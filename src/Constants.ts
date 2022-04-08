@@ -1,0 +1,1 @@
+export const MS_PER_UPDATE = 1000 / 60;

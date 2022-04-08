@@ -1,6 +1,4 @@
-function main() {
-    window.requestAnimationFrame(main);
-    
-}
+import { Game } from "core/Game";
 
-main();
+const game = new Game();
+game.start();
