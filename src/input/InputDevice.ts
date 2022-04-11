@@ -1,6 +1,7 @@
 import { Vector } from "math/Vector";
 import { GamepadInput } from "./GamepadInput";
 import { KeyboardInput } from "./KeyboardInput";
+import { MouseInput } from "./MouseInput";
 import { Pointer } from "./Pointer";
 
 
@@ -128,8 +129,10 @@ export class InputDevice
 
     private onMouseWheel(event: WheelEvent)
     {
-        
-        console.log(event);
+        const direction = Math.sign(event.deltaY);
+        this.pointer.identifier = (direction < 0) ? MouseInput.WHEEL_UP : MouseInput.WHEEL_DOWN;
+        this.pointerMoved(event.clientX, event.clientY);
+        this.cancelEvent(event);
     }
 
 

@@ -14,13 +14,13 @@ export enum GamepadInput
     START = "9",
     HOME = "16",
 
-    LSTICK_CENTER = "10",
+    LSTICK = "10",
     LSTICK_LEFT = "17",
     LSTICK_RIGHT = "18",
     LSTICK_UP = "19",
     LSTICK_DOWN = "20",
 
-    RSTICK_CENTER = "11",
+    RSTICK = "11",
     RSTICK_LEFT = "21",
     RSTICK_RIGHT = "22",
     RSTICK_UP = "23",
