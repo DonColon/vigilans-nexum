@@ -53,10 +53,9 @@ export class InputDevice
 
         if(!gamepad) return;
 
-        gamepad.buttons.forEach((gamepadButton, index) => {
-            const buttonIndex = index.toString();
-            this.gamepad.set(buttonIndex, gamepadButton.pressed);
-        });
+        for(const index in gamepad.buttons) {
+            this.gamepad.set(index, gamepad.buttons[index].pressed);
+        }
 
         this.gamepad.set(GamepadInput.LSTICK_LEFT, gamepad.axes[0] <= -0.5);
         this.gamepad.set(GamepadInput.LSTICK_RIGHT, gamepad.axes[0] >= 0.5);
