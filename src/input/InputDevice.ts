@@ -1,5 +1,7 @@
+import { Vector } from "math/Vector";
 import { GamepadInput } from "./GamepadInput";
 import { KeyboardInput } from "./KeyboardInput";
+import { Pointer } from "./Pointer";
 
 
 export class InputDevice
@@ -7,6 +9,8 @@ export class InputDevice
     private viewport: HTMLCanvasElement;
     private keyboard: Map<string, boolean>;
     private gamepad: Map<string, boolean>;
+    private pointer: Pointer;
+
     private gamepadSlot: number;
 
 
@@ -15,7 +19,11 @@ export class InputDevice
         this.viewport = viewport;
         this.keyboard = new Map<string, boolean>();
         this.gamepad = new Map<string, boolean>();
+        this.pointer = {} as Pointer;
         this.gamepadSlot = 0;
+
+        window.addEventListener( "contextmenu", this.cancelEvent);
+        window.addEventListener( "selectstart", this.cancelEvent);
 
         if(this.isGamepadSupported()) {
             this.initGamepad();
@@ -94,37 +102,35 @@ export class InputDevice
 
     private initMouse()
     {
-        this.viewport.addEventListener("mousemove", this.onMouseMove.bind(this));
         this.viewport.addEventListener("mousedown", this.onMouseDown.bind(this));
         this.viewport.addEventListener("mouseup", this.onMouseUp.bind(this));
-    }
-
-    private onMouseMove(event: MouseEvent)
-    {
-        this.cancelEvent(event);
+        this.viewport.addEventListener("mousemove", this.onMouseMove.bind(this));
     }
 
     private onMouseDown(event: MouseEvent)
     {
+        this.pointerPressed(event.clientX, event.clientY, event.button);
         this.cancelEvent(event);
     }
 
     private onMouseUp(event: MouseEvent)
     {
+        this.pointerReleased();
+        this.cancelEvent(event);
+    }
+
+    private onMouseMove(event: MouseEvent)
+    {
+        this.pointerMoved(event.clientX, event.clientY);
         this.cancelEvent(event);
     }
 
 
     private initTouch()
     {
-        this.viewport.addEventListener("touchmove", this.onTouchMove.bind(this));
         this.viewport.addEventListener("touchstart", this.onTouchStart.bind(this));
         this.viewport.addEventListener("touchend", this.onTouchEnd.bind(this));
-    }
-
-    private onTouchMove(event: TouchEvent)
-    {
-        this.cancelEvent(event);
+        this.viewport.addEventListener("touchmove", this.onTouchMove.bind(this));
     }
 
     private onTouchStart(event: TouchEvent)
@@ -137,6 +143,34 @@ export class InputDevice
         this.cancelEvent(event);
     }
 
+    private onTouchMove(event: TouchEvent)
+    {
+        this.cancelEvent(event);
+    }
+
+
+    private pointerPressed(x: number, y: number, identifier: number)
+    {
+        this.pointer.identifier = identifier;
+        this.pointer.pressed = true;
+        this.pointerMoved(x, y);
+    }
+
+    private pointerReleased()
+    {
+        this.pointer.identifier = -1;
+        this.pointer.pressed = false;
+    }
+
+    private pointerMoved(x: number, y: number)
+    {
+        const viewportX = x - this.viewport.offsetLeft;
+        const viewportY = y - this.viewport.offsetTop;
+
+        this.pointer.previous = this.pointer.current;
+        this.pointer.current = new Vector(viewportX, viewportY);
+        this.pointer.moved = true;
+    }
 
     private cancelEvent(event: Event)
     {
