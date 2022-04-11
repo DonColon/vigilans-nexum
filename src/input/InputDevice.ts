@@ -105,6 +105,7 @@ export class InputDevice
         this.viewport.addEventListener("mousedown", this.onMouseDown.bind(this));
         this.viewport.addEventListener("mouseup", this.onMouseUp.bind(this));
         this.viewport.addEventListener("mousemove", this.onMouseMove.bind(this));
+        this.viewport.addEventListener("wheel", this.onMouseWheel.bind(this));
     }
 
     private onMouseDown(event: MouseEvent)
@@ -125,6 +126,12 @@ export class InputDevice
         this.cancelEvent(event);
     }
 
+    private onMouseWheel(event: WheelEvent)
+    {
+        
+        console.log(event);
+    }
+
 
     private initTouch()
     {
@@ -135,16 +142,32 @@ export class InputDevice
 
     private onTouchStart(event: TouchEvent)
     {
+        const touch = event.touches[0];
+        this.pointerPressed(touch.clientX, touch.clientY, touch.identifier);
         this.cancelEvent(event);
     }
 
     private onTouchEnd(event: TouchEvent)
     {
+        for(const touch of event.changedTouches) {
+            if(this.pointer.identifier === touch.identifier) {
+                this.pointerReleased();
+                break;
+            }
+        }
+        
         this.cancelEvent(event);
     }
 
     private onTouchMove(event: TouchEvent)
     {
+        for(const touch of event.changedTouches) {
+            if(this.pointer.identifier === touch.identifier) {
+                this.pointerMoved(touch.clientX, touch.clientY);
+                break;
+            }
+        }
+
         this.cancelEvent(event);
     }
 
@@ -167,7 +190,6 @@ export class InputDevice
         const viewportX = x - this.viewport.offsetLeft;
         const viewportY = y - this.viewport.offsetTop;
 
-        this.pointer.previous = this.pointer.current;
         this.pointer.current = new Vector(viewportX, viewportY);
         this.pointer.moved = true;
     }
