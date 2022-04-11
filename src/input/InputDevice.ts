@@ -1,11 +1,16 @@
+import { KeyboardInput } from "./KeyboardInput";
+
+
 export class InputDevice
 {
     private viewport: HTMLCanvasElement;
+    private keyboard: Map<string, boolean>;
 
 
     constructor(viewport: HTMLCanvasElement)
     {
         this.viewport = viewport;
+        this.keyboard = new Map<string, boolean>();
 
         if(this.isGamepadSupported()) {
             this.initGamepad();
@@ -35,17 +40,23 @@ export class InputDevice
 
     private initKeyboard()
     {
+        for(const key of Object.values(KeyboardInput)) {
+            this.keyboard.set(key, false);
+        }
+
         window.addEventListener("keydown", this.onKeyDown.bind(this));
         window.addEventListener("keyup", this.onKeyUp.bind(this));
     }
 
     private onKeyDown(event: KeyboardEvent)
     {
+        this.keyboard.set(event.code, true);
         this.cancelEvent(event);
     }
 
     private onKeyUp(event: KeyboardEvent)
     {
+        this.keyboard.set(event.code, false);
         this.cancelEvent(event);
     }
 
