@@ -56,7 +56,7 @@ export class InputDevice
         this.cancelEvent(event);
     }
 
-    public pollGamepadStatus()
+    private updateGamepad()
     {
         const gamepad = navigator.getGamepads()[this.gamepadSlot];
 
@@ -177,9 +177,11 @@ export class InputDevice
 
     private pointerPressed(x: number, y: number, identifier: number)
     {
+        this.pointerMoved(x, y);
+
         this.pointer.identifier = identifier;
         this.pointer.pressed = true;
-        this.pointerMoved(x, y);
+        this.pointer.previous = this.pointer.current;
     }
 
     private pointerReleased()
