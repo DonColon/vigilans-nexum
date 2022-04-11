@@ -1,3 +1,4 @@
+import { GamepadInput } from "./GamepadInput";
 import { KeyboardInput } from "./KeyboardInput";
 
 
@@ -5,12 +6,16 @@ export class InputDevice
 {
     private viewport: HTMLCanvasElement;
     private keyboard: Map<string, boolean>;
+    private gamepad: Map<string, boolean>;
+    private gamepadSlot: number;
 
 
     constructor(viewport: HTMLCanvasElement)
     {
         this.viewport = viewport;
         this.keyboard = new Map<string, boolean>();
+        this.gamepad = new Map<string, boolean>();
+        this.gamepadSlot = 0;
 
         if(this.isGamepadSupported()) {
             this.initGamepad();
@@ -29,12 +34,39 @@ export class InputDevice
 
     private initGamepad()
     {
+        for(const key of Object.values(GamepadInput)) {
+            this.gamepad.set(key, false);
+        }
+
         window.addEventListener("gamepadconnected", this.onGamepadConnected.bind(this));
     }
 
     private onGamepadConnected(event: GamepadEvent)
     {
+        this.gamepadSlot = event.gamepad.index;
         this.cancelEvent(event);
+    }
+
+    public pollGamepadStatus()
+    {
+        const gamepad = navigator.getGamepads()[this.gamepadSlot];
+
+        if(!gamepad) return;
+
+        gamepad.buttons.forEach((gamepadButton, index) => {
+            const buttonIndex = index.toString();
+            this.gamepad.set(buttonIndex, gamepadButton.pressed);
+        });
+
+        this.gamepad.set(GamepadInput.LSTICK_LEFT, gamepad.axes[0] <= -0.5);
+        this.gamepad.set(GamepadInput.LSTICK_RIGHT, gamepad.axes[0] >= 0.5);
+        this.gamepad.set(GamepadInput.LSTICK_UP, gamepad.axes[1] <= -0.5);
+        this.gamepad.set(GamepadInput.LSTICK_DOWN, gamepad.axes[1] >= 0.5);
+
+        this.gamepad.set(GamepadInput.RSTICK_LEFT, gamepad.axes[2] <= -0.5);
+        this.gamepad.set(GamepadInput.RSTICK_RIGHT, gamepad.axes[2] >= 0.5);
+        this.gamepad.set(GamepadInput.RSTICK_UP, gamepad.axes[3] <= -0.5);
+        this.gamepad.set(GamepadInput.RSTICK_DOWN, gamepad.axes[3] >= 0.5);
     }
 
 
