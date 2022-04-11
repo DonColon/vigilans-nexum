@@ -1,5 +1,6 @@
 import { MS_PER_UPDATE } from "Constants";
 
+
 export class Game 
 {
     private viewport: HTMLCanvasElement;
@@ -25,10 +26,6 @@ export class Game
 
     private main(current: DOMHighResTimeStamp)
     {
-        if(this.isRunning) {
-            window.requestAnimationFrame(this.main.bind(this));
-        }
-
         const elapsed = current - this.previous;
         this.previous = current;
         this.lag += elapsed;
@@ -41,11 +38,15 @@ export class Game
         }
 
         this.render();
+
+        if(this.isRunning) {
+            window.requestAnimationFrame(this.main.bind(this));
+        }
     }
 
     private update()
     {
-        console.log("Hello World");
+
     }
 
     private render()
@@ -57,12 +58,13 @@ export class Game
         this.drawContext.clearRect(0, 0, this.viewport.width, this.viewport.height);
     }
 
+    
     public start()
     {
         this.previous = performance.now();
         this.isRunning = true;
 
-        this.main(performance.now());
+        window.requestAnimationFrame(this.main.bind(this));
     }
 
     public stop()
