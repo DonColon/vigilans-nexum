@@ -3,25 +3,29 @@ import { GamepadInput } from "./GamepadInput";
 import { KeyboardInput } from "./KeyboardInput";
 import { MouseInput } from "./MouseInput";
 import { Pointer } from "./Pointer";
+import { TouchInput } from "./TouchInput";
 
 
 export class InputDevice
 {
     private viewport: HTMLCanvasElement;
+    private gamepad: Map<number, boolean>;
     private keyboard: Map<string, boolean>;
-    private gamepad: Map<string, boolean>;
-    private pointer: Pointer;
+    private touchpad: Map<number, boolean>;
 
     private gamepadSlot: number;
+    private pointer: Pointer;
 
 
     constructor(viewport: HTMLCanvasElement)
     {
         this.viewport = viewport;
+        this.gamepad = new Map<number, boolean>();
         this.keyboard = new Map<string, boolean>();
-        this.gamepad = new Map<string, boolean>();
-        this.pointer = {} as Pointer;
+        this.touchpad = new Map<number, boolean>();
+
         this.gamepadSlot = 0;
+        this.pointer = {} as Pointer;
 
         window.addEventListener( "contextmenu", this.cancelEvent);
         window.addEventListener( "selectstart", this.cancelEvent);
@@ -35,6 +39,13 @@ export class InputDevice
         this.initTouch();
     }
 
+
+    public update()
+    {
+        this.updateGamepad();
+        this.updatePointer();
+    }
+
     
     private isGamepadSupported()
     {
@@ -43,8 +54,12 @@ export class InputDevice
 
     private initGamepad()
     {
-        for(const key of Object.values(GamepadInput)) {
-            this.gamepad.set(key, false);
+        const values = Object.values(GamepadInput)
+                .map(key => Number(key))
+                .filter(key => !isNaN(key));
+
+        for(const value of values) {
+            this.gamepad.set(value, false);
         }
 
         window.addEventListener("gamepadconnected", this.onGamepadConnected.bind(this));
@@ -62,8 +77,8 @@ export class InputDevice
 
         if(!gamepad) return;
 
-        for(const index in gamepad.buttons) {
-            this.gamepad.set(index, gamepad.buttons[index].pressed);
+        for(const [index, button] of gamepad.buttons.entries()) {
+            this.gamepad.set(index, button.pressed);
         }
 
         this.gamepad.set(GamepadInput.LSTICK_LEFT, gamepad.axes[0] <= -0.5);
@@ -138,6 +153,14 @@ export class InputDevice
 
     private initTouch()
     {
+        const values = Object.keys(TouchInput)
+                .map(key => Number(key))
+                .filter(key => !isNaN(key));
+
+        for(const value of values) {
+            this.touchpad.set(value, false);
+        }
+
         this.viewport.addEventListener("touchstart", this.onTouchStart.bind(this));
         this.viewport.addEventListener("touchend", this.onTouchEnd.bind(this));
         this.viewport.addEventListener("touchmove", this.onTouchMove.bind(this));
@@ -186,6 +209,14 @@ export class InputDevice
 
     private pointerReleased()
     {
+        const values = Object.keys(TouchInput)
+            .map(key => Number(key))
+            .filter(key => !isNaN(key));
+
+        for(const value of values) {
+            this.touchpad.set(value, false);
+        }
+
         this.pointer.identifier = -1;
         this.pointer.pressed = false;
     }
@@ -197,6 +228,28 @@ export class InputDevice
 
         this.pointer.current = new Vector(viewportX, viewportY);
         this.pointer.moved = true;
+    }
+
+    private updatePointer()
+    {
+        if(!this.pointer.pressed) return;
+        const { current, previous } = this.pointer;
+
+        if(current.getX() < previous.getX()) {
+            this.touchpad.set(TouchInput.SWIPE_LEFT, true);
+        }
+
+        if(current.getX() > previous.getX()) {
+            this.touchpad.set(TouchInput.SWIPE_RIGHT, true);
+        }
+
+        if(current.getY() < previous.getY()) {
+            this.touchpad.set(TouchInput.SWIPE_UP, true);
+        }
+
+        if(current.getY() > previous.getY()) {
+            this.touchpad.set(TouchInput.SWIPE_DOWN, true);
+        }
     }
 
     private cancelEvent(event: Event)
