@@ -1,5 +1,6 @@
 import { Vector } from "math/Vector";
 import { GamepadInput } from "./GamepadInput";
+import { InputChannel } from "./InputChannel";
 import { KeyboardInput } from "./KeyboardInput";
 import { MouseInput } from "./MouseInput";
 import { Pointer } from "./Pointer";
@@ -9,9 +10,10 @@ import { TouchInput } from "./TouchInput";
 export class InputDevice
 {
     private viewport: HTMLCanvasElement;
-    private gamepad: Map<number, boolean>;
-    private keyboard: Map<string, boolean>;
-    private touchpad: Map<number, boolean>;
+    private channels: Map<InputChannel, number>;
+    private gamepad: Map<GamepadInput, boolean>;
+    private keyboard: Map<KeyboardInput, boolean>;
+    private touchpad: Map<TouchInput, boolean>;
 
     private gamepadSlot: number;
     private pointer: Pointer;
@@ -20,9 +22,10 @@ export class InputDevice
     constructor(viewport: HTMLCanvasElement)
     {
         this.viewport = viewport;
-        this.gamepad = new Map<number, boolean>();
-        this.keyboard = new Map<string, boolean>();
-        this.touchpad = new Map<number, boolean>();
+        this.channels = new Map<InputChannel, number>();
+        this.gamepad = new Map<GamepadInput, boolean>();
+        this.keyboard = new Map<KeyboardInput, boolean>();
+        this.touchpad = new Map<TouchInput, boolean>();
 
         this.gamepadSlot = 0;
         this.pointer = {} as Pointer;
@@ -44,6 +47,16 @@ export class InputDevice
     {
         this.updateGamepad();
         this.updatePointer();
+    }
+
+    public uses(channel: InputChannel): boolean
+    {
+        const min = Math.max(...this.channels.values());
+        const inputChannel = [...this.channels].find(([key, value]) => value === min);
+        
+        if(!inputChannel) return false;
+
+        return inputChannel.at(0) === channel;
     }
 
     
@@ -77,6 +90,8 @@ export class InputDevice
 
         if(!gamepad) return;
 
+        this.channels.set(InputChannel.GAMEPAD, gamepad.timestamp);
+
         for(const [index, button] of gamepad.buttons.entries()) {
             this.gamepad.set(index, button.pressed);
         }
@@ -105,13 +120,17 @@ export class InputDevice
 
     private onKeyDown(event: KeyboardEvent)
     {
-        this.keyboard.set(event.code, true);
+        this.channels.set(InputChannel.KEYBOARD, event.timeStamp);
+
+        const keyCode = (<any>KeyboardInput)[event.code];
+        this.keyboard.set(keyCode, true);
         this.cancelEvent(event);
     }
 
     private onKeyUp(event: KeyboardEvent)
     {
-        this.keyboard.set(event.code, false);
+        const keyCode = (<any>KeyboardInput)[event.code];
+        this.keyboard.set(keyCode, false);
         this.cancelEvent(event);
     }
 
@@ -126,6 +145,8 @@ export class InputDevice
 
     private onMouseDown(event: MouseEvent)
     {
+        this.channels.set(InputChannel.MOUSE, event.timeStamp);
+
         this.pointerPressed(event.clientX, event.clientY, event.button);
         this.cancelEvent(event);
     }
@@ -144,6 +165,8 @@ export class InputDevice
 
     private onMouseWheel(event: WheelEvent)
     {
+        this.channels.set(InputChannel.MOUSE, event.timeStamp);
+
         const direction = Math.sign(event.deltaY);
         this.pointer.identifier = (direction < 0) ? MouseInput.WHEEL_UP : MouseInput.WHEEL_DOWN;
         this.pointerMoved(event.clientX, event.clientY);
@@ -168,6 +191,8 @@ export class InputDevice
 
     private onTouchStart(event: TouchEvent)
     {
+        this.channels.set(InputChannel.TOUCH, event.timeStamp);
+
         const touch = event.touches[0];
         this.pointerPressed(touch.clientX, touch.clientY, touch.identifier);
         this.cancelEvent(event);
