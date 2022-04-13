@@ -59,6 +59,35 @@ export class InputDevice
         return inputChannel.at(0) === channel;
     }
 
+    public isPressed(channel: InputChannel, input: GamepadInput | KeyboardInput | MouseInput | TouchInput): boolean
+    {
+        if(channel === InputChannel.GAMEPAD) {
+            return !!this.gamepad.get(input as GamepadInput);
+        }
+        else if(channel === InputChannel.KEYBOARD) {
+            return !!this.keyboard.get(input as KeyboardInput);
+        }
+        else if(channel === InputChannel.MOUSE) {
+            return (this.pointer.button === input as MouseInput) ? this.pointer.pressed : false;
+        }
+        else if(channel === InputChannel.TOUCH) {
+            const touchInput = input as TouchInput;
+
+            if(touchInput === TouchInput.TOUCH) {
+                return (this.pointer.button === touchInput) ? this.pointer.pressed : false;
+            } else {
+                return !!this.touchpad.get(touchInput);
+            }
+        }
+
+        return false;
+    }
+
+    public getPointer(): Pointer
+    {
+        return this.pointer;
+    }
+
     
     private isGamepadSupported()
     {
@@ -138,7 +167,7 @@ export class InputDevice
     private onMouseDown(event: MouseEvent)
     {
         this.channels.set(InputChannel.MOUSE, event.timeStamp);
-        this.pointerPressed(event.clientX, event.clientY, event.button);
+        this.pointerPressed(event.clientX, event.clientY, 0, event.button);
         this.cancelEvent(event);
     }
 
@@ -181,7 +210,7 @@ export class InputDevice
         this.channels.set(InputChannel.TOUCH, event.timeStamp);
 
         const touch = event.touches[0];
-        this.pointerPressed(touch.clientX, touch.clientY, touch.identifier);
+        this.pointerPressed(touch.clientX, touch.clientY, touch.identifier, TouchInput.TOUCH);
         this.cancelEvent(event);
     }
 
@@ -210,11 +239,12 @@ export class InputDevice
     }
 
 
-    private pointerPressed(x: number, y: number, identifier: number)
+    private pointerPressed(x: number, y: number, identifier: number, button: number)
     {
         this.pointerMoved(x, y);
 
         this.pointer.identifier = identifier;
+        this.pointer.button = button;
         this.pointer.pressed = true;
         this.pointer.previous = this.pointer.current;
     }
@@ -226,6 +256,7 @@ export class InputDevice
         }
 
         this.pointer.identifier = -1;
+        this.pointer.button = -1;
         this.pointer.pressed = false;
     }
 
