@@ -67,11 +67,7 @@ export class InputDevice
 
     private initGamepad()
     {
-        const values = Object.values(GamepadInput)
-                .map(key => Number(key))
-                .filter(key => !isNaN(key));
-
-        for(const value of values) {
+        for(const value of GamepadInput.values()) {
             this.gamepad.set(value, false);
         }
 
@@ -87,13 +83,12 @@ export class InputDevice
     private updateGamepad()
     {
         const gamepad = navigator.getGamepads()[this.gamepadSlot];
-
         if(!gamepad) return;
 
         this.channels.set(InputChannel.GAMEPAD, gamepad.timestamp);
 
         for(const [index, button] of gamepad.buttons.entries()) {
-            this.gamepad.set(index, button.pressed);
+            this.gamepad.set(index as GamepadInput, button.pressed);
         }
 
         this.gamepad.set(GamepadInput.LSTICK_LEFT, gamepad.axes[0] <= -0.5);
@@ -110,7 +105,7 @@ export class InputDevice
 
     private initKeyboard()
     {
-        for(const key of Object.values(KeyboardInput)) {
+        for(const key of KeyboardInput.values()) {
             this.keyboard.set(key, false);
         }
 
@@ -121,16 +116,13 @@ export class InputDevice
     private onKeyDown(event: KeyboardEvent)
     {
         this.channels.set(InputChannel.KEYBOARD, event.timeStamp);
-
-        const keyCode = (<any>KeyboardInput)[event.code];
-        this.keyboard.set(keyCode, true);
+        this.keyboard.set(event.code as KeyboardInput, true);
         this.cancelEvent(event);
     }
 
     private onKeyUp(event: KeyboardEvent)
     {
-        const keyCode = (<any>KeyboardInput)[event.code];
-        this.keyboard.set(keyCode, false);
+        this.keyboard.set(event.code as KeyboardInput, false);
         this.cancelEvent(event);
     }
 
@@ -146,7 +138,6 @@ export class InputDevice
     private onMouseDown(event: MouseEvent)
     {
         this.channels.set(InputChannel.MOUSE, event.timeStamp);
-
         this.pointerPressed(event.clientX, event.clientY, event.button);
         this.cancelEvent(event);
     }
@@ -176,11 +167,7 @@ export class InputDevice
 
     private initTouch()
     {
-        const values = Object.keys(TouchInput)
-                .map(key => Number(key))
-                .filter(key => !isNaN(key));
-
-        for(const value of values) {
+        for(const value of TouchInput.values()) {
             this.touchpad.set(value, false);
         }
 
@@ -234,11 +221,7 @@ export class InputDevice
 
     private pointerReleased()
     {
-        const values = Object.keys(TouchInput)
-            .map(key => Number(key))
-            .filter(key => !isNaN(key));
-
-        for(const value of values) {
+        for(const value of TouchInput.values()) {
             this.touchpad.set(value, false);
         }
 

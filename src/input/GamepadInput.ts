@@ -1,3 +1,6 @@
+import { numberEnumKeys, numberEnumValues } from "utils/Enums";
+
+
 export enum GamepadInput
 {
     A = 0,
@@ -30,4 +33,22 @@ export enum GamepadInput
     DPAD_DOWN = 13,
     DPAD_LEFT = 14,
     DPAD_RIGHT = 15,
+}
+
+export namespace GamepadInput
+{
+    export function keys(): string[] 
+    {
+        return numberEnumKeys(GamepadInput);
+    }
+
+    export function values(): GamepadInput[]
+    {
+        return numberEnumValues(GamepadInput);
+    }
+
+    export function exists(value: number): boolean
+    {
+        return value in GamepadInput;
+    }
 }

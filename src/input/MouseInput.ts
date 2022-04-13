@@ -1,3 +1,6 @@
+import { numberEnumKeys, numberEnumValues } from "utils/Enums";
+
+
 export enum MouseInput
 {
     LEFT = 0,
@@ -8,4 +11,22 @@ export enum MouseInput
     
     FORWARD = 4,
     BACKWARD = 3,
+}
+
+export namespace MouseInput
+{
+    export function keys(): string[] 
+    {
+        return numberEnumKeys(MouseInput);
+    }
+
+    export function values(): MouseInput[]
+    {
+        return numberEnumValues(MouseInput);
+    }
+
+    export function exists(value: number): boolean
+    {
+        return value in MouseInput;
+    }
 }

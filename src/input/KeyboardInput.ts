@@ -1,3 +1,6 @@
+import { stringEnumExists } from "utils/Enums";
+
+
 export enum KeyboardInput
 {
     ESCAPE = "Escape",
@@ -114,4 +117,22 @@ export enum KeyboardInput
     END = "End",
     PAGE_UP = "PageUp",
     PAGE_DOWN = "PageDown",
+}
+
+export namespace KeyboardInput
+{
+    export function keys(): string[] 
+    {
+        return Object.keys(KeyboardInput as object);
+    }
+
+    export function values(): KeyboardInput[]
+    {
+        return Object.values(KeyboardInput as object);
+    }
+
+    export function exists(value: string): boolean
+    {
+        return stringEnumExists(KeyboardInput, value);
+    }
 }
