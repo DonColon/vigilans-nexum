@@ -1,25 +1,28 @@
 {
-	"name": "vigilantes-prototype",
+	"name": "vigilans-nexum",
 	"version": "1.0.0",
-	"description": "A prototype for a tactical RPG",
+	"description": "A tactical RPG inspired by the fire emblem franchise",
 	"author": "Dardan Rrafshi",
 	"license": "Apache-2.0",
 	"main": "bundle.min.js",
 	"keywords": [
-		"RPG",
 		"tactical",
-		"strategic",
-		"grid-based",
-		"turn-based"
+		"turn-based",
+		"tile-based",
+		"rpg",
+		"tactical-rpg",
+		"story",
+		"game",
+		"game-development"
 	],
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/DonColon/vigilantes-prototype.git"
+		"url": "git+https://github.com/DonColon/vigilans-nexum.git"
 	},
 	"bugs": {
-		"url": "https://github.com/DonColon/vigilantes-prototype/issues"
+		"url": "https://github.com/DonColon/vigilans-nexum/issues"
 	},
-	"homepage": "https://github.com/DonColon/vigilantes-prototype#readme",
+	"homepage": "https://github.com/DonColon/vigilans-nexum#readme",
 	"scripts": {
 		"build": "rollup -c",
 		"watch": "rollup -c -f umd -w",
