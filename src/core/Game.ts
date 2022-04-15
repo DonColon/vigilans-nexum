@@ -1,10 +1,12 @@
 import { MS_PER_UPDATE } from "Constants";
+import { InputDevice } from "input/InputDevice";
 import { Display } from "./Display";
 
 
 export class Game 
 {
     private display: Display;
+    private inputDevice: InputDevice;
 
     private isRunning: boolean;
     private previous: number;
@@ -13,7 +15,12 @@ export class Game
 
     constructor()
     {
-        this.display = new Display({ viewportID: "viewport" });
+        this.display = new Display({
+            dimension: { width: 1280, height: 720 }, 
+            viewportID: "viewport"
+        });
+
+        this.inputDevice = new InputDevice(this.display);
         
         this.isRunning = false;
         this.previous = 0;
@@ -40,7 +47,7 @@ export class Game
         this.previous = current;
         this.lag += elapsed;
 
-        // TODO Process the input of the user
+        this.inputDevice.update();
 
         while(this.lag >= MS_PER_UPDATE) {
             this.update();

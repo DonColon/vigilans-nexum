@@ -7,10 +7,21 @@ export class Display
 {
     private viewport: HTMLCanvasElement;
 
+    private onMouseDown!: (event: MouseEvent) => any;
+    private onMouseUp!: (event: MouseEvent) => any;
+    private onMouseMove!: (event: MouseEvent) => any;
+    private onWheelChange!: (event: WheelEvent) => any;
+
+    private onTouchStart!: (event: TouchEvent) => any;
+    private onTouchEnd!: (event: TouchEvent) => any;
+    private onTouchMove!: (event: TouchEvent) => any;
+
     private onFullscreenChange!: (event: Event) => any;
     private onFullscreenError!: (event: Event) => any;
+
     private onPointerLockChange!: (event: Event) => any;
     private onPointerLockError!: (event: Event) => any;
+
     private onOrientationChange!: (event: Event) => any;
 
 
@@ -36,6 +47,85 @@ export class Display
             this.viewport.width = DISPLAY_WIDTH;
             this.viewport.height = DISPLAY_HEIGHT;
         }
+    }
+
+
+    public addMouseDownListener(onDown: (event: MouseEvent) => any)
+    {
+        this.onMouseDown = onDown;
+        this.viewport.addEventListener("mousedown", onDown);
+    }
+
+    public addMouseUpListener(onUp: (event: MouseEvent) => any)
+    {
+        this.onMouseUp = onUp;
+        this.viewport.addEventListener("mouseup", onUp);
+    }
+
+    public addMouseMoveListener(onMove: (event: MouseEvent) => any)
+    {
+        this.onMouseMove = onMove;
+        this.viewport.addEventListener("mousemove", onMove);
+    }
+
+    public addWheelChangeListener(onChange: (event: WheelEvent) => any)
+    {
+        this.onWheelChange = onChange;
+        this.viewport.addEventListener("wheel", onChange);
+    }
+
+    public removeMouseDownListener()
+    {
+        this.viewport.removeEventListener("mousedown", this.onMouseDown);
+    }
+
+    public removeMouseUpListener()
+    {
+        this.viewport.removeEventListener("mouseup", this.onMouseUp);
+    }
+
+    public removeMouseMoveListener()
+    {
+        this.viewport.removeEventListener("mousemove", this.onMouseMove);
+    }
+
+    public removeWheelChangeListener()
+    {
+        this.viewport.removeEventListener("wheel", this.onWheelChange);
+    }
+
+
+    public addTouchStartListener(onStart: (event: TouchEvent) => any)
+    {
+        this.onTouchStart = onStart;
+        this.viewport.addEventListener("touchstart", onStart);
+    }
+
+    public addTouchEndListener(onEnd: (event: TouchEvent) => any)
+    {
+        this.onTouchEnd = onEnd;
+        this.viewport.addEventListener("touchend", onEnd);
+    }
+
+    public addTouchMoveListener(onMove: (event: TouchEvent) => any)
+    {
+        this.onTouchMove = onMove;
+        this.viewport.addEventListener("touchmove", onMove);
+    }
+
+    public removeTouchStartListener()
+    {
+        this.viewport.addEventListener("touchstart", this.onTouchStart);
+    }
+
+    public removeTouchEndListener()
+    {
+        this.viewport.addEventListener("touchend", this.onTouchEnd);
+    }
+
+    public removeTouchMoveListener()
+    {
+        this.viewport.addEventListener("touchmove", this.onTouchMove);
     }
 
 
@@ -148,6 +238,14 @@ export class Display
         return {
             width: this.viewport.width * devicePixelRatio,
             height: this.viewport.height * devicePixelRatio
+        };
+    }
+
+    public getViewportOffset(): Dimension
+    {
+        return {
+            width: this.viewport.offsetLeft * devicePixelRatio,
+            height: this.viewport.offsetTop * devicePixelRatio
         };
     }
 

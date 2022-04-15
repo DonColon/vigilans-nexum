@@ -12,6 +12,12 @@ export class Vector
 		this.z = z;
 	}
 
+	public static fromAngle(angle: number): Vector
+	{
+		const radian = angle * Math.PI / 180;
+		return new Vector(Math.cos(radian), Math.sin(radian));
+	}
+
 
 	public add(other: Vector): Vector 
 	{
@@ -23,14 +29,14 @@ export class Vector
 		return new Vector(this.x - other.x, this.y - other.y, this.z - other.z);
 	}
 
-	public multiply(scalar: number): Vector 
+	public multiply(scale: number): Vector 
 	{
-		return new Vector(this.x * scalar, this.y * scalar, this.z * scalar);
+		return new Vector(this.x * scale, this.y * scale, this.z * scale);
 	}
 
-	public divide(scalar: number): Vector 
+	public divide(scale: number): Vector 
 	{
-		return new Vector(this.x / scalar, this.y / scalar, this.z / scalar);
+		return new Vector(this.x / scale, this.y / scale, this.z / scale);
 	}
 
 
@@ -45,6 +51,22 @@ export class Vector
 						  this.z * other.x - this.x * other.z,
 						  this.x * other.y - this.y * other.x);
 	}
+
+	public flipX(): Vector
+	{
+		return new Vector(this.x * -1, this.y, this.z);
+	}
+
+	public flipY(): Vector
+	{
+		return new Vector(this.x, this.y * -1, this.z);
+	}
+
+	public flipZ(): Vector
+	{
+		return new Vector(this.x, this.y, this.z * -1);
+	}
+
 
 	public magnitude(): number 
 	{
@@ -68,11 +90,26 @@ export class Vector
 		return vector.magnitude();
 	}
 
+	public rotate(angle: number): Vector
+	{
+		const radian = angle * Math.PI / 180;
+
+		const newX = this.x * Math.cos(radian) - this.y * Math.sin(radian);
+		const newY = this.x * Math.sin(radian) + this.y * Math.cos(radian);
+
+		return new Vector(newX, newY, this.z);
+	}
+
 	public angleBetween(other: Vector): number 
 	{
 		const numerator = this.dot(other);
 		const denominator = this.magnitude() * other.magnitude();
 		return Math.acos(numerator / denominator) * 180 / Math.PI;
+	}
+
+	public heading(): number
+	{
+		return (Math.atan2(this.y, this.x) * 180 / Math.PI + 360) % 360;
 	}
 
 	public isCollinear(other: Vector): boolean 

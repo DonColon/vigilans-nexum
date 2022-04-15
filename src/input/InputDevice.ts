@@ -1,31 +1,33 @@
+import { Display } from "core/Display";
 import { Vector } from "math/Vector";
 import { GamepadInput } from "./GamepadInput";
 import { InputChannel } from "./InputChannel";
 import { KeyboardInput } from "./KeyboardInput";
 import { MouseInput } from "./MouseInput";
 import { Pointer } from "./Pointer";
+import { SwipeInput } from "./SwipeInput";
 import { TouchInput } from "./TouchInput";
 
 
 export class InputDevice
 {
-    private viewport: HTMLCanvasElement;
+    private display: Display;
     private channels: Map<InputChannel, number>;
     private gamepad: Map<GamepadInput, boolean>;
     private keyboard: Map<KeyboardInput, boolean>;
-    private touchpad: Map<TouchInput, boolean>;
+    private touchpad: Map<SwipeInput, boolean>;
 
     private gamepadSlot: number;
     private pointer: Pointer;
 
 
-    constructor(viewport: HTMLCanvasElement)
+    constructor(display: Display)
     {
-        this.viewport = viewport;
+        this.display = display;
         this.channels = new Map<InputChannel, number>();
         this.gamepad = new Map<GamepadInput, boolean>();
         this.keyboard = new Map<KeyboardInput, boolean>();
-        this.touchpad = new Map<TouchInput, boolean>();
+        this.touchpad = new Map<SwipeInput, boolean>();
 
         this.gamepadSlot = 0;
         this.pointer = {} as Pointer;
@@ -59,7 +61,7 @@ export class InputDevice
         return inputChannel.at(0) === channel;
     }
 
-    public isPressed(channel: InputChannel, input: GamepadInput | KeyboardInput | MouseInput | TouchInput): boolean
+    public isPressed(channel: InputChannel, input: GamepadInput | KeyboardInput | MouseInput | TouchInput | SwipeInput): boolean
     {
         if(channel === InputChannel.GAMEPAD) {
             return !!this.gamepad.get(input as GamepadInput);
@@ -76,7 +78,7 @@ export class InputDevice
             if(touchInput === TouchInput.TOUCH) {
                 return (this.pointer.button === touchInput) ? this.pointer.pressed : false;
             } else {
-                return !!this.touchpad.get(touchInput);
+                return !!this.touchpad.get(input as SwipeInput);
             }
         }
 
@@ -158,10 +160,10 @@ export class InputDevice
 
     private initMouse()
     {
-        this.viewport.addEventListener("mousedown", this.onMouseDown.bind(this));
-        this.viewport.addEventListener("mouseup", this.onMouseUp.bind(this));
-        this.viewport.addEventListener("mousemove", this.onMouseMove.bind(this));
-        this.viewport.addEventListener("wheel", this.onMouseWheel.bind(this));
+        this.display.addMouseDownListener(this.onMouseDown.bind(this));
+        this.display.addMouseUpListener(this.onMouseUp.bind(this));
+        this.display.addMouseMoveListener(this.onMouseMove.bind(this));
+        this.display.addWheelChangeListener(this.onMouseWheel.bind(this));
     }
 
     private onMouseDown(event: MouseEvent)
@@ -196,13 +198,13 @@ export class InputDevice
 
     private initTouch()
     {
-        for(const value of TouchInput.values()) {
+        for(const value of SwipeInput.values()) {
             this.touchpad.set(value, false);
         }
 
-        this.viewport.addEventListener("touchstart", this.onTouchStart.bind(this));
-        this.viewport.addEventListener("touchend", this.onTouchEnd.bind(this));
-        this.viewport.addEventListener("touchmove", this.onTouchMove.bind(this));
+        this.display.addTouchStartListener(this.onTouchStart.bind(this));
+        this.display.addTouchEndListener(this.onTouchEnd.bind(this));
+        this.display.addTouchMoveListener(this.onTouchMove.bind(this));
     }
 
     private onTouchStart(event: TouchEvent)
@@ -251,7 +253,7 @@ export class InputDevice
 
     private pointerReleased()
     {
-        for(const value of TouchInput.values()) {
+        for(const value of SwipeInput.values()) {
             this.touchpad.set(value, false);
         }
 
@@ -262,8 +264,9 @@ export class InputDevice
 
     private pointerMoved(x: number, y: number)
     {
-        const viewportX = x - this.viewport.offsetLeft;
-        const viewportY = y - this.viewport.offsetTop;
+        const offset = this.display.getViewportOffset();
+        const viewportX = x - offset.width;
+        const viewportY = y - offset.height;
 
         this.pointer.current = new Vector(viewportX, viewportY);
         this.pointer.moved = true;
@@ -274,21 +277,10 @@ export class InputDevice
         if(!this.pointer.pressed) return;
         const { current, previous } = this.pointer;
 
-        if(current.getX() < previous.getX()) {
-            this.touchpad.set(TouchInput.SWIPE_LEFT, true);
-        }
-
-        if(current.getX() > previous.getX()) {
-            this.touchpad.set(TouchInput.SWIPE_RIGHT, true);
-        }
-
-        if(current.getY() < previous.getY()) {
-            this.touchpad.set(TouchInput.SWIPE_UP, true);
-        }
-
-        if(current.getY() > previous.getY()) {
-            this.touchpad.set(TouchInput.SWIPE_DOWN, true);
-        }
+        const swipe = current.subtract(previous).flipY();
+        const angle = swipe.heading();
+        
+        this.touchpad.set(SwipeInput.fromAngle(angle), true);
     }
 
     private cancelEvent(event: Event)
