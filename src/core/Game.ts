@@ -1,25 +1,35 @@
 import { MS_PER_UPDATE } from "Constants";
+import { Display } from "./Display";
 
 
 export class Game 
 {
-    private viewport: HTMLCanvasElement;
-    private drawContext: CanvasRenderingContext2D | null;
-
-    private previous: DOMHighResTimeStamp;
-    private lag: number;
+    private display: Display;
 
     private isRunning: boolean;
+    private previous: number;
+    private lag: number;
 
 
     constructor()
     {
-        this.viewport = document.getElementById("viewport") as HTMLCanvasElement;
-        this.drawContext = this.viewport.getContext("2d");
-
+        this.display = new Display({ viewportID: "viewport" });
+        
+        this.isRunning = false;
         this.previous = 0;
         this.lag = 0;
+    }
 
+
+    public start()
+    {
+        this.isRunning = true;
+        this.previous = performance.now();
+        window.requestAnimationFrame(this.main.bind(this));
+    }
+
+    public stop()
+    {
         this.isRunning = false;
     }
 
@@ -51,24 +61,9 @@ export class Game
 
     private render()
     {
-        if(!this.drawContext) {
-            return;
-        }
+        const context = this.display.getRenderContext();
+        const viewport = this.display.getViewportDimension();
 
-        this.drawContext.clearRect(0, 0, this.viewport.width, this.viewport.height);
-    }
-
-    
-    public start()
-    {
-        this.previous = performance.now();
-        this.isRunning = true;
-
-        window.requestAnimationFrame(this.main.bind(this));
-    }
-
-    public stop()
-    {
-        this.isRunning = false;
+        context.clearRect(0, 0, viewport.width, viewport.height);
     }
 }
