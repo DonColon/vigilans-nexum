@@ -65,6 +65,23 @@ export function randomBooleans(size: number): boolean[]
 }
 
 
+export function randomUUID()
+{
+    let timestamp = Date.now();
+
+    const uuid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (value) => {
+        const random = randomInteger({ max: 16 });
+
+        const hexCode = (timestamp + random) % 16;
+        timestamp = Math.floor(timestamp / 16);
+
+        return (value === "x" ? hexCode : hexCode % 4 + 8).toString(16); 
+    });
+
+    return uuid;
+}
+
+
 export function anyOf<T>(items: T[]): T
 {
     return items.at(randomInteger({ max: items.length - 1 })) as T;
