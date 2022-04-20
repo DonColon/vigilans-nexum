@@ -1,23 +1,30 @@
 type JsonType = (string | number | boolean | object | string[] | number[] | boolean[] | object[] | null);
 
 
-export function ComponentName(name: string) {
+interface ComponentConstructor extends Function
+{
+    componentName: string
+}
+
+
+export function JsonName(name: string)
+{
     return (target: Function) => {
-        target.prototype.componentName = name;
+        const component = target as ComponentConstructor;
+        component.componentName = name;
     }
 }
 
 
 export abstract class Component<T>
 {
+    static componentName: string;
     [key: string]: JsonType;
 
 
     constructor(parameters: T) 
     {
-        for(const [key, value] of Object.entries(parameters)) {
-            this[key] = value;
-        }
+        this.set(parameters);
     }
 
 
