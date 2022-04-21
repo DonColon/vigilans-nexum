@@ -1,7 +1,7 @@
 type JsonType = (string | number | boolean | object | string[] | number[] | boolean[] | object[] | null);
 
 
-interface ComponentConstructor extends Function
+export interface ComponentConstructor extends Function
 {
     componentName: string
 }
@@ -10,8 +10,8 @@ interface ComponentConstructor extends Function
 export function JsonName(name: string)
 {
     return (target: Function) => {
-        const component = target as ComponentConstructor;
-        component.componentName = name;
+        const constructor = target as ComponentConstructor;
+        constructor.componentName = name;
     }
 }
 

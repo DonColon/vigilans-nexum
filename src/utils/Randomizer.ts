@@ -65,15 +65,17 @@ export function randomBooleans(size: number): boolean[]
 }
 
 
-export function randomUUID()
+export function randomUUID(): string
 {
-    let timestamp = Date.now();
+    let current = Date.now();
 
     const uuid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (value) => {
         const random = randomInteger({ max: 16 });
 
-        const hexCode = (timestamp + random) % 16;
-        timestamp = Math.floor(timestamp / 16);
+        const hexCode = (current + random) % 16;
+        current = Math.floor(current / 16);
+
+        if(current === 0) current = Date.now();
 
         return (value === "x" ? hexCode : hexCode % 4 + 8).toString(16); 
     });
