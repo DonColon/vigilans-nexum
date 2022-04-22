@@ -1,4 +1,4 @@
-import { Vector } from "math/Vector";
+import { Vector } from "core/math/Vector";
 
 
 export interface Pointer

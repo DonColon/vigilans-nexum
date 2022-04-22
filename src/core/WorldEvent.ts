@@ -1,4 +1,4 @@
-import { stringEnumExists } from "utils/Enums";
+import { stringEnumExists } from "core/utils/Enums";
 import { Entity } from "./Entity";
 
 

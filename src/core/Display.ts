@@ -1,5 +1,5 @@
 import { DISPLAY_HEIGHT, DISPLAY_WIDTH } from "Constants";
-import { Vector } from "math/Vector";
+import { Vector } from "core/math/Vector";
 import { DisplayOrientation } from "./DisplayOrientation";
 
 

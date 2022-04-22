@@ -1,5 +1,5 @@
 import { Display } from "core/Display";
-import { Vector } from "math/Vector";
+import { Vector } from "core/math/Vector";
 import { GamepadInput } from "./GamepadInput";
 import { InputChannel } from "./InputChannel";
 import { KeyboardInput } from "./KeyboardInput";

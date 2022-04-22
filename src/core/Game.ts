@@ -1,5 +1,5 @@
 import { MS_PER_UPDATE } from "Constants";
-import { InputDevice } from "input/InputDevice";
+import { InputDevice } from "core/input/InputDevice";
 import { Display } from "./Display";
 
 

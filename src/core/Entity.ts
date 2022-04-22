@@ -1,4 +1,4 @@
-import { randomUUID } from "utils/Randomizer";
+import { randomUUID } from "core/utils/Randomizer";
 import { Component, ComponentConstructor } from "./Component";
 import { EventType } from "./WorldEvent";
 

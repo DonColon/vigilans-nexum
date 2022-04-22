@@ -1,4 +1,4 @@
-import { numberEnumKeys, numberEnumValues } from "utils/Enums";
+import { numberEnumKeys, numberEnumValues } from "core/utils/Enums";
 
 
 export enum TouchInput
