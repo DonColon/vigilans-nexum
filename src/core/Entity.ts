@@ -1,11 +1,12 @@
 import { randomUUID } from "utils/Randomizer";
 import { Component, ComponentConstructor } from "./Component";
+import { EventType } from "./WorldEvent";
 
 
 export abstract class Entity
 {
-    protected componentTypes: Map<string, ComponentConstructor>;
-    protected component: Map<string, Component<object>>;
+    protected componentTypes: Map<string, ComponentConstructor<any>>;
+    protected components: Map<string, Component<any>>;
 
     protected id: string;
     protected alive: boolean;
@@ -13,60 +14,72 @@ export abstract class Entity
 
     constructor(id: string = randomUUID())
     {
-        this.componentTypes = new Map<string, ComponentConstructor>();
-        this.component = new Map<string, Component<object>>();
+        this.componentTypes = new Map<string, ComponentConstructor<any>>();
+        this.components = new Map<string, Component<any>>();
 
         this.id = id;
         this.alive = true;
     }
 
 
-    public getComponent(name: string): Component<object>
+    public getComponent(componentType: ComponentConstructor<any> | string): Component<any>
     {
-        return this.component.get(name) as Component<object>;
+        const name = (typeof componentType === "string") ? componentType : componentType.componentName;
+        return this.components.get(name) as Component<any>;
     }
 
-    public addComponent(componentType: ComponentConstructor, values: object): Entity
+    public addComponent(componentType: ComponentConstructor<any> | string, values: object): Entity
     {
-        const component = componentType(values);
-        this.componentTypes.set(componentType.componentName, componentType);
-        this.component.set(componentType.componentName, component);
+        const constructor = (typeof componentType === "string") ? world.getComponent(componentType) : componentType;
+        const component = new constructor(values);
+
+        this.componentTypes.set(constructor.componentName, constructor);
+        this.components.set(constructor.componentName, component);
+
+        world.dispatch(EventType.COMPONENT_CHANGED, { entity: this });
         return this;
     }
 
-    public removeComponent(componentType: ComponentConstructor): Entity
+    public removeComponent(componentType: ComponentConstructor<any> | string): Entity
     {
-        this.componentTypes.delete(componentType.componentName);
-        this.component.delete(componentType.componentName);
+        const name = (typeof componentType === "string") ? componentType : componentType.componentName;
+
+        this.componentTypes.delete(name);
+        this.components.delete(name);
+
+        world.dispatch(EventType.COMPONENT_CHANGED, { entity: this });
         return this;
     }
 
     public reset(): Entity
     {
         this.componentTypes.clear();
-        this.component.clear();
+        this.components.clear();
+
+        world.dispatch(EventType.COMPONENT_CHANGED, { entity: this });
         return this;
     }
 
 
-    public hasComponent(name: string): boolean
+    public hasComponent(componentType: ComponentConstructor<any> | string): boolean
     {
-        return this.componentTypes.has(name) && this.component.has(name);
+        const name = (typeof componentType === "string") ? componentType : componentType.componentName;
+        return this.componentTypes.has(name) && this.components.has(name);
     }
 
-    public hasAllComponent(components: string[]): boolean
+    public hasAllComponent(componentTypes: Set<ComponentConstructor<any>> | Set<string>): boolean
     {
-        for(const name of components) {
-            if(!this.hasComponent(name)) return false;
+        for(const componentType of componentTypes) {
+            if(!this.hasComponent(componentType)) return false;
         }
 
         return true;
     }
 
-    public hasAnyComponent(components: string[]): boolean
+    public hasAnyComponent(componentTypes: Set<ComponentConstructor<any>> | Set<string>): boolean
     {
-        for(const name of components) {
-            if(this.hasComponent(name)) return true;
+        for(const componentType of componentTypes) {
+            if(this.hasComponent(componentType)) return true;
         }
 
         return false;
