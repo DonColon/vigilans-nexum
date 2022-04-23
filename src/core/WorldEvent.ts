@@ -8,25 +8,25 @@ export interface WorldEvent
 }
 
 
-export enum EventType
+export enum WorldEventType
 {
     COMPONENT_CHANGED = "componentsChanged",
 }
 
-export namespace EventType
+export namespace WorldEventType
 {
     export function keys(): string[] 
     {
-        return Object.keys(EventType as object);
+        return Object.keys(WorldEventType as object);
     }
 
-    export function values(): EventType[]
+    export function values(): WorldEventType[]
     {
-        return Object.values(EventType as object);
+        return Object.values(WorldEventType as object);
     }
 
     export function exists(value: string): boolean
     {
-        return stringEnumExists(EventType, value);
+        return stringEnumExists(WorldEventType, value);
     }
 }
