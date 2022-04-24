@@ -20,7 +20,7 @@ export abstract class System
     }
 
 
-    public static compare(value: System, other: System): number
+    public static byPriority(value: System, other: System): number
     {
         return value.priority - other.priority;
     }

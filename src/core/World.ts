@@ -22,11 +22,11 @@ export class World extends EventDispatcher
 
     public execute(elapsed: number)
     {
-        const executionPlan = Array.from(this.systems.values());
+        const schedule = Array.from(this.systems.values());
         
-        executionPlan.sort(System.compare);
+        schedule.sort(System.byPriority);
         
-        for(const system of executionPlan) {
+        for(const system of schedule) {
             if(system.isEnabled()) {
                 system.execute(elapsed);
             }
