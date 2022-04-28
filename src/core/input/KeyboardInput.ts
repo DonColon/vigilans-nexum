@@ -37,6 +37,7 @@ export enum KeyboardInput
     KEY_E = "KeyE",
     KEY_R = "KeyR",
     KEY_T = "KeyT",
+    KEY_Y = "KeyY",
     KEY_U = "KeyU",
     KEY_I = "KeyI",
     KEY_O = "KeyO",

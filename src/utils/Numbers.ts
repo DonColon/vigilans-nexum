@@ -1,32 +1,32 @@
-export function isDivisibleBy(number: number, divisor: number)
+export function isDivisibleBy(value: number, divisor: number)
 {
-    return number % divisor === 0;
+    return value % divisor === 0;
 }
 
-export function isEven(number: number)
+export function isEven(value: number)
 {
-    return isDivisibleBy(number, 2);
+    return isDivisibleBy(value, 2);
 }
 
-export function isOdd(number: number)
+export function isOdd(value: number)
 {
-    return number % 2 === 1;
+    return !isDivisibleBy(value, 2);
 }
 
-export function isPowerOf(number: number, base: number)
+export function isPowerOf(value: number, base: number)
 {
-    if(number === 0) return false;
+    if(value === 0) return false;
 
-    const exponent = Math.log(number) / Math.log(base);
+    const exponent = Math.log(value) / Math.log(base);
     return Math.ceil(exponent) === Math.floor(exponent);
 }
 
-export function isPrime(number: number)
+export function isPrime(value: number)
 {
-    if(number <= 1) return false;
+    if(value <= 1) return false;
 
-    for(let i = 2; i < number; i++) {
-        if(number % i === 0) {
+    for(let i = 2; i < value; i++) {
+        if(isDivisibleBy(value, i)) {
             return false;
         }
     }
@@ -34,14 +34,14 @@ export function isPrime(number: number)
     return true;
 }
 
-export function isFibonacci(number: number)
+export function isPerfectSquare(value: number)
 {
-    return isPerfectSquare(5 * number * number + 4)
-        || isPerfectSquare(5 * number * number - 4);
+    const side = Math.sqrt(value);
+    return side * side === value;
 }
 
-function isPerfectSquare(number: number)
+export function isFibonacci(value: number)
 {
-    const side = Math.sqrt(number);
-    return side * side === number;
+    return isPerfectSquare(5 * value * value + 4)
+        || isPerfectSquare(5 * value * value - 4);
 }
