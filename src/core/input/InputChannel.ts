@@ -6,7 +6,7 @@ export enum InputChannel
     GAMEPAD = "Gamepad",
     KEYBOARD = "Keyboard",
     MOUSE = "Mouse",
-    TOUCH = "Touch",
+    TOUCHPAD = "Touchpad",
 }
 
 export namespace InputChannel

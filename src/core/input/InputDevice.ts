@@ -2,35 +2,52 @@ import { Display } from "core/Display";
 import { Vector } from "core/math/Vector";
 import { GamepadInput } from "./GamepadInput";
 import { InputChannel } from "./InputChannel";
+import { InputState } from "./InputState";
 import { KeyboardInput } from "./KeyboardInput";
 import { MouseInput } from "./MouseInput";
-import { Pointer } from "./Pointer";
 import { SwipeInput } from "./SwipeInput";
 import { TouchInput } from "./TouchInput";
+
+
+type DeviceInput = (GamepadInput | KeyboardInput | MouseInput | TouchInput | SwipeInput);
+
+
+interface Input
+{
+    current: boolean,
+    previous: boolean
+}
+
+interface Pointer
+{
+    identifier: number,
+    position: {
+        current: Vector,
+        previous: Vector,
+    }
+    state: Input
+}
 
 
 export class InputDevice
 {
     private display: Display;
     private channels: Map<InputChannel, number>;
-    private gamepad: Map<GamepadInput, boolean>;
-    private keyboard: Map<KeyboardInput, boolean>;
-    private touchpad: Map<SwipeInput, boolean>;
 
-    private gamepadSlot: number;
-    private pointer: Pointer;
+    private gamepad!: Map<GamepadInput, Input>;
+    private gamepadSlot!: number;
+
+    private keyboard!: Map<KeyboardInput, Input>;
+    private mouse!: Map<MouseInput, Pointer>;
+
+    private touchpad!: Map<SwipeInput, Input>;
+    private touch!: Pointer;
 
 
     constructor(display: Display)
     {
         this.display = display;
         this.channels = new Map<InputChannel, number>();
-        this.gamepad = new Map<GamepadInput, boolean>();
-        this.keyboard = new Map<KeyboardInput, boolean>();
-        this.touchpad = new Map<SwipeInput, boolean>();
-
-        this.gamepadSlot = 0;
-        this.pointer = {} as Pointer;
 
         window.addEventListener( "contextmenu", this.cancelEvent);
         window.addEventListener( "selectstart", this.cancelEvent);
@@ -41,14 +58,16 @@ export class InputDevice
 
         this.initKeyboard();
         this.initMouse();
-        this.initTouch();
+        this.initTouchpad();
     }
 
 
     public update()
     {
         this.updateGamepad();
-        this.updatePointer();
+        this.updateKeyboard();
+        this.updateMouse();
+        this.updateTouchpad();
     }
 
     public uses(channel: InputChannel): boolean
@@ -61,33 +80,57 @@ export class InputDevice
         return inputChannel.at(0) === channel;
     }
 
-    public isPressed(channel: InputChannel, input: GamepadInput | KeyboardInput | MouseInput | TouchInput | SwipeInput): boolean
+    public isStateOf(channel: InputChannel, deviceInput: DeviceInput, state: InputState): boolean
+    {
+        return this.stateOf(channel, deviceInput) === state;
+    }
+
+    private stateOf(channel: InputChannel, deviceInput: DeviceInput): InputState
+    {
+        const input = this.inputOf(channel, deviceInput);
+
+        if(input.previous === false && input.current === false) {
+            return InputState.STILL_RELEASED;
+        }
+        else if(input.previous === false && input.current === true) {
+            return InputState.JUST_PRESSED;
+        }
+        else if(input.previous === true && input.current === true) {
+            return InputState.STILL_PRESSED;
+        }
+        else if(input.previous === true && input.current === false) {
+            return InputState.JUST_RELEASED;
+        }
+
+        return InputState.STILL_RELEASED;
+    }
+
+    private inputOf(channel: InputChannel, deviceInput: DeviceInput): Input
     {
         if(channel === InputChannel.GAMEPAD) {
-            return !!this.gamepad.get(input as GamepadInput);
+            return this.gamepad.get(deviceInput as GamepadInput) as Input;
         }
         else if(channel === InputChannel.KEYBOARD) {
-            return !!this.keyboard.get(input as KeyboardInput);
+            return this.keyboard.get(deviceInput as KeyboardInput) as Input;
         }
         else if(channel === InputChannel.MOUSE) {
-            return (this.pointer.button === input as MouseInput) ? this.pointer.pressed : false;
+            const pointer = this.mouse.get(deviceInput as MouseInput) as Pointer;
+            return pointer.state;
         }
-        else if(channel === InputChannel.TOUCH) {
-            const touchInput = input as TouchInput;
+        else if(channel === InputChannel.TOUCHPAD) {
+            const touchInput = deviceInput as TouchInput;
 
             if(touchInput === TouchInput.TOUCH) {
-                return (this.pointer.button === touchInput) ? this.pointer.pressed : false;
+                return this.touch.state;
             } else {
-                return !!this.touchpad.get(input as SwipeInput);
+                return this.touchpad.get(deviceInput as SwipeInput) as Input;
             }
         }
 
-        return false;
-    }
-
-    public getPointer(): Pointer
-    {
-        return this.pointer;
+        return {
+            current: false,
+            previous: false
+        };
     }
 
     
@@ -98,9 +141,16 @@ export class InputDevice
 
     private initGamepad()
     {
+        this.gamepad = new Map<GamepadInput, Input>();
+
         for(const value of GamepadInput.values()) {
-            this.gamepad.set(value, false);
+            this.gamepad.set(value, {
+                current: false,
+                previous: false
+            });
         }
+
+        this.gamepadSlot = 0;
 
         window.addEventListener("gamepadconnected", this.onGamepadConnected.bind(this));
     }
@@ -114,30 +164,47 @@ export class InputDevice
     private updateGamepad()
     {
         const gamepad = navigator.getGamepads()[this.gamepadSlot];
+
         if(!gamepad) return;
 
         this.channels.set(InputChannel.GAMEPAD, gamepad.timestamp);
 
         for(const [index, button] of gamepad.buttons.entries()) {
-            this.gamepad.set(index as GamepadInput, button.pressed);
+            const input = this.gamepad.get(index as GamepadInput) as Input;
+            input.previous = input.current;
+            input.current = button.pressed;
         }
 
-        this.gamepad.set(GamepadInput.LSTICK_LEFT, gamepad.axes[0] <= -0.5);
-        this.gamepad.set(GamepadInput.LSTICK_RIGHT, gamepad.axes[0] >= 0.5);
-        this.gamepad.set(GamepadInput.LSTICK_UP, gamepad.axes[1] <= -0.5);
-        this.gamepad.set(GamepadInput.LSTICK_DOWN, gamepad.axes[1] >= 0.5);
+        const axisButtons = [
+            gamepad.axes[0] <= -0.5,
+            gamepad.axes[0] >= 0.5,
+            gamepad.axes[1] <= -0.5,
+            gamepad.axes[1] >= 0.5,
+            gamepad.axes[2] <= -0.5,
+            gamepad.axes[2] >= 0.5,
+            gamepad.axes[3] <= -0.5,
+            gamepad.axes[3] >= 0.5
+        ];
 
-        this.gamepad.set(GamepadInput.RSTICK_LEFT, gamepad.axes[2] <= -0.5);
-        this.gamepad.set(GamepadInput.RSTICK_RIGHT, gamepad.axes[2] >= 0.5);
-        this.gamepad.set(GamepadInput.RSTICK_UP, gamepad.axes[3] <= -0.5);
-        this.gamepad.set(GamepadInput.RSTICK_DOWN, gamepad.axes[3] >= 0.5);
+        for(let i = 0; i < axisButtons.length; i++) {
+            const index = i + gamepad.buttons.length;
+
+            const input = this.gamepad.get(index as GamepadInput) as Input;
+            input.previous = input.current;
+            input.current = axisButtons[i];
+        }
     }
 
 
     private initKeyboard()
     {
+        this.keyboard = new Map<KeyboardInput, Input>();
+
         for(const key of KeyboardInput.values()) {
-            this.keyboard.set(key, false);
+            this.keyboard.set(key, {
+                current: false,
+                previous: false
+            });
         }
 
         window.addEventListener("keydown", this.onKeyDown.bind(this));
@@ -147,19 +214,39 @@ export class InputDevice
     private onKeyDown(event: KeyboardEvent)
     {
         this.channels.set(InputChannel.KEYBOARD, event.timeStamp);
-        this.keyboard.set(event.code as KeyboardInput, true);
+
+        const input = this.keyboard.get(event.code as KeyboardInput) as Input;
+        input.previous = input.current;
+        input.current = true;
+        
         this.cancelEvent(event);
     }
 
     private onKeyUp(event: KeyboardEvent)
     {
-        this.keyboard.set(event.code as KeyboardInput, false);
+        const input = this.keyboard.get(event.code as KeyboardInput) as Input;
+        input.previous = input.current;
+        input.current = false;
+
         this.cancelEvent(event);
+    }
+
+    private updateKeyboard()
+    {
+        for(const input of this.keyboard.values()) {
+            input.previous = input.current;
+        }
     }
 
 
     private initMouse()
     {
+        this.mouse = new Map<MouseInput, Pointer>();
+
+        for(const value of MouseInput.values()) {
+            this.mouse.set(value, this.initPointer());
+        }
+
         this.display.addMouseDownListener(this.onMouseDown.bind(this));
         this.display.addMouseUpListener(this.onMouseUp.bind(this));
         this.display.addMouseMoveListener(this.onMouseMove.bind(this));
@@ -169,19 +256,26 @@ export class InputDevice
     private onMouseDown(event: MouseEvent)
     {
         this.channels.set(InputChannel.MOUSE, event.timeStamp);
-        this.pointerPressed(event.clientX, event.clientY, 0, event.button);
+
+        const pointer = this.mouse.get(event.button as MouseInput) as Pointer;
+        this.pointerPressed(pointer, event.clientX, event.clientY, 0);
+
         this.cancelEvent(event);
     }
 
     private onMouseUp(event: MouseEvent)
     {
-        this.pointerReleased();
+        const pointer = this.mouse.get(event.button as MouseInput) as Pointer;
+        this.pointerReleased(pointer);
+
         this.cancelEvent(event);
     }
 
     private onMouseMove(event: MouseEvent)
     {
-        this.pointerMoved(event.clientX, event.clientY);
+        const pointer = this.mouse.get(event.button as MouseInput) as Pointer;
+        this.pointerMoved(pointer, event.clientX, event.clientY);
+
         this.cancelEvent(event);
     }
 
@@ -190,17 +284,34 @@ export class InputDevice
         this.channels.set(InputChannel.MOUSE, event.timeStamp);
 
         const direction = Math.sign(event.deltaY);
-        this.pointer.identifier = (direction < 0) ? MouseInput.WHEEL_UP : MouseInput.WHEEL_DOWN;
-        this.pointerMoved(event.clientX, event.clientY);
+        const input = (direction < 0) ? MouseInput.WHEEL_UP : MouseInput.WHEEL_DOWN;
+
+        const pointer = this.mouse.get(input) as Pointer;
+        this.pointerMoved(pointer, event.clientX, event.clientY);
+
         this.cancelEvent(event);
     }
 
-
-    private initTouch()
+    private updateMouse()
     {
-        for(const value of SwipeInput.values()) {
-            this.touchpad.set(value, false);
+        for(const pointer of this.mouse.values()) {
+            pointer.state.previous = pointer.state.current;
         }
+    }
+
+
+    private initTouchpad()
+    {
+        this.touchpad = new Map<SwipeInput, Input>();
+
+        for(const value of SwipeInput.values()) {
+            this.touchpad.set(value, {
+                current: false,
+                previous: false
+            });
+        }
+
+        this.touch = this.initPointer();
 
         this.display.addTouchStartListener(this.onTouchStart.bind(this));
         this.display.addTouchEndListener(this.onTouchEnd.bind(this));
@@ -209,20 +320,27 @@ export class InputDevice
 
     private onTouchStart(event: TouchEvent)
     {
-        this.channels.set(InputChannel.TOUCH, event.timeStamp);
+        this.channels.set(InputChannel.TOUCHPAD, event.timeStamp);
 
         const touch = event.touches[0];
-        this.pointerPressed(touch.clientX, touch.clientY, touch.identifier, TouchInput.TOUCH);
+        this.pointerPressed(this.touch, touch.clientX, touch.clientY, touch.identifier);
+
         this.cancelEvent(event);
     }
 
     private onTouchEnd(event: TouchEvent)
     {
         for(const touch of event.changedTouches) {
-            if(this.pointer.identifier === touch.identifier) {
-                this.pointerReleased();
+            if(this.touch.identifier === touch.identifier) {
+                this.pointerReleased(this.touch);
                 break;
             }
+        }
+
+        for(const value of SwipeInput.values()) {
+            const input = this.touchpad.get(value) as Input;
+            input.previous = input.current;
+            input.current = false;
         }
         
         this.cancelEvent(event);
@@ -231,8 +349,8 @@ export class InputDevice
     private onTouchMove(event: TouchEvent)
     {
         for(const touch of event.changedTouches) {
-            if(this.pointer.identifier === touch.identifier) {
-                this.pointerMoved(touch.clientX, touch.clientY);
+            if(this.touch.identifier === touch.identifier) {
+                this.pointerMoved(this.touch, touch.clientX, touch.clientY);
                 break;
             }
         }
@@ -240,47 +358,66 @@ export class InputDevice
         this.cancelEvent(event);
     }
 
-
-    private pointerPressed(x: number, y: number, identifier: number, button: number)
+    private updateTouchpad()
     {
-        this.pointerMoved(x, y);
+        const { position, state } = this.touch;
+        state.previous = state.current;
 
-        this.pointer.identifier = identifier;
-        this.pointer.button = button;
-        this.pointer.pressed = true;
-        this.pointer.previous = this.pointer.current;
-    }
+        if(state.current) {
+            const swipe = position.current.subtract(position.previous).flipY();
+            const angle = swipe.heading();
+            
+            const input = this.touchpad.get(SwipeInput.fromAngle(angle)) as Input;
+            input.previous = input.current;
+            input.current = true;
+            return;
+        } 
 
-    private pointerReleased()
-    {
-        for(const value of SwipeInput.values()) {
-            this.touchpad.set(value, false);
+        for(const input of this.touchpad.values()) {
+            input.previous = input.current;
         }
-
-        this.pointer.identifier = -1;
-        this.pointer.button = -1;
-        this.pointer.pressed = false;
     }
 
-    private pointerMoved(x: number, y: number)
+
+    private initPointer(): Pointer
+    {
+        return {
+            identifier: -1,
+            position: {
+                current: new Vector(0, 0),
+                previous: new Vector(0, 0)
+            },
+            state: {
+                current: false,
+                previous: false
+            }
+        };
+    }
+
+    private pointerPressed(pointer: Pointer, x: number, y: number, identifier: number)
+    {
+        pointer.identifier = identifier;
+        pointer.state.previous = pointer.state.current;
+        pointer.state.current = true;
+
+        pointer.position.previous = pointer.position.current;
+        this.pointerMoved(pointer, x, y);
+    }
+
+    private pointerReleased(pointer: Pointer)
+    {
+        pointer.identifier = -1;
+        pointer.state.previous = pointer.state.current;
+        pointer.state.current = false;
+    }
+
+    private pointerMoved(pointer: Pointer, x: number, y: number)
     {
         const offset = this.display.getViewportOffset();
         const viewportX = x - offset.width;
         const viewportY = y - offset.height;
 
-        this.pointer.current = new Vector(viewportX, viewportY);
-        this.pointer.moved = true;
-    }
-
-    private updatePointer()
-    {
-        if(!this.pointer.pressed) return;
-        const { current, previous } = this.pointer;
-
-        const swipe = current.subtract(previous).flipY();
-        const angle = swipe.heading();
-        
-        this.touchpad.set(SwipeInput.fromAngle(angle), true);
+        pointer.position.current = new Vector(viewportX, viewportY);
     }
 
     private cancelEvent(event: Event)
