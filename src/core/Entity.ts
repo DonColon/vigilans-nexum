@@ -1,6 +1,5 @@
 import { randomUUID } from "core/utils/Randomizer";
 import { Component, ComponentConstructor } from "./Component";
-import { WorldEventType } from "./WorldEvent";
 
 
 export abstract class Entity
@@ -36,7 +35,7 @@ export abstract class Entity
         this.componentTypes.set(constructor.componentName, constructor);
         this.components.set(constructor.componentName, component);
 
-        world.dispatch(WorldEventType.COMPONENT_CHANGED, { entity: this });
+        world.dispatch("componentsChanged", { entity: this });
         return this;
     }
 
@@ -47,7 +46,7 @@ export abstract class Entity
         this.componentTypes.delete(name);
         this.components.delete(name);
 
-        world.dispatch(WorldEventType.COMPONENT_CHANGED, { entity: this });
+        world.dispatch("componentsChanged", { entity: this });
         return this;
     }
 
@@ -56,7 +55,7 @@ export abstract class Entity
         this.componentTypes.clear();
         this.components.clear();
 
-        world.dispatch(WorldEventType.COMPONENT_CHANGED, { entity: this });
+        world.dispatch("componentsChanged", { entity: this });
         return this;
     }
 

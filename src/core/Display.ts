@@ -3,6 +3,14 @@ import { Vector } from "core/math/Vector";
 import { DisplayOrientation } from "./DisplayOrientation";
 
 
+export interface DisplaySettings
+{
+    dimension?: Dimension,
+    viewportID?: string,
+    viewport?: HTMLCanvasElement
+}
+
+
 export class Display
 {
     private viewport: HTMLCanvasElement;
@@ -268,12 +276,4 @@ export class Display
     {
         return this.viewport.getContext("2d") as CanvasRenderingContext2D;
     }
-}
-
-
-export interface DisplaySettings
-{
-    dimension?: Dimension,
-    viewportID?: string,
-    viewport?: HTMLCanvasElement
 }

@@ -1,6 +1,6 @@
 import { ComponentConstructor } from "./Component";
 import { Entity } from "./Entity";
-import { WorldEventType, WorldEvent } from "./WorldEvent";
+import { WorldEvent } from "./event/GameEvent";
 
 
 interface QuerySettings
@@ -29,7 +29,7 @@ export class Query
             }
         }
 
-        world.on(WorldEventType.COMPONENT_CHANGED, this.onComponentsChanged.bind(this));
+        world.on("componentsChanged", this.onComponentsChanged.bind(this));
     }
 
 
