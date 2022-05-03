@@ -1,6 +1,6 @@
 import { ComponentConstructor } from "./Component";
 import { Entity } from "./Entity";
-import { EventDispatcher } from "./event/EventDispatcher";
+import { EventDispatcher } from "./EventDispatcher";
 import { System } from "./System";
 
 
