@@ -9,7 +9,7 @@ import { SwipeInput } from "./SwipeInput";
 import { TouchInput } from "./TouchInput";
 
 
-type DeviceInput = (GamepadInput | KeyboardInput | MouseInput | TouchInput | SwipeInput);
+export type DeviceInput = (GamepadInput | KeyboardInput | MouseInput | TouchInput | SwipeInput);
 
 
 interface Input

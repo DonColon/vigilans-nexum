@@ -1,6 +1,6 @@
 import { ComponentConstructor } from "./Component";
 import { Entity } from "./Entity";
-import { WorldEvent } from "./GameEvent";
+import { WorldEvent } from "./WorldEvent";
 
 
 interface QuerySettings

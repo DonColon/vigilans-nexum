@@ -1,7 +1,7 @@
 import { MS_PER_UPDATE } from "Constants";
 import { InputDevice } from "core/input/InputDevice";
 import { Display } from "./Display";
-import { World } from "./World";
+import { World } from "./ecs/World";
 
 
 export class Game 
@@ -25,12 +25,13 @@ export class Game
         });
 
         this.inputDevice = new InputDevice(this.display);
-        
+
         this.isRunning = false;
         this.previous = 0;
         this.lag = 0;
 
         window.world = this.world;
+        window.inputDevice = this.inputDevice;
     }
 
 

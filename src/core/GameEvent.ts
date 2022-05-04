@@ -1,15 +1,10 @@
-import { Entity } from "./Entity"
+import { WorldEvent } from "./ecs/WorldEvent";
 
 
 export interface GameEvent
 {
     type?: string,
     timestamp?: number
-}
-
-export interface WorldEvent extends GameEvent
-{
-    entity: Entity
 }
 
 export interface GameEventMap
