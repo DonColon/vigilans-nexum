@@ -1,5 +1,14 @@
 import { randomUUID } from "core/utils/Randomizer";
 import { Component, ComponentConstructor } from "./Component";
+import { JsonType } from "./JsonConversion";
+
+
+interface EntityType
+{
+    id: string,
+    alive: boolean,
+    [key: string]: JsonType
+}
 
 
 export abstract class Entity
@@ -23,7 +32,7 @@ export abstract class Entity
 
     public getComponent(componentType: ComponentConstructor<any> | string): Component<any>
     {
-        const name = (typeof componentType === "string") ? componentType : componentType.componentName;
+        const name = (typeof componentType === "string") ? componentType : componentType.jsonName;
         return this.components.get(name) as Component<any>;
     }
 
@@ -32,8 +41,8 @@ export abstract class Entity
         const constructor = (typeof componentType === "string") ? world.getComponent(componentType) : componentType;
         const component = new constructor(values);
 
-        this.componentTypes.set(constructor.componentName, constructor);
-        this.components.set(constructor.componentName, component);
+        this.componentTypes.set(constructor.jsonName, constructor);
+        this.components.set(constructor.jsonName, component);
 
         world.dispatch("componentsChanged", { entity: this });
         return this;
@@ -41,7 +50,7 @@ export abstract class Entity
 
     public removeComponent(componentType: ComponentConstructor<any> | string): Entity
     {
-        const name = (typeof componentType === "string") ? componentType : componentType.componentName;
+        const name = (typeof componentType === "string") ? componentType : componentType.jsonName;
 
         this.componentTypes.delete(name);
         this.components.delete(name);
@@ -62,7 +71,7 @@ export abstract class Entity
 
     public hasComponent(componentType: ComponentConstructor<any> | string): boolean
     {
-        const name = (typeof componentType === "string") ? componentType : componentType.componentName;
+        const name = (typeof componentType === "string") ? componentType : componentType.jsonName;
         return this.componentTypes.has(name) && this.components.has(name);
     }
 
@@ -84,6 +93,20 @@ export abstract class Entity
         return false;
     }
 
+
+    public json(): EntityType
+    {
+        const entity: EntityType = {
+            id: this.id,
+            alive: this.alive,
+        };
+
+        for (const [name, component] of this.components.entries()) {
+            entity[name] = component.json();
+        }
+
+        return entity;
+    }
 
     public getID(): string
     {

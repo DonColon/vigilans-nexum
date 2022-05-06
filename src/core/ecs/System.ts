@@ -1,8 +1,17 @@
+import { HasName } from "./JsonConversion";
 import { Query } from "./Query";
+
+
+export interface SystemConstructor extends HasName
+{
+    new(priority: number): System,
+}
 
 
 export abstract class System
 {
+    static jsonName: string;
+
     protected priority: number;
     protected enabled: boolean;
 

@@ -1,7 +1,7 @@
 import { ComponentConstructor } from "./Component";
 import { Entity } from "./Entity";
 import { EventDispatcher } from "../EventDispatcher";
-import { System } from "./System";
+import { System, SystemConstructor } from "./System";
 
 
 export class World extends EventDispatcher
@@ -31,6 +31,26 @@ export class World extends EventDispatcher
                 system.execute(elapsed);
             }
         }
+    }
+
+
+    public registerComponent(componentType: ComponentConstructor<any>): World
+    {
+        this.components.set(componentType.jsonName, componentType);
+        return this;
+    }
+
+    public registerEntity(entity: Entity): World
+    {
+        this.entities.set(entity.getID(), entity);
+        return this;
+    }
+
+    public registerSystem(systemType: SystemConstructor, priority: number): World
+    {
+        const system = new systemType(priority);
+        this.systems.set(systemType.jsonName, system);
+        return this;
     }
 
 

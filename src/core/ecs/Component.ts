@@ -1,25 +1,27 @@
-type JsonType = (string | number | boolean | object | string[] | number[] | boolean[] | object[] | null);
+import { HasName, JsonType } from "./JsonConversion";
 
 
-export interface ComponentConstructor<T>
+export interface ComponentConstructor<T> extends HasName
 {
     new(parameters: T): Component<T>
-    componentName: string
+    isTag: boolean
 }
 
 
-export function JsonName(name: string)
+export function Tag()
 {
     return (target: Function) => {
         const constructor = target as ComponentConstructor<any>;
-        constructor.componentName = name;
+        constructor.isTag = true;
     }
 }
 
 
 export abstract class Component<T>
 {
-    static componentName: string;
+    static jsonName: string;
+    static isTag: boolean;
+
     [key: string]: JsonType;
 
 
