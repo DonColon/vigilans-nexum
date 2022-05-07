@@ -3,20 +3,9 @@ import { InputBinding } from "./InputBinding";
 
 export abstract class GameCommand
 {
-    readonly name!: string;
-    protected inputBinding: InputBinding;
+    protected abstract name: string;
+    protected abstract inputBinding: InputBinding;
 
-
-    constructor(inputBinding: InputBinding)
-    {
-        this.inputBinding = inputBinding
-    }
-
-
-    public bindInput(inputBinding: InputBinding)
-    {
-        this.inputBinding = inputBinding;
-    }
 
     public execute(elapsed: number)
     {
@@ -25,6 +14,16 @@ export abstract class GameCommand
         }
     }
 
-
     protected abstract action(elapsed: number): void;
+
+
+    public bindInput(inputBinding: InputBinding)
+    {
+        this.inputBinding = inputBinding;
+    }
+
+    public getName(): string
+    {
+        return this.name;
+    }
 }
