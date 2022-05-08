@@ -16,6 +16,16 @@ export class Circle extends Shape
     }
 
 
+    public getArea(): number
+    {
+        return Math.PI * this.radius * this.radius;
+    }
+
+    public getPerimeter(): number
+    {
+        return 2 * this.radius * Math.PI;
+    }
+
     public getCenter(): Vector
     {
         const offset = new Vector(this.radius, this.radius);
@@ -33,6 +43,7 @@ export class Circle extends Shape
         const center = this.getCenter();
         return center.getY();
     }
+
 
     public getPosition(): Vector
     {

@@ -26,6 +26,16 @@ export class Rectangle extends Shape
     }
 
 
+    public getArea(): number
+    {
+        return this.dimension.width * this.dimension.height;
+    }
+
+    public getPerimeter(): number
+    {
+        return 2 * this.dimension.width + 2 * this.dimension.height;
+    }
+
     public getCorners(): RectangleCorners
     {
         return {
@@ -53,6 +63,7 @@ export class Rectangle extends Shape
         const center = this.getCenter();
         return center.getY();
     }
+
 
     public getPosition(): Vector
     {

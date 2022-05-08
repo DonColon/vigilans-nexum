@@ -29,14 +29,14 @@ export class Vector
 		return new Vector(this.x - other.x, this.y - other.y, this.z - other.z);
 	}
 
-	public multiply(scale: number): Vector 
+	public multiply(scalar: number): Vector 
 	{
-		return new Vector(this.x * scale, this.y * scale, this.z * scale);
+		return new Vector(this.x * scalar, this.y * scalar, this.z * scalar);
 	}
 
-	public divide(scale: number): Vector 
+	public divide(scalar: number): Vector 
 	{
-		return new Vector(this.x / scale, this.y / scale, this.z / scale);
+		return new Vector(this.x / scalar, this.y / scalar, this.z / scalar);
 	}
 
 
