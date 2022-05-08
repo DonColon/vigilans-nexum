@@ -18,7 +18,7 @@ export class Vector
 		return new Vector(Math.cos(radian), Math.sin(radian));
 	}
 
-
+	
 	public add(other: Vector): Vector 
 	{
 		return new Vector(this.x + other.x, this.y + other.y, this.z + other.z);
@@ -118,18 +118,12 @@ export class Vector
 		const checkY = this.y / other.y;
 		const checkZ = this.z / other.z;
 
-		if (checkX === checkY || checkY === checkZ || checkZ === checkX)
-			return true;
-		else
-			return false;
+		return checkX === checkY || checkY === checkZ || checkZ === checkX;
 	}
 
 	public isVertical(other: Vector): boolean 
 	{
-		if (this.dot(other) === 0)
-			return true;
-		else
-			return false;
+		return this.dot(other) === 0;
 	}
 
 	public lerp(other: Vector, amount: number): Vector 
