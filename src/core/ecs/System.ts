@@ -36,7 +36,7 @@ export abstract class System
 
 
     public abstract initialize(): void;
-    public abstract execute(elapsed: number): void;
+    public abstract execute(elapsed: number, frame: number): void;
 
 
     public getPriority(): number

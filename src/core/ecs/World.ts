@@ -20,7 +20,7 @@ export class World extends EventDispatcher
     }
 
 
-    public execute(elapsed: number)
+    public execute(elapsed: number, frame: number)
     {
         const schedule = Array.from(this.systems.values());
         
@@ -28,7 +28,7 @@ export class World extends EventDispatcher
         
         for(const system of schedule) {
             if(system.isEnabled()) {
-                system.execute(elapsed);
+                system.execute(elapsed, frame);
             }
         }
     }

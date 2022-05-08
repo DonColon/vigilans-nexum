@@ -61,7 +61,7 @@ export class Game
         this.inputDevice.update();
 
         while(this.lag >= MS_PER_UPDATE) {
-            this.update(elapsed);
+            this.update(elapsed, current);
             this.lag -= MS_PER_UPDATE;
         }
 
@@ -72,9 +72,9 @@ export class Game
         }
     }
 
-    private update(elapsed: number)
+    private update(elapsed: number, frame: number)
     {
-        this.world.execute(elapsed);
+        this.world.execute(elapsed, frame);
     }
 
     private render()

@@ -7,14 +7,14 @@ export abstract class GameCommand
     protected abstract inputBinding: InputBinding;
 
 
-    public execute(elapsed: number)
+    public execute(elapsed: number, frame: number)
     {
         if(this.inputBinding.condition()) {
-            this.action(elapsed);
+            this.action(elapsed, frame);
         }
     }
 
-    protected abstract action(elapsed: number): void;
+    protected abstract action(elapsed: number, frame: number): void;
 
 
     public bindInput(inputBinding: InputBinding)
