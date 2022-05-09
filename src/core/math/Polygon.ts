@@ -1,3 +1,4 @@
+import { Line } from "./Line";
 import { Shape } from "./Shape";
 import { Vector } from "./Vector";
 
@@ -37,12 +38,29 @@ export class Polygon extends Shape
 
         for(let current = 0; current < this.vertices.length; current++) {
             const next = (current + 1) % this.vertices.length;
-            
+
             const distance = this.vertices[current].distanceBetween(this.vertices[next]);
             perimeter += distance;
         }
 
         return perimeter;
+    }
+
+    public getSides(): Line[]
+    {
+        const sides: Line[] = [];
+
+        for(let current = 0; current < this.vertices.length; current++) {
+            const next = (current + 1) % this.vertices.length;
+
+            const start = this.vertices[current];
+            const end = this.vertices[next];
+
+            const side = new Line(start.getX(), start.getY(), end.getX(), end.getY());
+            sides.push(side);
+        }
+
+        return sides;
     }
 
 
