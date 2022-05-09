@@ -1,6 +1,7 @@
 import { Shape } from "./Shape";
 import { Dimension } from "./Dimension";
 import { Vector } from "./Vector";
+import { Line } from "./Line";
 
 
 interface RectangleCorners
@@ -9,6 +10,14 @@ interface RectangleCorners
     topRight: Vector,
     bottomLeft: Vector,
     bottomRight: Vector
+}
+
+interface RectangleSides
+{
+    top: Line,
+    right: Line,
+    bottom: Line,
+    left: Line
 }
 
 
@@ -34,6 +43,18 @@ export class Rectangle extends Shape
     public getPerimeter(): number
     {
         return 2 * this.dimension.width + 2 * this.dimension.height;
+    }
+
+    public getSides(): RectangleSides
+    {
+        const { topLeft, topRight, bottomLeft, bottomRight } = this.getCorners();
+
+        return {
+            top: new Line(topLeft.getX(), topLeft.getY(), topRight.getX(), topRight.getY()),
+            left: new Line(topLeft.getX(), topLeft.getY(), bottomLeft.getX(), bottomLeft.getY()),
+            right: new Line(topRight.getX(), topRight.getY(), bottomRight.getX(), bottomRight.getY()),
+            bottom: new Line(bottomLeft.getX(), bottomLeft.getY(), bottomRight.getX(), bottomRight.getY())
+        };
     }
 
     public getCorners(): RectangleCorners
