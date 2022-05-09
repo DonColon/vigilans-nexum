@@ -38,11 +38,13 @@ export class Rectangle extends Shape
 
     public getCorners(): RectangleCorners
     {
+        const { width, height } = this.dimension;
+
         return {
             topLeft: this.position,
-            topRight: this.position.add(new Vector(this.dimension.width, 0)),
-            bottomLeft: this.position.add(new Vector(0, this.dimension.height)),
-            bottomRight: this.position.add(new Vector(this.dimension.width, this.dimension.height))
+            topRight: this.position.add(new Vector(width, 0)),
+            bottomLeft: this.position.add(new Vector(0, height)),
+            bottomRight: this.position.add(new Vector(width, height))
         };
     }
 

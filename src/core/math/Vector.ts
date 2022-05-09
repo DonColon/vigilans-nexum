@@ -26,7 +26,7 @@ export class Vector
 
 	public subtract(other: Vector): Vector 
 	{
-		return new Vector(this.x - other.x, this.y - other.y, this.z - other.z);
+		return new Vector(other.x - this.x, other.y - this.y, other.z - this.z);
 	}
 
 	public multiply(scalar: number): Vector 
@@ -43,6 +43,11 @@ export class Vector
 	public dot(other: Vector): number 
 	{
 		return this.x * other.x + this.y * other.y + this.z * other.z;
+	}
+
+	public perpDot(other: Vector): number
+	{
+		return this.x * other.y - this.y * other.x;
 	}
 
 	public cross(other: Vector): Vector 
@@ -86,7 +91,7 @@ export class Vector
 
 	public distanceBetween(other: Vector): number 
 	{
-		const vector = other.subtract(this);
+		const vector = this.subtract(other);
 		return vector.magnitude();
 	}
 
