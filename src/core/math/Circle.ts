@@ -18,6 +18,24 @@ export class Circle extends Shape
         this.radius = radius;
     }
 
+    public static fromPoints(start: Vector, center: Vector, end: Vector): Circle
+    {
+        const startCenter = Line.fromPoints(start, center);
+        const endCenter = Line.fromPoints(center, end);
+
+        const startBisector = startCenter.getVerticalBisector();
+        const endBisector = endCenter.getVerticalBisector();
+
+        const denominator = startBisector.A * endBisector.B - endBisector.A * startBisector.B;
+
+        const centerX = (endBisector.B * startBisector.C - startBisector.B * endBisector.C) / denominator;
+        const centerY = (startBisector.A * endBisector.C - endBisector.A * startBisector.C) / denominator;
+
+        const radius = start.distanceBetween(new Vector(centerX, centerY));
+
+        return new Circle(centerX - radius, centerY - radius, radius);
+    }
+
 
     public contains(point: Vector): boolean
     {

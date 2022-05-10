@@ -126,10 +126,10 @@ export class Rectangle extends Shape
         const { topLeft, topRight, bottomLeft, bottomRight } = this.getCorners();
 
         return {
-            top: new Line(topLeft.x, topLeft.y, topRight.x, topRight.y),
-            left: new Line(topLeft.x, topLeft.y, bottomLeft.x, bottomLeft.y),
-            right: new Line(topRight.x, topRight.y, bottomRight.x, bottomRight.y),
-            bottom: new Line(bottomLeft.x, bottomLeft.y, bottomRight.x, bottomRight.y)
+            top: Line.fromPoints(topLeft, topRight),
+            left: Line.fromPoints(topLeft, bottomLeft),
+            right: Line.fromPoints(topRight, bottomRight),
+            bottom: Line.fromPoints(bottomLeft, bottomRight)
         };
     }
 

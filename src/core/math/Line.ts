@@ -26,6 +26,11 @@ export class Line extends Shape
         this.end = new Vector(endX, endY);
     }
 
+    public static fromPoints(start: Vector, end: Vector): Line
+    {
+        return new Line(start.x, start.y, end.x, end.y);
+    }
+
 
     public contains(point: Vector): boolean
     {
@@ -92,6 +97,18 @@ export class Line extends Shape
         const y = (self.A * line.C - line.A * self.C) / denominator;
 
         return new Vector(x, y);
+    }
+
+    public getVerticalBisector(): LineParameters
+    {
+        const self = this.getLineParameters();
+        const center = this.getCenter();
+
+        const A = -self.B;
+        const B = self.A;
+        const C = A * center.x + B * center.y;
+
+        return { A, B, C };
     }
 
     public getLineParameters(): LineParameters
