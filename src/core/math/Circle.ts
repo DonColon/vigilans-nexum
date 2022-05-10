@@ -1,4 +1,5 @@
 import { Line } from "./Line";
+import { Rectangle } from "./Rectangle";
 import { Shape } from "./Shape";
 import { Vector } from "./Vector";
 
@@ -30,6 +31,10 @@ export class Circle extends Shape
         }
         else if(other instanceof Circle) {
             return this.intersectsWithCircle(other as Circle);
+        }
+        else if(other instanceof Rectangle) {
+            const rectangle = other as Rectangle;
+            return rectangle.intersects(this);
         }
 
         return false;

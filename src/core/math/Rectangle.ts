@@ -54,6 +54,9 @@ export class Rectangle extends Shape
         else if(other instanceof Circle) {
             return this.intersectsWithCircle(other as Circle);
         }
+        else if(other instanceof Rectangle) {
+            return this.intersectsWithRectangle(other as Rectangle);
+        }
 
         return false;
     }
@@ -92,6 +95,14 @@ export class Rectangle extends Shape
         const distance = center.distanceBetween(new Vector(checkX, checkY));
 
         return distance <= other.getRadius();
+    }
+
+    private intersectsWithRectangle(other: Rectangle): boolean
+    {
+        return this.position.x + this.dimension.width >= other.position.x
+            && this.position.x <= other.position.x + other.dimension.width
+            && this.position.y + this.dimension.height >= other.position.y
+            && this.position.y <= other.position.y + other.dimension.height;
     }
 
 
