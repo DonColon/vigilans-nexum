@@ -76,6 +76,22 @@ export class Line extends Shape
     }
 
 
+    public reflect(point: Vector): Vector
+    {
+        const self = this.getLineParameters();
+        const bisector = this.getVerticalBisector(point);
+
+        const denominator = self.A * bisector.B - bisector.A * self.B;
+
+        const x = (bisector.B * self.C - self.B * bisector.C) / denominator;
+        const y = (self.A * bisector.C - bisector.A * self.C) / denominator;
+
+        const vector = new Vector(x, y);
+        const reflect = vector.subtract(point);
+        
+        return vector.subtract(reflect);
+    }
+
     public isParallel(other: Line): boolean
     {
         const self = this.getLineParameters();
@@ -99,14 +115,14 @@ export class Line extends Shape
         return new Vector(x, y);
     }
 
-    public getVerticalBisector(): LineParameters
+    public getVerticalBisector(point?: Vector): LineParameters
     {
         const self = this.getLineParameters();
-        const center = this.getCenter();
+        const other = point || this.getCenter();
 
         const A = -self.B;
         const B = self.A;
-        const C = A * center.x + B * center.y;
+        const C = A * other.x + B * other.y;
 
         return { A, B, C };
     }

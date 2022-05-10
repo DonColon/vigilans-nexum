@@ -1,6 +1,4 @@
-import { Circle } from "./Circle";
 import { Line } from "./Line";
-import { Rectangle } from "./Rectangle";
 import { Shape } from "./Shape";
 import { Vector } from "./Vector";
 
