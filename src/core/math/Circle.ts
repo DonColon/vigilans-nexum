@@ -75,6 +75,12 @@ export class Circle extends Shape
     }
 
 
+    public getBorderPoint(angle: number): Vector
+    {
+        const vector = Vector.fromAngle(angle);
+        return vector.multiply(this.radius);
+    }
+
     public getArea(): number
     {
         return Math.PI * this.radius * this.radius;
