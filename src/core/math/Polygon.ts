@@ -39,47 +39,6 @@ export class Polygon extends Shape
 
     public intersects(other: Shape): boolean
     {
-        if(other instanceof Line) {
-            return this.intersectsWithLine(other as Line);
-        }
-        else if(other instanceof Circle) {
-            return this.intersectsWithCircle(other as Circle);
-        }
-        else if(other instanceof Rectangle) {
-            return this.intersectsWithRectangle(other as Rectangle);
-        }
-
-        return false;
-    }
-
-    private intersectsWithLine(other: Line): boolean
-    {
-        let intersects = false;
-
-        for(const side of this.getSides()) {
-            if(side.intersects(other)) {
-                intersects = true;
-            }
-        }
-
-        return intersects;
-    }
-
-    private intersectsWithCircle(other: Circle): boolean
-    {
-        let intersects = false;
-
-        for(const side of this.getSides()) {
-            if(side.intersects(other)) {
-                intersects = true;
-            }
-        }
-
-        return intersects;
-    }
-
-    private intersectsWithRectangle(other: Rectangle): boolean
-    {
         let intersects = false;
 
         for(const side of this.getSides()) {

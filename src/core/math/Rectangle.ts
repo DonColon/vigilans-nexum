@@ -3,6 +3,7 @@ import { Dimension } from "./Dimension";
 import { Vector } from "./Vector";
 import { Line } from "./Line";
 import { Circle } from "./Circle";
+import { Polygon } from "./Polygon";
 
 
 interface RectangleCorners
@@ -56,6 +57,10 @@ export class Rectangle extends Shape
         }
         else if(other instanceof Rectangle) {
             return this.intersectsWithRectangle(other as Rectangle);
+        }
+        else if(other instanceof Polygon) {
+            const polygon = other as Polygon;
+            return polygon.intersects(this);
         }
 
         return false;
