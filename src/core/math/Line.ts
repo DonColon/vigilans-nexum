@@ -2,6 +2,14 @@ import { Shape } from "./Shape";
 import { Vector } from "./Vector";
 
 
+interface LineParameters
+{
+    A: number,
+    B: number,
+    C: number
+}
+
+
 export class Line extends Shape
 {
     private start: Vector;
@@ -28,6 +36,34 @@ export class Line extends Shape
             && distanceStart + distanceEnd <= length + tolerance;
     }
 
+    public intersects(other: Shape): boolean
+    {
+        if(other instanceof Line) {
+            return this.intersectsWithLine(other as Line);
+        }
+
+        return false;
+    }
+
+    private intersectsWithLine(other: Line): boolean
+    {
+        const lineParameters = this.getLineParameters();
+        const otherParameters = other.getLineParameters();
+
+        const denominator = lineParameters.A * otherParameters.B - otherParameters.A * lineParameters.B;
+        
+        return denominator !== 0;
+    }
+
+
+    public getLineParameters(): LineParameters
+    {
+        const A = this.end.y - this.start.y;
+        const B = this.start.x - this.end.x;
+        const C = A * this.start.x + B * this.start.y;
+
+        return { A, B, C };
+    }
 
     public getAngle(): number
     {

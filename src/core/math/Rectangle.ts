@@ -45,6 +45,25 @@ export class Rectangle extends Shape
             && point.y <= this.position.y + height;
     }
 
+    public intersects(other: Shape): boolean
+    {
+        if(other instanceof Line) {
+            return this.intersectsWithLine(other as Line);
+        }
+
+        return false;
+    }
+
+    private intersectsWithLine(other: Line): boolean
+    {
+        const { top, left, right, bottom } = this.getSides();
+
+        return top.intersects(other)
+            || left.intersects(other)
+            || right.intersects(other)
+            || bottom.intersects(other);
+    }
+
 
     public getArea(): number
     {

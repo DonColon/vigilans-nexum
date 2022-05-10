@@ -1,3 +1,4 @@
+import { Line } from "./Line";
 import { Shape } from "./Shape";
 import { Vector } from "./Vector";
 
@@ -19,6 +20,34 @@ export class Circle extends Shape
     public contains(point: Vector): boolean
     {
         const distance = point.distanceBetween(this.getCenter());
+        return distance <= this.radius;
+    }
+
+    public intersects(other: Shape): boolean
+    {
+        if(other instanceof Line) {
+            return this.intersectsWithLine(other as Line);
+        }
+
+        return false;
+    }
+
+    private intersectsWithLine(other: Line): boolean
+    {
+        const center = this.getCenter();
+        const start = other.getStart();
+        const end = other.getEnd();
+
+        if(this.contains(start) || this.contains(end)) return true;
+
+        const direction = start.subtract(end);
+        const dot = direction.dot(center);
+        const closest = start.add(direction.multiply(dot));
+
+        if(!other.contains(closest)) return false;
+
+        const distance = center.distanceBetween(closest);
+
         return distance <= this.radius;
     }
 

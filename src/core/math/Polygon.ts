@@ -17,7 +17,7 @@ export class Polygon extends Shape
 
     public contains(point: Vector): boolean
     {
-        let collision = false;
+        let contains = false;
 
         for(let current = 1; current < this.vertices.length; current++) {
             const next = (current + 1) % this.vertices.length;
@@ -28,11 +28,33 @@ export class Polygon extends Shape
             const result = (other.x - vector.x) * (point.y - vector.y) / (other.y - vector.y) + vector.x;
 
             if((vector.y >= point.y && other.y < point.y) || (vector.y < point.y && other.y >= point.y) && (point.x < result)) {
-                collision = !collision;
+                contains = !contains;
             }
         }
 
-        return collision;
+        return contains;
+    }
+
+    public intersects(other: Shape): boolean
+    {
+        if(other instanceof Line) {
+            return this.intersectsWithLine(other as Line);
+        }
+
+        return false;
+    }
+
+    private intersectsWithLine(other: Line): boolean
+    {
+        let intersects = false;
+
+        for(const side of this.getSides()) {
+            if(side.intersects(other)) {
+                intersects = true;
+            }
+        }
+
+        return intersects;
     }
 
 
