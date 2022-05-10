@@ -1,3 +1,4 @@
+import { Circle } from "./Circle";
 import { Line } from "./Line";
 import { Shape } from "./Shape";
 import { Vector } from "./Vector";
@@ -40,11 +41,27 @@ export class Polygon extends Shape
         if(other instanceof Line) {
             return this.intersectsWithLine(other as Line);
         }
+        else if(other instanceof Circle) {
+            return this.intersectsWithCircle(other as Circle);
+        }
 
         return false;
     }
 
     private intersectsWithLine(other: Line): boolean
+    {
+        let intersects = false;
+
+        for(const side of this.getSides()) {
+            if(side.intersects(other)) {
+                intersects = true;
+            }
+        }
+
+        return intersects;
+    }
+
+    private intersectsWithCircle(other: Circle): boolean
     {
         let intersects = false;
 

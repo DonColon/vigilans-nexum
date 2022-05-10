@@ -2,6 +2,7 @@ import { Shape } from "./Shape";
 import { Dimension } from "./Dimension";
 import { Vector } from "./Vector";
 import { Line } from "./Line";
+import { Circle } from "./Circle";
 
 
 interface RectangleCorners
@@ -50,6 +51,9 @@ export class Rectangle extends Shape
         if(other instanceof Line) {
             return this.intersectsWithLine(other as Line);
         }
+        else if(other instanceof Circle) {
+            return this.intersectsWithCircle(other as Circle);
+        }
 
         return false;
     }
@@ -62,6 +66,32 @@ export class Rectangle extends Shape
             || left.intersects(other)
             || right.intersects(other)
             || bottom.intersects(other);
+    }
+
+    private intersectsWithCircle(other: Circle): boolean
+    {
+        const center = other.getCenter();
+
+        let checkX = center.x;
+        let checkY = center.y;
+
+        if(center.x < this.position.x) {
+            checkX = this.position.x;
+        }
+        else if(center.x > this.position.x + this.dimension.width) {
+            checkX = this.position.x + this.dimension.width;
+        }
+
+        if(center.y < this.position.y) {
+            checkY = this.position.y;
+        }
+        else if(center.y > this.position.y + this.dimension.height) {
+            checkY = this.position.y + this.dimension.height;
+        }
+
+        const distance = center.distanceBetween(new Vector(checkX, checkY));
+
+        return distance <= other.getRadius();
     }
 
 

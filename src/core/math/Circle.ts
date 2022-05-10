@@ -28,6 +28,9 @@ export class Circle extends Shape
         if(other instanceof Line) {
             return this.intersectsWithLine(other as Line);
         }
+        else if(other instanceof Circle) {
+            return this.intersectsWithCircle(other as Circle);
+        }
 
         return false;
     }
@@ -49,6 +52,16 @@ export class Circle extends Shape
         const distance = center.distanceBetween(closest);
 
         return distance <= this.radius;
+    }
+
+    private intersectsWithCircle(other: Circle): boolean
+    {
+        const center = this.getCenter();
+        const otherCenter = other.getCenter();
+
+        const distance = center.distanceBetween(otherCenter);
+
+        return distance <= this.radius + other.radius;
     }
 
 
