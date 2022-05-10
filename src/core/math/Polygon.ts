@@ -15,6 +15,27 @@ export class Polygon extends Shape
     }
 
 
+    public contains(point: Vector): boolean
+    {
+        let collision = false;
+
+        for(let current = 1; current < this.vertices.length; current++) {
+            const next = (current + 1) % this.vertices.length;
+
+            const vector = this.vertices[current];
+            const other = this.vertices[next];
+
+            const result = (other.x - vector.x) * (point.y - vector.y) / (other.y - vector.y) + vector.x;
+
+            if((vector.y >= point.y && other.y < point.y) || (vector.y < point.y && other.y >= point.y) && (point.x < result)) {
+                collision = !collision;
+            }
+        }
+
+        return collision;
+    }
+
+
     public getArea(): number
     {
         let area = 0;

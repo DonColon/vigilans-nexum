@@ -16,6 +16,13 @@ export class Circle extends Shape
     }
 
 
+    public contains(point: Vector): boolean
+    {
+        const distance = point.distanceBetween(this.getCenter());
+        return distance <= this.radius;
+    }
+
+
     public getArea(): number
     {
         return Math.PI * this.radius * this.radius;

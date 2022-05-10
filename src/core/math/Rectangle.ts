@@ -35,6 +35,15 @@ export class Rectangle extends Shape
     }
 
 
+    public contains(point: Vector): boolean
+    {
+        return point.getX() >= this.position.getX()
+            && point.getX() <= this.position.getX() + this.dimension.width
+            && point.getY() >= this.position.getY()
+            && point.getY() <= this.position.getY() + this.dimension.height;
+    }
+
+
     public getArea(): number
     {
         return this.dimension.width * this.dimension.height;
