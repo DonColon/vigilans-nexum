@@ -37,10 +37,12 @@ export class Rectangle extends Shape
 
     public contains(point: Vector): boolean
     {
-        return point.getX() >= this.position.getX()
-            && point.getX() <= this.position.getX() + this.dimension.width
-            && point.getY() >= this.position.getY()
-            && point.getY() <= this.position.getY() + this.dimension.height;
+        const { width, height } = this.dimension;
+
+        return point.x >= this.position.x
+            && point.x <= this.position.x + width
+            && point.y >= this.position.y
+            && point.y <= this.position.y + height;
     }
 
 
@@ -59,10 +61,10 @@ export class Rectangle extends Shape
         const { topLeft, topRight, bottomLeft, bottomRight } = this.getCorners();
 
         return {
-            top: new Line(topLeft.getX(), topLeft.getY(), topRight.getX(), topRight.getY()),
-            left: new Line(topLeft.getX(), topLeft.getY(), bottomLeft.getX(), bottomLeft.getY()),
-            right: new Line(topRight.getX(), topRight.getY(), bottomRight.getX(), bottomRight.getY()),
-            bottom: new Line(bottomLeft.getX(), bottomLeft.getY(), bottomRight.getX(), bottomRight.getY())
+            top: new Line(topLeft.x, topLeft.y, topRight.x, topRight.y),
+            left: new Line(topLeft.x, topLeft.y, bottomLeft.x, bottomLeft.y),
+            right: new Line(topRight.x, topRight.y, bottomRight.x, bottomRight.y),
+            bottom: new Line(bottomLeft.x, bottomLeft.y, bottomRight.x, bottomRight.y)
         };
     }
 
@@ -84,32 +86,10 @@ export class Rectangle extends Shape
         return this.position.add(offset);
     }
 
-    public getCenterX(): number
-    {
-        const center = this.getCenter();
-        return center.getX();
-    }
-
-    public getCenterY(): number
-    {
-        const center = this.getCenter();
-        return center.getY();
-    }
-
 
     public getPosition(): Vector
     {
         return this.position;
-    }
-
-    public getX(): number
-    {
-        return this.position.getX();
-    }
-
-    public getY(): number
-    {
-        return this.position.getY();
     }
 
     public getDimension(): Dimension

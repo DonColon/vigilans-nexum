@@ -77,7 +77,7 @@ export class Polygon extends Shape
             const start = this.vertices[current];
             const end = this.vertices[next];
 
-            const side = new Line(start.getX(), start.getY(), end.getX(), end.getY());
+            const side = new Line(start.x, start.y, end.x, end.y);
             sides.push(side);
         }
 

@@ -39,32 +39,10 @@ export class Circle extends Shape
         return this.position.add(offset);
     }
 
-    public getCenterX(): number
-    {
-        const center = this.getCenter();
-        return center.getX();
-    }
-
-    public getCenterY(): number
-    {
-        const center = this.getCenter();
-        return center.getY();
-    }
-
 
     public getPosition(): Vector
     {
         return this.position;
-    }
-
-    public getX(): number
-    {
-        return this.position.getX();
-    }
-
-    public getY(): number
-    {
-        return this.position.getY();
     }
     
     public getRadius(): number

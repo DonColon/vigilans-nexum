@@ -148,19 +148,4 @@ export class Vector
 			&& this.y === other.y
 			&& this.z === other.z;
 	}
-
-	public getX(): number 
-	{
-		return this.x;
-	}
-
-	public getY(): number 
-	{
-		return this.y;
-	}
-
-	public getZ(): number 
-	{
-		return this.z;
-	}
 }

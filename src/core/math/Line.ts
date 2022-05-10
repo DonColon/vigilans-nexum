@@ -38,7 +38,7 @@ export class Line extends Shape
     public getSlope(): number
     {
         const delta = this.start.subtract(this.end);
-        return delta.getY() / delta.getX();
+        return delta.y / delta.x;
     }
 
     public getLength(): number
@@ -51,46 +51,14 @@ export class Line extends Shape
         return this.start.add(this.end).divide(2);
     }
 
-    public getCenterX(): number
-    {
-        const center = this.getCenter();
-        return center.getX();
-    }
-
-    public getCenterY(): number
-    {
-        const center = this.getCenter();
-        return center.getY();
-    }
-
 
     public getStart(): Vector
     {
         return this.start;
     }
 
-    public getStartX(): number
-    {
-        return this.start.getX();
-    }
-
-    public getStartY(): number
-    {
-        return this.start.getY();
-    }
-
     public getEnd(): Vector
     {
         return this.end;
-    }
-
-    public getEndX(): number
-    {
-        return this.end.getX();
-    }
-
-    public getEndY(): number
-    {
-        return this.end.getY();
     }
 }
