@@ -14,6 +14,62 @@ export class Polygon extends Shape
         this.vertices = vertices;
     }
 
+    public buildConvexHull(points: Vector[]): Polygon
+    {
+        const polygon = new Polygon();
+
+        let previous = 0;
+        for(let current = 1; current < points.length; current++) {
+            if(points[current] < points[previous]) {
+                previous = current;
+            }
+        }
+
+        const start = previous;
+        const used = [];
+
+        for(let index = 0; index < points.length; index++) {
+            used[index] = false;
+        }
+
+        do {
+            let next = -1;
+            let max = 0;
+
+            for(let current = 0; current < points.length; current++) {
+                if(current === previous) continue;
+                if(used[current]) continue;
+
+                if(next === -1) next = current;
+
+                const vector = points[previous].subtract(points[current]);
+                const other = points[previous].subtract(points[next]);
+
+                const distance = points[previous].distanceBetween(points[current]);
+                const result = vector.perpDot(other);
+
+                if(result === 0) {
+                    if(distance > max) {
+                        next = current;
+                        max = distance;
+                    }
+                }
+                else if(result < 0) {
+                    next = current;
+                    max = distance;
+                }
+            }
+
+            previous = next;
+            used[previous] = true;
+
+            polygon.addVertex(points[previous]);
+
+        } while(start !== previous);
+
+        return polygon;
+    }
+
 
     public contains(point: Vector): boolean
     {
