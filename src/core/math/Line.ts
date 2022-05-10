@@ -62,14 +62,37 @@ export class Line extends Shape
 
     private intersectsWithLine(other: Line): boolean
     {
-        const lineParameters = this.getLineParameters();
-        const otherParameters = other.getLineParameters();
+        const self = this.getLineParameters();
+        const line = other.getLineParameters();
 
-        const denominator = lineParameters.A * otherParameters.B - otherParameters.A * lineParameters.B;
+        const denominator = self.A * line.B - line.A * self.B;
         
         return denominator !== 0;
     }
 
+
+    public isParallel(other: Line): boolean
+    {
+        const self = this.getLineParameters();
+        const line = other.getLineParameters();
+
+        const denominator = self.A * line.B - line.A * self.B;
+        
+        return denominator === 0;
+    }
+
+    public getIntersection(other: Line): Vector
+    {
+        const self = this.getLineParameters();
+        const line = other.getLineParameters();
+
+        const denominator = self.A * line.B - line.A * self.B;
+
+        const x = (line.B * self.C - self.B * line.C) / denominator;
+        const y = (self.A * line.C - line.A * self.C) / denominator;
+
+        return new Vector(x, y);
+    }
 
     public getLineParameters(): LineParameters
     {
