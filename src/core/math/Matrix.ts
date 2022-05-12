@@ -1,3 +1,4 @@
+import { fillMatrix } from "core/utils/Arrays";
 import { Vector } from "./Vector";
 
 
@@ -23,6 +24,59 @@ export class Matrix
             [start.y, center.y, end.y],
             [start.z, center.z, end.z]
         ]);
+    }
+
+
+    public add(other: Matrix): Matrix
+    {
+        const values = fillMatrix(3, 3, 0);
+
+        for(let row = 0; row < values.length; row++) {
+            for(let column = 0; column < values[row].length; column++) {
+                values[row][column] = this.values[row][column] + other.values[row][column];
+            }
+        }
+
+        return new Matrix(values as MatrixLike);
+    }
+
+    public subtract(other: Matrix): Matrix
+    {
+        const values = fillMatrix(3, 3, 0);
+
+        for(let row = 0; row < values.length; row++) {
+            for(let column = 0; column < values[row].length; column++) {
+                values[row][column] = this.values[row][column] - other.values[row][column];
+            }
+        }
+
+        return new Matrix(values as MatrixLike);
+    }
+
+    public multiply(scalar: number): Matrix
+    {
+        const values = fillMatrix(3, 3, 0);
+
+        for(let row = 0; row < values.length; row++) {
+            for(let column = 0; column < values[row].length; column++) {
+                values[row][column] = this.values[row][column] * scalar;
+            }
+        }
+
+        return new Matrix(values as MatrixLike);
+    }
+
+    public divide(scalar: number): Matrix
+    {
+        const values = fillMatrix(3, 3, 0);
+
+        for(let row = 0; row < values.length; row++) {
+            for(let column = 0; column < values[row].length; column++) {
+                values[row][column] = this.values[row][column] / scalar;
+            }
+        }
+
+        return new Matrix(values as MatrixLike);
     }
 
 

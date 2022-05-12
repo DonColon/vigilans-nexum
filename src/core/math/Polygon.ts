@@ -1,3 +1,4 @@
+import { fillArray } from "core/utils/Arrays";
 import { Line } from "./Line";
 import { Shape } from "./Shape";
 import { Vector } from "./Vector";
@@ -25,7 +26,7 @@ export class Polygon
         }
 
         const start = previous;
-        const used = new Array(points.length).fill(false);
+        const used = fillArray(points.length, false);
 
         do {
             let next = -1;
