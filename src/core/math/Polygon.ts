@@ -3,14 +3,13 @@ import { Shape } from "./Shape";
 import { Vector } from "./Vector";
 
 
-export class Polygon extends Shape
+export class Polygon
 {
     private vertices: Vector[];
 
 
     constructor(vertices: Vector[] = [])
     {
-        super();
         this.vertices = vertices;
     }
 
@@ -26,11 +25,7 @@ export class Polygon extends Shape
         }
 
         const start = previous;
-        const used = [];
-
-        for(let index = 0; index < points.length; index++) {
-            used[index] = false;
-        }
+        const used = new Array(points.length).fill(false);
 
         do {
             let next = -1;

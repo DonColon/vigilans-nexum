@@ -5,7 +5,7 @@ import { Shape } from "./Shape";
 import { Vector } from "./Vector";
 
 
-export class Circle extends Shape
+export class Circle
 {
     private position: Vector;
     private radius: number;
@@ -13,7 +13,6 @@ export class Circle extends Shape
 
     constructor(x: number, y: number, radius: number)
     {
-        super();
         this.position = new Vector(x, y);
         this.radius = radius;
     }

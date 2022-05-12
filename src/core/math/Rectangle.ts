@@ -6,7 +6,7 @@ import { Circle } from "./Circle";
 import { Polygon } from "./Polygon";
 
 
-interface RectangleCorners
+export interface RectangleCorners
 {
     topLeft: Vector,
     topRight: Vector,
@@ -14,7 +14,7 @@ interface RectangleCorners
     bottomRight: Vector
 }
 
-interface RectangleSides
+export interface RectangleSides
 {
     top: Line,
     right: Line,
@@ -23,7 +23,7 @@ interface RectangleSides
 }
 
 
-export class Rectangle extends Shape
+export class Rectangle
 {
     private position: Vector;
     private dimension: Dimension;
@@ -31,7 +31,6 @@ export class Rectangle extends Shape
 
     constructor(x: number, y: number, width: number, height: number)
     {
-        super();
         this.position = new Vector(x, y);
         this.dimension = { width, height };
     }

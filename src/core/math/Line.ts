@@ -5,7 +5,7 @@ import { Shape } from "./Shape";
 import { Vector } from "./Vector";
 
 
-interface LineParameters
+export interface LineParameters
 {
     A: number,
     B: number,
@@ -13,7 +13,7 @@ interface LineParameters
 }
 
 
-export class Line extends Shape
+export class Line
 {
     private start: Vector;
     private end: Vector;
@@ -21,7 +21,6 @@ export class Line extends Shape
 
     constructor(startX: number, startY: number, endX: number, endY: number)
     {
-        super();
         this.start = new Vector(startX, startY);
         this.end = new Vector(endX, endY);
     }
