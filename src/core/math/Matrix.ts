@@ -93,6 +93,21 @@ export class Matrix
         return new Matrix(values);
     }
 
+    public dot(other: Matrix): Matrix
+    {
+        const values = fillMatrix(3, 3, 0) as MatrixLike;
+
+        for(let row = 0; row < this.values.length; row++) {
+            for(let column = 0; column < other.values[0].length; column++) {
+                for(let index = 0; index < this.values[row].length; index++) {
+                    values[row][column] += this.values[row][index] * other.values[index][column];
+                }
+            }
+        }
+
+        return new Matrix(values);
+    }
+
 
     public equals(other: Matrix): boolean
     {
