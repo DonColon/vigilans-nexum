@@ -26,6 +26,20 @@ export class Matrix
         ]);
     }
 
+    
+    public static determinant(values: number[][]): number
+    {
+        if(values.length === 1) {
+            return values[0][0];
+        }
+        else if(values.length === 2) {
+            return values[0][0] * values[1][1] - values[0][1] * values[1][0];
+        }
+
+        return values[0].reduce((previous, current, i) => 
+            previous + (-1) ** (i + 2) * current * Matrix.determinant(values.slice(1).map(matrix => matrix.filter((value, k) => i != k))), 0);
+    }
+
 
     public add(other: Matrix): Matrix
     {
@@ -106,6 +120,11 @@ export class Matrix
         }
 
         return new Matrix(values);
+    }
+
+    public determinant(): number
+    {
+        return Matrix.determinant(this.values);
     }
 
 
