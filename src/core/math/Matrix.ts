@@ -29,7 +29,7 @@ export class Matrix
 
     public add(other: Matrix): Matrix
     {
-        const values = fillMatrix(3, 3, 0);
+        const values = fillMatrix(3, 3, 0) as MatrixLike;
 
         for(let row = 0; row < values.length; row++) {
             for(let column = 0; column < values[row].length; column++) {
@@ -37,12 +37,12 @@ export class Matrix
             }
         }
 
-        return new Matrix(values as MatrixLike);
+        return new Matrix(values);
     }
 
     public subtract(other: Matrix): Matrix
     {
-        const values = fillMatrix(3, 3, 0);
+        const values = fillMatrix(3, 3, 0) as MatrixLike;
 
         for(let row = 0; row < values.length; row++) {
             for(let column = 0; column < values[row].length; column++) {
@@ -50,12 +50,12 @@ export class Matrix
             }
         }
 
-        return new Matrix(values as MatrixLike);
+        return new Matrix(values);
     }
 
     public multiply(scalar: number): Matrix
     {
-        const values = fillMatrix(3, 3, 0);
+        const values = fillMatrix(3, 3, 0) as MatrixLike;
 
         for(let row = 0; row < values.length; row++) {
             for(let column = 0; column < values[row].length; column++) {
@@ -63,12 +63,12 @@ export class Matrix
             }
         }
 
-        return new Matrix(values as MatrixLike);
+        return new Matrix(values);
     }
 
     public divide(scalar: number): Matrix
     {
-        const values = fillMatrix(3, 3, 0);
+        const values = fillMatrix(3, 3, 0) as MatrixLike;
 
         for(let row = 0; row < values.length; row++) {
             for(let column = 0; column < values[row].length; column++) {
@@ -76,7 +76,21 @@ export class Matrix
             }
         }
 
-        return new Matrix(values as MatrixLike);
+        return new Matrix(values);
+    }
+
+
+    public transpose(): Matrix
+    {
+        const values = fillMatrix(3, 3, 0) as MatrixLike;
+
+        for(let row = 0; row < values.length; row++) {
+            for(let column = 0; column < values[row].length; column++) {
+                values[column][row] = this.values[row][column];
+            }
+        }
+
+        return new Matrix(values);
     }
 
 
