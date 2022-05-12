@@ -27,6 +27,17 @@ export class Matrix
     }
 
     
+    public static identity(): Matrix
+    {
+        const values = fillMatrix(3, 3, 0) as MatrixLike;
+
+        for(let index = 0; index < values.length; index++) {
+            values[index][index] = 1;
+        }
+
+        return new Matrix(values);
+    }
+
     public static determinant(values: number[][]): number
     {
         if(values.length === 1) {
@@ -94,20 +105,7 @@ export class Matrix
     }
 
 
-    public transpose(): Matrix
-    {
-        const values = fillMatrix(3, 3, 0) as MatrixLike;
-
-        for(let row = 0; row < values.length; row++) {
-            for(let column = 0; column < values[row].length; column++) {
-                values[column][row] = this.values[row][column];
-            }
-        }
-
-        return new Matrix(values);
-    }
-
-    public dot(other: Matrix): Matrix
+    public product(other: Matrix): Matrix
     {
         const values = fillMatrix(3, 3, 0) as MatrixLike;
 
@@ -116,6 +114,19 @@ export class Matrix
                 for(let index = 0; index < this.values[row].length; index++) {
                     values[row][column] += this.values[row][index] * other.values[index][column];
                 }
+            }
+        }
+
+        return new Matrix(values);
+    }
+
+    public transpose(): Matrix
+    {
+        const values = fillMatrix(3, 3, 0) as MatrixLike;
+
+        for(let row = 0; row < values.length; row++) {
+            for(let column = 0; column < values[row].length; column++) {
+                values[column][row] = this.values[row][column];
             }
         }
 
