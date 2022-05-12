@@ -1,3 +1,6 @@
+export type VectorLike = [number, number, number?];
+
+
 export class Vector 
 {
 	public x: number;
@@ -10,6 +13,11 @@ export class Vector
 		this.x = x;
 		this.y = y;
 		this.z = z;
+	}
+
+	public static fromArray(values: VectorLike): Vector
+	{
+		return new Vector(values[0], values[1], values[2]);
 	}
 
 	public static fromAngle(angle: number): Vector
@@ -147,5 +155,10 @@ export class Vector
 		return this.x === other.x
 			&& this.y === other.y
 			&& this.z === other.z;
+	}
+	
+	public toArray(): VectorLike
+	{
+		return [this.x, this.y, this.z];
 	}
 }
