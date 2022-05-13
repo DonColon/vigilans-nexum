@@ -120,17 +120,9 @@ export class Matrix
         return new Matrix(values);
     }
 
-    public transpose(): Matrix
+    public inverse(): Matrix
     {
-        const values = fillMatrix(3, 3, 0) as MatrixLike;
-
-        for(let row = 0; row < values.length; row++) {
-            for(let column = 0; column < values[row].length; column++) {
-                values[column][row] = this.values[row][column];
-            }
-        }
-
-        return new Matrix(values);
+        return this.adjoint().divide(this.determinant());
     }
 
     public adjoint(): Matrix
@@ -148,6 +140,20 @@ export class Matrix
                         .map((row) => row.filter((_, k) => k != column));
 
                 values[row][column] = (-1) ** (row + column) * Matrix.determinant(subMatrix);
+            }
+        }
+
+        return new Matrix(values);
+    }
+
+
+    public transpose(): Matrix
+    {
+        const values = fillMatrix(3, 3, 0) as MatrixLike;
+
+        for(let row = 0; row < values.length; row++) {
+            for(let column = 0; column < values[row].length; column++) {
+                values[column][row] = this.values[row][column];
             }
         }
 
