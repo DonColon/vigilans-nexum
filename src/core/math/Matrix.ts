@@ -26,7 +26,6 @@ export class Matrix
         ]);
     }
 
-    
     public static identity(): Matrix
     {
         const values = fillMatrix(3, 3, 0) as MatrixLike;
@@ -38,7 +37,8 @@ export class Matrix
         return new Matrix(values);
     }
 
-    public static determinant(values: number[][]): number
+
+    private static determinant(values: number[][]): number
     {
         if(values.length === 1) {
             return values[0][0];
@@ -65,6 +65,17 @@ export class Matrix
         return new Matrix(values);
     }
 
+    public addRow(from: number, to: number): Matrix
+    {
+        const values = [...this.values] as MatrixLike;
+
+        for(let column = 0; column < values[to].length; column++) {
+            values[to][column] += values[from][column];
+        }
+
+        return new Matrix(values);
+    }
+
     public subtract(other: Matrix): Matrix
     {
         const values = fillMatrix(3, 3, 0) as MatrixLike;
@@ -73,6 +84,17 @@ export class Matrix
             for(let column = 0; column < values[row].length; column++) {
                 values[row][column] = this.values[row][column] - other.values[row][column];
             }
+        }
+
+        return new Matrix(values);
+    }
+
+    public subtractRow(from: number, to: number): Matrix
+    {
+        const values = [...this.values] as MatrixLike;
+
+        for(let column = 0; column < values[to].length; column++) {
+            values[to][column] -= values[from][column];
         }
 
         return new Matrix(values);
@@ -91,6 +113,17 @@ export class Matrix
         return new Matrix(values);
     }
 
+    public multiplyRow(scalar: number, to: number)
+    {
+        const values = [...this.values] as MatrixLike;
+
+        for(let column = 0; column < values[to].length; column++) {
+            values[to][column] *= scalar;
+        }
+
+        return new Matrix(values);
+    }
+
     public divide(scalar: number): Matrix
     {
         const values = fillMatrix(3, 3, 0) as MatrixLike;
@@ -103,6 +136,31 @@ export class Matrix
 
         return new Matrix(values);
     }
+    
+    public divideRow(scalar: number, to: number)
+    {
+        const values = [...this.values] as MatrixLike;
+
+        for(let column = 0; column < values[to].length; column++) {
+            values[to][column] /= scalar;
+        }
+
+        return new Matrix(values);
+    }
+
+
+    public switchRows(from: number, to: number): Matrix
+    {
+        const values = [...this.values] as MatrixLike;
+
+        const temp = values[to];
+        values[to] = values[from];
+        values[from] = temp;
+
+        return new Matrix(values);
+    }
+
+    // TODO: Implement column operations
 
 
     public product(other: Matrix): Matrix
@@ -118,6 +176,25 @@ export class Matrix
         }
 
         return new Matrix(values);
+    }
+
+    public transpose(): Matrix
+    {
+        const values = fillMatrix(3, 3, 0) as MatrixLike;
+
+        for(let row = 0; row < values.length; row++) {
+            for(let column = 0; column < values[row].length; column++) {
+                values[column][row] = this.values[row][column];
+            }
+        }
+
+        return new Matrix(values);
+    }
+
+
+    public determinant(): number
+    {
+        return Matrix.determinant(this.values);
     }
 
     public trace(): number
@@ -158,23 +235,7 @@ export class Matrix
     }
 
 
-    public transpose(): Matrix
-    {
-        const values = fillMatrix(3, 3, 0) as MatrixLike;
-
-        for(let row = 0; row < values.length; row++) {
-            for(let column = 0; column < values[row].length; column++) {
-                values[column][row] = this.values[row][column];
-            }
-        }
-
-        return new Matrix(values);
-    }
-
-    public determinant(): number
-    {
-        return Matrix.determinant(this.values);
-    }
+    // TODO: Implement linear transformation methods
 
 
     public equals(other: Matrix): boolean
