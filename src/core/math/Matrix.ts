@@ -120,6 +120,17 @@ export class Matrix
         return new Matrix(values);
     }
 
+    public trace(): number
+    {
+        let trace = 0;
+
+        for(let index = 0; index < this.values.length; index++) {
+            trace += this.values[index][index];
+        }
+
+        return trace;
+    }
+
     public inverse(): Matrix
     {
         return this.adjoint().divide(this.determinant());
