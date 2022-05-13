@@ -133,6 +133,11 @@ export class Matrix
         return new Matrix(values);
     }
 
+    public adjoint(): Matrix
+    {
+        return this.cofactor().transpose();
+    }
+
     public cofactor(): Matrix
     {
         const values = fillMatrix(3, 3, 0) as MatrixLike;
