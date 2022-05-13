@@ -76,6 +76,17 @@ export class Matrix
         return new Matrix(values);
     }
 
+    public addColumn(from: number, to: number): Matrix
+    {
+        const values = [...this.values] as MatrixLike;
+
+        for(let row = 0; row < values.length; row++) {
+            values[row][to] += values[row][from];
+        }
+
+        return new Matrix(values);
+    }
+
     public subtract(other: Matrix): Matrix
     {
         const values = fillMatrix(3, 3, 0) as MatrixLike;
@@ -95,6 +106,17 @@ export class Matrix
 
         for(let column = 0; column < values[to].length; column++) {
             values[to][column] -= values[from][column];
+        }
+
+        return new Matrix(values);
+    }
+
+    public subtractColumn(from: number, to: number): Matrix
+    {
+        const values = [...this.values] as MatrixLike;
+
+        for(let row = 0; row < values.length; row++) {
+            values[row][to] -= values[row][from];
         }
 
         return new Matrix(values);
@@ -124,6 +146,17 @@ export class Matrix
         return new Matrix(values);
     }
 
+    public multiplyColumn(scalar: number, to: number): Matrix
+    {
+        const values = [...this.values] as MatrixLike;
+
+        for(let row = 0; row < values.length; row++) {
+            values[row][to] *= scalar;
+        }
+
+        return new Matrix(values);
+    }
+
     public divide(scalar: number): Matrix
     {
         const values = fillMatrix(3, 3, 0) as MatrixLike;
@@ -148,6 +181,17 @@ export class Matrix
         return new Matrix(values);
     }
 
+    public divideColumn(scalar: number, to: number): Matrix
+    {
+        const values = [...this.values] as MatrixLike;
+
+        for(let row = 0; row < values.length; row++) {
+            values[row][to] /= scalar;
+        }
+
+        return new Matrix(values);
+    }
+
 
     public switchRows(from: number, to: number): Matrix
     {
@@ -160,7 +204,18 @@ export class Matrix
         return new Matrix(values);
     }
 
-    // TODO: Implement column operations
+    public switchColumns(from: number, to: number): Matrix
+    {
+        const values = [...this.values] as MatrixLike;
+
+        for(let row = 0; row < values.length; row++) {
+            const temp = values[row][to];
+            values[row][to] = values[row][from];
+            values[row][from] = temp;
+        }
+
+        return new Matrix(values);
+    }
 
 
     public product(other: Matrix): Matrix
