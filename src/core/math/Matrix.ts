@@ -370,6 +370,50 @@ export class Matrix
         return this.product(transformation);
     }
 
+    public reflect(): Matrix
+    {
+        const transformation = new Matrix([
+            [-1, 0, 0],
+            [0, -1, 0],
+            [0, 0, -1]
+        ]);
+
+        return this.product(transformation);
+    }
+
+    public reflectX(): Matrix
+    {
+        const transformation = new Matrix([
+            [-1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1]
+        ]);
+
+        return this.product(transformation);
+    }
+
+    public reflectY(): Matrix
+    {
+        const transformation = new Matrix([
+            [1, 0, 0],
+            [0, -1, 0],
+            [0, 0, 1]
+        ]);
+
+        return this.product(transformation);
+    }
+
+    public reflectZ(): Matrix
+    {
+        const transformation = new Matrix([
+            [1, 0, 0],
+            [0, 1, 0],
+            [0, 0, -1]
+        ]);
+
+        return this.product(transformation);
+    }
+
 
     public equals(other: Matrix): boolean
     {
