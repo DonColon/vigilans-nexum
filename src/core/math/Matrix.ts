@@ -312,6 +312,25 @@ export class Matrix
         return this.product(transformation);
     }
 
+    public rotate(angle: number, clockwise: boolean = false): Matrix
+    {
+        const radian = angle * Math.PI / 180;
+
+        const transformation = new Matrix([
+            [Math.cos(radian), Math.sin(radian), 0],
+            [Math.sin(radian), Math.cos(radian), 0],
+            [0, 0, 1]
+        ]);
+
+        if(clockwise) {
+            transformation.values[1][0] *= -1;
+        } else {
+            transformation.values[0][1] *= -1;
+        }
+
+        return this.product(transformation);
+    }
+
 
     public equals(other: Matrix): boolean
     {
