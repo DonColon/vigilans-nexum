@@ -331,6 +331,45 @@ export class Matrix
         return this.product(transformation);
     }
 
+    public shear(angle: number): Matrix
+    {
+        const radian = angle * Math.PI / 180;
+
+        const transformation = new Matrix([
+            [1, Math.tan(radian), 0],
+            [Math.tan(radian), 1, 0],
+            [0, 0, 1]
+        ]);
+
+        return this.product(transformation);
+    }
+
+    public shearX(angle: number): Matrix
+    {
+        const radian = angle * Math.PI / 180;
+
+        const transformation = new Matrix([
+            [1, Math.tan(radian), 0],
+            [0, 1, 0],
+            [0, 0, 1]
+        ]);
+
+        return this.product(transformation);
+    }
+
+    public shearY(angle: number): Matrix
+    {
+        const radian = angle * Math.PI / 180;
+
+        const transformation = new Matrix([
+            [1, 0, 0],
+            [Math.tan(radian), 0, 0],
+            [0, 0, 1]
+        ]);
+
+        return this.product(transformation);
+    }
+
 
     public equals(other: Matrix): boolean
     {
