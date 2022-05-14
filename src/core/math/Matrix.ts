@@ -290,7 +290,16 @@ export class Matrix
     }
 
 
-    // TODO: Implement linear transformation methods
+    public translate(x: number, y: number): Matrix
+    {
+        const transformation = new Matrix([
+            [1, 0, x],
+            [0, 1, y],
+            [0, 0, 1]
+        ]);
+
+        return this.product(transformation);
+    }
 
 
     public equals(other: Matrix): boolean
