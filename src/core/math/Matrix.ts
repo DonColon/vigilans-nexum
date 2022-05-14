@@ -301,6 +301,17 @@ export class Matrix
         return this.product(transformation);
     }
 
+    public scale(width: number, height: number): Matrix
+    {
+        const transformation = new Matrix([
+            [width, 0, 0],
+            [0, height, 0],
+            [0, 0, 1]
+        ]);
+
+        return this.product(transformation);
+    }
+
 
     public equals(other: Matrix): boolean
     {
