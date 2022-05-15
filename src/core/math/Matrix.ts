@@ -12,12 +12,44 @@ export class Matrix
     private values: MatrixLike;
 
 
-    constructor(values: MatrixLike)
+    constructor(values: number[][])
     {
-        this.values = values;
+        this.values = fillMatrix(3, 3, 0) as MatrixLike;
+
+        for(let row = 0; row < this.values.length; row++) {
+            for(let column = 0; column < this.values[row].length; column++) {
+                if(values[row][column] === undefined) return;
+                this.values[row][column] = values[row][column];
+            }
+        }
     }
 
-    public static fromVectors(start: Vector, center: Vector, end: Vector): Matrix
+    public static ofRowVector(vector: Vector): Matrix
+    {
+        return new Matrix([
+            [vector.x, vector.y, vector.z]
+        ]);
+    }
+
+    public static ofColumnVector(vector: Vector): Matrix
+    {
+        return new Matrix([
+            [vector.x],
+            [vector.y],
+            [vector.z]
+        ]);
+    }
+
+    public static ofRowVectors(start: Vector, center: Vector, end: Vector): Matrix
+    {
+        return new Matrix([
+            [start.x, start.y, start.z],
+            [center.x, center.y, center.z],
+            [end.x, end.y, end.z]
+        ]);
+    }
+
+    public static ofColumnVectors(start: Vector, center: Vector, end: Vector): Matrix
     {
         return new Matrix([
             [start.x, center.x, end.x],
@@ -26,6 +58,7 @@ export class Matrix
         ]);
     }
 
+    
     public static identity(): Matrix
     {
         const values = fillMatrix(3, 3, 0) as MatrixLike;
@@ -36,7 +69,6 @@ export class Matrix
 
         return new Matrix(values);
     }
-
 
     private static determinant(values: number[][]): number
     {
@@ -49,6 +81,147 @@ export class Matrix
 
         return values[0].reduce((previous, current, i) => 
             previous + (-1) ** (i + 2) * current * Matrix.determinant(values.slice(1).map(matrix => matrix.filter((_, k) => i != k))), 0);
+    }
+
+
+    public static translate(vector: Vector, x: number, y: number): Vector
+    {
+        const other = Matrix.ofColumnVector(vector);
+
+        const transformation = new Matrix([
+            [1, 0, x],
+            [0, 1, y],
+            [0, 0, 1]
+        ]);
+
+        return transformation.product(other).asColumnVector();
+    }
+
+    public static scale(vector: Vector, width: number, height: number): Vector
+    {
+        const other = Matrix.ofColumnVector(vector);
+
+        const transformation = new Matrix([
+            [width, 0, 0],
+            [0, height, 0],
+            [0, 0, 1]
+        ]);
+
+        return transformation.product(other).asColumnVector();
+    }
+
+    public static rotate(vector: Vector, angle: number, clockwise: boolean = false): Vector
+    {
+        const other = Matrix.ofColumnVector(vector);
+        const radian = angle * Math.PI / 180;
+
+        const transformation = new Matrix([
+            [Math.cos(radian), Math.sin(radian), 0],
+            [Math.sin(radian), Math.cos(radian), 0],
+            [0, 0, 1]
+        ]);
+
+        if(clockwise) {
+            transformation.values[1][0] *= -1;
+        } else {
+            transformation.values[0][1] *= -1;
+        }
+
+        return transformation.product(other).asColumnVector();
+    }
+
+    public static shear(vector: Vector, angle: number): Vector
+    {
+        const other = Matrix.ofColumnVector(vector);
+        const radian = angle * Math.PI / 180;
+
+        const transformation = new Matrix([
+            [1, Math.tan(radian), 0],
+            [Math.tan(radian), 1, 0],
+            [0, 0, 1]
+        ]);
+
+        return transformation.product(other).asColumnVector();
+    }
+
+    public static shearX(vector: Vector, angle: number): Vector
+    {
+        const other = Matrix.ofColumnVector(vector);
+        const radian = angle * Math.PI / 180;
+
+        const transformation = new Matrix([
+            [1, Math.tan(radian), 0],
+            [0, 1, 0],
+            [0, 0, 1]
+        ]);
+
+        return transformation.product(other).asColumnVector();
+    }
+
+    public static shearY(vector: Vector, angle: number): Vector
+    {
+        const other = Matrix.ofColumnVector(vector);
+        const radian = angle * Math.PI / 180;
+
+        const transformation = new Matrix([
+            [1, 0, 0],
+            [Math.tan(radian), 0, 0],
+            [0, 0, 1]
+        ]);
+
+        return transformation.product(other).asColumnVector();
+    }
+
+    public static reflect(vector: Vector): Vector
+    {
+        const other = Matrix.ofColumnVector(vector);
+
+        const transformation = new Matrix([
+            [-1, 0, 0],
+            [0, -1, 0],
+            [0, 0, -1]
+        ]);
+
+        return transformation.product(other).asColumnVector();
+    }
+
+    public static reflectX(vector: Vector): Vector
+    {
+        const other = Matrix.ofColumnVector(vector);
+
+        const transformation = new Matrix([
+            [-1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1]
+        ]);
+
+        return transformation.product(other).asColumnVector();
+    }
+
+    public static reflectY(vector: Vector): Vector
+    {
+        const other = Matrix.ofColumnVector(vector);
+
+        const transformation = new Matrix([
+            [1, 0, 0],
+            [0, -1, 0],
+            [0, 0, 1]
+        ]);
+
+        return transformation.product(other).asColumnVector();
+    }
+
+    public static reflectZ(vector: Vector): Vector
+    {
+        const other = Matrix.ofColumnVector(vector);
+
+        const transformation = new Matrix([
+            [1, 0, 0],
+            [0, 1, 0],
+            [0, 0, -1]
+        ]);
+
+        return transformation.product(other).asColumnVector();
     }
 
 
@@ -290,131 +463,6 @@ export class Matrix
     }
 
 
-    public translate(x: number, y: number): Matrix
-    {
-        const transformation = new Matrix([
-            [1, 0, x],
-            [0, 1, y],
-            [0, 0, 1]
-        ]);
-
-        return this.product(transformation);
-    }
-
-    public scale(width: number, height: number): Matrix
-    {
-        const transformation = new Matrix([
-            [width, 0, 0],
-            [0, height, 0],
-            [0, 0, 1]
-        ]);
-
-        return this.product(transformation);
-    }
-
-    public rotate(angle: number, clockwise: boolean = false): Matrix
-    {
-        const radian = angle * Math.PI / 180;
-
-        const transformation = new Matrix([
-            [Math.cos(radian), Math.sin(radian), 0],
-            [Math.sin(radian), Math.cos(radian), 0],
-            [0, 0, 1]
-        ]);
-
-        if(clockwise) {
-            transformation.values[1][0] *= -1;
-        } else {
-            transformation.values[0][1] *= -1;
-        }
-
-        return this.product(transformation);
-    }
-
-    public shear(angle: number): Matrix
-    {
-        const radian = angle * Math.PI / 180;
-
-        const transformation = new Matrix([
-            [1, Math.tan(radian), 0],
-            [Math.tan(radian), 1, 0],
-            [0, 0, 1]
-        ]);
-
-        return this.product(transformation);
-    }
-
-    public shearX(angle: number): Matrix
-    {
-        const radian = angle * Math.PI / 180;
-
-        const transformation = new Matrix([
-            [1, Math.tan(radian), 0],
-            [0, 1, 0],
-            [0, 0, 1]
-        ]);
-
-        return this.product(transformation);
-    }
-
-    public shearY(angle: number): Matrix
-    {
-        const radian = angle * Math.PI / 180;
-
-        const transformation = new Matrix([
-            [1, 0, 0],
-            [Math.tan(radian), 0, 0],
-            [0, 0, 1]
-        ]);
-
-        return this.product(transformation);
-    }
-
-    public reflect(): Matrix
-    {
-        const transformation = new Matrix([
-            [-1, 0, 0],
-            [0, -1, 0],
-            [0, 0, -1]
-        ]);
-
-        return this.product(transformation);
-    }
-
-    public reflectX(): Matrix
-    {
-        const transformation = new Matrix([
-            [-1, 0, 0],
-            [0, 1, 0],
-            [0, 0, 1]
-        ]);
-
-        return this.product(transformation);
-    }
-
-    public reflectY(): Matrix
-    {
-        const transformation = new Matrix([
-            [1, 0, 0],
-            [0, -1, 0],
-            [0, 0, 1]
-        ]);
-
-        return this.product(transformation);
-    }
-
-    public reflectZ(): Matrix
-    {
-        const transformation = new Matrix([
-            [1, 0, 0],
-            [0, 1, 0],
-            [0, 0, -1]
-        ]);
-
-        return this.product(transformation);
-    }
-
-
     public equals(other: Matrix): boolean
     {
         let equals = true;
@@ -430,45 +478,18 @@ export class Matrix
         return equals;
     }
 
-    public toArray(): MatrixLike
+    public asArray(): MatrixLike
     {
-        return this.values;
+        return [...this.values];
     }
 
-
-    public getRow(index: number): MatrixRow
+    public asRowVector(row: number = 0): Vector
     {
-        return this.values[index];
+        return new Vector(this.values[row][0], this.values[row][1], this.values[row][2]);
     }
 
-    public setRow(index: number, row: MatrixRow)
+    public asColumnVector(column: number = 0): Vector
     {
-        this.values[index] = row;
-    }
-
-    public getColumn(index: number): MatrixColumn
-    {
-        return [
-            this.values[0][index],
-            this.values[1][index],
-            this.values[2][index]
-        ];
-    }
-
-    public setColumn(index: number, column: MatrixColumn)
-    {
-        this.values[0][index] = column[0];
-        this.values[1][index] = column[1];
-        this.values[2][index] = column[2];
-    }
-
-    public getValue(row: number, column: number): number
-    {
-        return this.values[row][column];
-    }
-
-    public setValue(row: number, column: number, value: number)
-    {
-        this.values[row][column] = value;
+        return new Vector(this.values[0][column], this.values[1][column], this.values[2][column]);
     }
 }
