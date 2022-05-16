@@ -38,7 +38,7 @@ export class Circle
 
     public contains(point: Vector): boolean
     {
-        const distance = point.distanceBetween(this.getCenter());
+        const distance = point.distanceBetween(this.getPosition());
         return distance <= this.radius;
     }
 
@@ -64,7 +64,7 @@ export class Circle
 
     private intersectsWithLine(other: Line): boolean
     {
-        const center = this.getCenter();
+        const center = this.getPosition();
         const start = other.getStart();
         const end = other.getEnd();
 
@@ -83,8 +83,8 @@ export class Circle
 
     private intersectsWithCircle(other: Circle): boolean
     {
-        const center = this.getCenter();
-        const otherCenter = other.getCenter();
+        const center = this.getPosition();
+        const otherCenter = other.getPosition();
 
         const distance = center.distanceBetween(otherCenter);
 
@@ -106,12 +106,6 @@ export class Circle
     public getPerimeter(): number
     {
         return 2 * this.radius * Math.PI;
-    }
-
-    public getCenter(): Vector
-    {
-        const offset = new Vector(this.radius, this.radius);
-        return this.position.add(offset);
     }
 
 

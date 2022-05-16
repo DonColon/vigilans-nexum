@@ -77,7 +77,7 @@ export class Rectangle
 
     private intersectsWithCircle(other: Circle): boolean
     {
-        const center = other.getCenter();
+        const center = other.getPosition();
 
         let checkX = center.x;
         let checkY = center.y;

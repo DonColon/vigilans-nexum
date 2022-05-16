@@ -241,7 +241,7 @@ export class Matrix
 
     public addRow(from: number, to: number): Matrix
     {
-        const values = [...this.values] as MatrixLike;
+        const values = this.asArray();
 
         for(let column = 0; column < values[to].length; column++) {
             values[to][column] += values[from][column];
@@ -252,7 +252,7 @@ export class Matrix
 
     public addColumn(from: number, to: number): Matrix
     {
-        const values = [...this.values] as MatrixLike;
+        const values = this.asArray();
 
         for(let row = 0; row < values.length; row++) {
             values[row][to] += values[row][from];
@@ -276,7 +276,7 @@ export class Matrix
 
     public subtractRow(from: number, to: number): Matrix
     {
-        const values = [...this.values] as MatrixLike;
+        const values = this.asArray();
 
         for(let column = 0; column < values[to].length; column++) {
             values[to][column] -= values[from][column];
@@ -287,7 +287,7 @@ export class Matrix
 
     public subtractColumn(from: number, to: number): Matrix
     {
-        const values = [...this.values] as MatrixLike;
+        const values = this.asArray();
 
         for(let row = 0; row < values.length; row++) {
             values[row][to] -= values[row][from];
@@ -311,7 +311,7 @@ export class Matrix
 
     public multiplyRow(scalar: number, to: number)
     {
-        const values = [...this.values] as MatrixLike;
+        const values = this.asArray();
 
         for(let column = 0; column < values[to].length; column++) {
             values[to][column] *= scalar;
@@ -322,7 +322,7 @@ export class Matrix
 
     public multiplyColumn(scalar: number, to: number): Matrix
     {
-        const values = [...this.values] as MatrixLike;
+        const values = this.asArray();
 
         for(let row = 0; row < values.length; row++) {
             values[row][to] *= scalar;
@@ -346,7 +346,7 @@ export class Matrix
     
     public divideRow(scalar: number, to: number)
     {
-        const values = [...this.values] as MatrixLike;
+        const values = this.asArray();
 
         for(let column = 0; column < values[to].length; column++) {
             values[to][column] /= scalar;
@@ -357,7 +357,7 @@ export class Matrix
 
     public divideColumn(scalar: number, to: number): Matrix
     {
-        const values = [...this.values] as MatrixLike;
+        const values = this.asArray();
 
         for(let row = 0; row < values.length; row++) {
             values[row][to] /= scalar;
@@ -369,7 +369,7 @@ export class Matrix
 
     public switchRows(from: number, to: number): Matrix
     {
-        const values = [...this.values] as MatrixLike;
+        const values = this.asArray();
 
         const temp = values[to];
         values[to] = values[from];
@@ -380,7 +380,7 @@ export class Matrix
 
     public switchColumns(from: number, to: number): Matrix
     {
-        const values = [...this.values] as MatrixLike;
+        const values = this.asArray();
 
         for(let row = 0; row < values.length; row++) {
             const temp = values[row][to];
