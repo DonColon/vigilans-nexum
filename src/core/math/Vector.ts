@@ -1,3 +1,6 @@
+import { toDegrees, toRadians } from "core/utils/Maths";
+
+
 export type VectorLike = [number, number, number?];
 
 
@@ -15,14 +18,14 @@ export class Vector
 		this.z = z;
 	}
 
-	public static fromArray(values: VectorLike): Vector
+	public static ofArray(values: VectorLike): Vector
 	{
 		return new Vector(values[0], values[1], values[2]);
 	}
 
-	public static fromAngle(angle: number): Vector
+	public static ofAngle(angle: number): Vector
 	{
-		const radian = angle * Math.PI / 180;
+		const radian = toRadians(angle);
 		return new Vector(Math.cos(radian), Math.sin(radian));
 	}
 
@@ -65,21 +68,6 @@ export class Vector
 						  this.x * other.y - this.y * other.x);
 	}
 
-	public flipX(): Vector
-	{
-		return new Vector(this.x * -1, this.y, this.z);
-	}
-
-	public flipY(): Vector
-	{
-		return new Vector(this.x, this.y * -1, this.z);
-	}
-
-	public flipZ(): Vector
-	{
-		return new Vector(this.x, this.y, this.z * -1);
-	}
-
 
 	public magnitude(): number 
 	{
@@ -103,27 +91,27 @@ export class Vector
 		return vector.magnitude();
 	}
 
-	public rotate(angle: number): Vector
-	{
-		const radian = angle * Math.PI / 180;
-
-		const newX = this.x * Math.cos(radian) - this.y * Math.sin(radian);
-		const newY = this.x * Math.sin(radian) + this.y * Math.cos(radian);
-
-		return new Vector(newX, newY, this.z);
-	}
-
 	public angleBetween(other: Vector): number 
 	{
 		const numerator = this.dot(other);
 		const denominator = this.magnitude() * other.magnitude();
-		return Math.acos(numerator / denominator) * 180 / Math.PI;
+		return toDegrees(Math.acos(numerator / denominator));
 	}
 
 	public heading(): number
 	{
-		return (Math.atan2(this.y, this.x) * 180 / Math.PI + 360) % 360;
+		const angle = toDegrees(Math.atan2(this.y, this.x))
+		return (angle + 360) % 360;
 	}
+
+	public interpolate(other: Vector, scale: number): Vector 
+	{
+		if (scale > 1.0) scale = 1.0;
+
+		const direction = this.subtract(other).multiply(scale);
+		return this.add(direction);
+	}
+
 
 	public isCollinear(other: Vector): boolean 
 	{
@@ -139,17 +127,6 @@ export class Vector
 		return this.dot(other) === 0;
 	}
 
-	public lerp(other: Vector, amount: number): Vector 
-	{
-		if (amount > 1.0) amount = 1.0;
-
-		const newX = this.x + (other.x - this.x) * amount;
-		const newY = this.y + (other.y - this.y) * amount;
-		const newZ = this.z + (other.z - this.z) * amount;
-
-		return new Vector(newX, newY, newZ);
-	}
-
 	public equals(other: Vector): boolean 
 	{
 		return this.x === other.x
@@ -157,7 +134,7 @@ export class Vector
 			&& this.z === other.z;
 	}
 	
-	public toArray(): VectorLike
+	public asArray(): VectorLike
 	{
 		return [this.x, this.y, this.z];
 	}

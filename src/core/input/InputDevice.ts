@@ -1,4 +1,5 @@
 import { Display } from "core/Display";
+import { Matrix } from "core/math/Matrix";
 import { Vector } from "core/math/Vector";
 import { GamepadInput } from "./GamepadInput";
 import { InputChannel } from "./InputChannel";
@@ -364,7 +365,7 @@ export class InputDevice
         state.previous = state.current;
 
         if(state.current) {
-            const swipe = position.current.subtract(position.previous).flipY();
+            const swipe = Matrix.reflectY(position.current.subtract(position.previous));
             const angle = swipe.heading();
             
             const input = this.touchpad.get(SwipeInput.fromAngle(angle)) as Input;

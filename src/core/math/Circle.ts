@@ -94,7 +94,7 @@ export class Circle
 
     public getBorderPoint(angle: number): Vector
     {
-        const vector = Vector.fromAngle(angle);
+        const vector = Vector.ofAngle(angle);
         return vector.multiply(this.radius);
     }
 
