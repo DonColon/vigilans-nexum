@@ -1,5 +1,5 @@
 import { fillMatrix } from "core/utils/Arrays";
-import { toRadians } from "core/utils/Maths";
+import { toRadians } from "core/utils/Angles";
 import { Vector } from "./Vector";
 
 

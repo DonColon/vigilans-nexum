@@ -15,7 +15,7 @@ export enum SwipeInput
 
 export namespace SwipeInput
 {
-    export function fromAngle(angle: number): SwipeInput
+    export function ofAngle(angle: number): SwipeInput
     {
         if(angle >= 0 && angle <= 22.5 || angle > 337.5 && angle <= 360) {
             return SwipeInput.RIGHT;

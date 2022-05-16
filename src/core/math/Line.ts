@@ -25,7 +25,7 @@ export class Line
         this.end = new Vector(endX, endY);
     }
 
-    public static fromPoints(start: Vector, end: Vector): Line
+    public static ofPoints(start: Vector, end: Vector): Line
     {
         return new Line(start.x, start.y, end.x, end.y);
     }

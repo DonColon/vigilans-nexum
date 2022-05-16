@@ -142,7 +142,7 @@ export class Polygon
             const start = this.vertices[current];
             const end = this.vertices[next];
 
-            const side = Line.fromPoints(start, end);
+            const side = Line.ofPoints(start, end);
             sides.push(side);
         }
 

@@ -17,10 +17,10 @@ export class Circle
         this.radius = radius;
     }
 
-    public static fromPoints(start: Vector, center: Vector, end: Vector): Circle
+    public static ofPoints(start: Vector, center: Vector, end: Vector): Circle
     {
-        const startCenter = Line.fromPoints(start, center);
-        const endCenter = Line.fromPoints(center, end);
+        const startCenter = Line.ofPoints(start, center);
+        const endCenter = Line.ofPoints(center, end);
 
         const startBisector = startCenter.getVerticalBisector();
         const endBisector = endCenter.getVerticalBisector();

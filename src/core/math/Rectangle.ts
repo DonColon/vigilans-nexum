@@ -125,10 +125,10 @@ export class Rectangle
         const { topLeft, topRight, bottomLeft, bottomRight } = this.getCorners();
 
         return {
-            top: Line.fromPoints(topLeft, topRight),
-            left: Line.fromPoints(topLeft, bottomLeft),
-            right: Line.fromPoints(topRight, bottomRight),
-            bottom: Line.fromPoints(bottomLeft, bottomRight)
+            top: Line.ofPoints(topLeft, topRight),
+            left: Line.ofPoints(topLeft, bottomLeft),
+            right: Line.ofPoints(topRight, bottomRight),
+            bottom: Line.ofPoints(bottomLeft, bottomRight)
         };
     }
 

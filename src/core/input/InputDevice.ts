@@ -368,7 +368,7 @@ export class InputDevice
             const swipe = Matrix.reflectY(position.current.subtract(position.previous));
             const angle = swipe.heading();
             
-            const input = this.touchpad.get(SwipeInput.fromAngle(angle)) as Input;
+            const input = this.touchpad.get(SwipeInput.ofAngle(angle)) as Input;
             input.previous = input.current;
             input.current = true;
             return;

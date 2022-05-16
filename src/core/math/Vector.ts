@@ -1,4 +1,4 @@
-import { toDegrees, toRadians } from "core/utils/Maths";
+import { toDegrees, toRadians } from "core/utils/Angles";
 
 
 export type VectorLike = [number, number, number?];
