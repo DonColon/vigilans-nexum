@@ -50,6 +50,14 @@ export class Color
         this.alpha = settings.alpha;
     }
 
+    public static hex(code: string): Color
+    {
+        const { hue, saturation, lightness, alpha } = Color.hexAsHsl(code);
+        const { red, green, blue } = Color.hexAsRgb(code);
+
+        return new Color({ code, hue, saturation, lightness, red, green, blue, alpha });
+    }
+
     public static hsl(hue: number, saturation: number, lightness: number, alpha?: number): Color
     {
         const { red, green, blue } = Color.hslAsRgb(hue, saturation, lightness, alpha);
@@ -66,14 +74,77 @@ export class Color
         return new Color({ code, hue, saturation, lightness, red, green, blue, alpha });
     }
 
-    public static hex(code: string): Color
+    public static css(property: string): Color | null
     {
-        const { hue, saturation, lightness, alpha } = Color.hexAsHsl(code);
-        const { red, green, blue } = Color.hexAsRgb(code);
+        if(property.startsWith("#")) {
+            return Color.hex(property);
+        }
+        else if(property.startsWith("hsl")) {
+            const args = property.match(/\d*\.?\d+/g);
+            
+            if(args !== null) {
+                const [hue, saturation, lightness, alpha] = args.map(Number);
+                return Color.hsl(hue, saturation, lightness, alpha);
+            }
+        }
+        else if(property.startsWith("rgb")) {
+            const args = property.match(/\d*\.?\d+/g);
+            
+            if(args !== null) {
+                const [red, green, blue, alpha] = args.map(Number);
+                return Color.rgb(red, green, blue, alpha);
+            }
+        }
 
-        return new Color({ code, hue, saturation, lightness, red, green, blue, alpha });
+        return null;
     }
 
+
+    private static hexAsHsl(code: string): HSL
+    {
+        const { red, green, blue, alpha } = Color.hexAsRgb(code);
+        return Color.rgbAsHsl(red, green, blue, alpha);
+    }
+
+    private static hexAsRgb(code: string): RGB
+    {
+        if(code.length === 4) {
+            const red = parseInt(code[1] + code[1], 16);
+            const green = parseInt(code[2] + code[2], 16);
+            const blue = parseInt(code[3] + code[3], 16);
+
+            return { red, green, blue };
+        }
+        else if(code.length === 5) {
+            const red = parseInt(code[1] + code[1], 16);
+            const green = parseInt(code[2] + code[2], 16);
+            const blue = parseInt(code[3] + code[3], 16);
+
+            let alpha = parseInt(code[4] + code[4], 16);
+            alpha = +(alpha / 255).toFixed(3);
+
+            return { red, green, blue, alpha };
+        }
+        else if(code.length === 7) {
+            const red = parseInt(code[1]+ code[2], 16);
+            const green = parseInt(code[3] + code[4], 16);
+            const blue = parseInt(code[5] + code[6], 16);
+
+            return { red, green, blue };
+        }
+        else if(code.length === 9) {
+            const red = parseInt(code[1]+ code[2], 16);
+            const green = parseInt(code[3] + code[4], 16);
+            const blue = parseInt(code[5] + code[6], 16);
+
+            let alpha = parseInt(code[7] + code[8], 16);
+            alpha = +(alpha / 255).toFixed(3);
+
+            return { red, green, blue, alpha };
+        }
+
+        return {} as RGB;
+    }
 
     private static hslAsHex(hue: number, saturation: number, lightness: number, alpha?: number): string
     {
@@ -176,52 +247,6 @@ export class Color
         return hsl;
     }
 
-    private static hexAsHsl(code: string): HSL
-    {
-        const { red, green, blue, alpha } = Color.hexAsRgb(code);
-        return Color.rgbAsHsl(red, green, blue, alpha);
-    }
-
-    private static hexAsRgb(code: string): RGB
-    {
-        if(code.length === 4) {
-            const red = parseInt(code[1] + code[1], 16);
-            const green = parseInt(code[2] + code[2], 16);
-            const blue = parseInt(code[3] + code[3], 16);
-
-            return { red, green, blue };
-        }
-        else if(code.length === 5) {
-            const red = parseInt(code[1] + code[1], 16);
-            const green = parseInt(code[2] + code[2], 16);
-            const blue = parseInt(code[3] + code[3], 16);
-
-            let alpha = parseInt(code[4] + code[4], 16);
-            alpha = +(alpha / 255).toFixed(3);
-
-            return { red, green, blue, alpha };
-        }
-        else if(code.length === 7) {
-            const red = parseInt(code[1]+ code[2], 16);
-            const green = parseInt(code[3] + code[4], 16);
-            const blue = parseInt(code[5] + code[6], 16);
-
-            return { red, green, blue };
-        }
-        else if(code.length === 9) {
-            const red = parseInt(code[1]+ code[2], 16);
-            const green = parseInt(code[3] + code[4], 16);
-            const blue = parseInt(code[5] + code[6], 16);
-
-            let alpha = parseInt(code[7] + code[8], 16);
-            alpha = +(alpha / 255).toFixed(3);
-
-            return { red, green, blue, alpha };
-        }
-
-        return {} as RGB;
-    }
-
 
     public asHsl(): HSL
     {
@@ -233,6 +258,15 @@ export class Color
         };
     }
 
+    public asHslCss(): string
+    {
+        if(this.alpha === undefined) {
+            return `hsl(${this.hue}, ${this.saturation}, ${this.lightness})`;
+        } else {
+            return `hsla(${this.hue}, ${this.saturation}, ${this.lightness}, ${this.alpha})`;
+        }
+    }
+
     public asRgb(): RGB
     {
         return {
@@ -241,6 +275,15 @@ export class Color
             blue: this.blue,
             alpha: this.alpha
         };
+    }
+
+    public asRgbCss(): string
+    {
+        if(this.alpha === undefined) {
+            return `rgb(${this.red}, ${this.green}, ${this.blue})`;
+        } else {
+            return `rgba(${this.red}, ${this.green}, ${this.blue}, ${this.alpha})`;
+        }
     }
 
     public asHexCode(): string
