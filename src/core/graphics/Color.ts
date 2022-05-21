@@ -107,6 +107,117 @@ export class Color
     }
 
 
+    public mix(other: Color, percentage: number = 0.5): Color
+    {
+        const red = (1 - percentage) * this.red + percentage * other.red;
+        const green = (1 - percentage) * this.green + percentage * other.green;
+        const blue = (1 - percentage) * this.blue + percentage * other.blue;
+
+        if(this.alpha !== undefined && other.alpha !== undefined) {
+            const alpha = (1 - percentage) * this.alpha + percentage * other.alpha;
+            return Color.rgb(red, green, blue, alpha);
+        }
+
+        return Color.rgb(red, green, blue);
+    }
+
+    public invert(): Color
+    {
+        const red = 255 - this.red;
+        const green = 255 - this.green;
+        const blue = 255 - this.blue;
+
+        return Color.rgb(red, green, blue, this.alpha);
+    }
+
+    public complement(): Color
+    {
+        const hue = (this.hue + 180) % 360;
+        return Color.hsl(hue, this.saturation, this.lightness, this.alpha);
+    }
+
+    public saturate(value: number): Color
+    {
+        if(value < 0 || value > 100) {
+            throw new RangeError("value must be percentage");
+        }
+
+        let saturation = this.saturation + value;
+        if(saturation > 100) saturation = 100;
+
+        return Color.hsl(this.hue, saturation, this.lightness, this.alpha);
+    }
+
+    public desaturate(value: number): Color
+    {
+        if(value < 0 || value > 100) {
+            throw new RangeError("value must be percentage");
+        }
+
+        let saturation = this.saturation - value;
+        if(saturation < 0) saturation = 0;
+
+        return Color.hsl(this.hue, saturation, this.lightness, this.alpha);
+    }
+
+    public grayscale(): Color
+    {
+        return Color.hsl(this.hue, 0, this.lightness, this.alpha);
+    }
+
+    public lighten(value: number): Color
+    {
+        if(value < 0 || value > 100) {
+            throw new RangeError("value must be percentage");
+        }
+
+        let lightness = this.lightness + value;
+        if(lightness > 100) lightness = 100;
+
+        return Color.hsl(this.hue, this.saturation, lightness, this.alpha);
+    }
+
+    public darken(value: number): Color
+    {
+        if(value < 0 || value > 100) {
+            throw new RangeError("value must be percentage");
+        }
+
+        let lightness = this.lightness - value;
+        if(lightness < 0) lightness = 0;
+
+        return Color.hsl(this.hue, this.saturation, lightness, this.alpha);
+    }
+
+    public opacify(value: number): Color
+    {
+        if(value < 0 || value > 100) {
+            throw new RangeError("value must be percentage");
+        }
+
+        let alpha = this.alpha || 100;
+        alpha += value;
+
+        if(alpha > 100) alpha = 100;
+
+        return Color.hsl(this.hue, this.saturation, this.lightness, alpha);
+    }
+
+    public transparentize(value: number): Color
+    {
+        if(value < 0 || value > 100) {
+            throw new RangeError("value must be percentage");
+        }
+
+        let alpha = this.alpha || 100;
+        alpha -= value;
+
+        if(alpha < 0) alpha = 0;
+
+        return Color.hsl(this.hue, this.saturation, this.lightness, alpha);
+    }
+
+
     public asHexCode(): string
     {
         return this.code;
