@@ -9,7 +9,7 @@ export class Shadow
     private blur: number;
 
 
-    constructor(color: Color, offsetX: number, offsetY: number, blur: number)
+    constructor(color?: Color, offsetX?: number, offsetY?: number, blur?: number)
     {
         this. color = color || Color.hex("#000");
         this.offsetX = offsetX || 0;
