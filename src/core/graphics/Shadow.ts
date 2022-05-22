@@ -1,6 +1,15 @@
 import { Color } from "./Color";
 
 
+export interface ShadowSettings
+{
+    color?: Color,
+    offsetX?: number,
+    offsetY?: number,
+    blur?: number
+}
+
+
 export class Shadow
 {
     private color: Color;
@@ -9,12 +18,12 @@ export class Shadow
     private blur: number;
 
 
-    constructor(color?: Color, offsetX?: number, offsetY?: number, blur?: number)
+    constructor(settings: ShadowSettings)
     {
-        this. color = color || Color.hex("#000");
-        this.offsetX = offsetX || 0;
-        this.offsetY = offsetY || 0;
-        this.blur = blur || 0;
+        this. color = settings.color || Color.hex("#000");
+        this.offsetX = settings.offsetX || 0;
+        this.offsetY = settings.offsetY || 0;
+        this.blur = settings.blur || 0;
     }
 
 

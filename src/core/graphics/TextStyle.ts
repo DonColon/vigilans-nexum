@@ -3,6 +3,14 @@ import { TextBaseline } from "./TextBaseline";
 import { TextDirection } from "./TextDirection";
 
 
+export interface TextStyleSettings
+{
+    align?: TextAlign,
+    baseline?: TextBaseline,
+    direction?: TextDirection
+}
+
+
 export class TextStyle
 {
     private align: TextAlign;
@@ -10,11 +18,11 @@ export class TextStyle
     private direction: TextDirection;
 
 
-    constructor(align?: TextAlign, baseline?: TextBaseline, direction?: TextDirection)
+    constructor(settings: TextStyleSettings)
     {
-        this.align = align || TextAlign.START;
-        this.baseline = baseline || TextBaseline.ALPHABETIC;
-        this.direction = direction || TextDirection.LTR;
+        this.align = settings.align || TextAlign.START;
+        this.baseline = settings.baseline || TextBaseline.ALPHABETIC;
+        this.direction = settings.direction || TextDirection.LTR;
     }
 
 

@@ -1,3 +1,13 @@
+export interface FontStyleSettings
+{
+    family: string,
+    size: string,
+    weight?: string,
+    style?: string,
+    lineHeight?: string
+}
+
+
 export class FontStyle
 {
     private family: string;
@@ -7,13 +17,13 @@ export class FontStyle
     private lineHeight: string;
 
 
-    constructor(family: string, size: string, weight?: string, style?: string, lineHeight?: string)
+    constructor(settings: FontStyleSettings)
     {
-        this.family = family;
-        this.size = size;
-        this.weight = weight || "normal";
-        this.style = style || "normal";
-        this.lineHeight = lineHeight || "normal";
+        this.family = settings.family;
+        this.size = settings.size;
+        this.weight = settings.weight || "normal";
+        this.style = settings.style || "normal";
+        this.lineHeight = settings.lineHeight || "normal";
     }
 
 
