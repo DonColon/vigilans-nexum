@@ -2,6 +2,7 @@ import { DISPLAY_HEIGHT, DISPLAY_WIDTH } from "Constants";
 import { Vector } from "./math/Vector";
 import { DisplayOrientation } from "./DisplayOrientation";
 import { Dimension } from "./math/Dimension";
+import { Graphics } from "./graphics/Graphics";
 
 
 export interface DisplaySettings
@@ -15,6 +16,7 @@ export interface DisplaySettings
 export class Display
 {
     private viewport: HTMLCanvasElement;
+    private graphics: Graphics;
 
     private onMouseDown!: (event: MouseEvent) => any;
     private onMouseUp!: (event: MouseEvent) => any;
@@ -56,6 +58,14 @@ export class Display
             this.viewport.width = DISPLAY_WIDTH;
             this.viewport.height = DISPLAY_HEIGHT;
         }
+
+        const context = this.viewport.getContext("2d");
+
+        if(context === null) {
+            throw new Error("Rendering Context could not be created");
+        }
+
+        this.graphics = new Graphics(context);
     }
 
 
@@ -273,8 +283,8 @@ export class Display
     }
 
 
-    public getRenderContext(): CanvasRenderingContext2D
+    public getGraphicsContext(): Graphics
     {
-        return this.viewport.getContext("2d") as CanvasRenderingContext2D;
+        return this.graphics;
     }
 }

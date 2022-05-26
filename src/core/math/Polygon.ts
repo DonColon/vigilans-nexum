@@ -169,6 +169,6 @@ export class Polygon
 
     public getVertices(): Vector[]
     {
-        return this.vertices;
+        return [...this.vertices];
     }
 }

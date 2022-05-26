@@ -79,9 +79,9 @@ export class Game
 
     private render()
     {
-        const context = this.display.getRenderContext();
-        const viewport = this.display.getViewportDimension();
+        const graphics = this.display.getGraphicsContext();
+        graphics.clearCanvas();
 
-        context.clearRect(0, 0, viewport.width, viewport.height);
+        // TODO: Rendering
     }
 }
