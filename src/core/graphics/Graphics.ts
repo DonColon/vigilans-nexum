@@ -11,58 +11,72 @@ import { Shadow } from "./Shadow";
 import { LineStyle } from "./LineStyle";
 import { TextStyle } from "./TextStyle";
 import { FontStyle } from "./FontStyle";
+import { Label } from "./Label";
 
 
 export class Graphics extends GraphicsContext
 {
+    private globalFillColor: Color;
+    private globalStrokeColor: Color;
+    private globalShadowStyle: Shadow;
+
+    private globalLineStyle: LineStyle;
+    private globalFontStyle: FontStyle;
+    private globalTextStyle: TextStyle;
+
+
     constructor(context: CanvasRenderingContext2D)
     {
         super(context);
+        this.globalFillColor = Color.hex("#000");
+        this.globalStrokeColor = Color.hex("#000");
+        this.globalShadowStyle = new Shadow();
+        
+        this.globalLineStyle = new LineStyle();
+        this.globalFontStyle = new FontStyle();
+        this.globalTextStyle = new TextStyle();
     }
 
 
     public fillStyle(color: Color): Graphics
     {
-        this.context.fillStyle = color.asHexCode();
+        this.globalFillColor = color;
+        this.setFillColor(color);
         return this;
     }
 
     public strokeStyle(color: Color): Graphics
     {
-        this.context.strokeStyle = color.asHexCode();
-        return this;
-    }
-
-    public lineStyle(style: LineStyle): Graphics
-    {
-        this.context.lineWidth = style.getWidth();
-        this.context.lineCap = style.getCap();
-        this.context.lineJoin = style.getJoin();
-        this.context.lineDashOffset = style.getDashOffset();
-        this.context.setLineDash(style.getDashPattern());
-        return this;
-    }
-
-    public textStyle(style: TextStyle): Graphics
-    {
-        this.context.textAlign = style.getAlign();
-        this.context.textBaseline = style.getBaseline();
-        this.context.direction = style.getDirection();
-        return this;
-    }
-
-    public fontStyle(style: FontStyle): Graphics
-    {
-        this.context.font = style.asCss();
+        this.globalStrokeColor = color;
+        this.setStrokeColor(color);
         return this;
     }
 
     public shadowStyle(style: Shadow): Graphics
     {
-        this.context.shadowColor = style.getColor().asHexCode();
-        this.context.shadowOffsetX = style.getOffsetX();
-        this.context.shadowOffsetY = style.getOffsetY();
-        this.context.shadowBlur = style.getBlur();
+        this.globalShadowStyle = style;
+        this.setShadowStyle(style);
+        return this;
+    }
+
+    public lineStyle(style: LineStyle): Graphics
+    {
+        this.globalLineStyle = style;
+        this.setLineStyle(style);
+        return this;
+    }
+
+    public fontStyle(style: FontStyle): Graphics
+    {
+        this.globalFontStyle = style;
+        this.setFontStyle(style);
+        return this;
+    }
+
+    public textStyle(style: TextStyle): Graphics
+    {
+        this.globalTextStyle = style;
+        this.setTextStyle(style);
         return this;
     }
 
@@ -156,6 +170,16 @@ export class Graphics extends GraphicsContext
         const { width, height } = this.context.canvas;
         this.context.clearRect(0, 0, width, height);
         return this;
+    }
+
+    public createLabel(text: string, x: number, y: number, fontStyle?: FontStyle, textStyle?: TextStyle): Label
+    {
+        const height = (fontStyle) ? parseInt(fontStyle.getSize()) : parseInt(this.globalFontStyle.getSize());
+
+        const metrics = this.context.measureText(text);
+        const width = metrics.width;
+
+        return new Label({ text, x, y, width, height, fontStyle, textStyle });
     }
 
 
@@ -290,5 +314,86 @@ export class Graphics extends GraphicsContext
             }
 
         this.closePath();
+    }
+
+
+    public fillLabel(label: Label): Graphics
+    {
+        this.drawLabel(label, "fill");
+        return this;
+    }
+
+    public strokeLabel(label: Label): Graphics
+    {
+        this.drawLabel(label, "stroke");
+        return this;
+    }
+
+    private drawLabel(label: Label, action: "fill" | "stroke")
+    {
+        const text = label.getText();
+        const position = label.getPosition();
+
+        const fontStyle = label.getFontStyle();
+        const textStyle = label.getTextStyle();
+
+        if(fontStyle !== undefined) {
+            this.setFontStyle(fontStyle);
+        }
+
+        if(textStyle !== undefined) {
+            this.setTextStyle(textStyle);
+        }
+
+        if(action === "fill") {
+            this.context.fillText(text, position.x, position.y);
+        }
+        else if(action === "stroke") {
+            this.context.strokeText(text, position.x, position.y);
+        }
+
+        this.setFontStyle(this.globalFontStyle);
+        this.setTextStyle(this.globalTextStyle);
+        return this;
+    }
+
+
+    private setFillColor(color: Color)
+    {
+        this.context.fillStyle = color.asHexCode();
+    }
+
+    private setStrokeColor(color: Color)
+    {
+        this.context.strokeStyle = color.asHexCode();
+    }
+
+    private setShadowStyle(style: Shadow)
+    {
+        this.context.shadowColor = style.getColor().asHexCode();
+        this.context.shadowOffsetX = style.getOffsetX();
+        this.context.shadowOffsetY = style.getOffsetY();
+        this.context.shadowBlur = style.getBlur();
+    }
+
+    private setLineStyle(style: LineStyle)
+    {
+        this.context.lineWidth = style.getWidth();
+        this.context.lineCap = style.getCap();
+        this.context.lineJoin = style.getJoin();
+        this.context.lineDashOffset = style.getDashOffset();
+        this.context.setLineDash(style.getDashPattern());
+    }
+
+    private setFontStyle(style: FontStyle)
+    {
+        this.context.font = style.asCss();
+    }
+
+    private setTextStyle(style: TextStyle)
+    {
+        this.context.textAlign = style.getAlign();
+        this.context.textBaseline = style.getBaseline();
+        this.context.direction = style.getDirection();
     }
 }

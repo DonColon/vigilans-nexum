@@ -18,11 +18,11 @@ export class TextStyle
     private direction: TextDirection;
 
 
-    constructor(settings: TextStyleSettings)
+    constructor(settings?: TextStyleSettings)
     {
-        this.align = settings.align || TextAlign.START;
-        this.baseline = settings.baseline || TextBaseline.ALPHABETIC;
-        this.direction = settings.direction || TextDirection.LTR;
+        this.align = (settings && settings.align) || TextAlign.START;
+        this.baseline = (settings && settings.baseline) || TextBaseline.ALPHABETIC;
+        this.direction = (settings && settings.direction) || TextDirection.LTR;
     }
 
 

@@ -21,13 +21,13 @@ export class LineStyle
     private join: LineJoin;
 
 
-    constructor(settings: LineStyleSettings)
+    constructor(settings?: LineStyleSettings)
     {
-        this.width = settings.width || 1;
-        this.dashPattern = settings.dashPattern || [];
-        this.dashOffset = settings.dashOffset || 0;
-        this.cap = settings.cap || LineCap.BUTT;
-        this.join = settings.join || LineJoin.MITER;
+        this.width = (settings && settings.width) || 1;
+        this.dashPattern = (settings && settings.dashPattern) || [];
+        this.dashOffset = (settings && settings.dashOffset) || 0;
+        this.cap = (settings && settings.cap) || LineCap.BUTT;
+        this.join = (settings && settings.join) || LineJoin.MITER;
     }
 
 

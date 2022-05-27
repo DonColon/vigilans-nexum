@@ -18,12 +18,12 @@ export class Shadow
     private blur: number;
 
 
-    constructor(settings: ShadowSettings)
+    constructor(settings?: ShadowSettings)
     {
-        this. color = settings.color || Color.hex("#000");
-        this.offsetX = settings.offsetX || 0;
-        this.offsetY = settings.offsetY || 0;
-        this.blur = settings.blur || 0;
+        this. color = (settings && settings.color) || Color.hex("#000");
+        this.offsetX = (settings && settings.offsetX) || 0;
+        this.offsetY = (settings && settings.offsetY) || 0;
+        this.blur = (settings && settings.blur) || 0;
     }
 
 
