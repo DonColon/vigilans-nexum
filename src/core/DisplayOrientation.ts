@@ -1,34 +1,17 @@
-import { stringEnumExists } from "core/utils/Enums";
+export type DisplayOrientationType = typeof DisplayOrientation[keyof typeof DisplayOrientation];
 
 
-export enum DisplayOrientation
-{
-    ANY = "any",
-    NATURAL = "natural",
+export const DisplayOrientation = {
 
-    LANDSCAPE = "landscape",
-    LANDSCAPE_PRIMARY = "landscape-primary",
-    LANDSCAPE_SECONDARY = "landscape-secondary",
+    ANY: "any",
+    NATURAL: "natural",
 
-    PORTRAIT = "portrait",
-    PORTRAIT_PRIMARY = "portrait-primary",
-    PORTRAIT_SECONDARY = "portrait-secondary",
-}
+    LANDSCAPE: "landscape",
+    LANDSCAPE_PRIMARY: "landscape-primary",
+    LANDSCAPE_SECONDARY: "landscape-secondary",
 
-export namespace DisplayOrientation
-{
-    export function keys(): string[] 
-    {
-        return Object.keys(DisplayOrientation as object);
-    }
+    PORTRAIT: "portrait",
+    PORTRAIT_PRIMARY: "portrait-primary",
+    PORTRAIT_SECONDARY: "portrait-secondary",
 
-    export function values(): DisplayOrientation[]
-    {
-        return Object.values(DisplayOrientation as object);
-    }
-
-    export function exists(value: string): boolean
-    {
-        return stringEnumExists(DisplayOrientation, value);
-    }
-}
+} as const;

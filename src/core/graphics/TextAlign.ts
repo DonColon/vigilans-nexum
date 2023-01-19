@@ -1,29 +1,12 @@
-import { stringEnumExists } from "core/utils/Enums";
+export type TextAlignType = typeof TextAlign[keyof typeof TextAlign];
 
 
-export enum TextAlign
-{
-    START = "start",
-    LEFT = "left",
-    CENTER = "center",
-    RIGHT = "right",
-    END = "end"
-}
+export const TextAlign = {
 
-export namespace TextAlign
-{
-    export function keys(): string[] 
-    {
-        return Object.keys(TextAlign as object);
-    }
+    START: "start",
+    LEFT: "left",
+    CENTER: "center",
+    RIGHT: "right",
+    END: "end",
 
-    export function values(): TextAlign[]
-    {
-        return Object.values(TextAlign as object);
-    }
-
-    export function exists(value: string): boolean
-    {
-        return stringEnumExists(TextAlign, value);
-    }
-}
+} as const;

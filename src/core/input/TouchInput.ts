@@ -1,25 +1,8 @@
-import { numberEnumKeys, numberEnumValues } from "core/utils/Enums";
+export type TouchInputType = typeof TouchInput[keyof typeof TouchInput];
 
 
-export enum TouchInput
-{
-    TOUCH = 7,
-}
+export const TouchInput = {
 
-export namespace TouchInput
-{
-    export function keys(): string[] 
-    {
-        return numberEnumKeys(TouchInput);
-    }
+    TOUCH: 7,
 
-    export function values(): TouchInput[]
-    {
-        return numberEnumValues(TouchInput);
-    }
-
-    export function exists(value: number): boolean
-    {
-        return value in TouchInput;
-    }
-}
+} as const;

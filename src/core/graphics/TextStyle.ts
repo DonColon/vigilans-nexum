@@ -1,21 +1,21 @@
-import { TextAlign } from "./TextAlign";
-import { TextBaseline } from "./TextBaseline";
-import { TextDirection } from "./TextDirection";
+import { TextAlign, TextAlignType } from "./TextAlign";
+import { TextBaseline, TextBaselineType } from "./TextBaseline";
+import { TextDirection, TextDirectionType } from "./TextDirection";
 
 
 export interface TextStyleSettings
 {
-    align?: TextAlign,
-    baseline?: TextBaseline,
-    direction?: TextDirection
+    align?: TextAlignType,
+    baseline?: TextBaselineType,
+    direction?: TextDirectionType
 }
 
 
 export class TextStyle
 {
-    private align: TextAlign;
-    private baseline: TextBaseline;
-    private direction: TextDirection;
+    private align: TextAlignType;
+    private baseline: TextBaselineType;
+    private direction: TextDirectionType;
 
 
     constructor(settings?: TextStyleSettings)
@@ -26,17 +26,17 @@ export class TextStyle
     }
 
 
-    public getAlign(): TextAlign
+    public getAlign(): TextAlignType
     {
         return this.align;
     }
 
-    public getBaseline(): TextBaseline
+    public getBaseline(): TextBaselineType
     {
         return this.baseline;
     }
 
-    public getDirection(): TextDirection
+    public getDirection(): TextDirectionType
     {
         return this.direction;
     }

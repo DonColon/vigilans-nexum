@@ -1,13 +1,13 @@
-import { InputChannel } from "./InputChannel";
-import { DeviceInput } from "./InputDevice";
-import { InputState } from "./InputState";
+import { DeviceInputType } from "./InputDevice";
+import { InputChannelType } from "./InputChannel";
+import { InputStateType } from "./InputState";
 
 
 export interface InputBindingSettings
 {
-    channel: InputChannel;
-    input: DeviceInput;
-    state: InputState;
+    channel: InputChannelType;
+    input: DeviceInputType;
+    state: InputStateType;
 }
 
 export interface InputBindingsSettings
@@ -19,9 +19,9 @@ export interface InputBindingsSettings
 
 export class InputBinding
 {
-    private channel?: InputChannel;
-    private input?: DeviceInput;
-    private state?: InputState;
+    private channel?: InputChannelType;
+    private input?: DeviceInputType;
+    private state?: InputStateType;
 
     private bindings?: InputBinding[];
     private and?: boolean; 

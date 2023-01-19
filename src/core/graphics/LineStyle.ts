@@ -1,5 +1,5 @@
-import { LineCap } from "./LineCap";
-import { LineJoin } from "./LineJoin";
+import { LineCap, LineCapType } from "./LineCap";
+import { LineJoin, LineJoinType } from "./LineJoin";
 
 
 export interface LineStyleSettings
@@ -7,8 +7,8 @@ export interface LineStyleSettings
     width?: number;
     dashPattern?: number[];
     dashOffset?: number;
-    cap?: LineCap;
-    join?: LineJoin;
+    cap?: LineCapType;
+    join?: LineJoinType;
 }
 
 
@@ -17,8 +17,8 @@ export class LineStyle
     private width: number;
     private dashPattern: number[];
     private dashOffset: number;
-    private cap: LineCap;
-    private join: LineJoin;
+    private cap: LineCapType;
+    private join: LineJoinType;
 
 
     constructor(settings?: LineStyleSettings)
@@ -46,12 +46,12 @@ export class LineStyle
         return this.dashOffset;
     }
 
-    public getCap(): LineCap
+    public getCap(): LineCapType
     {
         return this.cap;
     }
 
-    public getJoin(): LineJoin
+    public getJoin(): LineJoinType
     {
         return this.join;
     }

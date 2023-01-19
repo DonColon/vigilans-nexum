@@ -1,27 +1,10 @@
-import { stringEnumExists } from "core/utils/Enums";
+export type LineCapType = typeof LineCap[keyof typeof LineCap];
 
 
-export enum LineCap
-{
-    BUTT = "butt",
-    ROUND = "round",
-    SQUARE = "square"
-}
+export const LineCap = {
 
-export namespace LineCap
-{
-    export function keys(): string[] 
-    {
-        return Object.keys(LineCap as object);
-    }
+    BUTT: "butt",
+    ROUND: "round",
+    SQUARE: "square",
 
-    export function values(): LineCap[]
-    {
-        return Object.values(LineCap as object);
-    }
-
-    export function exists(value: string): boolean
-    {
-        return stringEnumExists(LineCap, value);
-    }
-}
+} as const;

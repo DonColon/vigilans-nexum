@@ -1,16 +1,16 @@
 import { Display } from "core/Display";
 import { Matrix } from "core/math/Matrix";
 import { Vector } from "core/math/Vector";
-import { GamepadInput } from "./GamepadInput";
-import { InputChannel } from "./InputChannel";
-import { InputState } from "./InputState";
-import { KeyboardInput } from "./KeyboardInput";
-import { MouseInput } from "./MouseInput";
-import { SwipeInput } from "./SwipeInput";
-import { TouchInput } from "./TouchInput";
+import { GamepadInput, GamepadInputType } from "./GamepadInput";
+import { InputChannel, InputChannelType } from "./InputChannel";
+import { InputState, InputStateType } from "./InputState";
+import { KeyboardInput, KeyboardInputType } from "./KeyboardInput";
+import { MouseInput, MouseInputType } from "./MouseInput";
+import { SwipeInput, SwipeInputs, SwipeInputType } from "./SwipeInput";
+import { TouchInput, TouchInputType } from "./TouchInput";
 
 
-export type DeviceInput = (GamepadInput | KeyboardInput | MouseInput | TouchInput | SwipeInput);
+export type DeviceInputType = GamepadInputType | KeyboardInputType | MouseInputType | TouchInputType | SwipeInputType;
 
 
 interface Input
@@ -33,22 +33,22 @@ interface Pointer
 export class InputDevice
 {
     private display: Display;
-    private channels: Map<InputChannel, number>;
+    private channels: Map<InputChannelType, number>;
 
-    private gamepad!: Map<GamepadInput, Input>;
+    private gamepad!: Map<GamepadInputType, Input>;
     private gamepadSlot!: number;
 
-    private keyboard!: Map<KeyboardInput, Input>;
-    private mouse!: Map<MouseInput, Pointer>;
+    private keyboard!: Map<KeyboardInputType, Input>;
+    private mouse!: Map<MouseInputType, Pointer>;
 
-    private touchpad!: Map<SwipeInput, Input>;
+    private touchpad!: Map<SwipeInputType, Input>;
     private touch!: Pointer;
 
 
     constructor(display: Display)
     {
         this.display = display;
-        this.channels = new Map<InputChannel, number>();
+        this.channels = new Map<InputChannelType, number>();
 
         window.addEventListener( "contextmenu", this.cancelEvent);
         window.addEventListener( "selectstart", this.cancelEvent);
@@ -71,7 +71,7 @@ export class InputDevice
         this.updateTouchpad();
     }
 
-    public uses(channel: InputChannel): boolean
+    public uses(channel: InputChannelType): boolean
     {
         const min = Math.max(...this.channels.values());
         const inputChannel = [...this.channels].find(([key, value]) => value === min);
@@ -81,12 +81,12 @@ export class InputDevice
         return inputChannel.at(0) === channel;
     }
 
-    public isStateOf(channel: InputChannel, deviceInput: DeviceInput, state: InputState): boolean
+    public isStateOf(channel: InputChannelType, deviceInput: DeviceInputType, state: InputStateType): boolean
     {
         return this.stateOf(channel, deviceInput) === state;
     }
 
-    private stateOf(channel: InputChannel, deviceInput: DeviceInput): InputState
+    private stateOf(channel: InputChannelType, deviceInput: DeviceInputType): InputStateType
     {
         const input = this.inputOf(channel, deviceInput);
 
@@ -106,25 +106,25 @@ export class InputDevice
         return InputState.STILL_RELEASED;
     }
 
-    private inputOf(channel: InputChannel, deviceInput: DeviceInput): Input
+    private inputOf(channel: InputChannelType, deviceInput: DeviceInputType): Input
     {
         if(channel === InputChannel.GAMEPAD) {
-            return this.gamepad.get(deviceInput as GamepadInput) as Input;
+            return this.gamepad.get(deviceInput as GamepadInputType) as Input;
         }
         else if(channel === InputChannel.KEYBOARD) {
-            return this.keyboard.get(deviceInput as KeyboardInput) as Input;
+            return this.keyboard.get(deviceInput as KeyboardInputType) as Input;
         }
         else if(channel === InputChannel.MOUSE) {
-            const pointer = this.mouse.get(deviceInput as MouseInput) as Pointer;
+            const pointer = this.mouse.get(deviceInput as MouseInputType) as Pointer;
             return pointer.state;
         }
         else if(channel === InputChannel.TOUCHPAD) {
-            const touchInput = deviceInput as TouchInput;
+            const touchInput = deviceInput as TouchInputType;
 
             if(touchInput === TouchInput.TOUCH) {
                 return this.touch.state;
             } else {
-                return this.touchpad.get(deviceInput as SwipeInput) as Input;
+                return this.touchpad.get(deviceInput as SwipeInputType) as Input;
             }
         }
 
@@ -142,9 +142,9 @@ export class InputDevice
 
     private initGamepad()
     {
-        this.gamepad = new Map<GamepadInput, Input>();
+        this.gamepad = new Map<GamepadInputType, Input>();
 
-        for(const value of GamepadInput.values()) {
+        for(const value of Object.values(GamepadInput)) {
             this.gamepad.set(value, {
                 current: false,
                 previous: false
@@ -171,7 +171,7 @@ export class InputDevice
         this.channels.set(InputChannel.GAMEPAD, gamepad.timestamp);
 
         for(const [index, button] of gamepad.buttons.entries()) {
-            const input = this.gamepad.get(index as GamepadInput) as Input;
+            const input = this.gamepad.get(index as GamepadInputType) as Input;
             input.previous = input.current;
             input.current = button.pressed;
         }
@@ -190,7 +190,7 @@ export class InputDevice
         for(let i = 0; i < axisButtons.length; i++) {
             const index = i + gamepad.buttons.length;
 
-            const input = this.gamepad.get(index as GamepadInput) as Input;
+            const input = this.gamepad.get(index as GamepadInputType) as Input;
             input.previous = input.current;
             input.current = axisButtons[i];
         }
@@ -199,9 +199,9 @@ export class InputDevice
 
     private initKeyboard()
     {
-        this.keyboard = new Map<KeyboardInput, Input>();
+        this.keyboard = new Map<KeyboardInputType, Input>();
 
-        for(const key of KeyboardInput.values()) {
+        for(const key of Object.values(KeyboardInput)) {
             this.keyboard.set(key, {
                 current: false,
                 previous: false
@@ -216,7 +216,7 @@ export class InputDevice
     {
         this.channels.set(InputChannel.KEYBOARD, event.timeStamp);
 
-        const input = this.keyboard.get(event.code as KeyboardInput) as Input;
+        const input = this.keyboard.get(event.code as KeyboardInputType) as Input;
         input.previous = input.current;
         input.current = true;
         
@@ -225,7 +225,7 @@ export class InputDevice
 
     private onKeyUp(event: KeyboardEvent)
     {
-        const input = this.keyboard.get(event.code as KeyboardInput) as Input;
+        const input = this.keyboard.get(event.code as KeyboardInputType) as Input;
         input.previous = input.current;
         input.current = false;
 
@@ -242,9 +242,9 @@ export class InputDevice
 
     private initMouse()
     {
-        this.mouse = new Map<MouseInput, Pointer>();
+        this.mouse = new Map<MouseInputType, Pointer>();
 
-        for(const value of MouseInput.values()) {
+        for(const value of Object.values(MouseInput)) {
             this.mouse.set(value, this.initPointer());
         }
 
@@ -258,7 +258,7 @@ export class InputDevice
     {
         this.channels.set(InputChannel.MOUSE, event.timeStamp);
 
-        const pointer = this.mouse.get(event.button as MouseInput) as Pointer;
+        const pointer = this.mouse.get(event.button as MouseInputType) as Pointer;
         this.pointerPressed(pointer, event.clientX, event.clientY, 0);
 
         this.cancelEvent(event);
@@ -266,7 +266,7 @@ export class InputDevice
 
     private onMouseUp(event: MouseEvent)
     {
-        const pointer = this.mouse.get(event.button as MouseInput) as Pointer;
+        const pointer = this.mouse.get(event.button as MouseInputType) as Pointer;
         this.pointerReleased(pointer);
 
         this.cancelEvent(event);
@@ -274,7 +274,7 @@ export class InputDevice
 
     private onMouseMove(event: MouseEvent)
     {
-        const pointer = this.mouse.get(event.button as MouseInput) as Pointer;
+        const pointer = this.mouse.get(event.button as MouseInputType) as Pointer;
         this.pointerMoved(pointer, event.clientX, event.clientY);
 
         this.cancelEvent(event);
@@ -303,9 +303,9 @@ export class InputDevice
 
     private initTouchpad()
     {
-        this.touchpad = new Map<SwipeInput, Input>();
+        this.touchpad = new Map<SwipeInputType, Input>();
 
-        for(const value of SwipeInput.values()) {
+        for(const value of Object.values(SwipeInput)) {
             this.touchpad.set(value, {
                 current: false,
                 previous: false
@@ -338,7 +338,7 @@ export class InputDevice
             }
         }
 
-        for(const value of SwipeInput.values()) {
+        for(const value of Object.values(SwipeInput)) {
             const input = this.touchpad.get(value) as Input;
             input.previous = input.current;
             input.current = false;
@@ -368,7 +368,7 @@ export class InputDevice
             const swipe = Matrix.reflectY(position.current.subtract(position.previous));
             const angle = swipe.heading();
             
-            const input = this.touchpad.get(SwipeInput.ofAngle(angle)) as Input;
+            const input = this.touchpad.get(SwipeInputs.ofAngle(angle)) as Input;
             input.previous = input.current;
             input.current = true;
             return;

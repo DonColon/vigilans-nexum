@@ -1,21 +1,23 @@
-import { numberEnumKeys, numberEnumValues } from "core/utils/Enums";
+export type SwipeInputType = typeof SwipeInput[keyof typeof SwipeInput];
 
 
-export enum SwipeInput
+export const SwipeInput = {
+
+    RIGHT:  8,
+    RIGHT_UP:  9,
+    UP:  10,
+    LEFT_UP:  11,
+    LEFT:  12,
+    LEFT_DOWN:  13,
+    DOWN:  14,
+    RIGHT_DOWN:  15,
+
+} as const;
+
+
+export namespace SwipeInputs
 {
-    RIGHT = 8,
-    RIGHT_UP = 9,
-    UP = 10,
-    LEFT_UP = 11,
-    LEFT = 12,
-    LEFT_DOWN = 13,
-    DOWN = 14,
-    RIGHT_DOWN = 15,
-}
-
-export namespace SwipeInput
-{
-    export function ofAngle(angle: number): SwipeInput
+    export function ofAngle(angle: number): SwipeInputType
     {
         if(angle >= 0 && angle <= 22.5 || angle > 337.5 && angle <= 360) {
             return SwipeInput.RIGHT;
@@ -42,22 +44,7 @@ export namespace SwipeInput
             return SwipeInput.RIGHT_DOWN;
         }
         else {
-            return -1;
+            throw new TypeError("Enum value does not exist");
         }
-    }
-
-    export function keys(): string[] 
-    {
-        return numberEnumKeys(SwipeInput);
-    }
-
-    export function values(): SwipeInput[]
-    {
-        return numberEnumValues(SwipeInput);
-    }
-
-    export function exists(value: number): boolean
-    {
-        return value in SwipeInput;
     }
 }

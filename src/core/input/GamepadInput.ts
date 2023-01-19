@@ -1,54 +1,37 @@
-import { numberEnumKeys, numberEnumValues } from "core/utils/Enums";
+export type GamepadInputType = typeof GamepadInput[keyof typeof GamepadInput];
 
 
-export enum GamepadInput
-{
-    A = 0,
-    B = 1,
-    X = 2,
-    Y = 3,
+export const GamepadInput = {
 
-    LB = 4,
-    RB = 5,
-    LT = 6,
-    RT = 7,
+    A:  0,
+    B:  1,
+    X:  2,
+    Y:  3,
 
-    SELECT = 8,
-    START = 9,
-    HOME = 16,
+    LB:  4,
+    RB:  5,
+    LT:  6,
+    RT:  7,
 
-    LSTICK = 10,
-    LSTICK_LEFT = 17,
-    LSTICK_RIGHT = 18,
-    LSTICK_UP = 19,
-    LSTICK_DOWN = 20,
+    SELECT:  8,
+    START:  9,
+    HOME:  16,
 
-    RSTICK = 11,
-    RSTICK_LEFT = 21,
-    RSTICK_RIGHT = 22,
-    RSTICK_UP = 23,
-    RSTICK_DOWN = 24,
+    LSTICK:  10,
+    LSTICK_LEFT:  17,
+    LSTICK_RIGHT:  18,
+    LSTICK_UP:  19,
+    LSTICK_DOWN:  20,
 
-    DPAD_UP = 12,
-    DPAD_DOWN = 13,
-    DPAD_LEFT = 14,
-    DPAD_RIGHT = 15,
-}
+    RSTICK:  11,
+    RSTICK_LEFT:  21,
+    RSTICK_RIGHT:  22,
+    RSTICK_UP:  23,
+    RSTICK_DOWN:  24,
 
-export namespace GamepadInput
-{
-    export function keys(): string[] 
-    {
-        return numberEnumKeys(GamepadInput);
-    }
+    DPAD_UP:  12,
+    DPAD_DOWN:  13,
+    DPAD_LEFT:  14,
+    DPAD_RIGHT:  15,
 
-    export function values(): GamepadInput[]
-    {
-        return numberEnumValues(GamepadInput);
-    }
-
-    export function exists(value: number): boolean
-    {
-        return value in GamepadInput;
-    }
-}
+} as const;

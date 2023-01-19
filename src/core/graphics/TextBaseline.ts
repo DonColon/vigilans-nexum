@@ -1,30 +1,13 @@
-import { stringEnumExists } from "core/utils/Enums";
+export type TextBaselineType = typeof TextBaseline[keyof typeof TextBaseline];
 
 
-export enum TextBaseline
-{
-    TOP = "top",
-    HANGING = "hanging",
-    MIDDLE = "middle",
-    ALPHABETIC = "alphabetic",
-    IDEOGRAPHIC = "ideographic",
-    BOTTOM = "bottom"
-}
+export const TextBaseline = {
 
-export namespace TextBaseline
-{
-    export function keys(): string[] 
-    {
-        return Object.keys(TextBaseline as object);
-    }
+    TOP: "top",
+    HANGING: "hanging",
+    MIDDLE: "middle",
+    ALPHABETIC: "alphabetic",
+    IDEOGRAPHIC: "ideographic",
+    BOTTOM: "bottom",
 
-    export function values(): TextBaseline[]
-    {
-        return Object.values(TextBaseline as object);
-    }
-
-    export function exists(value: string): boolean
-    {
-        return stringEnumExists(TextBaseline, value);
-    }
-}
+} as const;

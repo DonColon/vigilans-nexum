@@ -1,6 +1,6 @@
 import { DISPLAY_HEIGHT, DISPLAY_WIDTH } from "Constants";
 import { Vector } from "./math/Vector";
-import { DisplayOrientation } from "./DisplayOrientation";
+import { DisplayOrientationType } from "./DisplayOrientation";
 import { Dimension } from "./math/Dimension";
 import { Graphics } from "./graphics/Graphics";
 
@@ -225,7 +225,7 @@ export class Display
     }
 
 
-    public lockDisplayOrientation(orientation: DisplayOrientation)
+    public lockDisplayOrientation(orientation: DisplayOrientationType)
     {
         screen.orientation.lock(orientation);
     }
@@ -246,9 +246,9 @@ export class Display
         screen.orientation.removeEventListener("change", this.onOrientationChange);
     }
 
-    public getDisplayOrientation(): DisplayOrientation
+    public getDisplayOrientation(): DisplayOrientationType
     {
-        return screen.orientation.type as DisplayOrientation;
+        return screen.orientation.type as DisplayOrientationType;
     }
 
 
