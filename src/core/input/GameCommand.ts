@@ -4,12 +4,12 @@ import { InputBinding } from "./InputBinding";
 export abstract class GameCommand
 {
     protected abstract name: string;
-    protected abstract inputBinding: InputBinding;
+    protected abstract binding: InputBinding;
 
 
     public execute(elapsed: number, frame: number)
     {
-        if(this.inputBinding.condition()) {
+        if(this.binding.condition()) {
             this.action(elapsed, frame);
         }
     }
@@ -17,9 +17,9 @@ export abstract class GameCommand
     protected abstract action(elapsed: number, frame: number): void;
 
 
-    public bindInput(inputBinding: InputBinding)
+    public bindInput(binding: InputBinding)
     {
-        this.inputBinding = inputBinding;
+        this.binding = binding;
     }
 
     public getName(): string

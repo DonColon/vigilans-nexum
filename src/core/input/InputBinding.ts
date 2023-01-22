@@ -1,16 +1,16 @@
-import { DeviceInputType } from "./InputDevice";
+import { InputType } from "./Input";
 import { InputChannelType } from "./InputChannel";
 import { InputStateType } from "./InputState";
 
 
-export interface InputBindingSettings
+interface SimpleInputBinding
 {
     channel: InputChannelType;
-    input: DeviceInputType;
+    input: InputType;
     state: InputStateType;
 }
 
-export interface InputBindingsSettings
+interface ComplexInputBinding
 {
     bindings: InputBinding[];
     and: boolean; 
@@ -19,39 +19,46 @@ export interface InputBindingsSettings
 
 export class InputBinding
 {
-    private channel?: InputChannelType;
-    private input?: DeviceInputType;
-    private state?: InputStateType;
-
-    private bindings?: InputBinding[];
-    private and?: boolean; 
+    private simple?: SimpleInputBinding;
+    private complex?: ComplexInputBinding;
 
 
-    constructor(settings: InputBindingSettings | InputBindingsSettings)
+    constructor(binding: SimpleInputBinding | ComplexInputBinding)
     {
-        if("channel" in settings && "input" in settings && "state" in settings) {
-            this.channel = settings.channel;
-            this.input = settings.input;
-            this.state = settings.state;
+        if(InputBinding.isSimple(binding)) {
+            this.simple = binding;
         }
-        else if("bindings" in settings && "and" in settings) {
-            this.bindings = settings.bindings;
-            this.and = settings.and;
+        else if(InputBinding.isComplex(binding)) {
+            this.complex = binding;
         }
+    }
+
+
+    private static isSimple(binding: object): binding is SimpleInputBinding
+    {
+        return "channel" in binding && "input" in binding && "state" in binding;
+    }
+
+    private static isComplex(binding: object): binding is ComplexInputBinding
+    {
+        return "bindings" in binding && "and" in binding;
     }
 
     
     public condition(): boolean
     {
-        if(this.channel !== undefined && this.input !== undefined && this.state !== undefined) {
-            return inputDevice.isStateOf(this.channel, this.input, this.state);
+        if(this.simple) {
+            const { channel, input, state } = this.simple;
+            return inputDevice.isState(channel, input, state);
         }
 
-        if(this.bindings !== undefined && this.and !== undefined) {
-            if(this.and) {
-                return this.bindings.every((binding: InputBinding) => binding.condition());
+        if(this.complex) {
+            const { bindings, and } = this.complex;
+
+            if(and) {
+                return bindings.every(binding => binding.condition());
             } else {
-                return this.bindings.some((binding: InputBinding) => binding.condition());
+                return bindings.some(binding => binding.condition());
             }
         }
 
