@@ -1,8 +1,8 @@
-import { Line } from "./Line";
-import { Polygon } from "./Polygon";
-import { Rectangle } from "./Rectangle";
 import { Shape } from "./Shape";
 import { Vector } from "./Vector";
+import { Line } from "./Line";
+import { Rectangle } from "./Rectangle";
+import { Polygon } from "./Polygon";
 
 
 export class Circle
@@ -45,18 +45,16 @@ export class Circle
     public intersects(other: Shape): boolean
     {
         if(other instanceof Line) {
-            return this.intersectsWithLine(other as Line);
+            return this.intersectsWithLine(other);
         }
         else if(other instanceof Circle) {
-            return this.intersectsWithCircle(other as Circle);
+            return this.intersectsWithCircle(other);
         }
         else if(other instanceof Rectangle) {
-            const rectangle = other as Rectangle;
-            return rectangle.intersects(this);
+            return other.intersects(this);
         }
         else if(other instanceof Polygon) {
-            const polygon = other as Polygon;
-            return polygon.intersects(this);
+            return other.intersects(this);
         }
 
         return false;

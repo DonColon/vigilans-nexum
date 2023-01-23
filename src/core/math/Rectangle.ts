@@ -1,12 +1,12 @@
-import { Shape } from "./Shape";
 import { Dimension } from "./Dimension";
+import { Shape } from "./Shape";
 import { Vector } from "./Vector";
 import { Line } from "./Line";
 import { Circle } from "./Circle";
 import { Polygon } from "./Polygon";
 
 
-export interface RectangleCorners
+interface RectangleCorners
 {
     topLeft: Vector,
     topRight: Vector,
@@ -14,7 +14,7 @@ export interface RectangleCorners
     bottomRight: Vector
 }
 
-export interface RectangleSides
+interface RectangleSides
 {
     top: Line,
     right: Line,
@@ -49,17 +49,16 @@ export class Rectangle
     public intersects(other: Shape): boolean
     {
         if(other instanceof Line) {
-            return this.intersectsWithLine(other as Line);
+            return this.intersectsWithLine(other);
         }
         else if(other instanceof Circle) {
-            return this.intersectsWithCircle(other as Circle);
+            return this.intersectsWithCircle(other);
         }
         else if(other instanceof Rectangle) {
-            return this.intersectsWithRectangle(other as Rectangle);
+            return this.intersectsWithRectangle(other);
         }
         else if(other instanceof Polygon) {
-            const polygon = other as Polygon;
-            return polygon.intersects(this);
+            return other.intersects(this);
         }
 
         return false;

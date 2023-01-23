@@ -1,25 +1,25 @@
-import { fillMatrix } from "core/utils/Arrays";
-import { toRadians } from "core/utils/Angles";
+import { Arrays, Matrix as MatrixLike } from "core/utils/Arrays";
+import { Angles } from "core/utils/Angles";
 import { Vector } from "./Vector";
-
-
-export type MatrixRow = [number, number, number];
-export type MatrixColumn = [number, number, number];
-export type MatrixLike = [MatrixRow, MatrixRow, MatrixRow];
 
 
 export class Matrix
 {
-    private values: MatrixLike;
+    private values: MatrixLike<number, 3, 3>;
 
 
     constructor(values: number[][])
     {
-        this.values = fillMatrix(3, 3, 0) as MatrixLike;
+        this.values = Arrays.fillMatrix(0, 3, 3);
 
         for(let row = 0; row < this.values.length; row++) {
             for(let column = 0; column < this.values[row].length; column++) {
-                if(values[row][column] === undefined) return;
+
+                if(values[row][column] === undefined) {
+                    if(row === column) this.values[row][column] = 1;
+                    continue;
+                }
+
                 this.values[row][column] = values[row][column];
             }
         }
@@ -62,7 +62,7 @@ export class Matrix
     
     public static identity(): Matrix
     {
-        const values = fillMatrix(3, 3, 0) as MatrixLike;
+        const values = Arrays.fillMatrix(0, 3, 3);
 
         for(let index = 0; index < values.length; index++) {
             values[index][index] = 1;
@@ -114,7 +114,7 @@ export class Matrix
     public static rotate(vector: Vector, angle: number, clockwise: boolean = false): Vector
     {
         const other = Matrix.ofColumnVector(vector);
-        const radian = toRadians(angle);
+        const radian = Angles.toRadians(angle);
 
         const transformation = new Matrix([
             [Math.cos(radian), Math.sin(radian), 0],
@@ -134,7 +134,7 @@ export class Matrix
     public static shear(vector: Vector, angle: number): Vector
     {
         const other = Matrix.ofColumnVector(vector);
-        const radian = toRadians(angle);
+        const radian = Angles.toRadians(angle);
 
         const transformation = new Matrix([
             [1, Math.tan(radian), 0],
@@ -148,7 +148,7 @@ export class Matrix
     public static shearX(vector: Vector, angle: number): Vector
     {
         const other = Matrix.ofColumnVector(vector);
-        const radian = toRadians(angle);
+        const radian = Angles.toRadians(angle);
 
         const transformation = new Matrix([
             [1, Math.tan(radian), 0],
@@ -162,7 +162,7 @@ export class Matrix
     public static shearY(vector: Vector, angle: number): Vector
     {
         const other = Matrix.ofColumnVector(vector);
-        const radian = toRadians(angle);
+        const radian = Angles.toRadians(angle);
 
         const transformation = new Matrix([
             [1, 0, 0],
@@ -228,7 +228,7 @@ export class Matrix
 
     public add(other: Matrix): Matrix
     {
-        const values = fillMatrix(3, 3, 0) as MatrixLike;
+        const values = Arrays.fillMatrix(0, 3, 3);
 
         for(let row = 0; row < values.length; row++) {
             for(let column = 0; column < values[row].length; column++) {
@@ -263,7 +263,7 @@ export class Matrix
 
     public subtract(other: Matrix): Matrix
     {
-        const values = fillMatrix(3, 3, 0) as MatrixLike;
+        const values = Arrays.fillMatrix(0, 3, 3);
 
         for(let row = 0; row < values.length; row++) {
             for(let column = 0; column < values[row].length; column++) {
@@ -298,7 +298,7 @@ export class Matrix
 
     public multiply(scalar: number): Matrix
     {
-        const values = fillMatrix(3, 3, 0) as MatrixLike;
+        const values = Arrays.fillMatrix(0, 3, 3);
 
         for(let row = 0; row < values.length; row++) {
             for(let column = 0; column < values[row].length; column++) {
@@ -333,7 +333,7 @@ export class Matrix
 
     public divide(scalar: number): Matrix
     {
-        const values = fillMatrix(3, 3, 0) as MatrixLike;
+        const values = Arrays.fillMatrix(0, 3, 3);
 
         for(let row = 0; row < values.length; row++) {
             for(let column = 0; column < values[row].length; column++) {
@@ -394,7 +394,7 @@ export class Matrix
 
     public product(other: Matrix): Matrix
     {
-        const values = fillMatrix(3, 3, 0) as MatrixLike;
+        const values = Arrays.fillMatrix(0, 3, 3);
 
         for(let row = 0; row < this.values.length; row++) {
             for(let column = 0; column < other.values[0].length; column++) {
@@ -409,7 +409,7 @@ export class Matrix
 
     public transpose(): Matrix
     {
-        const values = fillMatrix(3, 3, 0) as MatrixLike;
+        const values = Arrays.fillMatrix(0, 3, 3);
 
         for(let row = 0; row < values.length; row++) {
             for(let column = 0; column < values[row].length; column++) {
@@ -449,7 +449,7 @@ export class Matrix
 
     public cofactor(): Matrix
     {
-        const values = fillMatrix(3, 3, 0) as MatrixLike;
+        const values = Arrays.fillMatrix(0, 3, 3);
 
         for(let row = 0; row < values.length; row++) {
             for(let column = 0; column < values[row].length; column++) {
@@ -466,8 +466,6 @@ export class Matrix
 
     public equals(other: Matrix): boolean
     {
-        let equals = true;
-
         for(let row = 0; row < this.values.length; row++) {
             for(let column = 0; this.values[row].length; column++) {
                 if(this.values[row][column] !== other.values[row][column]) {
@@ -476,10 +474,10 @@ export class Matrix
             }
         }
 
-        return equals;
+        return true;
     }
 
-    public asArray(): MatrixLike
+    public asArray(): MatrixLike<number, 3, 3>
     {
         return [...this.values];
     }

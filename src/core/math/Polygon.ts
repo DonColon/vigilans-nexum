@@ -1,7 +1,7 @@
-import { fillArray } from "core/utils/Arrays";
-import { Line } from "./Line";
+import { Arrays } from "core/utils/Arrays";
 import { Shape } from "./Shape";
 import { Vector } from "./Vector";
+import { Line } from "./Line";
 
 
 export class Polygon
@@ -14,7 +14,7 @@ export class Polygon
         this.vertices = vertices;
     }
 
-    public buildConvexHull(points: Vector[]): Polygon
+    public static buildConvexHull(points: Vector[]): Polygon
     {
         const polygon = new Polygon();
 
@@ -26,7 +26,7 @@ export class Polygon
         }
 
         const start = previous;
-        const used = fillArray(points.length, false);
+        const used = Arrays.fillTuple(false, points.length);
 
         do {
             let next = -1;
@@ -92,7 +92,7 @@ export class Polygon
         let intersects = false;
 
         for(const side of this.getSides()) {
-            if(side.intersects(other)) {
+            if(other.intersects(side)) {
                 intersects = true;
             }
         }

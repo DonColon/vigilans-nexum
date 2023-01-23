@@ -1,7 +1,5 @@
-import { toDegrees, toRadians } from "core/utils/Angles";
-
-
-export type VectorLike = [number, number, number?];
+import { Angles } from "core/utils/Angles";
+import { Tuple } from "core/utils/Arrays";
 
 
 export class Vector 
@@ -18,14 +16,14 @@ export class Vector
 		this.z = z;
 	}
 
-	public static ofArray(values: VectorLike): Vector
+	public static ofArray(values: Tuple<number, 3>): Vector
 	{
 		return new Vector(values[0], values[1], values[2]);
 	}
 
 	public static ofAngle(angle: number): Vector
 	{
-		const radian = toRadians(angle);
+		const radian = Angles.toRadians(angle);
 		return new Vector(Math.cos(radian), Math.sin(radian));
 	}
 
@@ -95,13 +93,12 @@ export class Vector
 	{
 		const numerator = this.dot(other);
 		const denominator = this.magnitude() * other.magnitude();
-		return toDegrees(Math.acos(numerator / denominator));
+		return Angles.toDegrees(Math.acos(numerator / denominator));
 	}
 
 	public heading(): number
 	{
-		const angle = toDegrees(Math.atan2(this.y, this.x))
-		return (angle + 360) % 360;
+		return Angles.toDegrees(Math.atan2(this.y, this.x));
 	}
 
 	public interpolate(other: Vector, scale: number): Vector 
@@ -134,7 +131,7 @@ export class Vector
 			&& this.z === other.z;
 	}
 	
-	public asArray(): VectorLike
+	public asArray(): Tuple<number, 3>
 	{
 		return [this.x, this.y, this.z];
 	}

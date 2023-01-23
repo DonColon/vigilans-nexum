@@ -1,11 +1,12 @@
-import { Circle } from "./Circle";
-import { Polygon } from "./Polygon";
-import { Rectangle } from "./Rectangle";
+import { Angles } from "core/utils/Angles";
 import { Shape } from "./Shape";
 import { Vector } from "./Vector";
+import { Circle } from "./Circle";
+import { Rectangle } from "./Rectangle";
+import { Polygon } from "./Polygon";
 
 
-export interface LineParameters
+interface LineParameters
 {
     A: number,
     B: number,
@@ -46,19 +47,16 @@ export class Line
     public intersects(other: Shape): boolean
     {
         if(other instanceof Line) {
-            return this.intersectsWithLine(other as Line);
+            return this.intersectsWithLine(other);
         }
         else if(other instanceof Circle) {
-            const circle = other as Circle;
-            return circle.intersects(this);
+            return other.intersects(this);
         }
         else if(other instanceof Rectangle) {
-            const rectangle = other as Rectangle;
-            return rectangle.intersects(this);
+            return other.intersects(this);
         }
         else if(other instanceof Polygon) {
-            const polygon = other as Polygon;
-            return polygon.intersects(this);
+            return other.intersects(this);
         }
 
         return false;
@@ -138,7 +136,7 @@ export class Line
     public getAngle(): number
     {
         const slope = this.getSlope();
-        return Math.atan(slope) * 180 / Math.PI;
+        return Angles.toDegrees(Math.atan(slope));
     }
 
     public getSlope(): number
