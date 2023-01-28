@@ -1,8 +1,7 @@
-import { HasName } from "./JsonConversion";
-import { Query } from "./Query";
+import { QueryList } from "./Query";
 
 
-export interface SystemConstructor extends HasName
+export interface SystemConstructor
 {
     new(priority: number): System,
 }
@@ -10,21 +9,15 @@ export interface SystemConstructor extends HasName
 
 export abstract class System
 {
-    static jsonName: string;
-
+    protected abstract queries: QueryList;
     protected priority: number;
     protected enabled: boolean;
-
-    protected queries: {
-        [queryName: string]: Query
-    }
 
 
     constructor(priority: number)
     {
         this.priority = priority;
         this.enabled = true;
-        this.queries = {};
         this.initialize();
     }
 

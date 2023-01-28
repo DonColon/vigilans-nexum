@@ -1,45 +1,46 @@
-import { HasName, JsonType } from "./JsonConversion";
+import { JsonSchema } from "./JsonSchema";
 
 
-export interface ComponentConstructor<T> extends HasName
+export interface ComponentConstructor<T extends JsonSchema>
 {
-    new(parameters: T): Component<T>
-    isTag: boolean
+    new(data: T): Component<T>
 }
 
 
-export function Tag()
+export class Component<T extends JsonSchema>
 {
-    return (target: Function) => {
-        const constructor = target as ComponentConstructor<any>;
-        constructor.isTag = true;
-    }
-}
+    constructor(private data: T) {}
 
 
-export abstract class Component<T>
-{
-    static jsonName: string;
-    static isTag: boolean;
-
-    [key: string]: JsonType;
-
-
-    constructor(parameters: T) 
+    public static parse<T extends JsonSchema>(json: string): Component<T>
     {
-        this.set(parameters);
+        const data = JSON.parse(json);
+        return new Component<T>(data);
     }
 
 
-    public set(component: T)
+    public clone(): Component<T>
     {
-        for(const [key, value] of Object.entries(component)) {
-            this[key] = value;
-        }
+        return new Component<T>(this.data);
     }
-    
-    public json(): T 
+
+    public copy(other: Component<T>)
     {
-        return JSON.parse(JSON.stringify(this)) as T;
+        this.data = { ...other.data };
+    }
+
+    public update(data: T)
+    {
+        this.data = data;
+    }
+
+    public toObject(): T
+    {
+        return this.data;
+    }
+
+    public toString(): string
+    {
+        return JSON.stringify(this.data, null, "\t");
     }
 }

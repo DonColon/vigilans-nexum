@@ -1,34 +1,31 @@
-import { GameEventListener, GameEventMap } from "./GameEvent";
+import { GameEvent, GameEventListener, GameEventMap } from "./GameEvent";
 
 
 export abstract class EventDispatcher
 {
-    private events: Map<string, Set<GameEventListener>>;
+    private events: Map<string, GameEventListener[]> = new Map<string, GameEventListener[]>();
 
 
-    constructor()
+    public on<K extends keyof GameEventMap>(type: K, listener: GameEventListener)
     {
-        this.events = new Map<string, Set<GameEventListener>>();
-    }
-
-
-    public on(type: string, listener: GameEventListener)
-    {
-        const listeners = this.events.get(type) || new Set<GameEventListener>();
-        listeners.add(listener);
+        const listeners = this.events.get(type) || [];
+        listeners.push(listener);
 
         this.events.set(type, listeners);
     }
 
-    public dispatch<K extends keyof GameEventMap>(type: string, event: GameEventMap[K])
+    public dispatch<K extends keyof GameEventMap>(type: K, event: Omit<GameEventMap[K], keyof GameEvent>)
     {
         const listeners = this.events.get(type) || [];
 
-        event.type = type;
-        event.timestamp = Date.now();
-
+        const gameEvent: GameEventMap[K] = {
+            type: type,
+            timestamp: Date.now(),
+            ...event
+        }
+        
         for(const listener of listeners) {
-            listener(event);
+            listener(gameEvent);
         }
     }
 }

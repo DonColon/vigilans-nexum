@@ -1,45 +1,56 @@
+import { WorldEvent } from "./WorldEvent";
 import { ComponentConstructor } from "./Component";
 import { Entity } from "./Entity";
-import { WorldEvent } from "./WorldEvent";
 
+
+export interface QueryList
+{
+    [queryName: string]: Query
+}
 
 interface QuerySettings
 {
-    allowlist: ComponentConstructor<any>[],
+    allowlist?: ComponentConstructor<any>[],
     blocklist?: ComponentConstructor<any>[]
 }
 
 
 export class Query
 {
-    private allowlist: Set<ComponentConstructor<any>>;
-    private blocklist: Set<ComponentConstructor<any>>;
-    private entities: Set<Entity>;
+    private allowlist: ComponentConstructor<any>[];
+    private blocklist: ComponentConstructor<any>[];
+    private entities: Entity[];
 
 
     constructor(settings: QuerySettings)
     {
-        this.allowlist = new Set<ComponentConstructor<any>>(settings.allowlist);
-        this.blocklist = new Set<ComponentConstructor<any>>(settings.blocklist);
-        this.entities = new Set<Entity>();
+        this.allowlist = settings.allowlist || [];
+        this.blocklist = settings.blocklist || [];
+        this.entities = [];
 
         for(const entity of world.getEntities()) {
             if(this.match(entity)) {
-                this.entities.add(entity);
+                this.entities.push(entity);
             }
         }
 
-        world.on("componentsChanged", this.onComponentsChanged.bind(this));
+        world.on("entityChanged", this.onEntityChanged.bind(this));
     }
 
 
-    private onComponentsChanged(event: WorldEvent)
+    private onEntityChanged(event: WorldEvent)
     {
         if(this.match(event.entity)) {
-            this.entities.add(event.entity);
+            this.entities.push(event.entity);
         } else {
-            this.entities.delete(event.entity);
+            this.removeEntity(event.entity);
         }
+    }
+
+    private removeEntity(entity: Entity)
+    {
+        const index = this.entities.indexOf(entity);
+        this.entities.splice(index, 1);
     }
 
     private match(entity: Entity): boolean
@@ -49,7 +60,7 @@ export class Query
     }
 
 
-    public getResultSet(): Set<Entity>
+    public getResult(): Entity[]
     {
         return this.entities;
     }
