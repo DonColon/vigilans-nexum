@@ -34,7 +34,7 @@ export class Query
             }
         }
 
-        world.on("entityChanged", this.onEntityChanged.bind(this));
+        world.on("entityChanged", this.onEntityChanged);
     }
 
 

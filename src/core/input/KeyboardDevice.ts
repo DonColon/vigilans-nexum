@@ -17,8 +17,8 @@ export class KeyboardDevice
             this.keyboard.set(key, { current: false, previous: false });
         }
 
-        window.addEventListener("keydown", this.onKeyDown.bind(this));
-        window.addEventListener("keyup", this.onKeyUp.bind(this));
+        window.addEventListener("keydown", this.onKeyDown);
+        window.addEventListener("keyup", this.onKeyUp);
     }
 
 

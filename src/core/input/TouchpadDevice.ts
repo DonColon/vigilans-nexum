@@ -27,9 +27,9 @@ export class TouchpadDevice
             this.touchpad.set(value, { current: false, previous: false });
         }
 
-        this.display.addTouchStartListener(this.onTouchStart.bind(this));
-        this.display.addTouchEndListener(this.onTouchEnd.bind(this));
-        this.display.addTouchMoveListener(this.onTouchMove.bind(this));
+        this.display.addTouchStartListener(this.onTouchStart);
+        this.display.addTouchEndListener(this.onTouchEnd);
+        this.display.addTouchMoveListener(this.onTouchMove);
     }
 
 

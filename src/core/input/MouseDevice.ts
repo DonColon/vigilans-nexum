@@ -21,10 +21,10 @@ export class MouseDevice
             this.mouse.set(value, this.initPointer());
         }
 
-        this.display.addMouseDownListener(this.onMouseDown.bind(this));
-        this.display.addMouseUpListener(this.onMouseUp.bind(this));
-        this.display.addMouseMoveListener(this.onMouseMove.bind(this));
-        this.display.addWheelChangeListener(this.onMouseWheel.bind(this));
+        this.display.addMouseDownListener(this.onMouseDown);
+        this.display.addMouseUpListener(this.onMouseUp);
+        this.display.addMouseMoveListener(this.onMouseMove);
+        this.display.addWheelChangeListener(this.onMouseWheel);
     }
 
 
