@@ -1,8 +1,14 @@
-import { MS_PER_UPDATE } from "Constants";
-import { InputDevice } from "core/input/InputDevice";
-import { Display } from "./Display";
 import { World } from "./ecs/World";
+import { Display, DisplaySettings } from "./Display";
+import { InputDevice } from "core/input/InputDevice";
 import { GameStateManager } from "./GameStateManager";
+
+
+interface GameSettings
+{
+    maxFPS: number,
+    display?: DisplaySettings
+}
 
 
 export class Game 
@@ -12,43 +18,28 @@ export class Game
     private inputDevice: InputDevice;
     private stateManager: GameStateManager;
 
+    private timePerUpdate: number;
     private isRunning: boolean;
     private previous: number;
     private lag: number;
 
 
-    constructor()
+    constructor(settings: GameSettings)
     {
         this.world = new World();
-
-        this.display = new Display({
-            dimension: { width: 1280, height: 720 }, 
-            viewportID: "viewport"
-        });
-
+        this.display = new Display(settings.display);
         this.inputDevice = new InputDevice(this.display);
         this.stateManager = new GameStateManager();
 
+        window.world = this.world;
+        window.display = this.display;
+        window.inputDevice = this.inputDevice;
+        window.stateManager = this.stateManager;
+
+        this.timePerUpdate = 1000 / settings.maxFPS;
         this.isRunning = false;
         this.previous = 0;
         this.lag = 0;
-
-        window.world = this.world;
-        window.inputDevice = this.inputDevice;
-        window.stateManager = this.stateManager;
-    }
-
-
-    public start()
-    {
-        this.isRunning = true;
-        this.previous = performance.now();
-        window.requestAnimationFrame(this.main.bind(this));
-    }
-
-    public stop()
-    {
-        this.isRunning = false;
     }
 
 
@@ -60,15 +51,15 @@ export class Game
 
         this.inputDevice.update();
 
-        while(this.lag >= MS_PER_UPDATE) {
+        while(this.lag >= this.timePerUpdate) {
             this.update(elapsed, current);
-            this.lag -= MS_PER_UPDATE;
+            this.lag -= this.timePerUpdate;
         }
 
         this.render();
 
         if(this.isRunning) {
-            window.requestAnimationFrame(this.main.bind(this));
+            window.requestAnimationFrame(current => this.main(current));
         }
     }
 
@@ -81,7 +72,21 @@ export class Game
     {
         const graphics = this.display.getGraphicsContext();
         graphics.clearCanvas();
+    }
 
-        // TODO: Rendering
+
+    public start()
+    {
+        window.game = this;
+
+        this.isRunning = true;
+        this.previous = performance.now();
+
+        window.requestAnimationFrame(current => this.main(current));
+    }
+
+    public stop()
+    {
+        this.isRunning = false;
     }
 }
