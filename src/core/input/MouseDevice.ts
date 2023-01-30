@@ -21,10 +21,10 @@ export class MouseDevice
             this.mouse.set(value, this.initPointer());
         }
 
-        this.display.addMouseDownListener(this.onMouseDown);
-        this.display.addMouseUpListener(this.onMouseUp);
-        this.display.addMouseMoveListener(this.onMouseMove);
-        this.display.addWheelChangeListener(this.onMouseWheel);
+        this.display.addMouseDownListener(event => this.onMouseDown(event));
+        this.display.addMouseUpListener(event => this.onMouseUp(event));
+        this.display.addMouseMoveListener(event => this.onMouseMove(event));
+        this.display.addWheelChangeListener(event => this.onMouseWheel(event));
     }
 
 
@@ -131,8 +131,8 @@ export class MouseDevice
     private pointerMoved(pointer: Pointer, x: number, y: number)
     {
         const offset = this.display.getViewportOffset();
-        const viewportX = x - offset.width;
-        const viewportY = y - offset.height;
+        const viewportX = x - offset.x;
+        const viewportY = y - offset.y;
 
         pointer.position.current = new Vector(viewportX, viewportY);
     }

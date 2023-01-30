@@ -17,7 +17,7 @@ export class GamepadDevice
             this.gamepad.set(value, { current: false, previous: false });
         }
 
-        window.addEventListener("gamepadconnected", this.onGamepadConnected);
+        window.addEventListener("gamepadconnected", event => this.onGamepadConnected(event));
     }
 
 

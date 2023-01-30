@@ -39,8 +39,8 @@ export class InputDevice
         this.mouse = new MouseDevice(this.display);
         this.touchpad = new TouchpadDevice(this.display);
 
-        window.addEventListener( "contextmenu", this.cancelEvent);
-        window.addEventListener( "selectstart", this.cancelEvent);
+        window.addEventListener( "contextmenu", event => this.cancelEvent(event));
+        window.addEventListener( "selectstart", event => this.cancelEvent(event));
     }
 
 

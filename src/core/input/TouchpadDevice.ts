@@ -27,9 +27,9 @@ export class TouchpadDevice
             this.touchpad.set(value, { current: false, previous: false });
         }
 
-        this.display.addTouchStartListener(this.onTouchStart);
-        this.display.addTouchEndListener(this.onTouchEnd);
-        this.display.addTouchMoveListener(this.onTouchMove);
+        this.display.addTouchStartListener(event => this.onTouchStart(event));
+        this.display.addTouchEndListener(event => this.onTouchEnd(event));
+        this.display.addTouchMoveListener(event => this.onTouchMove(event));
     }
 
 
@@ -146,8 +146,8 @@ export class TouchpadDevice
     private pointerMoved(pointer: Pointer, x: number, y: number)
     {
         const offset = this.display.getViewportOffset();
-        const viewportX = x - offset.width;
-        const viewportY = y - offset.height;
+        const viewportX = x - offset.x;
+        const viewportY = y - offset.y;
 
         pointer.position.current = new Vector(viewportX, viewportY);
     }
