@@ -1,7 +1,12 @@
 import { Game } from "core/Game";
 
 
-const game = new Game();
-game.start();
+const game = new Game({
+    maxFPS: 60,
+    display: {
+        viewportID: "viewport",
+        dimension: { width: 1280, height: 720 }
+    }
+});
 
-window.game = game;
+game.start();
