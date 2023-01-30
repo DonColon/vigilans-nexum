@@ -1,15 +1,10 @@
+import { GameError } from "./GameError";
 import { GameState } from "./GameState";
 
 
 export class GameStateManager
 {
-    private currentStates: GameState[];
-
-
-    constructor()
-    {
-        this.currentStates = [];
-    }
+    private currentStates: GameState[] = [];
 
 
     public switch(state: GameState)
@@ -35,11 +30,27 @@ export class GameStateManager
 
     public pop(): GameState
     {
-        return this.currentStates.pop() as GameState;
+        const currentState = this.currentStates.pop();
+        const state = this.peek();
+
+        if(currentState === undefined) {
+            throw new GameError("No states defined in stack");
+        }
+
+        currentState.onExit();
+        state.onEnter();
+
+        return currentState;
     }
 
     public peek(): GameState
     {
-        return this.currentStates.at(-1) as GameState;
+        const currentState = this.currentStates.at(-1);
+
+        if(currentState === undefined) {
+            throw new GameError("No states defined in stack");
+        }
+
+        return currentState;
     }
 }
