@@ -65,14 +65,14 @@ export class Graphics extends GraphicsContext
         return this;
     }
 
-    public fillStyle(color: Color): this
+    public fillColor(color: Color): this
     {
         this.globalFillColor = color;
         this.setFillColor(this.globalFillColor);
         return this;
     }
 
-    public strokeStyle(color: Color): this
+    public strokeColor(color: Color): this
     {
         this.globalStrokeColor = color;
         this.setStrokeColor(this.globalStrokeColor);
@@ -87,10 +87,22 @@ export class Graphics extends GraphicsContext
         return this;
     }
 
+    public undoSvgFilter(): this
+    {
+        this.undoFilter("url");
+        return this;
+    }
+
     public applyBlurFilter(radius: string): this
     {
         const filter = `blur(${radius})`;
         this.applyFilter(filter);
+        return this;
+    }
+
+    public undoBlurFilter(): this
+    {
+        this.undoFilter("blur");
         return this;
     }
 
@@ -101,6 +113,12 @@ export class Graphics extends GraphicsContext
         return this;
     }
 
+    public undoBrightnessFilter(): this
+    {
+        this.undoFilter("brightness");
+        return this;
+    }
+
     public applyContrastFilter(amount: string): this
     {
         const filter = `contrast(${amount})`;
@@ -108,9 +126,21 @@ export class Graphics extends GraphicsContext
         return this;
     }
 
+    public undoContrastFilter(): this
+    {
+        this.undoFilter("contrast");
+        return this;
+    }
+
     public applyDropShadowFilter(shadow: Shadow): this
     {
         this.applyFilter(shadow.asDropShadow());
+        return this;
+    }
+
+    public undoDropShadowFilter(): this
+    {
+        this.undoFilter("drop-shadow");
         return this;
     }
 
@@ -121,10 +151,22 @@ export class Graphics extends GraphicsContext
         return this;
     }
 
+    public undoGrayscaleFilter(): this
+    {
+        this.undoFilter("grayscale");
+        return this;
+    }
+
     public applyHueFilter(angle: string): this
     {
         const filter = `hue-rotate(${angle})`;
         this.applyFilter(filter);
+        return this;
+    }
+
+    public undoHueFilter(): this
+    {
+        this.undoFilter("hue-rotate");
         return this;
     }
 
@@ -135,10 +177,22 @@ export class Graphics extends GraphicsContext
         return this;
     }
 
+    public undoInvertFilter(): this
+    {
+        this.undoFilter("invert");
+        return this;
+    }
+
     public applyOpacityFilter(alpha: string): this
     {
         const filter = `opacity(${alpha})`;
         this.applyFilter(filter);
+        return this;
+    }
+
+    public undoOpacityFilter(): this
+    {
+        this.undoFilter("opacity");
         return this;
     }
 
@@ -149,6 +203,12 @@ export class Graphics extends GraphicsContext
         return this;
     }
 
+    public undoSaturationFilter(): this
+    {
+        this.undoFilter("saturate");
+        return this;
+    }
+
     public applySepiaFilter(amount: string): this
     {
         const filter = `sepia(${amount})`;
@@ -156,11 +216,33 @@ export class Graphics extends GraphicsContext
         return this;
     }
 
+    public undoSepiaFilter(): this
+    {
+        this.undoFilter("sepia");
+        return this;
+    }
+
+    public resetFilters(): this
+    {
+        this.context.filter = "none";
+        return this;
+    }
+
     private applyFilter(filter: string)
     {
-        (this.context.filter)
-            ? this.context.filter.concat(" ", filter) 
-            : this.context.filter.concat(filter);
+        (this.context.filter === "none")
+            ? this.context.filter = filter
+            : this.context.filter.concat(" ", filter);
+    }
+
+    private undoFilter(name: string)
+    {
+        if(this.context.filter === "none") return;
+
+        const effects = this.context.filter.split(" ");
+        const newEffects = effects.filter(value => !value.startsWith(name));
+
+        this.context.filter = newEffects.join(" ");
     }
 
 
