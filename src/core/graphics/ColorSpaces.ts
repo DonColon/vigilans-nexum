@@ -1,35 +1,10 @@
-export interface HexCode
-{
-    code: string
-}
-
-export interface RGB
-{
-    red: number,
-    green: number,
-    blue: number,
-    alpha?: number
-}
-
-export interface HSL
-{
-    hue: number,
-    saturation: number,
-    lightness: number,
-    alpha?: number
-}
-
-export interface HWB
-{
-    hue: number,
-    whiteness: number,
-    blackness: number,
-    alpha?: number
-}
-
-
 export namespace ColorSpaces
 {
+    export interface HEX
+    {
+        code: string
+    }
+
     export function hex2rgb(code: string): RGB
     {
         const hexCode = code.substring(1);
@@ -69,7 +44,7 @@ export namespace ColorSpaces
             return { red, green, blue, alpha };
         }
 
-        return {} as RGB;
+        return { red: 255, green: 255, blue: 255 };
     }
 
     export function hex2hsl(code: string): HSL
@@ -82,6 +57,15 @@ export namespace ColorSpaces
     {
         const { hue, saturation, lightness, alpha } = hex2hsl(code);
         return hsl2hwb(hue, saturation, lightness, alpha);
+    }
+
+
+    export interface RGB
+    {
+        red: number,
+        green: number,
+        blue: number,
+        alpha?: number
     }
 
     export function rgb2hex(red: number, green: number, blue: number, alpha?: number): string
@@ -146,6 +130,15 @@ export namespace ColorSpaces
         return hsl2hwb(hue, saturation, lightness, alpha);
     }
 
+
+    export interface HSL
+    {
+        hue: number,
+        saturation: number,
+        lightness: number,
+        alpha?: number
+    }
+
     export function hsl2hex(hue: number, saturation: number, lightness: number, alpha?: number): string
     {
         const { red, green, blue } = hsl2rgb(hue, saturation, lightness, alpha);
@@ -200,6 +193,15 @@ export namespace ColorSpaces
         const blackness = 1 - b;
 
         return { hue, whiteness, blackness, alpha };
+    }
+
+
+    export interface HWB
+    {
+        hue: number,
+        whiteness: number,
+        blackness: number,
+        alpha?: number
     }
 
     export function hwb2hex(hue: number, whiteness: number, blackness: number, alpha?: number): string

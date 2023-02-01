@@ -1,41 +1,13 @@
-import { ColorSpaces, HexCode, HSL, HWB, RGB } from "./ColorSpaces";
+import { ColorSpaces } from "./ColorSpaces";
+
+
+type ColorSettings = ColorSpaces.HEX & ColorSpaces.RGB & ColorSpaces.HSL & ColorSpaces.HWB;
 
 
 export class Color
 {
-    private code: string;
+    private constructor(private settings: ColorSettings) {}
 
-    private red: number;
-    private green: number;
-    private blue: number;
-
-    private hue: number;
-    private saturation: number;
-    private lightness: number;
-
-    private whiteness: number;
-    private blackness: number;
-
-    private alpha?: number;
-
-
-    private constructor(settings: HexCode & RGB & HSL & HWB)
-    {
-        this.code = settings.code;
-
-        this.red = settings.red;
-        this.green = settings.green;
-        this.blue = settings.blue;
-
-        this.hue = settings.hue;
-        this.saturation = settings.saturation;
-        this.lightness = settings.lightness;
-
-        this.whiteness = settings.whiteness;
-        this.blackness = settings.blackness;
-
-        this.alpha = settings.alpha;
-    }
 
     public static hex(code: string): Color
     {
@@ -73,6 +45,7 @@ export class Color
         return new Color({ code, red, green, blue, hue, saturation, lightness, whiteness, blackness, alpha });
     }
 
+
     public static css(property: string): Color | null
     {
         if(property.startsWith("#")) {
@@ -109,31 +82,34 @@ export class Color
 
     public mix(other: Color, percentage: number = 0.5): Color
     {
-        const red = (1 - percentage) * this.red + percentage * other.red;
-        const green = (1 - percentage) * this.green + percentage * other.green;
-        const blue = (1 - percentage) * this.blue + percentage * other.blue;
+        const r = (1 - percentage) * this.settings.red + percentage * other.settings.red;
+        const g = (1 - percentage) * this.settings.green + percentage * other.settings.green;
+        const b = (1 - percentage) * this.settings.blue + percentage * other.settings.blue;
 
-        if(this.alpha !== undefined && other.alpha !== undefined) {
-            const alpha = (1 - percentage) * this.alpha + percentage * other.alpha;
-            return Color.rgb(red, green, blue, alpha);
+        if(this.settings.alpha && other.settings.alpha) {
+            const a = (1 - percentage) * this.settings.alpha + percentage * other.settings.alpha;
+            return Color.rgb(r, g, b, a);
         }
 
-        return Color.rgb(red, green, blue);
+        return Color.rgb(r, g, b);
     }
 
     public invert(): Color
     {
-        const red = 255 - this.red;
-        const green = 255 - this.green;
-        const blue = 255 - this.blue;
+        const { red, green, blue, alpha } = this.settings;
 
-        return Color.rgb(red, green, blue, this.alpha);
+        const r = 255 - red;
+        const g = 255 - green;
+        const b = 255 - blue;
+
+        return Color.rgb(r, g, b, alpha);
     }
 
     public complement(): Color
     {
-        const hue = (this.hue + 180) % 360;
-        return Color.hsl(hue, this.saturation, this.lightness, this.alpha);
+        const { hue, saturation, lightness, alpha } = this.settings;
+        const h = (hue + 180) % 360;
+        return Color.hsl(h, saturation, lightness, alpha);
     }
 
     public saturate(value: number): Color
@@ -142,10 +118,12 @@ export class Color
             throw new RangeError("value must be percentage");
         }
 
-        let saturation = this.saturation + value;
-        if(saturation > 100) saturation = 100;
+        const { hue, saturation, lightness, alpha } = this.settings;
 
-        return Color.hsl(this.hue, saturation, this.lightness, this.alpha);
+        let s = saturation + value;
+        if(s > 100) s = 100;
+
+        return Color.hsl(hue, s, lightness, alpha);
     }
 
     public desaturate(value: number): Color
@@ -154,15 +132,18 @@ export class Color
             throw new RangeError("value must be percentage");
         }
 
-        let saturation = this.saturation - value;
-        if(saturation < 0) saturation = 0;
+        const { hue, saturation, lightness, alpha } = this.settings;
 
-        return Color.hsl(this.hue, saturation, this.lightness, this.alpha);
+        let s = saturation - value;
+        if(s < 0) s = 0;
+
+        return Color.hsl(hue, s, lightness, alpha);
     }
 
     public grayscale(): Color
     {
-        return Color.hsl(this.hue, 0, this.lightness, this.alpha);
+        const { hue, lightness, alpha } = this.settings;
+        return Color.hsl(hue, 0, lightness, alpha);
     }
 
     public lighten(value: number): Color
@@ -171,10 +152,12 @@ export class Color
             throw new RangeError("value must be percentage");
         }
 
-        let lightness = this.lightness + value;
-        if(lightness > 100) lightness = 100;
+        const { hue, saturation, lightness, alpha } = this.settings;
 
-        return Color.hsl(this.hue, this.saturation, lightness, this.alpha);
+        let l = lightness + value;
+        if(l > 100) l = 100;
+
+        return Color.hsl(hue, saturation, l, alpha);
     }
 
     public darken(value: number): Color
@@ -183,10 +166,12 @@ export class Color
             throw new RangeError("value must be percentage");
         }
 
-        let lightness = this.lightness - value;
-        if(lightness < 0) lightness = 0;
+        const { hue, saturation, lightness, alpha } = this.settings;
 
-        return Color.hsl(this.hue, this.saturation, lightness, this.alpha);
+        let l = lightness - value;
+        if(l < 0) l = 0;
+
+        return Color.hsl(hue, saturation, l, alpha);
     }
 
     public opacify(value: number): Color
@@ -195,12 +180,14 @@ export class Color
             throw new RangeError("value must be percentage");
         }
 
-        let alpha = this.alpha || 100;
-        alpha += value;
+        const { hue, saturation, lightness, alpha } = this.settings;
 
-        if(alpha > 100) alpha = 100;
+        let a = alpha || 100;
+        a += value;
 
-        return Color.hsl(this.hue, this.saturation, this.lightness, alpha);
+        if(a > 100) a = 100;
+
+        return Color.hsl(hue, saturation, lightness, a);
     }
 
     public transparentize(value: number): Color
@@ -209,74 +196,86 @@ export class Color
             throw new RangeError("value must be percentage");
         }
 
-        let alpha = this.alpha || 100;
-        alpha -= value;
+        const { hue, saturation, lightness, alpha } = this.settings;
 
-        if(alpha < 0) alpha = 0;
+        let a = alpha || 100;
+        a -= value;
 
-        return Color.hsl(this.hue, this.saturation, this.lightness, alpha);
+        if(a > 100) a = 100;
+
+        return Color.hsl(hue, saturation, lightness, a);
     }
 
 
-    public asHexCode(): string
+    public asCss(property: "hex" | "rgb" | "hsl" | "hwb"): string
     {
-        return this.code;
+        if(property === "hex") {
+            return this.settings.code;
+        }
+        else if(property === "rgb") {
+            const { red, green, blue, alpha } = this.settings;
+
+            if(alpha) {
+                return `rgb(${red} ${green} ${blue} / ${alpha})`;
+            } else {
+                return `rgb(${red} ${green} ${blue})`;
+            }
+        }
+        else if(property === "hsl") {
+            const { hue, saturation, lightness, alpha } = this.settings;
+
+            if(alpha) {
+                return `hsl(${hue} ${saturation} ${lightness} / ${alpha})`;
+            } else {
+                return `hsl(${hue} ${saturation} ${lightness})`;
+            }
+        }
+        else if(property === "hwb") {
+            const { hue, whiteness, blackness, alpha } = this.settings;
+
+            if(alpha) {
+                return `hwb(${hue} ${whiteness} ${blackness} / ${alpha})`;
+            } else {
+                return `hwb(${hue} ${whiteness} ${blackness})`;
+            }
+        }
+
+        throw new SyntaxError("Should not happen");
     }
 
-    public asRGB(): RGB
+
+    public asHEX(): string
+    {
+        return this.settings.code;
+    }
+
+    public asRGB(): ColorSpaces.RGB
     {
         return {
-            red: this.red,
-            green: this.green,
-            blue: this.blue,
-            alpha: this.alpha
+            red: this.settings.red,
+            green: this.settings.green,
+            blue: this.settings.blue,
+            alpha: this.settings.alpha
         };
     }
 
-    public asCssRGB(): string
-    {
-        if(this.alpha === undefined) {
-            return `rgb(${this.red} ${this.green} ${this.blue})`;
-        } else {
-            return `rgb(${this.red} ${this.green} ${this.blue} / ${this.alpha})`;
-        }
-    }
-
-    public asHSL(): HSL
+    public asHSL(): ColorSpaces.HSL
     {
         return {
-            hue: this.hue,
-            saturation: this.saturation,
-            lightness: this.lightness,
-            alpha: this.alpha   
+            hue: this.settings.hue,
+            saturation: this.settings.saturation,
+            lightness: this.settings.lightness,
+            alpha: this.settings.alpha   
         };
     }
 
-    public asCssHSL(): string
-    {
-        if(this.alpha === undefined) {
-            return `hsl(${this.hue} ${this.saturation} ${this.lightness})`;
-        } else {
-            return `hsl(${this.hue} ${this.saturation} ${this.lightness} / ${this.alpha})`;
-        }
-    }
-
-    public asHWB(): HWB
+    public asHWB(): ColorSpaces.HWB
     {
         return {
-            hue: this.hue,
-            whiteness: this.whiteness,
-            blackness: this.blackness,
-            alpha: this.alpha
+            hue: this.settings.hue,
+            whiteness: this.settings.whiteness,
+            blackness: this.settings.blackness,
+            alpha: this.settings.alpha
         };
-    }
-
-    public asCssHWB(): string
-    {
-        if(this.alpha === undefined) {
-            return `hwb(${this.hue} ${this.whiteness} ${this.blackness})`;
-        } else {
-            return `hwb(${this.hue} ${this.whiteness} ${this.blackness} / ${this.alpha})`;
-        }
     }
 }

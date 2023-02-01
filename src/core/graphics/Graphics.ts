@@ -1,156 +1,155 @@
 import { GraphicsContext } from "./GraphicsContext";
 
-import { Vector } from "core/math/Vector";
 import { Line } from "core/math/Line";
 import { Circle } from "core/math/Circle";
 import { Rectangle } from "core/math/Rectangle";
 import { Polygon } from "core/math/Polygon";
 
 import { Color } from "./Color";
-import { Shadow } from "./Shadow";
-import { LineStyle } from "./LineStyle";
-import { TextStyle } from "./TextStyle";
-import { FontStyle } from "./FontStyle";
-import { Label } from "./Label";
+import { Shadow, ShadowSettings } from "./Shadow";
+import { LineStyle, LineStyleSettings } from "./LineStyle";
+import { TextStyle, TextStyleSettings } from "./TextStyle";
+import { FontStyle, FontStyleSettings } from "./FontStyle";
+import { Label, LabelSettings } from "./Label";
 
 
 export class Graphics extends GraphicsContext
 {
+    private globalShadowStyle: Shadow;
+    private globalLineStyle: LineStyle;
+    private globalTextStyle: TextStyle;
+    private globalFontStyle: FontStyle;
+
     private globalFillColor: Color;
     private globalStrokeColor: Color;
-    private globalShadowStyle: Shadow;
-
-    private globalLineStyle: LineStyle;
-    private globalFontStyle: FontStyle;
-    private globalTextStyle: TextStyle;
 
 
     constructor(context: CanvasRenderingContext2D)
     {
         super(context);
+        this.globalShadowStyle = new Shadow();
+        this.globalLineStyle = new LineStyle();
+        this.globalTextStyle = new TextStyle();
+        this.globalFontStyle = new FontStyle();
+
         this.globalFillColor = Color.hex("#000");
         this.globalStrokeColor = Color.hex("#000");
-        this.globalShadowStyle = new Shadow();
-        
-        this.globalLineStyle = new LineStyle();
-        this.globalFontStyle = new FontStyle();
-        this.globalTextStyle = new TextStyle();
     }
 
 
-    public fillStyle(color: Color): Graphics
+    public shadowStyle(settings: ShadowSettings): this
+    {
+        this.globalShadowStyle = new Shadow(settings);
+        this.setShadowStyle(this.globalShadowStyle);
+        return this;
+    }
+
+    public lineStyle(settings: LineStyleSettings): this
+    {
+        this.globalLineStyle = new LineStyle(settings);
+        this.setLineStyle(this.globalLineStyle);
+        return this;
+    }
+
+    public textStyle(settings: TextStyleSettings): this
+    {
+        this.globalTextStyle = new TextStyle(settings);
+        this.setTextStyle(this.globalTextStyle);
+        return this;
+    }
+
+    public fontStyle(settings: FontStyleSettings): this
+    {
+        this.globalFontStyle = new FontStyle(settings);
+        this.setFontStyle(this.globalFontStyle);
+        return this;
+    }
+
+    public fillStyle(color: Color): this
     {
         this.globalFillColor = color;
-        this.setFillColor(color);
+        this.setFillColor(this.globalFillColor);
         return this;
     }
 
-    public strokeStyle(color: Color): Graphics
+    public strokeStyle(color: Color): this
     {
         this.globalStrokeColor = color;
-        this.setStrokeColor(color);
-        return this;
-    }
-
-    public shadowStyle(style: Shadow): Graphics
-    {
-        this.globalShadowStyle = style;
-        this.setShadowStyle(style);
-        return this;
-    }
-
-    public lineStyle(style: LineStyle): Graphics
-    {
-        this.globalLineStyle = style;
-        this.setLineStyle(style);
-        return this;
-    }
-
-    public fontStyle(style: FontStyle): Graphics
-    {
-        this.globalFontStyle = style;
-        this.setFontStyle(style);
-        return this;
-    }
-
-    public textStyle(style: TextStyle): Graphics
-    {
-        this.globalTextStyle = style;
-        this.setTextStyle(style);
+        this.setStrokeColor(this.globalStrokeColor);
         return this;
     }
 
 
-    public applySvgFilter(url: string): Graphics
+    public applySvgFilter(url: string): this
     {
         const filter = `url(${url})`;
         this.applyFilter(filter);
         return this;
     }
 
-    public applyBlurFilter(radius: string): Graphics
+    public applyBlurFilter(radius: string): this
     {
         const filter = `blur(${radius})`;
         this.applyFilter(filter);
         return this;
     }
 
-    public applyBrightnessFilter(amount: string): Graphics
+    public applyBrightnessFilter(amount: string): this
     {
         const filter = `brightness(${amount})`;
         this.applyFilter(filter);
         return this;
     }
 
-    public applyContrastFilter(amount: string): Graphics
+    public applyContrastFilter(amount: string): this
     {
         const filter = `contrast(${amount})`;
         this.applyFilter(filter);
         return this;
     }
 
-    public applyDropShadowFilter(shadow: Shadow): Graphics
+    public applyDropShadowFilter(shadow: Shadow): this
     {
         this.applyFilter(shadow.asDropShadow());
         return this;
     }
 
-    public applyGrayscaleFilter(amount: string): Graphics
+    public applyGrayscaleFilter(amount: string): this
     {
         const filter = `grayscale(${amount})`;
         this.applyFilter(filter);
         return this;
     }
 
-    public applyHueFilter(angle: string): Graphics
+    public applyHueFilter(angle: string): this
     {
         const filter = `hue-rotate(${angle})`;
         this.applyFilter(filter);
         return this;
     }
 
-    public applyInvertFilter(amount: string): Graphics
+    public applyInvertFilter(amount: string): this
     {
         const filter = `invert(${amount})`;
         this.applyFilter(filter);
         return this;
     }
 
-    public applyOpacityFilter(alpha: string): Graphics
+    public applyOpacityFilter(alpha: string): this
     {
         const filter = `opacity(${alpha})`;
         this.applyFilter(filter);
         return this;
     }
 
-    public applySaturationFilter(amount: string): Graphics
+    public applySaturationFilter(amount: string): this
     {
         const filter = `saturate(${amount})`;
         this.applyFilter(filter);
         return this;
     }
 
-    public applySepiaFilter(amount: string): Graphics
+    public applySepiaFilter(amount: string): this
     {
         const filter = `sepia(${amount})`;
         this.applyFilter(filter);
@@ -165,25 +164,25 @@ export class Graphics extends GraphicsContext
     }
 
 
-    public clearCanvas(): Graphics
+    public createLabel(settings: Omit<LabelSettings, "height" | "width">): Label
+    {
+        const height = (settings.fontStyle)? parseInt(settings.fontStyle.getSize()) : parseInt(this.globalFontStyle.getSize());
+
+        const metrics = this.context.measureText(settings.text);
+        const width = metrics.width;
+
+        return new Label({ ...settings, width, height });
+    }
+
+    public clearCanvas(): this
     {
         const { width, height } = this.context.canvas;
         this.context.clearRect(0, 0, width, height);
         return this;
     }
 
-    public createLabel(text: string, x: number, y: number, fontStyle?: FontStyle, textStyle?: TextStyle): Label
-    {
-        const height = (fontStyle) ? parseInt(fontStyle.getSize()) : parseInt(this.globalFontStyle.getSize());
 
-        const metrics = this.context.measureText(text);
-        const width = metrics.width;
-
-        return new Label({ text, x, y, width, height, fontStyle, textStyle });
-    }
-
-
-    public drawLine(line: Line): Graphics
+    public drawLine(line: Line): this
     {
         const start = line.getStart();
         const end = line.getEnd();
@@ -200,14 +199,14 @@ export class Graphics extends GraphicsContext
     }
 
 
-    public fillCircle(circle: Circle): Graphics
+    public fillCircle(circle: Circle): this
     {
         this.drawCircle(circle);
         this.fill();
         return this;
     }
 
-    public strokeCircle(circle: Circle): Graphics
+    public strokeCircle(circle: Circle): this
     {
         this.drawCircle(circle);
         this.stroke();
@@ -223,14 +222,14 @@ export class Graphics extends GraphicsContext
     }
 
 
-    public fillRectangle(rectangle: Rectangle): Graphics
+    public fillRectangle(rectangle: Rectangle): this
     {
         this.drawRectangle(rectangle);
         this.fill();
         return this;
     }
 
-    public strokeRectangle(rectangle: Rectangle): Graphics
+    public strokeRectangle(rectangle: Rectangle): this
     {
         this.drawRectangle(rectangle);
         this.stroke();
@@ -246,54 +245,37 @@ export class Graphics extends GraphicsContext
     }
 
 
-    public fillRoundedRectangle(rectangle: Rectangle, radius: number): Graphics
+    public fillRoundRectangle(rectangle: Rectangle, radius: number): this
     {
-        this.drawRoundedRectangle(rectangle, radius);
+        this.drawRoundRectangle(rectangle, radius);
         this.fill();
         return this;
     }
 
-    public strokeRoundedRectangle(rectangle: Rectangle, radius: number): Graphics
+    public strokeRoundRectangle(rectangle: Rectangle, radius: number): this
     {
-        this.drawRoundedRectangle(rectangle, radius);
+        this.drawRoundRectangle(rectangle, radius);
         this.stroke();
         return this;
     }
 
-    private drawRoundedRectangle(rectangle: Rectangle, radius: number)
+    private drawRoundRectangle(rectangle: Rectangle, radius: number)
     {
-        const { topLeft, bottomRight } = rectangle.getCorners();
         const { width, height } = rectangle.getDimension();
-        
-        if(radius > width / 2) radius = width / 2;
-        if(radius > height / 2) radius = height / 2;
+        const position = rectangle.getPosition();
 
-        this.beginPath();
-
-            this.moveTo(bottomRight.x - radius, topLeft.y);
-            this.quadraticCurveTo(bottomRight.x, topLeft.y, bottomRight.x, topLeft.y + radius);
-
-            this.lineTo(bottomRight.x, bottomRight.y - radius);
-            this.quadraticCurveTo(bottomRight.x, bottomRight.y, bottomRight.x - radius, bottomRight.y);
-
-            this.lineTo(topLeft.x + radius, bottomRight.y);
-            this.quadraticCurveTo(topLeft.x, bottomRight.y, topLeft.x, bottomRight.y - radius);
-
-            this.lineTo(topLeft.x, topLeft.y + radius);
-            this.quadraticCurveTo(topLeft.x, topLeft.y, topLeft.x + radius, topLeft.y);
-
-        this.closePath();
+        this.roundRect(position.x, position.y, width, height, radius);
     }
 
-    
-    public fillPolygon(polygon: Polygon): Graphics
+
+    public fillPolygon(polygon: Polygon): this
     {
         this.drawPolygon(polygon);
         this.fill();
         return this;
     }
 
-    public strokePolygon(polygon: Polygon): Graphics
+    public strokePolygon(polygon: Polygon): this
     {
         this.drawPolygon(polygon);
         this.stroke();
@@ -303,7 +285,11 @@ export class Graphics extends GraphicsContext
     private drawPolygon(polygon: Polygon)
     {
         const vertices = polygon.getVertices();
-        const start = vertices.shift() as Vector;
+        const start = vertices.shift();
+
+        if(start === undefined) {
+            throw new TypeError("Polygon has no vertices");
+        }
 
         this.beginPath();
 
@@ -354,23 +340,12 @@ export class Graphics extends GraphicsContext
 
         this.setFontStyle(this.globalFontStyle);
         this.setTextStyle(this.globalTextStyle);
-        return this;
     }
 
-
-    private setFillColor(color: Color)
-    {
-        this.context.fillStyle = color.asHexCode();
-    }
-
-    private setStrokeColor(color: Color)
-    {
-        this.context.strokeStyle = color.asHexCode();
-    }
 
     private setShadowStyle(style: Shadow)
     {
-        this.context.shadowColor = style.getColor().asHexCode();
+        this.context.shadowColor = style.getColor().asHEX();
         this.context.shadowOffsetX = style.getOffsetX();
         this.context.shadowOffsetY = style.getOffsetY();
         this.context.shadowBlur = style.getBlur();
@@ -385,15 +360,25 @@ export class Graphics extends GraphicsContext
         this.context.setLineDash(style.getDashPattern());
     }
 
-    private setFontStyle(style: FontStyle)
-    {
-        this.context.font = style.asCss();
-    }
-
     private setTextStyle(style: TextStyle)
     {
         this.context.textAlign = style.getAlign();
         this.context.textBaseline = style.getBaseline();
         this.context.direction = style.getDirection();
+    }
+
+    private setFontStyle(style: FontStyle)
+    {
+        this.context.font = style.asCss();
+    }
+
+    private setFillColor(color: Color)
+    {
+        this.context.fillStyle = color.asHEX();
+    }
+
+    private setStrokeColor(color: Color)
+    {
+        this.context.strokeStyle = color.asHEX();
     }
 }

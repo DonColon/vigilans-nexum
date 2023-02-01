@@ -20,7 +20,7 @@ export class Shadow
 
     constructor(settings?: ShadowSettings)
     {
-        this. color = (settings && settings.color) || Color.hex("#000");
+        this.color = (settings && settings.color) || Color.hex("#000");
         this.offsetX = (settings && settings.offsetX) || 0;
         this.offsetY = (settings && settings.offsetY) || 0;
         this.blur = (settings && settings.blur) || 0;
@@ -29,7 +29,7 @@ export class Shadow
 
     public asDropShadow(): string
     {
-        return `drop-shadow(${this.offsetX} ${this.offsetY} ${this.blur} ${this.color.asHexCode()})`;
+        return `drop-shadow(${this.offsetX} ${this.offsetY} ${this.blur} ${this.color.asHEX()})`;
     }
 
     public getColor(): Color
