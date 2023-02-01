@@ -1,4 +1,6 @@
 import { GraphicsContext } from "./GraphicsContext";
+import { CompositeOperationType } from "./CompositeOperation";
+import { SmoothingQualityType } from "./SmoothingQuality";
 
 import { Line } from "core/math/Line";
 import { Circle } from "core/math/Circle";
@@ -37,6 +39,34 @@ export class Graphics extends GraphicsContext
     }
 
 
+    public alpha(value: number): this
+    {
+        if(value < 0.0 || value > 1.0) {
+            throw new RangeError("alpha value goes from 0.0 to 1.0");
+        }
+
+        this.context.globalAlpha = value;
+        return this;
+    }
+
+    public compositeOperation(operation: CompositeOperationType): this
+    {
+        this.context.globalCompositeOperation = operation;
+        return this;
+    }
+
+    public imageSmoothing(quality?: SmoothingQualityType): this
+    {
+        if(quality) {
+            this.context.imageSmoothingQuality = quality;
+            this.context.imageSmoothingEnabled = true;
+        } else {
+            this.context.imageSmoothingEnabled = false;
+        }
+
+        return this;
+    }
+
     public shadowStyle(settings: ShadowSettings): this
     {
         this.globalShadowStyle = new Shadow(settings);
@@ -72,10 +102,34 @@ export class Graphics extends GraphicsContext
         return this;
     }
 
+    public fillGradient(gradient: CanvasGradient): this
+    {
+        this.context.fillStyle = gradient;
+        return this;
+    }
+
+    public fillPattern(pattern: CanvasPattern): this
+    {
+        this.context.fillStyle = pattern;
+        return this;
+    }
+
     public strokeColor(color: Color): this
     {
         this.globalStrokeColor = color;
         this.setStrokeColor(this.globalStrokeColor);
+        return this;
+    }
+
+    public strokeGradient(gradient: CanvasGradient): this
+    {
+        this.context.strokeStyle = gradient;
+        return this;
+    }
+
+    public strokePattern(pattern: CanvasPattern): this
+    {
+        this.context.strokeStyle = pattern;
         return this;
     }
 
@@ -259,7 +313,7 @@ export class Graphics extends GraphicsContext
     public clearCanvas(): this
     {
         const { width, height } = this.context.canvas;
-        this.context.clearRect(0, 0, width, height);
+        this.clearRect(0, 0, width, height);
         return this;
     }
 
@@ -385,13 +439,13 @@ export class Graphics extends GraphicsContext
     }
 
 
-    public fillLabel(label: Label): Graphics
+    public fillLabel(label: Label): this
     {
         this.drawLabel(label, "fill");
         return this;
     }
 
-    public strokeLabel(label: Label): Graphics
+    public strokeLabel(label: Label): this
     {
         this.drawLabel(label, "stroke");
         return this;
