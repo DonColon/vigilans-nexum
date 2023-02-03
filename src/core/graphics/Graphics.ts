@@ -304,7 +304,7 @@ export class Graphics extends GraphicsContext
     {
         const height = (settings.fontStyle)? parseInt(settings.fontStyle.getSize()) : parseInt(this.globalFontStyle.getSize());
 
-        const metrics = this.context.measureText(settings.text);
+        const metrics = this.measureText(settings.text);
         const width = metrics.width;
 
         return new Label({ ...settings, width, height });
@@ -468,10 +468,10 @@ export class Graphics extends GraphicsContext
         }
 
         if(action === "fill") {
-            this.context.fillText(text, position.x, position.y);
+            this.fillText(text, position.x, position.y);
         }
         else if(action === "stroke") {
-            this.context.strokeText(text, position.x, position.y);
+            this.strokeText(text, position.x, position.y);
         }
 
         this.setFontStyle(this.globalFontStyle);
@@ -493,7 +493,7 @@ export class Graphics extends GraphicsContext
         this.context.lineCap = style.getCap();
         this.context.lineJoin = style.getJoin();
         this.context.lineDashOffset = style.getDashOffset();
-        this.context.setLineDash(style.getDashPattern());
+        this.setLineDash(style.getDashPattern());
     }
 
     private setTextStyle(style: TextStyle)
