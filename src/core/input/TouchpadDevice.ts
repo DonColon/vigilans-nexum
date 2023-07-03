@@ -1,4 +1,3 @@
-import { Display } from "core/Display";
 import { Matrix } from "core/math/Matrix";
 import { Vector } from "core/math/Vector";
 import { Input, Pointer } from "./Input";
@@ -10,26 +9,22 @@ export class TouchpadDevice
 {
     private touchpad: Map<SwipeInputType, Input>;
     private touch: Pointer;
-
-    private display: Display;
     private lastUsed: number;
 
 
-    constructor(display: Display)
+    constructor()
     {
         this.touchpad = new Map<SwipeInputType, Input>();
         this.touch = this.initPointer();
-        
-        this.display = display;
         this.lastUsed = 0;
 
         for(const value of Object.values(SwipeInput)) {
             this.touchpad.set(value, { current: false, previous: false });
         }
 
-        this.display.addTouchStartListener(event => this.onTouchStart(event));
-        this.display.addTouchEndListener(event => this.onTouchEnd(event));
-        this.display.addTouchMoveListener(event => this.onTouchMove(event));
+        display.addTouchStartListener(event => this.onTouchStart(event));
+        display.addTouchEndListener(event => this.onTouchEnd(event));
+        display.addTouchMoveListener(event => this.onTouchMove(event));
     }
 
 
@@ -145,7 +140,7 @@ export class TouchpadDevice
 
     private pointerMoved(pointer: Pointer, x: number, y: number)
     {
-        const offset = this.display.getViewportOffset();
+        const offset = display.getViewportOffset();
         const viewportX = x - offset.x;
         const viewportY = y - offset.y;
 

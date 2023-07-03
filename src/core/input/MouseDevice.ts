@@ -1,4 +1,3 @@
-import { Display } from "core/Display";
 import { Vector } from "core/math/Vector";
 import { Input, Pointer } from "./Input";
 import { MouseInput, MouseInputType } from "./MouseInput";
@@ -7,24 +6,22 @@ import { MouseInput, MouseInputType } from "./MouseInput";
 export class MouseDevice
 {
     private mouse: Map<MouseInputType, Pointer>;
-    private display: Display;
     private lastUsed: number;
 
     
-    constructor(display: Display)
+    constructor()
     {
         this.mouse = new Map<MouseInputType, Pointer>();
-        this.display = display;
         this.lastUsed = 0;
 
         for(const value of Object.values(MouseInput)) {
             this.mouse.set(value, this.initPointer());
         }
 
-        this.display.addMouseDownListener(event => this.onMouseDown(event));
-        this.display.addMouseUpListener(event => this.onMouseUp(event));
-        this.display.addMouseMoveListener(event => this.onMouseMove(event));
-        this.display.addWheelChangeListener(event => this.onMouseWheel(event));
+        display.addMouseDownListener(event => this.onMouseDown(event));
+        display.addMouseUpListener(event => this.onMouseUp(event));
+        display.addMouseMoveListener(event => this.onMouseMove(event));
+        display.addWheelChangeListener(event => this.onMouseWheel(event));
     }
 
 
@@ -130,7 +127,7 @@ export class MouseDevice
 
     private pointerMoved(pointer: Pointer, x: number, y: number)
     {
-        const offset = this.display.getViewportOffset();
+        const offset = display.getViewportOffset();
         const viewportX = x - offset.x;
         const viewportY = y - offset.y;
 

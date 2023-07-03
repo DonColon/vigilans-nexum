@@ -4,7 +4,6 @@ import { Display } from "core/Display";
 import { InputDevice } from "core/input/InputDevice";
 import { AudioDevice } from "./audio/AudioDevice";
 import { GameStateManager } from "core/GameStateManager";
-
 import { EventSystem } from "./EventSystem";
 import { GameEvents } from "./GameEvents";
 import { GameEvent } from "./GameEvent";

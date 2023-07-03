@@ -1,4 +1,3 @@
-import { Display } from "core/Display";
 import { GameError } from "core/GameError";
 import { Input, InputTypeMap } from "./Input";
 import { InputState, InputStateType } from "./InputState";
@@ -17,18 +16,15 @@ import { TouchInputType } from "./TouchInput";
 export class InputDevice
 {
     private channels: Map<InputChannelType, number>;
-    private display: Display;
-
     private gamepad: GamepadDevice;
     private keyboard: KeyboardDevice;
     private mouse: MouseDevice;
     private touchpad: TouchpadDevice;
 
 
-    constructor(display: Display)
+    constructor()
     {
         this.channels = new Map<InputChannelType, number>();
-        this.display = display;
 
         if(!this.isGamepadSupported()) {
             throw new GameError("Gamepad not supported by browser");
@@ -36,8 +32,8 @@ export class InputDevice
 
         this.gamepad = new GamepadDevice();
         this.keyboard = new KeyboardDevice();
-        this.mouse = new MouseDevice(this.display);
-        this.touchpad = new TouchpadDevice(this.display);
+        this.mouse = new MouseDevice();
+        this.touchpad = new TouchpadDevice();
 
         window.addEventListener( "contextmenu", event => this.cancelEvent(event));
         window.addEventListener( "selectstart", event => this.cancelEvent(event));

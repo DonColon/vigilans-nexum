@@ -3,7 +3,6 @@ import { Display, DisplaySettings } from "./Display";
 import { InputDevice } from "core/input/InputDevice";
 import { AudioDevice } from "./audio/AudioDevice";
 import { GameStateManager } from "./GameStateManager";
-
 import { EventSystem } from "./EventSystem";
 import { GameEvents } from "./GameEvents";
 import { GameEvent } from "./GameEvent";
@@ -18,13 +17,6 @@ interface GameSettings
 
 export class Game 
 {
-    private world: World;
-    private display: Display;
-    private inputDevice: InputDevice;
-    private audioDevice: AudioDevice;
-    private stateManager: GameStateManager;
-    private eventSystem: EventSystem<GameEvents, GameEvent>;
-
     private timePerUpdate: number;
     private isRunning: boolean;
     private previous: number;
@@ -33,24 +25,17 @@ export class Game
 
     constructor(settings: GameSettings)
     {
-        this.world = new World();
-        this.display = new Display(settings.display);
-        this.inputDevice = new InputDevice(this.display);
-        this.audioDevice = new AudioDevice();
-        this.stateManager = new GameStateManager();
-        this.eventSystem = new EventSystem();
-
-        window.world = this.world;
-        window.display = this.display;
-        window.inputDevice = this.inputDevice;
-        window.audioDevice = this.audioDevice;
-        window.stateManager = this.stateManager;
-        window.eventSystem = this.eventSystem;
-
         this.timePerUpdate = 1000 / settings.maxFPS;
         this.isRunning = false;
         this.previous = 0;
         this.lag = 0;
+
+        window.world = new World();
+        window.display = new Display(settings.display);
+        window.inputDevice = new InputDevice();
+        window.audioDevice = new AudioDevice();
+        window.stateManager = new GameStateManager();
+        window.eventSystem = new EventSystem<GameEvents, GameEvent>();
     }
 
 
@@ -60,7 +45,7 @@ export class Game
         this.previous = current;
         this.lag += elapsed;
 
-        this.inputDevice.update();
+        inputDevice.update();
 
         while(this.lag >= this.timePerUpdate) {
             this.update(elapsed, current);
@@ -76,12 +61,12 @@ export class Game
 
     private update(elapsed: number, frame: number)
     {
-        this.world.execute(elapsed, frame);
+        world.execute(elapsed, frame);
     }
 
     private render()
     {
-        const graphics = this.display.getGraphicsContext();
+        const graphics = display.getGraphicsContext();
         graphics.clearCanvas();
     }
 
