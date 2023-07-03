@@ -55,7 +55,7 @@ export class Entity
         this.componentTypes.set(componentType.name, componentType);
         this.components.set(componentType.name, component);
 
-        world.dispatch("entityChanged", { entity: this });
+        eventSystem.dispatch("entityChanged", { entity: this });
         return this;
     }
 
@@ -64,7 +64,7 @@ export class Entity
         this.componentTypes.delete(componentType.name);
         this.components.delete(componentType.name);
 
-        world.dispatch("entityChanged", { entity: this });
+        eventSystem.dispatch("entityChanged", { entity: this });
         return this;
     }
 
@@ -90,7 +90,7 @@ export class Entity
         this.componentTypes.clear();
         this.components.clear();
 
-        world.dispatch("entityChanged", { entity: this });
+        eventSystem.dispatch("entityChanged", { entity: this });
         return this;
     }
 

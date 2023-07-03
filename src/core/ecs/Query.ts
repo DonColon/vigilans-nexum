@@ -34,7 +34,7 @@ export class Query
             }
         }
 
-        world.on("entityChanged", event => this.onEntityChanged(event));
+        eventSystem.subscribe("entityChanged", event => this.onEntityChanged(event));
     }
 
 

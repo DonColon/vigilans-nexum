@@ -1,7 +1,12 @@
 import { World } from "./ecs/World";
 import { Display, DisplaySettings } from "./Display";
 import { InputDevice } from "core/input/InputDevice";
+import { AudioDevice } from "./audio/AudioDevice";
 import { GameStateManager } from "./GameStateManager";
+
+import { EventSystem } from "./EventSystem";
+import { GameEvents } from "./GameEvents";
+import { GameEvent } from "./GameEvent";
 
 
 interface GameSettings
@@ -16,7 +21,9 @@ export class Game
     private world: World;
     private display: Display;
     private inputDevice: InputDevice;
+    private audioDevice: AudioDevice;
     private stateManager: GameStateManager;
+    private eventSystem: EventSystem<GameEvents, GameEvent>;
 
     private timePerUpdate: number;
     private isRunning: boolean;
@@ -29,12 +36,16 @@ export class Game
         this.world = new World();
         this.display = new Display(settings.display);
         this.inputDevice = new InputDevice(this.display);
+        this.audioDevice = new AudioDevice();
         this.stateManager = new GameStateManager();
+        this.eventSystem = new EventSystem();
 
         window.world = this.world;
         window.display = this.display;
         window.inputDevice = this.inputDevice;
+        window.audioDevice = this.audioDevice;
         window.stateManager = this.stateManager;
+        window.eventSystem = this.eventSystem;
 
         this.timePerUpdate = 1000 / settings.maxFPS;
         this.isRunning = false;

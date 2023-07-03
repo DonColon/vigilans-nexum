@@ -1,4 +1,3 @@
-import { EventDispatcher } from "core/EventDispatcher";
 import { GameError } from "core/GameError";
 import { JsonSchema } from "./JsonSchema";
 import { ComponentConstructor } from "./Component";
@@ -6,7 +5,7 @@ import { Entity } from "./Entity";
 import { System, SystemConstructor } from "./System";
 
 
-export class World extends EventDispatcher
+export class World
 {
     private components: Map<string, ComponentConstructor<any>>;
     private entities: Map<string, Entity>;
@@ -16,7 +15,6 @@ export class World extends EventDispatcher
 
     constructor()
     {
-        super();
         this.components = new Map<string, ComponentConstructor<any>>();
         this.entities = new Map<string, Entity>();
         this.systems = new Map<string, System>();
