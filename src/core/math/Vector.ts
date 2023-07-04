@@ -1,4 +1,4 @@
-import { Angles } from "core/utils/Angles";
+import { Maths } from "core/utils/Maths";
 import { Tuple } from "core/utils/Arrays";
 
 
@@ -23,7 +23,7 @@ export class Vector
 
 	public static ofAngle(angle: number): Vector
 	{
-		const radian = Angles.toRadians(angle);
+		const radian = Maths.toRadians(angle);
 		return new Vector(Math.cos(radian), Math.sin(radian));
 	}
 
@@ -93,12 +93,12 @@ export class Vector
 	{
 		const numerator = this.dot(other);
 		const denominator = this.magnitude() * other.magnitude();
-		return Angles.toDegrees(Math.acos(numerator / denominator));
+		return Maths.toDegrees(Math.acos(numerator / denominator));
 	}
 
 	public heading(): number
 	{
-		return Angles.toDegrees(Math.atan2(this.y, this.x));
+		return Maths.toDegrees(Math.atan2(this.y, this.x));
 	}
 
 	public interpolate(other: Vector, scale: number): Vector 

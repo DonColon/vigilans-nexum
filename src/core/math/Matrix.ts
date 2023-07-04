@@ -1,5 +1,5 @@
 import { Arrays, Matrix as MatrixLike } from "core/utils/Arrays";
-import { Angles } from "core/utils/Angles";
+import { Maths } from "core/utils/Maths";
 import { Vector } from "./Vector";
 
 
@@ -114,7 +114,7 @@ export class Matrix
     public static rotate(vector: Vector, angle: number, clockwise: boolean = false): Vector
     {
         const other = Matrix.ofColumnVector(vector);
-        const radian = Angles.toRadians(angle);
+        const radian = Maths.toRadians(angle);
 
         const transformation = new Matrix([
             [Math.cos(radian), Math.sin(radian), 0],
@@ -134,7 +134,7 @@ export class Matrix
     public static shear(vector: Vector, angle: number): Vector
     {
         const other = Matrix.ofColumnVector(vector);
-        const radian = Angles.toRadians(angle);
+        const radian = Maths.toRadians(angle);
 
         const transformation = new Matrix([
             [1, Math.tan(radian), 0],
@@ -148,7 +148,7 @@ export class Matrix
     public static shearX(vector: Vector, angle: number): Vector
     {
         const other = Matrix.ofColumnVector(vector);
-        const radian = Angles.toRadians(angle);
+        const radian = Maths.toRadians(angle);
 
         const transformation = new Matrix([
             [1, Math.tan(radian), 0],
@@ -162,7 +162,7 @@ export class Matrix
     public static shearY(vector: Vector, angle: number): Vector
     {
         const other = Matrix.ofColumnVector(vector);
-        const radian = Angles.toRadians(angle);
+        const radian = Maths.toRadians(angle);
 
         const transformation = new Matrix([
             [1, 0, 0],
