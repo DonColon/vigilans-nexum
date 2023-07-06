@@ -1,24 +1,29 @@
-import { GameError } from "./GameError";
-import { Vector } from "./math/Vector";
-import { Dimension } from "./math/Dimension";
-import { Graphics } from "./graphics/Graphics";
+import { GameError } from "../GameError";
+import { Vector } from "../math/Vector";
+import { Dimension } from "../math/Dimension";
+import { Graphics } from "./Graphics";
 import { DisplayOrientationType } from "./DisplayOrientation";
 
 
 export interface DisplaySettings
 {
     viewportID: string,
-    dimension?: Dimension
+    dimension?: Dimension,
+    layers?: {
+        [order: number]: string
+    }
 }
 
 
 export class Display
 {
-    private viewport: HTMLCanvasElement;
+    private viewport: HTMLElement;
     private viewportDimension: Dimension;
     private viewportOffset: Vector;
+    private viewportCenter: Vector;
 
-    private graphics: Graphics;
+    private layers: Map<string, Graphics>;
+
     private dimension: Dimension;
     private center: Vector;
 
@@ -29,10 +34,10 @@ export class Display
     {
         if(settings === undefined) {
 
-            this.viewport = document.createElement("canvas");
+            this.viewport = document.createElement("main");
 
-            this.viewport.width = window.innerWidth;
-            this.viewport.height = window.innerHeight;
+            this.viewport.style.width = `${window.innerWidth}px`;
+            this.viewport.style.height = `${window.innerHeight}px`;
 
             document.body.append(this.viewport);
 
@@ -44,37 +49,39 @@ export class Display
             if(viewport === null) {
                 throw new GameError(`Element with ID ${viewportID} does not exist`);
             }
-            
-            if(!(viewport instanceof HTMLCanvasElement)) {
-                throw new GameError(`Viewport is not of type ${HTMLCanvasElement.name}`);
-            }
     
             if(dimension !== undefined) {
-                viewport.width = dimension.width;
-                viewport.height = dimension.height;
+                viewport.style.width = `${dimension.width}px`;
+                viewport.style.height = `${dimension.height}px`;
             }
     
             this.viewport = viewport;
 
         }
 
-        const context = this.viewport.getContext("2d");
-
-        if(context === null) {
-            throw new GameError("Rendering Context for viewport could not be created");
-        }
-
-        this.graphics = new Graphics(context);
-
         this.viewportDimension = {
-            width: this.viewport.width * devicePixelRatio,
-            height: this.viewport.height * devicePixelRatio
+            width: parseFloat(this.viewport.style.width) * devicePixelRatio,
+            height: parseFloat(this.viewport.style.height) * devicePixelRatio
         };
 
         this.viewportOffset = new Vector(
             this.viewport.offsetLeft * devicePixelRatio, 
             this.viewport.offsetTop * devicePixelRatio
         );
+
+        this.viewportCenter = new Vector(
+            this.viewportOffset.x + this.viewportDimension.width / 2,
+            this.viewportOffset.y + this.viewportDimension.height / 2
+        );
+
+
+        this.layers = new Map<string, Graphics>();
+
+        if(settings !== undefined && settings.layers !== undefined) {
+            for(const [order, name] of Object.entries(settings.layers)) {
+                this.addLayer(name, parseInt(order));
+            }
+        }
 
         this.dimension = { 
             width: screen.width * devicePixelRatio, 
@@ -87,6 +94,124 @@ export class Display
         );
 
         this.orientationLocked = false;
+    }
+
+
+    public addLayer(name: string, order: number): this
+    {
+        if(this.layers.has(name)) {
+            throw new GameError(`Layer ${name} already exists`);
+        }
+
+        const canvas = this.createCanvas(name, order);
+        const context = canvas.getContext("2d");
+
+        if(context === null) {
+            throw new GameError(`Rendering Context for layer ${name} could not be created`);
+        }
+
+        const graphics = new Graphics(context);
+
+        this.layers.set(name, graphics);
+        this.viewport.append(canvas);
+
+        return this;
+    }
+
+    public removeLayer(name: string): this
+    {
+        const canvas = document.getElementById(name);
+
+        if(canvas === null) {
+            throw new GameError(`Layer ${name} does not exist`);
+        }
+
+        this.layers.delete(name);
+        this.viewport.removeChild(canvas);
+
+        return this;
+    }
+
+    public getLayer(name: string): Graphics
+    {
+        const layer = this.layers.get(name);
+
+        if(layer === undefined) {
+            throw new GameError(`Layer ${name} does not exist`);
+        }
+
+        return layer;
+    }
+
+    private createCanvas(name: string, order: number): HTMLCanvasElement
+    {
+        const canvas = document.createElement("canvas");
+        canvas.width = this.viewportDimension.width;
+        canvas.height = this.viewportDimension.height;
+        canvas.style.zIndex = order.toString();
+        canvas.id = name;
+
+        return canvas;
+    }
+
+
+    public enterFullscreen()
+    {
+        if(!this.isFullscreen()) {
+            this.viewport.requestFullscreen({ navigationUI: "hide" });
+        }
+    }
+
+    public exitFullscreen()
+    {
+        if(this.isFullscreen()) {
+            document.exitFullscreen();
+        }
+    }
+
+    public isFullscreen(): boolean
+    {
+        return document.fullscreenElement === this.viewport;
+    }
+
+    public lockPointer()
+    {
+        if(!this.isPointerLocked()) {
+            this.viewport.requestPointerLock();
+        }
+    }
+
+    public unlockPointer()
+    {
+        if(this.isPointerLocked()) {
+            document.exitPointerLock();
+        }
+    }
+
+    public isPointerLocked()
+    {
+        return document.pointerLockElement === this.viewport;
+    }
+
+    public lockOrientation(orientation: DisplayOrientationType)
+    {
+        if(!this.isOrientationLocked()) {
+            this.orientationLocked = true;
+            screen.orientation.lock(orientation);
+        }
+    }
+
+    public unlockOrientation()
+    {
+        if(this.isOrientationLocked()) {
+            this.orientationLocked = false;
+            screen.orientation.unlock();
+        }
+    }
+
+    public isOrientationLocked(): boolean
+    {
+        return this.orientationLocked;
     }
 
 
@@ -211,67 +336,7 @@ export class Display
     }
 
 
-    public enterFullscreen()
-    {
-        if(!this.isFullscreen()) {
-            this.viewport.requestFullscreen({ navigationUI: "hide" });
-        }
-    }
-
-    public exitFullscreen()
-    {
-        if(this.isFullscreen()) {
-            document.exitFullscreen();
-        }
-    }
-
-    public isFullscreen(): boolean
-    {
-        return document.fullscreenElement === this.viewport;
-    }
-
-    public lockPointer()
-    {
-        if(!this.isPointerLocked()) {
-            this.viewport.requestPointerLock();
-        }
-    }
-
-    public unlockPointer()
-    {
-        if(this.isPointerLocked()) {
-            document.exitPointerLock();
-        }
-    }
-
-    public isPointerLocked()
-    {
-        return document.pointerLockElement === this.viewport;
-    }
-
-    public lockOrientation(orientation: DisplayOrientationType)
-    {
-        if(!this.isOrientationLocked()) {
-            this.orientationLocked = true;
-            screen.orientation.lock(orientation);
-        }
-    }
-
-    public unlockOrientation()
-    {
-        if(this.isOrientationLocked()) {
-            this.orientationLocked = false;
-            screen.orientation.unlock();
-        }
-    }
-
-    public isOrientationLocked(): boolean
-    {
-        return this.orientationLocked;
-    }
-
-
-    public getViewport(): HTMLCanvasElement
+    public getViewport(): HTMLElement
     {
         return this.viewport;
     }
@@ -286,9 +351,9 @@ export class Display
         return this.viewportOffset;
     }
 
-    public getGraphicsContext(): Graphics
+    public getViewportCenter(): Vector
     {
-        return this.graphics;
+        return this.viewportCenter;
     }
 
     public getDimension(): Dimension

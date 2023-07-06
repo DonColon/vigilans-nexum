@@ -1,11 +1,11 @@
-import { World } from "./ecs/World";
-import { Display, DisplaySettings } from "./Display";
-import { InputDevice } from "core/input/InputDevice";
-import { AudioDevice } from "./audio/AudioDevice";
-import { GameStateManager } from "./GameStateManager";
 import { EventSystem } from "./EventSystem";
 import { GameEvents } from "./GameEvents";
 import { GameEvent } from "./GameEvent";
+import { GameStateManager } from "./GameStateManager";
+import { Display, DisplaySettings } from "./graphics/Display";
+import { InputDevice } from "./input/InputDevice";
+import { AudioDevice } from "./audio/AudioDevice";
+import { World } from "./ecs/World";
 
 
 interface GameSettings
@@ -30,12 +30,12 @@ export class Game
         this.previous = 0;
         this.lag = 0;
 
-        window.world = new World();
+        window.eventSystem = new EventSystem<GameEvents, GameEvent>();
+        window.stateManager = new GameStateManager();
         window.display = new Display(settings.display);
         window.inputDevice = new InputDevice();
         window.audioDevice = new AudioDevice();
-        window.stateManager = new GameStateManager();
-        window.eventSystem = new EventSystem<GameEvents, GameEvent>();
+        window.world = new World();
     }
 
 
@@ -66,8 +66,8 @@ export class Game
 
     private render()
     {
-        const graphics = display.getGraphicsContext();
-        graphics.clearCanvas();
+        /*const graphics = display.getGraphicsContext();
+        graphics.clearCanvas();*/
     }
 
 

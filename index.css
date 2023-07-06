@@ -15,7 +15,13 @@ body {
     background: #161616;
 }
 
-canvas {
+main {
+    position: relative;
     background: #eee;
     display: block;
+}
+
+main canvas {
+    position: absolute;
+    background-color: transparent;
 }
