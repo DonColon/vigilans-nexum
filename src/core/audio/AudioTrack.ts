@@ -1,5 +1,8 @@
 export interface AudioTrack
 {
     buffer: AudioBuffer,
-    channel: string
+    channel: string,
+    source?: AudioBufferSourceNode,
+    startedAt?: number,
+    offset?: number
 }

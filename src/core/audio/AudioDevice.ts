@@ -48,11 +48,58 @@ export class AudioDevice
     }
 
 
-    public play(id: string)
+    public play(id: string, loop: boolean = false)
     {
         const track = this.getTrack(id);
         const channel = this.getChannel(track.channel);
-        channel.play(track.buffer);
+
+        track.startedAt = this.context.currentTime;
+
+        if(loop) {
+            track.source = channel.loop(track.buffer, track.offset);
+        } else {
+            track.source = channel.play(track.buffer, track.offset);
+        }
+
+        this.tracks.set(id, track);
+    }
+
+    public pause(id: string)
+    {
+        const track = this.getTrack(id);
+
+        if(track.source && track.startedAt) {
+            track.offset = this.context.currentTime - track.startedAt;
+            track.source.stop();
+            this.tracks.set(id, track);
+        }
+    }
+
+    public stop(id: string)
+    {
+        const track = this.getTrack(id);
+        if(track.source) track.source.stop();
+    }
+
+    public volume(volume: number, channel?: string)
+    {
+        if(channel) {
+            const audioChannel = this.getChannel(channel);
+            audioChannel.setVolume(volume);
+        } else {
+            this.setVolume(volume);
+        }
+    }
+
+    private setVolume(volume: number)
+    {
+        if(volume < 0 || volume > 100) {
+            throw new RangeError("volume must be percentage");
+        }
+
+        const value = this.masterVolume.gain.minValue + (volume / 100) * (this.masterVolume.gain.maxValue - this.masterVolume.gain.minValue);
+
+        this.masterVolume.gain.value = value;
     }
 
 
