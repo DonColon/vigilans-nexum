@@ -1,3 +1,5 @@
+import { AudioTrack } from "./AudioTrack";
+
 export class AudioChannel
 {
     private context: AudioContext;
@@ -11,35 +13,41 @@ export class AudioChannel
     }
 
 
-    public play(buffer: AudioBuffer, offset?: number): AudioBufferSourceNode
+    public play(track: AudioTrack): AudioTrack
     {
         const source = this.context.createBufferSource();
-        source.buffer = buffer;
+        source.buffer = track.buffer;
         source.connect(this.volume);
 
-        if(offset) {
-            source.start(0, offset % buffer.duration);
+        track.startedAt = this.context.currentTime;
+
+        if(track.offset) {
+            source.start(0, track.offset % track.buffer.duration);
         } else {
             source.start();
         }
         
-        return source;
+        track.source = source;
+        return track;
     }
 
-    public loop(buffer: AudioBuffer, offset?: number): AudioBufferSourceNode
+    public loop(track: AudioTrack): AudioTrack
     {
         const source = this.context.createBufferSource();
-        source.buffer = buffer;
+        source.buffer = track.buffer;
         source.loop = true;
         source.connect(this.volume);
 
-        if(offset) {
-            source.start(0, offset % buffer.duration);
+        track.startedAt = this.context.currentTime;
+
+        if(track.offset) {
+            source.start(0, track.offset % track.buffer.duration);
         } else {
             source.start();
         }
         
-        return source;
+        track.source = source;
+        return track;
     }
 
     public setVolume(volume: number)

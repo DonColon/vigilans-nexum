@@ -22,7 +22,7 @@ export class AudioDevice
         this.masterVolume.connect(this.context.destination);
 
         eventSystem.subscribe("channelAdded", event => this.addChannel(event.channel));
-        eventSystem.subscribe("audioLoaded", event => this.addTracks(event.tracks));
+        eventSystem.subscribe("audioLoaded", event => this.updateTracks(event.tracks));
 
         this.start();
     }
@@ -53,15 +53,11 @@ export class AudioDevice
         const track = this.getTrack(id);
         const channel = this.getChannel(track.channel);
 
-        track.startedAt = this.context.currentTime;
-
         if(loop) {
-            track.source = channel.loop(track.buffer, track.offset);
+            this.tracks.set(id, channel.loop(track));
         } else {
-            track.source = channel.play(track.buffer, track.offset);
+            this.tracks.set(id, channel.play(track));
         }
-
-        this.tracks.set(id, track);
     }
 
     public pause(id: string)
@@ -69,8 +65,11 @@ export class AudioDevice
         const track = this.getTrack(id);
 
         if(track.source && track.startedAt) {
-            track.offset = this.context.currentTime - track.startedAt;
             track.source.stop();
+
+            track.offset = this.context.currentTime - track.startedAt;
+            delete track.source;
+
             this.tracks.set(id, track);
         }
     }
@@ -78,7 +77,16 @@ export class AudioDevice
     public stop(id: string)
     {
         const track = this.getTrack(id);
-        if(track.source) track.source.stop();
+        
+        if(track.source) {
+            track.source.stop();
+        }
+
+        delete track.offset;
+        delete track.startedAt;
+        delete track.source;
+
+        this.tracks.set(id, track);
     }
 
     public volume(volume: number, channel?: string)
@@ -133,7 +141,7 @@ export class AudioDevice
         return channel;
     }
 
-    private addTracks(tracks: Map<string, AudioTrack>)
+    private updateTracks(tracks: Map<string, AudioTrack>)
     {
         this.tracks = new Map<string, AudioTrack>([...this.tracks, ...tracks]);
     }
