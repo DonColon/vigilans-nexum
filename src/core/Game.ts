@@ -6,6 +6,7 @@ import { Display, DisplaySettings } from "./graphics/Display";
 import { InputDevice } from "./input/InputDevice";
 import { AudioDevice } from "./audio/AudioDevice";
 import { World } from "./ecs/World";
+import { AssetStorage } from "./assets/AssetStorage";
 
 
 interface GameSettings
@@ -31,6 +32,7 @@ export class Game
         this.lag = 0;
 
         window.eventSystem = new EventSystem<GameEvents, GameEvent>();
+        window.assetStorage = new AssetStorage();
         window.stateManager = new GameStateManager();
         window.display = new Display(settings.display);
         window.inputDevice = new InputDevice();

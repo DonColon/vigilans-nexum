@@ -1,14 +1,12 @@
 import { GameError } from "core/GameError";
 import { UserGestures } from "./UserGestures";
 import { AudioChannel } from "./AudioChannel";
-import { AudioTrack } from "./AudioTrack";
 
 
 export class AudioDevice
 {
     private context: AudioContext;
     private channels: Map<string, AudioChannel>;
-    private tracks: Map<string, AudioTrack>;
     private masterVolume: GainNode;
 
 
@@ -16,13 +14,9 @@ export class AudioDevice
     {
         this.context = new AudioContext();
         this.channels = new Map<string, AudioChannel>();
-        this.tracks = new Map<string, AudioTrack>();
 
         this.masterVolume = this.context.createGain();
         this.masterVolume.connect(this.context.destination);
-
-        eventSystem.subscribe("channelAdded", event => this.addChannel(event.channel));
-        eventSystem.subscribe("audioLoaded", event => this.updateTracks(event.tracks));
 
         this.start();
     }
@@ -50,19 +44,19 @@ export class AudioDevice
 
     public play(id: string, loop: boolean = false)
     {
-        const track = this.getTrack(id);
+        const track = assetStorage.getAudio(id);
         const channel = this.getChannel(track.channel);
 
         if(loop) {
-            this.tracks.set(id, channel.loop(track));
+            assetStorage.setAudio(id, channel.loop(track));
         } else {
-            this.tracks.set(id, channel.play(track));
+            assetStorage.setAudio(id, channel.play(track));
         }
     }
 
     public pause(id: string)
     {
-        const track = this.getTrack(id);
+        const track = assetStorage.getAudio(id);
 
         if(track.source && track.startedAt) {
             track.source.stop();
@@ -70,13 +64,13 @@ export class AudioDevice
             track.offset = this.context.currentTime - track.startedAt;
             delete track.source;
 
-            this.tracks.set(id, track);
+            assetStorage.setAudio(id, track);
         }
     }
 
     public stop(id: string)
     {
-        const track = this.getTrack(id);
+        const track = assetStorage.getAudio(id);
         
         if(track.source) {
             track.source.stop();
@@ -86,7 +80,7 @@ export class AudioDevice
         delete track.startedAt;
         delete track.source;
 
-        this.tracks.set(id, track);
+        assetStorage.setAudio(id, track);
     }
 
     public volume(volume: number, channel?: string)
@@ -139,21 +133,5 @@ export class AudioDevice
         }
 
         return channel;
-    }
-
-    private updateTracks(tracks: Map<string, AudioTrack>)
-    {
-        this.tracks = new Map<string, AudioTrack>([...this.tracks, ...tracks]);
-    }
-
-    private getTrack(id: string): AudioTrack
-    {
-        const track = this.tracks.get(id);
-
-        if(track === undefined) {
-            throw new GameError(`Track ${id} does not exist`);
-        }
-
-        return track;
     }
 }

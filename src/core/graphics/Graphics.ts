@@ -276,12 +276,6 @@ export class Graphics extends GraphicsContext
         return this;
     }
 
-    public resetFilters(): this
-    {
-        this.context.filter = "none";
-        return this;
-    }
-
     private applyFilter(filter: string)
     {
         (this.context.filter === "none")
@@ -297,6 +291,12 @@ export class Graphics extends GraphicsContext
         const newEffects = effects.filter(value => !value.startsWith(name));
 
         this.context.filter = newEffects.join(" ");
+    }
+
+    public resetFilters(): this
+    {
+        this.context.filter = "none";
+        return this;
     }
 
 
