@@ -68,7 +68,7 @@ export class Game
 
     private render()
     {
-        /*const graphics = display.getGraphicsContext();
+        /*const graphics = display.getLayer("ui");
         graphics.clearCanvas();*/
     }
 
