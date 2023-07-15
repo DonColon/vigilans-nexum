@@ -9,12 +9,14 @@ import { HtmlLoadedEvent } from "./HtmlLoadedEvent";
 import { CssLoadedEvent } from "./CssLoadedEvent";
 import { ScriptLoadedEvent } from "./ScriptLoadedEvent";
 import { ModuleLoadedEvent } from "./ModuleLoadedEvent";
+import { VideoLoadedEvent } from "./VideoLoadedEvent";
 
 
 export class AssetStorage
 {
     private audio: Map<string, AudioTrack>;
     private images: Map<string, HTMLImageElement>;
+    private videos: Map<string, HTMLVideoElement>;
     private jsons: Map<string, object>;
     private xmls: Map<string, XMLDocument>;
     private htmls: Map<string, Document>;
@@ -25,6 +27,7 @@ export class AssetStorage
     {
         this.audio = new Map<string, AudioTrack>();
         this.images = new Map<string, HTMLImageElement>();
+        this.videos = new Map<string, HTMLVideoElement>();
         this.jsons = new Map<string, object>();
         this.xmls = new Map<string, XMLDocument>();
         this.htmls = new Map<string, Document>();
@@ -32,6 +35,7 @@ export class AssetStorage
 
         eventSystem.subscribe("audioLoaded", event => this.onAudioLoaded(event));
         eventSystem.subscribe("imageLoaded", event => this.onImageLoaded(event));
+        eventSystem.subscribe("videoLoaded", event => this.onVideoLoaded(event));
         eventSystem.subscribe("fontLoaded", event => this.onFontLoaded(event));
         eventSystem.subscribe("jsonLoaded", event => this.onJsonLoaded(event));
         eventSystem.subscribe("xmlLoaded", event => this.onXmlLoaded(event));
@@ -50,6 +54,11 @@ export class AssetStorage
     private onImageLoaded(event: ImageLoadedEvent)
     {
         this.images.set(event.assetID, event.image);
+    }
+
+    private onVideoLoaded(event: VideoLoadedEvent)
+    {
+        this.videos.set(event.assetID, event.video);
     }
 
     private onFontLoaded(event: FontLoadedEvent)
@@ -118,6 +127,22 @@ export class AssetStorage
     public setImage(id: string, image: HTMLImageElement)
     {
         this.images.set(id, image);
+    }
+
+    public getVideo(id: string): HTMLVideoElement
+    {
+        const video = this.videos.get(id);
+
+        if(video === undefined) {
+            throw new GameError(`Video ${id} does not exist`);
+        }
+
+        return video;
+    }
+
+    public setVideo(id: string, video: HTMLVideoElement)
+    {
+        this.videos.set(id, video);
     }
 
     public getJson(id: string): object

@@ -31,6 +31,9 @@ export class AssetLoader
             else if(asset.type === "image") {
                 await this.loadImage(asset);
             }
+            else if(asset.type === "video") {
+                await this.loadVideo(asset);
+            }
             else if(asset.type === "font") {
                 await this.loadFont(asset);
             }
@@ -76,6 +79,20 @@ export class AssetLoader
         await image.decode();
 
         eventSystem.dispatch("imageLoaded", { assetID: asset.id, image: image });
+    }
+
+    private async loadVideo(asset: Asset)
+    {
+        return new Promise((resolve, reject) => {
+            const video = document.createElement("video");
+            video.autoplay = true;
+            video.src = asset.url;
+            video.onload = resolve;
+            video.onerror = reject;
+            video.load();
+
+            eventSystem.dispatch("videoLoaded", { assetID: asset.id, video: video });
+        });
     }
 
     private async loadFont(asset: Asset)

@@ -318,127 +318,6 @@ export class Graphics extends GraphicsContext
     }
 
 
-    public drawLine(line: Line): this
-    {
-        const start = line.getStart();
-        const end = line.getEnd();
-
-        this.beginPath();
-
-            this.moveTo(start.x, start.y);
-            this.lineTo(end.x, end.y);
-
-        this.closePath();
-
-        this.stroke();
-        return this;
-    }
-
-
-    public fillCircle(circle: Circle): this
-    {
-        this.drawCircle(circle);
-        this.fill();
-        return this;
-    }
-
-    public strokeCircle(circle: Circle): this
-    {
-        this.drawCircle(circle);
-        this.stroke();
-        return this;
-    }
-
-    private drawCircle(circle: Circle)
-    {
-        const center = circle.getPosition();
-        const radius = circle.getRadius();
-
-        this.arc(center.x, center.y, radius, 0, 2 * Math.PI);
-    }
-
-
-    public fillRectangle(rectangle: Rectangle): this
-    {
-        this.drawRectangle(rectangle);
-        this.fill();
-        return this;
-    }
-
-    public strokeRectangle(rectangle: Rectangle): this
-    {
-        this.drawRectangle(rectangle);
-        this.stroke();
-        return this;
-    }
-
-    private drawRectangle(rectangle: Rectangle)
-    {
-        const { width, height } = rectangle.getDimension();
-        const position = rectangle.getPosition();
-
-        this.rect(position.x, position.y, width, height);
-    }
-
-
-    public fillRoundRectangle(rectangle: Rectangle, radius: number): this
-    {
-        this.drawRoundRectangle(rectangle, radius);
-        this.fill();
-        return this;
-    }
-
-    public strokeRoundRectangle(rectangle: Rectangle, radius: number): this
-    {
-        this.drawRoundRectangle(rectangle, radius);
-        this.stroke();
-        return this;
-    }
-
-    private drawRoundRectangle(rectangle: Rectangle, radius: number)
-    {
-        const { width, height } = rectangle.getDimension();
-        const position = rectangle.getPosition();
-
-        this.roundRect(position.x, position.y, width, height, radius);
-    }
-
-
-    public fillPolygon(polygon: Polygon): this
-    {
-        this.drawPolygon(polygon);
-        this.fill();
-        return this;
-    }
-
-    public strokePolygon(polygon: Polygon): this
-    {
-        this.drawPolygon(polygon);
-        this.stroke();
-        return this;
-    }
-
-    private drawPolygon(polygon: Polygon)
-    {
-        const vertices = polygon.getVertices();
-        const start = vertices.shift();
-
-        if(start === undefined) {
-            throw new TypeError("Polygon has no vertices");
-        }
-
-        this.beginPath();
-
-            this.moveTo(start.x, start.y);
-
-            for(const vertex of vertices) {
-                this.lineTo(vertex.x, vertex.y);
-            }
-
-        this.closePath();
-    }
-
-
     public fillLabel(label: Label): this
     {
         this.drawLabel(label, "fill");
@@ -476,6 +355,130 @@ export class Graphics extends GraphicsContext
 
         this.setFontStyle(this.globalFontStyle);
         this.setTextStyle(this.globalTextStyle);
+    }
+
+    public drawSprite(id: string, x: number, y: number): this
+    {
+        const image = assetStorage.getImage(id);
+        this.drawImage(image, x, y);
+        return this;
+    }
+
+
+    public drawLine(line: Line): this
+    {
+        const start = line.getStart();
+        const end = line.getEnd();
+
+        this.beginPath();
+
+            this.moveTo(start.x, start.y);
+            this.lineTo(end.x, end.y);
+
+        this.closePath();
+
+        this.stroke();
+        return this;
+    }
+
+    public fillCircle(circle: Circle): this
+    {
+        this.drawCircle(circle);
+        this.fill();
+        return this;
+    }
+
+    public strokeCircle(circle: Circle): this
+    {
+        this.drawCircle(circle);
+        this.stroke();
+        return this;
+    }
+
+    private drawCircle(circle: Circle)
+    {
+        const center = circle.getPosition();
+        const radius = circle.getRadius();
+
+        this.arc(center.x, center.y, radius, 0, 2 * Math.PI);
+    }
+
+    public fillRectangle(rectangle: Rectangle): this
+    {
+        this.drawRectangle(rectangle);
+        this.fill();
+        return this;
+    }
+
+    public strokeRectangle(rectangle: Rectangle): this
+    {
+        this.drawRectangle(rectangle);
+        this.stroke();
+        return this;
+    }
+
+    private drawRectangle(rectangle: Rectangle)
+    {
+        const { width, height } = rectangle.getDimension();
+        const position = rectangle.getPosition();
+
+        this.rect(position.x, position.y, width, height);
+    }
+
+    public fillRoundRectangle(rectangle: Rectangle, radius: number): this
+    {
+        this.drawRoundRectangle(rectangle, radius);
+        this.fill();
+        return this;
+    }
+
+    public strokeRoundRectangle(rectangle: Rectangle, radius: number): this
+    {
+        this.drawRoundRectangle(rectangle, radius);
+        this.stroke();
+        return this;
+    }
+
+    private drawRoundRectangle(rectangle: Rectangle, radius: number)
+    {
+        const { width, height } = rectangle.getDimension();
+        const position = rectangle.getPosition();
+
+        this.roundRect(position.x, position.y, width, height, radius);
+    }
+
+    public fillPolygon(polygon: Polygon): this
+    {
+        this.drawPolygon(polygon);
+        this.fill();
+        return this;
+    }
+
+    public strokePolygon(polygon: Polygon): this
+    {
+        this.drawPolygon(polygon);
+        this.stroke();
+        return this;
+    }
+
+    private drawPolygon(polygon: Polygon)
+    {
+        const vertices = polygon.getVertices();
+        const start = vertices.shift();
+
+        if(start === undefined) {
+            throw new TypeError("Polygon has no vertices");
+        }
+
+        this.beginPath();
+
+            this.moveTo(start.x, start.y);
+
+            for(const vertex of vertices) {
+                this.lineTo(vertex.x, vertex.y);
+            }
+
+        this.closePath();
     }
 
 

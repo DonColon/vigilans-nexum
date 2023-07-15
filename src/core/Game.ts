@@ -4,7 +4,7 @@ import { GameEvent } from "./GameEvent";
 import { GameStateManager } from "./GameStateManager";
 import { Display, DisplaySettings } from "./graphics/Display";
 import { InputDevice } from "./input/InputDevice";
-import { AudioDevice } from "./audio/AudioDevice";
+import { AudioDevice, AudioSettings } from "./audio/AudioDevice";
 import { World } from "./ecs/World";
 import { AssetStorage } from "./assets/AssetStorage";
 
@@ -12,7 +12,8 @@ import { AssetStorage } from "./assets/AssetStorage";
 interface GameSettings
 {
     maxFPS: number,
-    display?: DisplaySettings
+    displaySettings?: DisplaySettings,
+    audioSettings?: AudioSettings
 }
 
 
@@ -34,9 +35,9 @@ export class Game
         window.eventSystem = new EventSystem<GameEvents, GameEvent>();
         window.assetStorage = new AssetStorage();
         window.stateManager = new GameStateManager();
-        window.display = new Display(settings.display);
+        window.display = new Display(settings.displaySettings);
         window.inputDevice = new InputDevice();
-        window.audioDevice = new AudioDevice();
+        window.audioDevice = new AudioDevice(settings.audioSettings);
         window.world = new World();
     }
 

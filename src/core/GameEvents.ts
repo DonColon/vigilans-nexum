@@ -2,6 +2,7 @@ import { WorldEvent } from "./ecs/WorldEvent";
 import { BundleLoadedEvent } from "./assets/BundleLoadedEvent";
 import { AudioLoadedEvent } from "./assets/AudioLoadedEvent";
 import { ImageLoadedEvent } from "./assets/ImageLoadedEvent";
+import { VideoLoadedEvent } from "./assets/VideoLoadedEvent";
 import { FontLoadedEvent } from "./assets/FontLoadedEvent";
 import { JsonLoadedEvent } from "./assets/JsonLoadedEvent";
 import { XmlLoadedEvent } from "./assets/XmlLoadedEvent";
@@ -17,6 +18,7 @@ export interface GameEvents
     "bundleLoaded": BundleLoadedEvent,
     "audioLoaded": AudioLoadedEvent,
     "imageLoaded": ImageLoadedEvent,
+    "videoLoaded": VideoLoadedEvent,
     "fontLoaded": FontLoadedEvent,
     "jsonLoaded": JsonLoadedEvent,
     "xmlLoaded": XmlLoadedEvent,
