@@ -1,6 +1,6 @@
 import { GameError } from "core/GameError";
 import { AssetManifest } from "./AssetManifest";
-import { Asset } from "./Asset";
+import { AudioAsset, CssAsset, FontAsset, HtmlAsset, ImageAsset, JavaScriptAsset, JsonAsset, VideoAsset, XmlAsset } from "./Asset";
 
 
 export class AssetLoader
@@ -24,7 +24,11 @@ export class AssetLoader
             throw new GameError(`Bundle ${bundleName} does not exist in asset manifest`);
         }
 
+        const assetRoot = this.manifest.assetRoot;
+
         for(const asset of bundle) {
+            asset.url = (assetRoot) ? assetRoot.concat(asset.url) : asset.url;
+
             if(asset.type === "audio") {
                 await this.loadAudio(asset);
             }
@@ -58,7 +62,7 @@ export class AssetLoader
     }
 
 
-    private async loadAudio(asset: Asset)
+    private async loadAudio(asset: AudioAsset)
     {
         const response = await fetch(asset.url);
         const data = await response.arrayBuffer();
@@ -72,7 +76,14 @@ export class AssetLoader
         eventSystem.dispatch("audioLoaded", { assetID: asset.id, track: audioTrack });
     }
 
-    private async loadImage(asset: Asset)
+    private async loadImage(asset: ImageAsset)
+    {
+        if(asset.subtype === "Sprite") {
+            this.loadSprite(asset);
+        }
+    }
+
+    private async loadSprite(asset: ImageAsset)
     {
         const image = new Image();
         image.src = asset.url;
@@ -81,7 +92,7 @@ export class AssetLoader
         eventSystem.dispatch("imageLoaded", { assetID: asset.id, image: image });
     }
 
-    private async loadVideo(asset: Asset)
+    private async loadVideo(asset: VideoAsset)
     {
         return new Promise((resolve, reject) => {
             const video = document.createElement("video");
@@ -95,7 +106,7 @@ export class AssetLoader
         });
     }
 
-    private async loadFont(asset: Asset)
+    private async loadFont(asset: FontAsset)
     {
         const response = await fetch(asset.url);
         const buffer = await response.arrayBuffer();
@@ -105,7 +116,7 @@ export class AssetLoader
         eventSystem.dispatch("fontLoaded", { assetID: asset.id, font: font });
     }
 
-    private async loadJson(asset: Asset)
+    private async loadJson(asset: JsonAsset)
     {
         const response = await fetch(asset.url);
         const json = await response.json();
@@ -113,7 +124,7 @@ export class AssetLoader
         eventSystem.dispatch("jsonLoaded", { assetID: asset.id, json: json });
     }
 
-    private async loadXml(asset: Asset)
+    private async loadXml(asset: XmlAsset)
     {
         const response = await fetch(asset.url);
         const text = await response.text();
@@ -122,7 +133,7 @@ export class AssetLoader
         eventSystem.dispatch("xmlLoaded", { assetID: asset.id, xml: xml });
     }
 
-    private async loadHtml(asset: Asset)
+    private async loadHtml(asset: HtmlAsset)
     {
         const response = await fetch(asset.url);
         const text = await response.text();
@@ -131,7 +142,7 @@ export class AssetLoader
         eventSystem.dispatch("htmlLoaded", { assetID: asset.id, html: html });
     }
 
-    private async loadCss(asset: Asset)
+    private async loadCss(asset: CssAsset)
     {
         return new Promise((resolve, reject) => {
             const css = document.createElement("link");
@@ -144,8 +155,9 @@ export class AssetLoader
         });
     }
 
-    private async loadJavaScript(asset: Asset)
+    private async loadJavaScript(asset: JavaScriptAsset)
     {
+
         if(asset.subtype === "Script") {
             await this.loadScript(asset);
         } 
@@ -154,7 +166,7 @@ export class AssetLoader
         }
     }
 
-    private async loadScript(asset: Asset)
+    private async loadScript(asset: JavaScriptAsset)
     {
         return new Promise((resolve, reject) => {
             const script = document.createElement("script");
@@ -167,7 +179,7 @@ export class AssetLoader
         });
     }
 
-    private async loadModule(asset: Asset)
+    private async loadModule(asset: JavaScriptAsset)
     {
         const module = await import(asset.url);
         eventSystem.dispatch("moduleLoaded", { assetID: asset.id, module: module });
