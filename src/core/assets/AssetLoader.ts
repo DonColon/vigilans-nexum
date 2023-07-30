@@ -1,19 +1,36 @@
 import { GameError } from "core/GameError";
 import { AssetManifest } from "./AssetManifest";
-import { AudioAsset, CssAsset, FontAsset, HtmlAsset, ImageAsset, JavaScriptAsset, JsonAsset, VideoAsset, XmlAsset } from "./Asset";
+import { AssetType, AudioAsset, CssAsset, FontAsset, HtmlAsset, ImageAsset, JavaScriptAsset, JsonAsset, VideoAsset, XmlAsset } from "./Asset";
 import { Sprite } from "core/graphics/Sprite";
+
+
+export interface LoaderSettings
+{
+    manifest: AssetManifest,
+    useCache: boolean
+}
 
 
 export class AssetLoader
 {
+    private manifest: AssetManifest;
+    private useCache: boolean;
+
+    private responses: Map<RequestInfo, Response>;
     private cache!: Cache;
+
     private renderContext: CanvasRenderingContext2D;
     private audioContext: AudioContext;
     private domParser: DOMParser;
 
 
-    constructor(private manifest: AssetManifest)
+    constructor(settings: LoaderSettings)
     {
+        this.manifest = settings.manifest;
+        this.useCache = settings.useCache;
+
+        this.responses = new Map<RequestInfo, Response>();
+
         const canvas = document.createElement("canvas");
         const renderContext = canvas.getContext("2d");
 
@@ -34,13 +51,7 @@ export class AssetLoader
             throw new GameError(`Bundle ${bundleName} does not exist in asset manifest`);
         }
 
-        const urls = bundle.map(asset => asset.url);
-
-        if(!this.cache) {
-            this.cache = await caches.open("assetStorage");
-        }
-
-        await this.cache.addAll(urls);
+        await this.loadBundle(bundle);
 
         for(const asset of bundle) {
             if(asset.type === "image") {
@@ -75,17 +86,49 @@ export class AssetLoader
         eventSystem.dispatch("bundleLoaded", { bundle: bundleName });
     }
 
+    private async loadBundle(bundle: AssetType[])
+    {
+        const urls = bundle.map(asset => asset.url);
+
+        if(this.useCache) {
+            if(!this.cache) {
+                this.cache = await caches.open("assetStorage");
+            }
+
+            await this.cache.addAll(urls);
+
+        } else {
+
+            const responses = await this.fetchAll(urls);
+
+            for(const [index, url] of urls.entries()) {
+                this.responses.set(url, responses[index]);
+            }
+        }
+    }
+
+    private async fetchAll(requests: RequestInfo[]): Promise<Response[]>
+    {
+        try {
+            return await Promise.all(requests.map(request => fetch(request)));
+
+        } catch(error) {
+
+            throw error;
+        }
+    }
+
 
     private async loadImage(asset: ImageAsset)
     {
-        if(asset.subtype === "Sprite") {
+        if(asset.subtype === "sprite") {
             await this.loadSprite(asset);
         }
     }
 
     private async loadSprite(asset: ImageAsset)
     {
-        const response = await this.cache.match(asset.url) as Response;
+        const response = await this.getResponse(asset.url);
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
 
@@ -98,7 +141,7 @@ export class AssetLoader
 
     private async loadAudio(asset: AudioAsset)
     {
-        const response = await this.cache.match(asset.url) as Response;
+        const response = await this.getResponse(asset.url);
         const buffer = await response.arrayBuffer();
         const audioBuffer = await this.audioContext.decodeAudioData(buffer);
 
@@ -112,7 +155,7 @@ export class AssetLoader
 
     private async loadVideo(asset: VideoAsset)
     {
-        const response = await this.cache.match(asset.url) as Response;
+        const response = await this.getResponse(asset.url);
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
 
@@ -124,7 +167,7 @@ export class AssetLoader
 
     private async loadFont(asset: FontAsset)
     {
-        const response = await this.cache.match(asset.url) as Response;
+        const response = await this.getResponse(asset.url);
         const buffer = await response.arrayBuffer();
 
         const font = new FontFace(asset.id, buffer);
@@ -135,7 +178,7 @@ export class AssetLoader
 
     private async loadJson(asset: JsonAsset)
     {
-        const response = await this.cache.match(asset.url) as Response;
+        const response = await this.getResponse(asset.url);
         const json = await response.json();
 
         eventSystem.dispatch("jsonLoaded", { assetID: asset.id, json: json });
@@ -143,7 +186,7 @@ export class AssetLoader
 
     private async loadXml(asset: XmlAsset)
     {
-        const response = await this.cache.match(asset.url) as Response;
+        const response = await this.getResponse(asset.url);
         const text = await response.text();
 
         const xml = this.domParser.parseFromString(text, "application/xml") as XMLDocument;
@@ -153,7 +196,7 @@ export class AssetLoader
 
     private async loadHtml(asset: HtmlAsset)
     {
-        const response = await this.cache.match(asset.url) as Response;
+        const response = await this.getResponse(asset.url);
         const text = await response.text();
 
         const html = this.domParser.parseFromString(text, "text/html");
@@ -163,7 +206,7 @@ export class AssetLoader
 
     private async loadCss(asset: CssAsset)
     {
-        const response = await this.cache.match(asset.url) as Response;
+        const response = await this.getResponse(asset.url);
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
 
@@ -176,19 +219,45 @@ export class AssetLoader
 
     private async loadJavaScript(asset: JavaScriptAsset)
     {
-        const response = await this.cache.match(asset.url) as Response;
+        const response = await this.getResponse(asset.url);
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
 
         const script = document.createElement("script");
 
-        if(asset.subtype === "Module") {
-            script.type = "module";
+        if(asset.subtype === "module") {
+            script.type = asset.subtype;
         }
 
         script.async = true;
         script.src = url;
             
         eventSystem.dispatch("scriptLoaded", { assetID: asset.id, script: script });
+    }
+
+
+    private async getResponse(request: RequestInfo): Promise<Response>
+    {
+        if(this.useCache) {
+            let response = await this.cache.match(request);
+
+            if(!response) {
+                await this.cache.add(request);
+                response = await this.cache.match(request);
+            }
+
+            return response as Response;
+
+        } else {
+            
+            let response = this.responses.get(request);
+
+            if(!response) {
+                response = await fetch(request);
+                this.responses.set(request, response);
+            }
+
+            return response;
+        }
     }
 }

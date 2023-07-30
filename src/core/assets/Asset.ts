@@ -11,7 +11,7 @@ export type AssetType = ImageAsset | AudioAsset | VideoAsset | FontAsset | JsonA
 export interface ImageAsset extends Asset
 {
     type: "image",
-    subtype: "Sprite" | "Spritesheet" | "Animation"
+    subtype: "sprite" | "spritesheet" | "animation"
 }
 
 export interface AudioAsset extends Asset
@@ -53,5 +53,5 @@ export interface CssAsset extends Asset
 export interface JavaScriptAsset extends Asset
 {
     type: "javascript",
-    subtype: "Script" | "Module"
+    subtype: "script" | "module"
 }
