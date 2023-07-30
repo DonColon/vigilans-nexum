@@ -360,7 +360,7 @@ export class Graphics extends GraphicsContext
     public drawSprite(id: string, x: number, y: number): this
     {
         const image = assetStorage.getImage(id);
-        this.drawImage(image, x, y);
+        image.display(this, x, y);
         return this;
     }
 

@@ -1,20 +1,30 @@
 import { GameError } from "core/GameError";
 import { AssetManifest } from "./AssetManifest";
 import { AudioAsset, CssAsset, FontAsset, HtmlAsset, ImageAsset, JavaScriptAsset, JsonAsset, VideoAsset, XmlAsset } from "./Asset";
+import { Sprite } from "core/graphics/Sprite";
 
 
 export class AssetLoader
 {
+    private cache!: Cache;
+    private renderContext: CanvasRenderingContext2D;
     private audioContext: AudioContext;
     private domParser: DOMParser;
 
 
     constructor(private manifest: AssetManifest)
     {
+        const canvas = document.createElement("canvas");
+        const renderContext = canvas.getContext("2d");
+
+        if(!renderContext) {
+            throw new GameError(`Rendering Context could not be created`);
+        }
+
+        this.renderContext = renderContext;
         this.audioContext = new AudioContext();
         this.domParser = new DOMParser();
     }
-
 
     public async load(bundleName: string)
     {
@@ -24,16 +34,20 @@ export class AssetLoader
             throw new GameError(`Bundle ${bundleName} does not exist in asset manifest`);
         }
 
-        const assetRoot = this.manifest.assetRoot;
+        const urls = bundle.map(asset => asset.url);
+
+        if(!this.cache) {
+            this.cache = await caches.open("assetStorage");
+        }
+
+        await this.cache.addAll(urls);
 
         for(const asset of bundle) {
-            asset.url = (assetRoot) ? assetRoot.concat(asset.url) : asset.url;
-
-            if(asset.type === "audio") {
-                await this.loadAudio(asset);
-            }
-            else if(asset.type === "image") {
+            if(asset.type === "image") {
                 await this.loadImage(asset);
+            }
+            else if(asset.type === "audio") {
+                await this.loadAudio(asset);
             }
             else if(asset.type === "video") {
                 await this.loadVideo(asset);
@@ -62,11 +76,31 @@ export class AssetLoader
     }
 
 
+    private async loadImage(asset: ImageAsset)
+    {
+        if(asset.subtype === "Sprite") {
+            await this.loadSprite(asset);
+        }
+    }
+
+    private async loadSprite(asset: ImageAsset)
+    {
+        const response = await this.cache.match(asset.url) as Response;
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+
+        const image = new Image();
+        image.src = url;
+
+        const sprite = new Sprite(image);
+        eventSystem.dispatch("imageLoaded", { assetID: asset.id, image: sprite });
+    }
+
     private async loadAudio(asset: AudioAsset)
     {
-        const response = await fetch(asset.url);
-        const data = await response.arrayBuffer();
-        const audioBuffer = await this.audioContext.decodeAudioData(data);
+        const response = await this.cache.match(asset.url) as Response;
+        const buffer = await response.arrayBuffer();
+        const audioBuffer = await this.audioContext.decodeAudioData(buffer);
 
         const audioTrack = { 
             buffer: audioBuffer, 
@@ -76,40 +110,23 @@ export class AssetLoader
         eventSystem.dispatch("audioLoaded", { assetID: asset.id, track: audioTrack });
     }
 
-    private async loadImage(asset: ImageAsset)
-    {
-        if(asset.subtype === "Sprite") {
-            this.loadSprite(asset);
-        }
-    }
-
-    private async loadSprite(asset: ImageAsset)
-    {
-        const image = new Image();
-        image.src = asset.url;
-        await image.decode();
-
-        eventSystem.dispatch("imageLoaded", { assetID: asset.id, image: image });
-    }
-
     private async loadVideo(asset: VideoAsset)
     {
-        return new Promise((resolve, reject) => {
-            const video = document.createElement("video");
-            video.autoplay = true;
-            video.src = asset.url;
-            video.onload = resolve;
-            video.onerror = reject;
-            video.load();
+        const response = await this.cache.match(asset.url) as Response;
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
 
-            eventSystem.dispatch("videoLoaded", { assetID: asset.id, video: video });
-        });
+        const video = document.createElement("video");
+        video.src = url;
+
+        eventSystem.dispatch("videoLoaded", { assetID: asset.id, video: video });
     }
 
     private async loadFont(asset: FontAsset)
     {
-        const response = await fetch(asset.url);
+        const response = await this.cache.match(asset.url) as Response;
         const buffer = await response.arrayBuffer();
+
         const font = new FontFace(asset.id, buffer);
         await font.load();
 
@@ -118,7 +135,7 @@ export class AssetLoader
 
     private async loadJson(asset: JsonAsset)
     {
-        const response = await fetch(asset.url);
+        const response = await this.cache.match(asset.url) as Response;
         const json = await response.json();
 
         eventSystem.dispatch("jsonLoaded", { assetID: asset.id, json: json });
@@ -126,8 +143,9 @@ export class AssetLoader
 
     private async loadXml(asset: XmlAsset)
     {
-        const response = await fetch(asset.url);
+        const response = await this.cache.match(asset.url) as Response;
         const text = await response.text();
+
         const xml = this.domParser.parseFromString(text, "application/xml") as XMLDocument;
 
         eventSystem.dispatch("xmlLoaded", { assetID: asset.id, xml: xml });
@@ -135,8 +153,9 @@ export class AssetLoader
 
     private async loadHtml(asset: HtmlAsset)
     {
-        const response = await fetch(asset.url);
+        const response = await this.cache.match(asset.url) as Response;
         const text = await response.text();
+
         const html = this.domParser.parseFromString(text, "text/html");
 
         eventSystem.dispatch("htmlLoaded", { assetID: asset.id, html: html });
@@ -144,44 +163,32 @@ export class AssetLoader
 
     private async loadCss(asset: CssAsset)
     {
-        return new Promise((resolve, reject) => {
-            const css = document.createElement("link");
-            css.rel = "stylesheet";
-            css.href = asset.url;
-            css.onload = resolve;
-            css.onerror = reject;
+        const response = await this.cache.match(asset.url) as Response;
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
 
-            eventSystem.dispatch("cssLoaded", { assetID: asset.id, css: css });
-        });
+        const css = document.createElement("link");
+        css.rel = "stylesheet";
+        css.href = url;
+
+        eventSystem.dispatch("cssLoaded", { assetID: asset.id, css: css });
     }
 
     private async loadJavaScript(asset: JavaScriptAsset)
     {
+        const response = await this.cache.match(asset.url) as Response;
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
 
-        if(asset.subtype === "Script") {
-            await this.loadScript(asset);
-        } 
-        else if(asset.subtype === "Module") {
-            await this.loadModule(asset);
+        const script = document.createElement("script");
+
+        if(asset.subtype === "Module") {
+            script.type = "module";
         }
-    }
 
-    private async loadScript(asset: JavaScriptAsset)
-    {
-        return new Promise((resolve, reject) => {
-            const script = document.createElement("script");
-            script.async = true;
-            script.src = asset.url;
-            script.onload = resolve;
-            script.onerror = reject;
+        script.async = true;
+        script.src = url;
             
-            eventSystem.dispatch("scriptLoaded", { assetID: asset.id, script: script });
-        });
-    }
-
-    private async loadModule(asset: JavaScriptAsset)
-    {
-        const module = await import(asset.url);
-        eventSystem.dispatch("moduleLoaded", { assetID: asset.id, module: module });
+        eventSystem.dispatch("scriptLoaded", { assetID: asset.id, script: script });
     }
 }

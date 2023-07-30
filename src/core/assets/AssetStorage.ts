@@ -1,4 +1,5 @@
 import { AudioTrack } from "core/audio/AudioTrack";
+import { Sprite } from "core/graphics/Sprite";
 import { GameError } from "core/GameError";
 import { AudioLoadedEvent } from "./AudioLoadedEvent";
 import { ImageLoadedEvent } from "./ImageLoadedEvent";
@@ -8,30 +9,27 @@ import { XmlLoadedEvent } from "./XmlLoadedEvent";
 import { HtmlLoadedEvent } from "./HtmlLoadedEvent";
 import { CssLoadedEvent } from "./CssLoadedEvent";
 import { ScriptLoadedEvent } from "./ScriptLoadedEvent";
-import { ModuleLoadedEvent } from "./ModuleLoadedEvent";
 import { VideoLoadedEvent } from "./VideoLoadedEvent";
 
 
 export class AssetStorage
 {
     private audio: Map<string, AudioTrack>;
-    private images: Map<string, HTMLImageElement>;
+    private images: Map<string, Sprite>;
     private videos: Map<string, HTMLVideoElement>;
     private jsons: Map<string, object>;
     private xmls: Map<string, XMLDocument>;
     private htmls: Map<string, Document>;
-    private modules: Map<string, any>;
 
 
     constructor()
     {
         this.audio = new Map<string, AudioTrack>();
-        this.images = new Map<string, HTMLImageElement>();
+        this.images = new Map<string, Sprite>();
         this.videos = new Map<string, HTMLVideoElement>();
         this.jsons = new Map<string, object>();
         this.xmls = new Map<string, XMLDocument>();
         this.htmls = new Map<string, Document>();
-        this.modules = new Map<string, any>();
 
         eventSystem.subscribe("audioLoaded", event => this.onAudioLoaded(event));
         eventSystem.subscribe("imageLoaded", event => this.onImageLoaded(event));
@@ -42,58 +40,61 @@ export class AssetStorage
         eventSystem.subscribe("htmlLoaded", event => this.onHtmlLoaded(event));
         eventSystem.subscribe("cssLoaded", event => this.onCssLoaded(event));
         eventSystem.subscribe("scriptLoaded", event => this.onScriptLoaded(event));
-        eventSystem.subscribe("moduleLoaded", event => this.onModuleLoaded(event));
     }
 
-
-    private onAudioLoaded(event: AudioLoadedEvent)
-    {
-        this.audio.set(event.assetID, event.track);
-    }
 
     private onImageLoaded(event: ImageLoadedEvent)
     {
+        console.log(event.image);
         this.images.set(event.assetID, event.image);
+    }
+
+    private onAudioLoaded(event: AudioLoadedEvent)
+    {
+        console.log(event.track);
+        this.audio.set(event.assetID, event.track);
     }
 
     private onVideoLoaded(event: VideoLoadedEvent)
     {
+        console.log(event.video);
         this.videos.set(event.assetID, event.video);
     }
 
     private onFontLoaded(event: FontLoadedEvent)
     {
+        console.log(event.font);
         document.fonts.add(event.font);
     }
 
     private onJsonLoaded(event: JsonLoadedEvent)
     {
+        console.log(event.json);
         this.jsons.set(event.assetID, event.json);
     }
 
     private onXmlLoaded(event: XmlLoadedEvent)
     {
+        console.log(event.xml);
         this.xmls.set(event.assetID, event.xml);
     }
 
     private onHtmlLoaded(event: HtmlLoadedEvent)
     {
+        console.log(event.html);
         this.htmls.set(event.assetID, event.html);
     }
 
     private onCssLoaded(event: CssLoadedEvent)
     {
+        console.log(event.css);
         document.head.appendChild(event.css);
     }
 
     private onScriptLoaded(event: ScriptLoadedEvent)
     {
+        console.log(event.script);
         document.body.appendChild(event.script);
-    }
-
-    private onModuleLoaded(event: ModuleLoadedEvent)
-    {
-        this.modules.set(event.assetID, event.module);
     }
 
 
@@ -113,7 +114,7 @@ export class AssetStorage
         this.audio.set(id, track);
     }
 
-    public getImage(id: string): HTMLImageElement
+    public getImage(id: string): Sprite
     {
         const image = this.images.get(id);
 
@@ -124,7 +125,7 @@ export class AssetStorage
         return image;
     }
 
-    public setImage(id: string, image: HTMLImageElement)
+    public setImage(id: string, image: Sprite)
     {
         this.images.set(id, image);
     }
@@ -191,21 +192,5 @@ export class AssetStorage
     public setHtml(id: string, html: Document)
     {
         this.htmls.set(id, html);
-    }
-
-    public getModule(id: string): any
-    {
-        const module = this.xmls.get(id);
-
-        if(module === undefined) {
-            throw new GameError(`Module ${id} does not exist`);
-        }
-
-        return module;
-    }
-
-    public setModule(id: string, module: any)
-    {
-        this.modules.set(id, module);
     }
 }

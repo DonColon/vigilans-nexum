@@ -5,19 +5,19 @@ interface Asset
 }
 
 
-export type AssetType = AudioAsset | ImageAsset | VideoAsset | FontAsset | JsonAsset | XmlAsset | HtmlAsset | CssAsset | JavaScriptAsset
+export type AssetType = ImageAsset | AudioAsset | VideoAsset | FontAsset | JsonAsset | XmlAsset | HtmlAsset | CssAsset | JavaScriptAsset;
 
-
-export interface AudioAsset extends Asset
-{
-    type: "audio",
-    subtype: string
-}
 
 export interface ImageAsset extends Asset
 {
     type: "image",
     subtype: "Sprite" | "Spritesheet" | "Animation"
+}
+
+export interface AudioAsset extends Asset
+{
+    type: "audio",
+    subtype: string
 }
 
 export interface VideoAsset extends Asset
