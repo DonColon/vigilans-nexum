@@ -27,7 +27,7 @@
 		"build": "rollup -c",
 		"watch": "rollup -c -f umd -w",
 		"start": "npm-run-all --parallel server watch",
-		"server": "serve"
+		"server": "serve dist"
 	},
 	"devDependencies": {
 		"@rollup/plugin-commonjs": "^21.0.3",
@@ -35,6 +35,7 @@
 		"@rollup/plugin-typescript": "^8.3.1",
 		"npm-run-all": "^1.7.0",
 		"rollup": "^2.70.1",
+		"rollup-plugin-copy": "^3.4.0",
 		"rollup-plugin-terser": "^7.0.2",
 		"serve": "^14.2.0",
 		"tslib": "^2.3.1",

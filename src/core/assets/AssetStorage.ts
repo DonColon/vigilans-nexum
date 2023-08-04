@@ -45,55 +45,46 @@ export class AssetStorage
 
     private onImageLoaded(event: ImageLoadedEvent)
     {
-        console.log(event.image);
         this.images.set(event.assetID, event.image);
     }
 
     private onAudioLoaded(event: AudioLoadedEvent)
     {
-        console.log(event.track);
         this.audio.set(event.assetID, event.track);
     }
 
     private onVideoLoaded(event: VideoLoadedEvent)
     {
-        console.log(event.video);
         this.videos.set(event.assetID, event.video);
     }
 
     private onFontLoaded(event: FontLoadedEvent)
     {
-        console.log(event.font);
         document.fonts.add(event.font);
     }
 
     private onJsonLoaded(event: JsonLoadedEvent)
     {
-        console.log(event.json);
         this.jsons.set(event.assetID, event.json);
     }
 
     private onXmlLoaded(event: XmlLoadedEvent)
     {
-        console.log(event.xml);
         this.xmls.set(event.assetID, event.xml);
     }
 
     private onHtmlLoaded(event: HtmlLoadedEvent)
     {
-        console.log(event.html);
         this.htmls.set(event.assetID, event.html);
     }
 
     private onCssLoaded(event: CssLoadedEvent)
     {
-        console.log(event.css);
         document.head.appendChild(event.css);
     }
 
     private onScriptLoaded(event: ScriptLoadedEvent)
     {
-        console.log(event.script);
         document.body.appendChild(event.script);
     }
 

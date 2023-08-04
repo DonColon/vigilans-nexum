@@ -39,6 +39,10 @@ export class Display
             this.viewport.style.width = `${window.innerWidth}px`;
             this.viewport.style.height = `${window.innerHeight}px`;
 
+            this.viewport.style.position = "relative";
+            this.viewport.style.display = "block";
+            this.viewport.style.background = "#eee";
+
             document.body.append(this.viewport);
 
         } else {
@@ -54,6 +58,10 @@ export class Display
                 viewport.style.width = `${dimension.width}px`;
                 viewport.style.height = `${dimension.height}px`;
             }
+
+            viewport.style.position = "relative";
+            viewport.style.display = "block";
+            viewport.style.background = "#eee";
     
             this.viewport = viewport;
 
@@ -148,6 +156,8 @@ export class Display
         const canvas = document.createElement("canvas");
         canvas.width = this.viewportDimension.width;
         canvas.height = this.viewportDimension.height;
+        canvas.style.backgroundColor = "transparent";
+        canvas.style.position = "absolute";
         canvas.style.zIndex = order.toString();
         canvas.id = name;
 

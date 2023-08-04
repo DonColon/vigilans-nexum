@@ -14,14 +14,3 @@ body {
     justify-content: center;
     background: #161616;
 }
-
-main {
-    position: relative;
-    background: #eee;
-    display: block;
-}
-
-main canvas {
-    position: absolute;
-    background-color: transparent;
-}
