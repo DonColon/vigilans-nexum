@@ -7,6 +7,7 @@ import { Sprite } from "core/graphics/Sprite";
 export interface LoaderSettings
 {
     manifest: AssetManifest,
+    initialBundle: string,
     useCache: boolean
 }
 

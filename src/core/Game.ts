@@ -7,11 +7,13 @@ import { InputDevice } from "./input/InputDevice";
 import { AudioDevice, AudioSettings } from "./audio/AudioDevice";
 import { World } from "./ecs/World";
 import { AssetStorage } from "./assets/AssetStorage";
+import { AssetLoader, LoaderSettings } from "./assets/AssetLoader";
 
 
 interface GameSettings
 {
     maxFPS: number,
+    loaderSettings: LoaderSettings,
     displaySettings?: DisplaySettings,
     audioSettings?: AudioSettings
 }
@@ -34,11 +36,26 @@ export class Game
 
         window.eventSystem = new EventSystem<GameEvents, GameEvent>();
         window.assetStorage = new AssetStorage();
+        window.assetLoader = new AssetLoader(settings.loaderSettings);
         window.stateManager = new GameStateManager();
         window.display = new Display(settings.displaySettings);
         window.inputDevice = new InputDevice();
         window.audioDevice = new AudioDevice(settings.audioSettings);
         window.world = new World();
+
+        this.initialLoad(settings.loaderSettings);
+    }
+
+    private initialLoad(settings: LoaderSettings)
+    {
+        const initialBundle = settings.initialBundle;
+        assetLoader.load(initialBundle);
+
+        eventSystem.subscribe("bundleLoaded", event => {
+            if(event.bundle === initialBundle) {
+                this.start();
+            }
+        });
     }
 
 
@@ -69,8 +86,7 @@ export class Game
 
     private render()
     {
-        /*const graphics = display.getLayer("ui");
-        graphics.clearCanvas();*/
+        
     }
 
 
