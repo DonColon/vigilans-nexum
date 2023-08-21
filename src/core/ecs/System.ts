@@ -10,13 +10,11 @@ export interface SystemConstructor
 export abstract class System
 {
     protected abstract queries: QueryList;
-    protected priority: number;
     protected enabled: boolean;
 
 
-    constructor(priority: number)
+    constructor(protected priority: number)
     {
-        this.priority = priority;
         this.enabled = true;
         this.initialize();
     }

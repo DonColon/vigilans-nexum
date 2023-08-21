@@ -4,7 +4,7 @@ import { AssetType, AudioAsset, CssAsset, FontAsset, HtmlAsset, ImageAsset, Java
 import { Sprite } from "core/graphics/Sprite";
 
 
-export interface LoaderSettings
+export interface LoaderConfiguration
 {
     manifest: AssetManifest,
     initialBundle: string,
@@ -16,6 +16,7 @@ export class AssetLoader
 {
     private manifest: AssetManifest;
     private useCache: boolean;
+    private id: string;
 
     private responses: Map<RequestInfo, Response>;
     private cache!: Cache;
@@ -25,10 +26,11 @@ export class AssetLoader
     private domParser: DOMParser;
 
 
-    constructor(settings: LoaderSettings)
+    constructor(id: string, config: LoaderConfiguration)
     {
-        this.manifest = settings.manifest;
-        this.useCache = settings.useCache;
+        this.manifest = config.manifest;
+        this.useCache = config.useCache;
+        this.id = id;
 
         this.responses = new Map<RequestInfo, Response>();
 
@@ -93,7 +95,7 @@ export class AssetLoader
 
         if(this.useCache) {
             if(!this.cache) {
-                this.cache = await caches.open("assetStorage");
+                this.cache = await caches.open(this.id);
             }
 
             await this.cache.addAll(urls);

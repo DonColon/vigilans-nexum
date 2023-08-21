@@ -3,7 +3,7 @@ import { UserGestures } from "./UserGestures";
 import { AudioChannel } from "./AudioChannel";
 
 
-export interface AudioSettings
+export interface AudioConfiguration
 {
     channels: string[]
 }
@@ -16,7 +16,7 @@ export class AudioDevice
     private masterVolume: GainNode;
 
 
-    constructor(settings?: AudioSettings)
+    constructor(config?: AudioConfiguration)
     {
         this.context = new AudioContext();
         this.channels = new Map<string, AudioChannel>();
@@ -24,8 +24,8 @@ export class AudioDevice
         this.masterVolume = this.context.createGain();
         this.masterVolume.connect(this.context.destination);
 
-        if(settings) {
-            for(const channel of settings.channels) {
+        if(config) {
+            for(const channel of config.channels) {
                 this.addChannel(channel);
             }
         }

@@ -3,30 +3,43 @@ import { JsonSchema } from "./JsonSchema";
 import { ComponentConstructor } from "./Component";
 import { Entity } from "./Entity";
 import { System, SystemConstructor } from "./System";
+import { UpdateSystem } from "./UpdateSystem";
+import { RenderSystem } from "./RenderSystem";
 
 
 export class World
 {
     private components: Map<string, ComponentConstructor<any>>;
     private entities: Map<string, Entity>;
+
     private systems: Map<string, System>;
-    private schedule: System[];
+    private updateSchedule: System[];
+    private renderSchedule: System[];
 
 
     constructor()
     {
         this.components = new Map<string, ComponentConstructor<any>>();
         this.entities = new Map<string, Entity>();
+
         this.systems = new Map<string, System>();
-        this.schedule = [];
+        this.updateSchedule = [];
+        this.renderSchedule = [];
     }
 
 
-    public execute(elapsed: number, frame: number)
+    public update(elapsed: number, frame: number)
     {
-        const schedule = this.getSchedule();
-        
-        for(const system of schedule) {
+        for(const system of this.updateSchedule) {
+            if(system.isEnabled()) {
+                system.execute(elapsed, frame);
+            }
+        }
+    }
+
+    public render(elapsed: number, frame: number)
+    {
+        for(const system of this.renderSchedule) {
             if(system.isEnabled()) {
                 system.execute(elapsed, frame);
             }
@@ -74,7 +87,29 @@ export class World
 
         const system = new systemType(priority);
         this.systems.set(systemType.name, system);
+
+        if(system instanceof UpdateSystem) {
+            this.scheduleUpdateSystems();
+        }
+        else if(system instanceof RenderSystem) {
+            this.scheduleRenderSystems();
+        }
+
         return this;
+    }
+
+    private scheduleUpdateSystems()
+    {
+        const systems = Array.from(this.systems.values());
+        this.updateSchedule = systems.filter(system => system instanceof UpdateSystem);
+        this.updateSchedule.sort(System.byPriority);
+    }
+
+    private scheduleRenderSystems()
+    {
+        const systems = Array.from(this.systems.values());
+        this.updateSchedule = systems.filter(system => system instanceof RenderSystem);
+        this.updateSchedule.sort(System.byPriority);
     }
 
     public unregisterSystem(systemType: SystemConstructor): this
@@ -143,18 +178,13 @@ export class World
         return system;
     }
 
-    public getSystems(): System[]
+    public getUpdateSchedule(): System[]
     {
-        return Array.from(this.systems.values());
+        return this.updateSchedule;
     }
 
-    public getSchedule(): System[]
+    public getRenderSchedule(): System[]
     {
-        if(this.systems.size !== this.schedule.length) {
-            this.schedule = Array.from(this.systems.values());
-            this.schedule.sort(System.byPriority);
-        }
-
-        return this.schedule;
+        return this.renderSchedule;
     }
 }

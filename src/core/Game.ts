@@ -1,54 +1,96 @@
 import { EventSystem } from "./EventSystem";
 import { GameEvents } from "./GameEvents";
 import { GameEvent } from "./GameEvent";
-import { GameStateManager } from "./GameStateManager";
-import { Display, DisplaySettings } from "./graphics/Display";
-import { InputDevice } from "./input/InputDevice";
-import { AudioDevice, AudioSettings } from "./audio/AudioDevice";
-import { World } from "./ecs/World";
+import { LocalDatabase, DatabaseConfiguration } from "./database/LocalDatabase";
 import { AssetStorage } from "./assets/AssetStorage";
-import { AssetLoader, LoaderSettings } from "./assets/AssetLoader";
+import { AssetLoader, LoaderConfiguration } from "./assets/AssetLoader";
+import { GameStateManager } from "./GameStateManager";
+import { Display, DisplayConfiguration } from "./graphics/Display";
+import { InputDevice } from "./input/InputDevice";
+import { AudioDevice, AudioConfiguration } from "./audio/AudioDevice";
+import { World } from "./ecs/World";
 
 
-interface GameSettings
+interface GameConfiguration
 {
+    id: string,
     maxFPS: number,
-    loaderSettings: LoaderSettings,
-    displaySettings?: DisplaySettings,
-    audioSettings?: AudioSettings
+    savegameSlots?: number,
+    assetLoader: LoaderConfiguration,
+    localDatabase: DatabaseConfiguration,
+    display?: DisplayConfiguration,
+    audioDevice?: AudioConfiguration,
 }
 
 
 export class Game 
 {
     private timePerUpdate: number;
-    private isRunning: boolean;
+    private animationFrame: number;
     private previous: number;
     private lag: number;
 
+    private isRunning: boolean;
+    private savegameSlots: number;
 
-    constructor(settings: GameSettings)
+
+    constructor(config: GameConfiguration)
     {
-        this.timePerUpdate = 1000 / settings.maxFPS;
-        this.isRunning = false;
+        this.timePerUpdate = 1000 / config.maxFPS;
+        this.animationFrame = 0;
         this.previous = 0;
         this.lag = 0;
 
+        this.isRunning = false;
+        this.savegameSlots = config.savegameSlots || Number.MAX_SAFE_INTEGER;
+
         window.eventSystem = new EventSystem<GameEvents, GameEvent>();
+        window.localDatabase = new LocalDatabase(config.id, config.localDatabase);
         window.assetStorage = new AssetStorage();
-        window.assetLoader = new AssetLoader(settings.loaderSettings);
+        window.assetLoader = new AssetLoader(config.id, config.assetLoader);
         window.stateManager = new GameStateManager();
-        window.display = new Display(settings.displaySettings);
+        window.display = new Display(config.id, config.display);
         window.inputDevice = new InputDevice();
-        window.audioDevice = new AudioDevice(settings.audioSettings);
+        window.audioDevice = new AudioDevice(config.audioDevice);
         window.world = new World();
 
-        this.initialLoad(settings.loaderSettings);
+        this.initialLoad(config.assetLoader);
     }
 
-    private initialLoad(settings: LoaderSettings)
+
+    public async start()
     {
-        const initialBundle = settings.initialBundle;
+        window.game = this;
+
+        await window.localDatabase.connect();
+        this.isRunning = true;
+
+        this.previous = performance.now();
+        this.animationFrame = window.requestAnimationFrame(current => this.main(current));
+    }
+
+    public load(slot: number)
+    {
+
+    }
+
+    public save(slot: number)
+    {
+
+    }
+
+    public stop()
+    {
+        window.localDatabase.disconnect();
+        this.isRunning = false;
+
+        window.cancelAnimationFrame(this.animationFrame);
+    }
+
+
+    private initialLoad(config: LoaderConfiguration)
+    {
+        const initialBundle = config.initialBundle;
         assetLoader.load(initialBundle);
 
         eventSystem.subscribe("bundleLoaded", event => {
@@ -58,50 +100,32 @@ export class Game
         });
     }
 
-
     private main(current: DOMHighResTimeStamp)
     {
         const elapsed = current - this.previous;
         this.previous = current;
         this.lag += elapsed;
 
-        inputDevice.update();
-
         while(this.lag >= this.timePerUpdate) {
             this.update(elapsed, current);
             this.lag -= this.timePerUpdate;
         }
 
-        this.render();
+        this.render(elapsed, current);
 
         if(this.isRunning) {
-            window.requestAnimationFrame(current => this.main(current));
+            this.animationFrame = window.requestAnimationFrame(current => this.main(current));
         }
     }
 
     private update(elapsed: number, frame: number)
     {
-        world.execute(elapsed, frame);
+        inputDevice.update();
+        world.update(elapsed, frame);
     }
 
-    private render()
+    private render(elapsed: number, frame: number)
     {
-        
-    }
-
-
-    public start()
-    {
-        window.game = this;
-
-        this.isRunning = true;
-        this.previous = performance.now();
-
-        window.requestAnimationFrame(current => this.main(current));
-    }
-
-    public stop()
-    {
-        this.isRunning = false;
+        world.render(elapsed, frame);
     }
 }

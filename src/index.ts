@@ -9,14 +9,27 @@ const manifest: AssetManifest = {
 };
 
 const game = new Game({
+    id: "vigilans-nexum",
     maxFPS: 60,
-    loaderSettings: {
+    savegameSlots: 8,
+    assetLoader: {
         manifest: manifest,
         initialBundle: "StartScreen",
         useCache: true
     },
-    displaySettings: {
-        viewportID: "viewport",
+    localDatabase: {
+        version: 1,
+        repositories: {
+            entities: {
+                key: "id"
+            },
+            saveFiles: {
+                autoIncrement: true,
+                key: "id"
+            }
+        }
+    },
+    display: {
         dimension: {
             width: 1280,
             height: 720
@@ -27,7 +40,7 @@ const game = new Game({
             3: "ui"
         }
     },
-    audioSettings: {
+    audioDevice: {
         channels: [
             "sound",
             "music",

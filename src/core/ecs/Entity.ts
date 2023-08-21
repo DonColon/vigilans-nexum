@@ -30,9 +30,9 @@ export class Entity
         this.enabled = true;
     }
 
-    public static parse(json: string): Entity
+    public static parse(json: EntityType | string): Entity
     {
-        const entityType: EntityType = JSON.parse(json);
+        const entityType: EntityType = (typeof json === "string") ? JSON.parse(json) : json;
         const entity = new Entity(entityType.id);
 
         for(const [name, data] of Object.entries(entityType.components)) {

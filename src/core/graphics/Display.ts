@@ -5,9 +5,8 @@ import { Graphics } from "./Graphics";
 import { DisplayOrientationType } from "./DisplayOrientation";
 
 
-export interface DisplaySettings
+export interface DisplayConfiguration
 {
-    viewportID: string,
     dimension?: Dimension,
     layers?: {
         [order: number]: string
@@ -30,42 +29,25 @@ export class Display
     private orientationLocked: boolean;
 
 
-    constructor(settings?: DisplaySettings)
+    constructor(id: string, config?: DisplayConfiguration)
     {
-        if(settings === undefined) {
+        this.viewport = document.createElement("main");
+        this.viewport.id = id;
 
-            this.viewport = document.createElement("main");
+        this.viewport.style.position = "relative";
+        this.viewport.style.display = "block";
+        this.viewport.style.background = "#eee";
 
+        if(config && config.dimension) {
+            this.viewport.style.width = `${config.dimension.width}px`;
+            this.viewport.style.height = `${config.dimension.height}px`;
+        } else {
             this.viewport.style.width = `${window.innerWidth}px`;
             this.viewport.style.height = `${window.innerHeight}px`;
-
-            this.viewport.style.position = "relative";
-            this.viewport.style.display = "block";
-            this.viewport.style.background = "#eee";
-
-            document.body.append(this.viewport);
-
-        } else {
-
-            const { viewportID, dimension } = settings;
-            const viewport = document.getElementById(viewportID);
-    
-            if(viewport === null) {
-                throw new GameError(`Element with ID ${viewportID} does not exist`);
-            }
-    
-            if(dimension !== undefined) {
-                viewport.style.width = `${dimension.width}px`;
-                viewport.style.height = `${dimension.height}px`;
-            }
-
-            viewport.style.position = "relative";
-            viewport.style.display = "block";
-            viewport.style.background = "#eee";
-    
-            this.viewport = viewport;
-
         }
+        
+        document.body.append(this.viewport);
+
 
         this.viewportDimension = {
             width: parseFloat(this.viewport.style.width) * devicePixelRatio,
@@ -85,11 +67,12 @@ export class Display
 
         this.layers = new Map<string, Graphics>();
 
-        if(settings !== undefined && settings.layers !== undefined) {
-            for(const [order, name] of Object.entries(settings.layers)) {
+        if(config && config.layers) {
+            for(const [order, name] of Object.entries(config.layers)) {
                 this.addLayer(name, parseInt(order));
             }
         }
+
 
         this.dimension = { 
             width: screen.width * devicePixelRatio, 
@@ -154,13 +137,14 @@ export class Display
     private createCanvas(name: string, order: number): HTMLCanvasElement
     {
         const canvas = document.createElement("canvas");
-        canvas.width = this.viewportDimension.width;
-        canvas.height = this.viewportDimension.height;
+        canvas.id = name;
+
         canvas.style.backgroundColor = "transparent";
         canvas.style.position = "absolute";
         canvas.style.zIndex = order.toString();
-        canvas.id = name;
 
+        canvas.width = this.viewportDimension.width;
+        canvas.height = this.viewportDimension.height;
         return canvas;
     }
 
