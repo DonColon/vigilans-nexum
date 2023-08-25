@@ -39,6 +39,12 @@ export class Graphics extends GraphicsContext
     }
 
 
+    public static byLayerIndex(value: Graphics, other: Graphics): number
+    {
+        return parseInt(value.context.canvas.style.zIndex) - parseInt(other.context.canvas.style.zIndex);
+    }
+
+
     public alpha(value: number): this
     {
         if(value < 0.0 || value > 1.0) {

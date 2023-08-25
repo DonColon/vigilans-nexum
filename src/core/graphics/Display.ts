@@ -88,6 +88,39 @@ export class Display
     }
 
 
+    public async screenshot(): Promise<Blob>
+    {
+        const layers = Array.from(this.layers.values());
+        layers.sort(Graphics.byLayerIndex);
+
+        const { width, height } = this.viewportDimension;
+
+        const screenshot = document.createElement("canvas");
+        screenshot.width = width;
+        screenshot.height = height;
+
+        const context = screenshot.getContext("2d");
+
+        if(!context) {
+            throw new GameError(`Rendering Context could not be created`);
+        }
+
+        for(const layer of layers) {
+            context.drawImage(layer.getCanvas(), 0, 0, width, height);
+        }
+
+        return new Promise<Blob>((resolve, reject) => {
+            screenshot.toBlob(blob => {
+                if(blob === null) {
+                    reject("Blob is null");
+                    return;
+                } 
+
+                resolve(blob);
+            })
+        });
+    }
+
     public addLayer(name: string, order: number): this
     {
         if(this.layers.has(name)) {

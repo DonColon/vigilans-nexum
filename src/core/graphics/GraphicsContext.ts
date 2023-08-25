@@ -312,4 +312,9 @@ export abstract class GraphicsContext
     {
         return this.context.getContextAttributes();
     }
+
+    getCanvas(): HTMLCanvasElement
+    {
+        return this.context.canvas;
+    }
 }

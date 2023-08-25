@@ -9,6 +9,8 @@ import { Display, DisplayConfiguration } from "./graphics/Display";
 import { InputDevice } from "./input/InputDevice";
 import { AudioDevice, AudioConfiguration } from "./audio/AudioDevice";
 import { World } from "./ecs/World";
+import { GameState } from "./GameState";
+import { GameCommand } from "./input/GameCommand";
 
 
 interface GameConfiguration
@@ -25,23 +27,31 @@ interface GameConfiguration
 
 export class Game 
 {
+    private states: Map<string, GameState>;
+    private commands: Map<string, GameCommand>;
+
     private timePerUpdate: number;
     private animationFrame: number;
     private previous: number;
     private lag: number;
 
     private isRunning: boolean;
+    private timer: number;
     private savegameSlots: number;
 
 
     constructor(config: GameConfiguration)
     {
+        this.states = new Map<string, GameState>();
+        this.commands = new Map<string, GameCommand>();
+
         this.timePerUpdate = 1000 / config.maxFPS;
         this.animationFrame = 0;
         this.previous = 0;
         this.lag = 0;
 
         this.isRunning = false;
+        this.timer = 0;
         this.savegameSlots = config.savegameSlots || Number.MAX_SAFE_INTEGER;
 
         window.eventSystem = new EventSystem<GameEvents, GameEvent>();
@@ -74,9 +84,21 @@ export class Game
 
     }
 
-    public save(slot: number)
+    public async save(slot: number)
     {
+        const screenshot = await display.screenshot();
+        const entities = world.getEntities();
 
+        const savegame = {
+            id: slot,
+            playtime: this.timer,
+            screenshot: screenshot,
+            modifiedOn: new Date().toISOString(),
+            entities: entities.map(entity => entity.toObject())
+        };
+
+        const repository = localDatabase.getRepository("savegames");
+        repository.save(savegame);
     }
 
     public stop()
@@ -104,8 +126,9 @@ export class Game
     {
         const elapsed = current - this.previous;
         this.previous = current;
-        this.lag += elapsed;
+        this.timer += elapsed;
 
+        this.lag += elapsed;
         while(this.lag >= this.timePerUpdate) {
             this.update(elapsed, current);
             this.lag -= this.timePerUpdate;
