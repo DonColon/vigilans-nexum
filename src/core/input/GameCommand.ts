@@ -1,9 +1,14 @@
 import { InputBinding } from "./InputBinding";
 
 
+export interface GameCommandConstructor
+{
+    new(): GameCommand,
+}
+
+
 export abstract class GameCommand
 {
-    protected abstract name: string;
     protected abstract binding: InputBinding;
 
 
@@ -20,10 +25,5 @@ export abstract class GameCommand
     public bindInput(binding: InputBinding)
     {
         this.binding = binding;
-    }
-
-    public getName(): string
-    {
-        return this.name;
     }
 }

@@ -1,15 +1,17 @@
 import { GameError } from "./GameError";
-import { GameState } from "./GameState";
+import { GameState, GameStateConstructor } from "./GameState";
 
 
 export class GameStateManager
 {
+    private states: Map<string, GameState> = new Map<string, GameState>();
     private currentStates: GameState[] = [];
 
 
-    public switch(state: GameState)
+    public switch(stateType: GameStateConstructor | string)
     {
         const currentState = this.peek();
+        const state = this.getState(stateType);
 
         currentState.onExit();
         state.onEnter();
@@ -18,9 +20,10 @@ export class GameStateManager
         this.currentStates.push(state);
     }
 
-    public push(state: GameState)
+    public push(stateType: GameStateConstructor | string)
     {
         const currentState = this.peek();
+        const state = this.getState(stateType);
 
         currentState.onExit();
         state.onEnter();
@@ -52,5 +55,36 @@ export class GameStateManager
         }
 
         return currentState;
+    }
+
+
+    public registerState(stateType: GameStateConstructor): this
+    {
+        if(this.states.has(stateType.name)) {
+            throw new GameError(`State ${stateType.name} is already registered`);
+        }
+
+        const state = new stateType();
+        this.states.set(stateType.name, state);
+
+        return this;
+    }
+
+    public unregisterState(stateType: GameStateConstructor): this
+    {
+        this.states.delete(stateType.name);
+        return this;
+    }
+
+    public getState(stateType: GameStateConstructor | string): GameState
+    {
+        const name = (typeof stateType === "string") ? stateType : stateType.name;
+        const state = this.states.get(name);
+
+        if(state === undefined) {
+            throw new GameError(`State ${name} is not registered`);
+        }
+
+        return state;
     }
 }

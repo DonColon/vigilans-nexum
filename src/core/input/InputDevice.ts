@@ -11,11 +11,14 @@ import { MouseInputType } from "./MouseInput";
 import { TouchpadDevice } from "./TouchpadDevice";
 import { SwipeInputType } from "./SwipeInput";
 import { TouchInputType } from "./TouchInput";
+import { GameCommand, GameCommandConstructor } from "./GameCommand";
 
 
 export class InputDevice
 {
+    private commands: Map<string, GameCommand>;
     private channels: Map<InputChannelType, number>;
+
     private gamepad: GamepadDevice;
     private keyboard: KeyboardDevice;
     private mouse: MouseDevice;
@@ -24,6 +27,7 @@ export class InputDevice
 
     constructor()
     {
+        this.commands = new Map<string, GameCommand>();
         this.channels = new Map<InputChannelType, number>();
 
         if(!this.isGamepadSupported()) {
@@ -61,6 +65,37 @@ export class InputDevice
     public isState<K extends keyof InputTypeMap>(channel: K, inputType: InputTypeMap[K], state: InputStateType): boolean
     {
         return this.getState(channel, inputType) === state;
+    }
+
+
+    public registerCommand(commandType: GameCommandConstructor): this
+    {
+        if(this.commands.has(commandType.name)) {
+            throw new GameError(`Command ${commandType.name} is already registered`);
+        }
+
+        const command = new commandType();
+        this.commands.set(commandType.name, command);
+
+        return this;
+    }
+
+    public unregisterCommand(commandType: GameCommandConstructor): this
+    {
+        this.commands.delete(commandType.name);
+        return this;
+    }
+
+    public getCommand(commandType: GameCommandConstructor | string): GameCommand
+    {
+        const name = (typeof commandType === "string") ? commandType : commandType.name;
+        const command = this.commands.get(name);
+
+        if(command === undefined) {
+            throw new GameError(`Command ${name} is not registered`);
+        }
+
+        return command;
     }
 
 

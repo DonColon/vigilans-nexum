@@ -1,7 +1,7 @@
 import { GameError } from "core/GameError";
 import { JsonSchema } from "./JsonSchema";
 import { ComponentConstructor } from "./Component";
-import { Entity } from "./Entity";
+import { Entity, EntityType } from "./Entity";
 import { System, SystemConstructor } from "./System";
 import { UpdateSystem } from "./UpdateSystem";
 import { RenderSystem } from "./RenderSystem";
@@ -11,8 +11,8 @@ export class World
 {
     private components: Map<string, ComponentConstructor<any>>;
     private entities: Map<string, Entity>;
-
     private systems: Map<string, System>;
+
     private updateSchedule: System[];
     private renderSchedule: System[];
 
@@ -21,8 +21,8 @@ export class World
     {
         this.components = new Map<string, ComponentConstructor<any>>();
         this.entities = new Map<string, Entity>();
-
         this.systems = new Map<string, System>();
+
         this.updateSchedule = [];
         this.renderSchedule = [];
     }
@@ -63,6 +63,39 @@ export class World
         return this;
     }
 
+    public getComponent(name: string): ComponentConstructor<any>
+    {
+        const component = this.components.get(name);
+
+        if(component === undefined) {
+            throw new GameError(`Component ${name} is not registered`);
+        }
+
+        return component;
+    }
+
+    public getComponents(): ComponentConstructor<any>[]
+    {
+        return Array.from(this.components.values());
+    }
+
+    public hasComponent<T extends JsonSchema>(componentType: ComponentConstructor<T>): boolean
+    {
+        return this.components.has(componentType.name);
+    }
+
+
+    public registerEntity(entityType: EntityType): this
+    {
+        if(this.entities.has(entityType.id)) {
+            throw new GameError(`Entity ${entityType.id} already exists`);
+        }
+
+        const entity = Entity.parse(entityType);
+        this.entities.set(entity.getID(), entity);
+        return this;
+    }
+
     public createEntity(id?: string): Entity
     {
         if(id && this.entities.has(id)) {
@@ -74,10 +107,33 @@ export class World
         return entity;
     }
 
-    public deleteEntity(id: string)
+    public unregisterEntity(entity: Entity): this
     {
-        this.entities.delete(id);
+        this.entities.delete(entity.getID());
+        return this;
     }
+
+    public getEntity(id: string): Entity
+    {
+        const entity = this.entities.get(id);
+
+        if(entity === undefined) {
+            throw new GameError(`Entity ${id} does not exist`);
+        }
+
+        return entity;
+    }
+
+    public getEntities(): Entity[]
+    {
+        return Array.from(this.entities.values());
+    }
+
+    public hasEntity(entity: Entity): boolean
+    {
+        return this.entities.has(entity.getID());
+    }
+
 
     public registerSystem(systemType: SystemConstructor, priority: number): this
     {
@@ -108,63 +164,14 @@ export class World
     private scheduleRenderSystems()
     {
         const systems = Array.from(this.systems.values());
-        this.updateSchedule = systems.filter(system => system instanceof RenderSystem);
-        this.updateSchedule.sort(System.byPriority);
+        this.renderSchedule = systems.filter(system => system instanceof RenderSystem);
+        this.renderSchedule.sort(System.byPriority);
     }
 
     public unregisterSystem(systemType: SystemConstructor): this
     {
         this.systems.delete(systemType.name);
         return this;
-    }
-
-
-    public hasComponent<T extends JsonSchema>(componentType: ComponentConstructor<T>): boolean
-    {
-        return this.components.has(componentType.name);
-    }
-
-    public hasEntity(id: string): boolean
-    {
-        return this.entities.has(id);
-    }
-
-    public hasSystem(systemType: SystemConstructor): boolean
-    {
-        return this.systems.has(systemType.name);
-    }
-
-
-    public getComponent(name: string): ComponentConstructor<any>
-    {
-        const component = this.components.get(name);
-
-        if(component === undefined) {
-            throw new GameError(`Component ${name} is not registered`);
-        }
-
-        return component;
-    }
-
-    public getComponents(): ComponentConstructor<any>[]
-    {
-        return Array.from(this.components.values());
-    }
-
-    public getEntity(id: string): Entity
-    {
-        const entity = this.entities.get(id);
-
-        if(entity === undefined) {
-            throw new GameError(`Entity ${id} does not exist`);
-        }
-
-        return entity;
-    }
-
-    public getEntities(): Entity[]
-    {
-        return Array.from(this.entities.values());
     }
 
     public getSystem(systemType: SystemConstructor): System
@@ -186,5 +193,10 @@ export class World
     public getRenderSchedule(): System[]
     {
         return this.renderSchedule;
+    }
+
+    public hasSystem(systemType: SystemConstructor): boolean
+    {
+        return this.systems.has(systemType.name);
     }
 }

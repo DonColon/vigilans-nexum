@@ -2,6 +2,12 @@ import { GameError } from "./GameError";
 import { GameCommand } from "./input/GameCommand";
 
 
+export interface GameStateConstructor
+{
+    new(): GameState,
+}
+
+
 export abstract class GameState
 {
     private commands: Map<string, GameCommand> = new Map<string, GameCommand>();

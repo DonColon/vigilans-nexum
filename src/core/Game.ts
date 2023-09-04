@@ -9,15 +9,23 @@ import { Display, DisplayConfiguration } from "./graphics/Display";
 import { InputDevice } from "./input/InputDevice";
 import { AudioDevice, AudioConfiguration } from "./audio/AudioDevice";
 import { World } from "./ecs/World";
-import { GameState } from "./GameState";
-import { GameCommand } from "./input/GameCommand";
+import { ComponentConstructor } from "./ecs/Component";
+import { JsonSchema } from "./ecs/JsonSchema";
+import { Entity, EntityType } from "./ecs/Entity";
+import { SystemConstructor } from "./ecs/System";
+import { GameStateConstructor } from "./GameState";
+import { GameCommandConstructor } from "./input/GameCommand";
 
 
-interface GameConfiguration
+export interface GameConfiguration
 {
     id: string,
     maxFPS: number,
     savegameSlots?: number,
+    initial: {
+        state: GameStateConstructor | string,
+        bundle: string,
+    }
     assetLoader: LoaderConfiguration,
     localDatabase: DatabaseConfiguration,
     display?: DisplayConfiguration,
@@ -25,11 +33,8 @@ interface GameConfiguration
 }
 
 
-export class Game 
+export class Game
 {
-    private states: Map<string, GameState>;
-    private commands: Map<string, GameCommand>;
-
     private timePerUpdate: number;
     private animationFrame: number;
     private previous: number;
@@ -37,14 +42,10 @@ export class Game
 
     private isRunning: boolean;
     private timer: number;
-    private savegameSlots: number;
 
 
-    constructor(config: GameConfiguration)
+    constructor(private config: GameConfiguration)
     {
-        this.states = new Map<string, GameState>();
-        this.commands = new Map<string, GameCommand>();
-
         this.timePerUpdate = 1000 / config.maxFPS;
         this.animationFrame = 0;
         this.previous = 0;
@@ -52,7 +53,6 @@ export class Game
 
         this.isRunning = false;
         this.timer = 0;
-        this.savegameSlots = config.savegameSlots || Number.MAX_SAFE_INTEGER;
 
         window.eventSystem = new EventSystem<GameEvents, GameEvent>();
         window.localDatabase = new LocalDatabase(config.id, config.localDatabase);
@@ -63,12 +63,24 @@ export class Game
         window.inputDevice = new InputDevice();
         window.audioDevice = new AudioDevice(config.audioDevice);
         window.world = new World();
-
-        this.initialLoad(config.assetLoader);
     }
 
 
-    public async start()
+    public start()
+    {
+        stateManager.switch(this.config.initial.state);
+
+        const initialBundle = this.config.initial.bundle;
+        assetLoader.load(initialBundle);
+
+        eventSystem.subscribe("bundleLoaded", event => {
+            if(event.bundle === initialBundle) {
+                this.resume();
+            }
+        });
+    }
+
+    public async resume()
     {
         window.game = this;
 
@@ -110,17 +122,71 @@ export class Game
     }
 
 
-    private initialLoad(config: LoaderConfiguration)
+    public registerComponent<T extends JsonSchema>(compenentType: ComponentConstructor<T>): this
     {
-        const initialBundle = config.initialBundle;
-        assetLoader.load(initialBundle);
-
-        eventSystem.subscribe("bundleLoaded", event => {
-            if(event.bundle === initialBundle) {
-                this.start();
-            }
-        });
+        world.registerComponent(compenentType);
+        return this;
     }
+
+    public unregisterComponent<T extends JsonSchema>(compenentType: ComponentConstructor<T>): this
+    {
+        world.unregisterComponent(compenentType);
+        return this;
+    }
+
+    public registerEntity(entityType: EntityType): this
+    {
+        world.registerEntity(entityType);
+        return this;
+    }
+
+    public createEntity(id?: string): Entity
+    {
+        return world.createEntity(id);
+    }
+
+    public unregisterEntity(entity: Entity): this
+    {
+        world.unregisterEntity(entity);
+        return this;
+    }
+
+    public registerSystem(systemType: SystemConstructor, priority: number): this
+    {
+        world.registerSystem(systemType, priority);
+        return this;
+    }
+
+    public unregisterSystem(systemType: SystemConstructor): this
+    {
+        world.unregisterSystem(systemType);
+        return this;
+    }
+
+    public registerState(stateType: GameStateConstructor): this
+    {
+        stateManager.registerState(stateType);
+        return this;
+    }
+
+    public unregisterState(stateType: GameStateConstructor): this
+    {
+        stateManager.unregisterState(stateType);
+        return this;
+    }
+
+    public registerCommand(commandType: GameCommandConstructor): this
+    {
+        inputDevice.registerCommand(commandType);
+        return this;
+    }
+
+    public unregisterCommand(commandType: GameCommandConstructor): this
+    {
+        inputDevice.unregisterCommand(commandType);
+        return this;
+    }
+
 
     private main(current: DOMHighResTimeStamp)
     {

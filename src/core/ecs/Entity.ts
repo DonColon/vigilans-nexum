@@ -4,7 +4,7 @@ import { JsonSchema } from "./JsonSchema";
 import { Component, ComponentConstructor } from "./Component";
 
 
-interface EntityType
+export interface EntityType
 {
     id: string,
     enabled: boolean,
