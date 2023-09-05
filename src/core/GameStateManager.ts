@@ -39,7 +39,7 @@ export class GameStateManager
         if(currentState === undefined) {
             throw new GameError("No states defined in stack");
         }
-
+        
         currentState.onExit();
         state.onEnter();
 
@@ -86,5 +86,10 @@ export class GameStateManager
         }
 
         return state;
+    }
+
+    public getCurrentStates(): GameState[]
+    {
+        return this.currentStates;
     }
 }

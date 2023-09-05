@@ -98,14 +98,15 @@ export class Game
 
     public async save(slot: number)
     {
-        const screenshot = await display.screenshot();
         const entities = world.getEntities();
+        const states = stateManager.getCurrentStates();
 
         const savegame = {
             id: slot,
             playtime: this.timer,
-            screenshot: screenshot,
             modifiedOn: new Date().toISOString(),
+            screenshot: await display.screenshot(),
+            currentState: states.map(state => state.constructor.name),
             entities: entities.map(entity => entity.toObject())
         };
 
