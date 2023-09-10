@@ -1,5 +1,5 @@
 import { GameError } from "core/GameError";
-import { UserGestures } from "./UserGestures";
+import { UserGestures } from "core/UserGestures";
 import { AudioChannel } from "./AudioChannel";
 
 

@@ -1,25 +1,26 @@
 import { GameError } from "core/GameError";
 import { Repository, RepositorySettings } from "./Repository";
+import { StoreNames } from "./DatabaseSchema";
 
 
 export interface DatabaseConfiguration
 {
     version: number,
     repositories: {
-        [name: string]: RepositorySettings
+        [Name in StoreNames]: RepositorySettings
     }
 }
 
 
 export class LocalDatabase
 {
-    private repositories: Map<string, Repository>;
+    private repositories: Map<StoreNames, Repository>;
     private database!: IDBDatabase;
 
 
     constructor(private id: string, private config: DatabaseConfiguration)
     {
-        this.repositories = new Map<string, Repository>();
+        this.repositories = new Map<StoreNames, Repository>();
     }
 
 
@@ -58,28 +59,13 @@ export class LocalDatabase
         });
     }
 
-    public getRepository(name: string): Repository
-    {
-        const repository = this.repositories.get(name);
-
-        if(repository === undefined) {
-            throw new GameError(`Repository ${name} does not exist`);
-        }
-
-        return repository;
-    }
-
-    public disconnect()
-    {
-        this.database.close();
-    }
-
-
     private load()
     {
         for(const name of Object.keys(this.config.repositories)) {
+            const repositoryName = name as StoreNames;
+
             if(this.database.objectStoreNames.contains(name)) {
-                this.repositories.set(name, new Repository(name, this.database));
+                this.repositories.set(repositoryName, new Repository(repositoryName, this.database));
             }
         }
     }
@@ -93,9 +79,28 @@ export class LocalDatabase
         }
 
         for(const name of this.database.objectStoreNames) {
-            if(!this.config.repositories[name]) {
-                this.database.deleteObjectStore(name);
+            const repositoryName = name as StoreNames;
+
+            if(!this.config.repositories[repositoryName]) {
+                this.database.deleteObjectStore(repositoryName);
             }
         }
+    }
+    
+
+    public getRepository<Name extends StoreNames>(name: Name): Repository<Name>
+    {
+        const repository = this.repositories.get(name);
+
+        if(repository === undefined) {
+            throw new GameError(`Repository ${name} does not exist`);
+        }
+
+        return repository;
+    }
+
+    public disconnect()
+    {
+        this.database.close();
     }
 }

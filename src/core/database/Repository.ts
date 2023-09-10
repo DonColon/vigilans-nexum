@@ -1,3 +1,6 @@
+import { StoreNames, StoreProperties, StoreType } from "./DatabaseSchema";
+
+
 export interface RepositorySettings
 {
     autoIncrement?: boolean,
@@ -5,12 +8,12 @@ export interface RepositorySettings
 }
 
 
-export class Repository
+export class Repository<Name extends StoreNames = any>
 {
-    constructor(private name: string, private database: IDBDatabase) {}
+    constructor(private name: Name, private database: IDBDatabase) {}
 
 
-    public async create(data: any): Promise<IDBValidKey>
+    public async create(data: StoreType<Name>): Promise<IDBValidKey>
     {
         const transaction = this.database.transaction(this.name, "readwrite");
         const done = this.promisifyTransaction(transaction);
@@ -22,7 +25,7 @@ export class Repository
         return result;
     }
 
-    public async read(key: IDBValidKey): Promise<any>
+    public async read(key: IDBValidKey): Promise<StoreType<Name>>
     {
         const transaction = this.database.transaction(this.name, "readonly");
         const done = this.promisifyTransaction(transaction);
@@ -34,7 +37,7 @@ export class Repository
         return result;
     }
 
-    public async update(data: any): Promise<IDBValidKey>
+    public async update(data: StoreType<Name>): Promise<IDBValidKey>
     {
         const transaction = this.database.transaction(this.name, "readwrite");
         const done = this.promisifyTransaction(transaction);
@@ -58,7 +61,7 @@ export class Repository
         return result === undefined;
     }
 
-    public async list(): Promise<any[]>
+    public async list(): Promise<StoreType<Name>[]>
     {
         const transaction = this.database.transaction(this.name, "readonly");
         const done = this.promisifyTransaction(transaction);
@@ -70,7 +73,7 @@ export class Repository
        return result;
     }
 
-    public async exists(data: any): Promise<boolean>
+    public async exists(data: StoreType<Name>): Promise<boolean>
     {
         const transaction = this.database.transaction(this.name, "readonly");
         const done = this.promisifyTransaction(transaction);
@@ -88,7 +91,7 @@ export class Repository
         return result !== undefined;
     }
 
-    public async save(data: any): Promise<IDBValidKey>
+    public async save(data: StoreType<Name>): Promise<IDBValidKey>
     {
         const exists = await this.exists(data);
 
@@ -100,7 +103,7 @@ export class Repository
     }
 
 
-    private extractKey(data: any, store: IDBObjectStore): IDBValidKey | null
+    private extractKey(data: StoreType<Name>, store: IDBObjectStore): IDBValidKey | null
     {
         const keyPath = store.keyPath;
 
@@ -108,28 +111,39 @@ export class Repository
             const key: IDBValidKey[] = [];
 
             for(const path of keyPath) {
-                const value = data[path];
-
-                if(value === undefined || value === null) {
+                if(!(path in data)) {
+                    return null;
+                }
+                
+                const propertyName = path as StoreProperties<Name>;
+                const value = data[propertyName];
+                
+                if(!this.isValidKey(value)) {
                     return null;
                 }
 
-                key.push(data[path]);
+                key.push(value as IDBValidKey);
             }
 
             return key;
 
         } else {
 
-            const value = data[keyPath];
-
-            if(value === undefined || value === null) {
+            if(!(keyPath in data)) {
                 return null;
             }
 
-            return data[keyPath]
+            const propertyName = keyPath as StoreProperties<Name>;
+            const value = data[propertyName];
+
+            if(!this.isValidKey(value)) {
+                return null;
+            }
+
+            return value as IDBValidKey;
         }
     }
+
 
     private promisifyRequest<T>(request: IDBRequest<T>)
     {
@@ -177,5 +191,17 @@ export class Repository
             transaction.addEventListener('error', error);
             transaction.addEventListener('abort', error);
         });
+    }
+
+    private isValidKey(key: any): key is IDBValidKey
+    {
+        return typeof key === "string"
+            || typeof key === "number"
+            || key instanceof Date
+            || key instanceof ArrayBuffer
+            || (key instanceof Array && key.every(value => typeof value === "string"))
+            || (key instanceof Array && key.every(value => typeof value === "number"))
+            || (key instanceof Array && key.every(value => value instanceof Date))
+            || (key instanceof Array && key.every(value => value instanceof ArrayBuffer));
     }
 }

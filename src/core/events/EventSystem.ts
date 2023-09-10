@@ -1,12 +1,13 @@
-type EventHandler<Events, K extends keyof Events = any> = (event: Events[K]) => void;
+import { GameEvent } from "./GameEvent";
+import { EventHandler, EventNames, GameEvents } from "./GameEvents";
 
 
-export class EventSystem<Events, BaseEvent>
+export class EventSystem
 {
-    private subscribers: Map<keyof Events, EventHandler<Events>[]> = new Map<keyof Events, EventHandler<Events>[]>();
+    private subscribers: Map<EventNames, EventHandler[]> = new Map<EventNames, EventHandler[]>();
 
 
-    public subscribe<K extends keyof Events>(eventName: K, handler: EventHandler<Events, K>)
+    public subscribe<Name extends EventNames>(eventName: Name, handler: EventHandler<Name>)
     {
         const handlers = this.subscribers.get(eventName) || [];
         handlers.push(handler);
@@ -14,7 +15,7 @@ export class EventSystem<Events, BaseEvent>
         this.subscribers.set(eventName, handlers);
     }
 
-    public unsubscribe<K extends keyof Events>(eventName: K, handler: EventHandler<Events, K>)
+    public unsubscribe<Name extends EventNames>(eventName: Name, handler: EventHandler<Name>)
     {
         let handlers = this.subscribers.get(eventName) || [];
         handlers = handlers.filter(subscriber => subscriber !== handler);
@@ -22,7 +23,7 @@ export class EventSystem<Events, BaseEvent>
         this.subscribers.set(eventName, handlers);
     }
 
-    public dispatch<K extends keyof Events>(eventName: K, data: Omit<Events[K], keyof BaseEvent>)
+    public dispatch<Name extends EventNames>(eventName: Name, data: Omit<GameEvents[Name], keyof GameEvent>)
     {
         const handlers = this.subscribers.get(eventName) || [];
 
@@ -30,7 +31,7 @@ export class EventSystem<Events, BaseEvent>
             type: eventName,
             timestamp: Date.now(),
             ...data
-        } as Events[K];
+        } as GameEvents[Name];
         
         for(const handler of handlers) {
             handler(event);

@@ -1,7 +1,5 @@
 import { Game } from "core/Game";
-import { EventSystem } from "./EventSystem";
-import { GameEvents } from "./GameEvents";
-import { GameEvent } from "./GameEvent";
+import { EventSystem } from "./events/EventSystem";
 import { LocalDatabase } from "./database/LocalDatabase";
 import { AssetStorage } from "./assets/AssetStorage";
 import { AssetLoader } from "./assets/AssetLoader";
@@ -15,7 +13,7 @@ import { World } from "core/ecs/World";
 declare global
 {
     var game: Game;
-    var eventSystem: EventSystem<GameEvents, GameEvent>;
+    var eventSystem: EventSystem;
     var localDatabase: LocalDatabase;
     var assetStorage: AssetStorage;
     var assetLoader: AssetLoader;

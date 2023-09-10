@@ -1,4 +1,4 @@
-import { GameEvent } from "core/GameEvent";
+import { GameEvent } from "core/events/GameEvent";
 import { Entity } from "./Entity";
 
 
