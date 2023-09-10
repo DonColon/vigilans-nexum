@@ -6,6 +6,12 @@ Vigilans Nexum is a tactical, turn- and tile-based RPG with a deep story about t
 vigilans-nexum
 ├── src
 │   ├── assets
+│   │   ├── audio
+│   │   ├── fonts
+│   │   ├── icons
+│   │   ├── images
+│   │   ├── javascript
+│   │   └── video
 │   ├── commands
 │   ├── components
 │   ├── core
@@ -13,7 +19,9 @@ vigilans-nexum
 │   ├── systems
 │   ├── utils
 │   ├── asset.manifest.ts
+│   ├── database.schema.ts
 │   ├── game.config.ts
+│   ├── game.events.ts
 │   ├── index.css
 │   ├── index.html
 │   ├── index.ts
