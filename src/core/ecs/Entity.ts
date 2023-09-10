@@ -2,31 +2,30 @@ import { GameError } from "core/GameError";
 import { Randomizer } from "core/utils/Randomizer";
 import { JsonSchema } from "./JsonSchema";
 import { Component, ComponentConstructor } from "./Component";
+import { GameStateManager } from "core/GameStateManager";
+import { GameStateConstructor } from "core/GameState";
 
 
 export interface EntityType
 {
     id: string,
     enabled: boolean,
+    states: string[],
     components: JsonSchema
 }
 
 
 export class Entity
 {
-    private componentTypes: Map<string, ComponentConstructor<any>>;
     private components: Map<string, Component<JsonSchema>>;
-
-    private id: string;
+    private stateManager: GameStateManager;
     private enabled: boolean;
 
 
-    constructor(id: string = Randomizer.randomUUID())
+    constructor(private id: string = Randomizer.randomUUID())
     {
-        this.componentTypes = new Map<string, ComponentConstructor<any>>();
         this.components = new Map<string, Component<JsonSchema>>();
-
-        this.id = id;
+        this.stateManager = new GameStateManager();
         this.enabled = true;
     }
 
@@ -34,6 +33,11 @@ export class Entity
     {
         const entityType: EntityType = (typeof json === "string") ? JSON.parse(json) : json;
         const entity = new Entity(entityType.id);
+
+        for(const state of entityType.states) {
+            const stateType = world.getEntityState(state);
+            entity.addState(stateType);
+        }
 
         for(const [name, data] of Object.entries(entityType.components)) {
             const componentType = world.getComponent(name);
@@ -51,8 +55,6 @@ export class Entity
         }
 
         const component = new componentType(data);
-
-        this.componentTypes.set(componentType.name, componentType);
         this.components.set(componentType.name, component);
 
         eventSystem.dispatch("entityChanged", { entity: this });
@@ -61,7 +63,6 @@ export class Entity
 
     public removeComponent<T extends JsonSchema>(componentType: ComponentConstructor<T>): this
     {
-        this.componentTypes.delete(componentType.name);
         this.components.delete(componentType.name);
 
         eventSystem.dispatch("entityChanged", { entity: this });
@@ -85,52 +86,64 @@ export class Entity
         return component.toObject();
     }
 
+    public hasComponent<T extends JsonSchema>(componentType: ComponentConstructor<T>): boolean
+    {
+        return this.components.has(componentType.name);
+    }
+
+    public hasAllComponent<T extends JsonSchema>(componentTypes: ComponentConstructor<T>[]): boolean
+    {
+        return componentTypes.every(componentType => this.hasComponent(componentType));
+    }
+
+    public hasAnyComponent<T extends JsonSchema>(componentTypes: ComponentConstructor<T>[]): boolean
+    {
+        return componentTypes.some(componentType => this.hasComponent(componentType));
+    }
+
+
+    public addState(stateType: GameStateConstructor): this
+    {
+        if(!world.hasEntityState(stateType)) {
+            return this;
+        }
+
+        this.stateManager.registerState(stateType);
+        return this;
+    }
+
+    public removeState(stateType: GameStateConstructor): this
+    {
+        this.stateManager.unregisterState(stateType);
+        return this;
+    }
+
+    public getStateManager(): GameStateManager
+    {
+        return this.stateManager;
+    }
+
+
     public reset(): this
     {
-        this.componentTypes.clear();
         this.components.clear();
+        this.stateManager.clear();
 
         eventSystem.dispatch("entityChanged", { entity: this });
         return this;
     }
-
-
-    public hasComponent<T extends JsonSchema>(componentType: ComponentConstructor<T>): boolean
-    {
-        return this.componentTypes.has(componentType.name) 
-            && this.components.has(componentType.name);
-    }
-
-    public hasAllComponent(componentTypes: ComponentConstructor<any>[]): boolean
-    {
-        for(const componentType of componentTypes) {
-            if(!this.hasComponent(componentType)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    public hasAnyComponent(componentTypes: ComponentConstructor<any>[]): boolean
-    {
-        for(const componentType of componentTypes) {
-            if(this.hasComponent(componentType)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
 
     public toObject(): EntityType
     {
         const entity: EntityType = {
             id: this.id,
             enabled: this.enabled,
+            states: [],
             components: {}
         };
+
+        const states = this.stateManager.getCurrentStates();
+        entity.states = states.map(state => state.constructor.name);
 
         for (const [name, component] of this.components.entries()) {
             entity.components[name] = component.toObject();

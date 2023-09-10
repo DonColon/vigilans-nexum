@@ -1,6 +1,4 @@
-import { EventSystem } from "./EventSystem";
-import { GameEvents } from "./GameEvents";
-import { GameEvent } from "./GameEvent";
+import { EventSystem } from "./events/EventSystem";
 import { LocalDatabase, DatabaseConfiguration } from "./database/LocalDatabase";
 import { AssetStorage } from "./assets/AssetStorage";
 import { AssetLoader, LoaderConfiguration } from "./assets/AssetLoader";
@@ -54,7 +52,7 @@ export class Game
         this.isRunning = false;
         this.timer = 0;
 
-        window.eventSystem = new EventSystem<GameEvents, GameEvent>();
+        window.eventSystem = new EventSystem();
         window.localDatabase = new LocalDatabase(config.id, config.localDatabase);
         window.assetStorage = new AssetStorage();
         window.assetLoader = new AssetLoader(config.id, config.assetLoader);
@@ -132,6 +130,18 @@ export class Game
     public unregisterComponent<T extends JsonSchema>(compenentType: ComponentConstructor<T>): this
     {
         world.unregisterComponent(compenentType);
+        return this;
+    }
+
+    public registerEntityState(stateType: GameStateConstructor): this
+    {
+        world.registerEntityState(stateType);
+        return this;
+    }
+
+    public unregisterEntityState(stateType: GameStateConstructor): this
+    {
+        world.registerEntityState(stateType);
         return this;
     }
 

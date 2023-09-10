@@ -57,6 +57,12 @@ export class GameStateManager
         return currentState;
     }
 
+    public clear()
+    {
+        this.states.clear();
+        this.currentStates.length = 0;
+    }
+
 
     public registerState(stateType: GameStateConstructor): this
     {

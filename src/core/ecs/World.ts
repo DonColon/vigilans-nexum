@@ -5,11 +5,13 @@ import { Entity, EntityType } from "./Entity";
 import { System, SystemConstructor } from "./System";
 import { UpdateSystem } from "./UpdateSystem";
 import { RenderSystem } from "./RenderSystem";
+import { GameStateConstructor } from "core/GameState";
 
 
 export class World
 {
     private components: Map<string, ComponentConstructor<any>>;
+    private states: Map<string, GameStateConstructor>;
     private entities: Map<string, Entity>;
     private systems: Map<string, System>;
 
@@ -20,6 +22,7 @@ export class World
     constructor()
     {
         this.components = new Map<string, ComponentConstructor<any>>();
+        this.states = new Map<string, GameStateConstructor>();
         this.entities = new Map<string, Entity>();
         this.systems = new Map<string, System>();
 
@@ -82,6 +85,44 @@ export class World
     public hasComponent<T extends JsonSchema>(componentType: ComponentConstructor<T>): boolean
     {
         return this.components.has(componentType.name);
+    }
+
+
+    public registerEntityState(stateType: GameStateConstructor): this
+    {
+        if(this.states.has(stateType.name)) {
+            throw new GameError(`Entity State ${stateType.name} is already registered`);
+        }
+
+        this.states.set(stateType.name, stateType);
+        return this;
+    }
+
+    public unregisterEntityState(stateType: GameStateConstructor): this
+    {
+        this.states.delete(stateType.name);
+        return this;
+    }
+
+    public getEntityState(name: string): GameStateConstructor
+    {
+        const state = this.states.get(name);
+
+        if(state === undefined) {
+            throw new GameError(`Entity State ${name} is not registered`);
+        }
+
+        return state;
+    }
+
+    public getEntityStates(): GameStateConstructor[]
+    {
+        return Array.from(this.states.values());
+    }
+
+    public hasEntityState(stateType: GameStateConstructor): boolean
+    {
+        return this.states.has(stateType.name);
     }
 
 
