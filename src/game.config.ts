@@ -18,7 +18,7 @@ const gameConfiguration: GameConfiguration = {
         version: 1,
         repositories: {
             savegames: {
-                key: "id"
+                key: ""
             }
         }
     },

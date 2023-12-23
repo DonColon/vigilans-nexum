@@ -13,6 +13,7 @@ import { Entity, EntityType } from "./ecs/Entity";
 import { SystemConstructor } from "./ecs/System";
 import { GameStateConstructor } from "./GameState";
 import { GameCommandConstructor } from "./input/GameCommand";
+import { Savegame } from "./model/Savegame";
 
 
 export interface GameConfiguration
@@ -89,9 +90,20 @@ export class Game
         this.animationFrame = window.requestAnimationFrame(current => this.main(current));
     }
 
-    public load(slot: number)
+    public async load(slot: number)
     {
+        const repository = localDatabase.getRepository("savegames")
+        const savegame = await repository.read(slot);
 
+        this.timer = savegame.playtime;
+
+        for(const entity of savegame.entities) {
+            this.registerEntity(entity);
+        }
+
+        for(const state of savegame.currentState) {
+            stateManager.push(state);
+        }
     }
 
     public async save(slot: number)
@@ -99,7 +111,7 @@ export class Game
         const entities = world.getEntities();
         const states = stateManager.getCurrentStates();
 
-        const savegame = {
+        const savegame: Savegame = {
             id: slot,
             playtime: this.timer,
             modifiedOn: new Date().toISOString(),

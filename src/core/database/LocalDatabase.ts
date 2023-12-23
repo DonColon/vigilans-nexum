@@ -62,10 +62,8 @@ export class LocalDatabase
     private load()
     {
         for(const name of Object.keys(this.config.repositories)) {
-            const repositoryName = name as StoreNames;
-
             if(this.database.objectStoreNames.contains(name)) {
-                this.repositories.set(repositoryName, new Repository(repositoryName, this.database));
+                this.repositories.set(name, new Repository(name, this.database));
             }
         }
     }
@@ -79,10 +77,8 @@ export class LocalDatabase
         }
 
         for(const name of this.database.objectStoreNames) {
-            const repositoryName = name as StoreNames;
-
-            if(!this.config.repositories[repositoryName]) {
-                this.database.deleteObjectStore(repositoryName);
+            if(!this.config.repositories[name]) {
+                this.database.deleteObjectStore(name);
             }
         }
     }

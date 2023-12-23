@@ -1,12 +1,17 @@
-import { DatabaseSchema } from "core/database/DatabaseSchema";
+import { LocalDatabaseSchema } from "core/database/DatabaseSchema";
 
 
 declare module "core/database/DatabaseSchema"
 {
-    interface DatabaseSchema
+    interface LocalDatabaseSchema
     {
         settings: {
-            id: string
+            key: {
+                id: string
+            },
+            type: {
+                id: string
+            }
         }
     }
 }

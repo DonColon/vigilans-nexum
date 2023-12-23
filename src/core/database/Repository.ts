@@ -10,7 +10,13 @@ export interface RepositorySettings
 
 export class Repository<Name extends StoreNames = any>
 {
-    constructor(private name: Name, private database: IDBDatabase) {}
+    // private name: string;
+
+
+    constructor(private name: Name, private database: IDBDatabase)
+    {
+        // this.name = name.toString();
+    }
 
 
     public async create(data: StoreType<Name>): Promise<IDBValidKey>
