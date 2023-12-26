@@ -62,8 +62,14 @@ export class LocalDatabase
     private load()
     {
         for(const name of Object.keys(this.config.repositories)) {
+            const repositoryName = this.asStoreName(name);
+
+            if(!repositoryName) {
+                throw new GameError(`The repository ${name} is not a valid store name`);
+            }
+
             if(this.database.objectStoreNames.contains(name)) {
-                this.repositories.set(name, new Repository(name, this.database));
+                this.repositories.set(repositoryName, new Repository(repositoryName, this.database));
             }
         }
     }
@@ -77,9 +83,20 @@ export class LocalDatabase
         }
 
         for(const name of this.database.objectStoreNames) {
-            if(!this.config.repositories[name]) {
+            const repositoryName = this.asStoreName(name);
+
+            if(!repositoryName) {
                 this.database.deleteObjectStore(name);
             }
+        }
+    }
+
+    private asStoreName(name: string): StoreNames | null
+    {
+        if(name in this.config.repositories) {
+            return name as StoreNames;
+        } else {
+            return null;
         }
     }
     
