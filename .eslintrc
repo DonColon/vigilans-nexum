@@ -1,0 +1,22 @@
+{
+	"root": true,
+	"parser": "@typescript-eslint/parser",
+	"plugins": [
+		"@typescript-eslint",
+		"prettier"
+	],
+	"ignorePatterns": [
+		"dist",
+		"node_modules"
+	],
+	"extends": [
+		"eslint:recommended",
+		"plugin:@typescript-eslint/eslint-recommended",
+		"plugin:@typescript-eslint/recommended",
+		"prettier"
+	],
+	"rules": {
+		"no-console": "error",
+		"prettier/prettier": "error"
+	}
+}

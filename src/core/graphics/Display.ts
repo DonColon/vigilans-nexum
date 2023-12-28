@@ -45,7 +45,7 @@ export class Display
             this.viewport.style.width = `${window.innerWidth}px`;
             this.viewport.style.height = `${window.innerHeight}px`;
         }
-        
+
         document.body.append(this.viewport);
 
 
@@ -55,7 +55,7 @@ export class Display
         };
 
         this.viewportOffset = new Vector(
-            this.viewport.offsetLeft * devicePixelRatio, 
+            this.viewport.offsetLeft * devicePixelRatio,
             this.viewport.offsetTop * devicePixelRatio
         );
 
@@ -74,13 +74,13 @@ export class Display
         }
 
 
-        this.dimension = { 
-            width: screen.width * devicePixelRatio, 
-            height: screen.height * devicePixelRatio 
+        this.dimension = {
+            width: screen.width * devicePixelRatio,
+            height: screen.height * devicePixelRatio
         };
 
         this.center = new Vector(
-            this.dimension.width / 2, 
+            this.dimension.width / 2,
             this.dimension.height / 2
         );
 
@@ -114,7 +114,7 @@ export class Display
                 if(blob === null) {
                     reject("Blob is null");
                     return;
-                } 
+                }
 
                 resolve(blob);
             })
@@ -224,7 +224,8 @@ export class Display
     {
         if(!this.isOrientationLocked()) {
             this.orientationLocked = true;
-            screen.orientation.lock(orientation);
+			// Currently unavailable with typescript 5.2.2
+            // screen.orientation.lock(orientation);
         }
     }
 
