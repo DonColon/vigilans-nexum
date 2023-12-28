@@ -5,13 +5,6 @@ declare module "core/database/DatabaseSchema"
 {
     interface LocalDatabaseSchema
     {
-        settings: {
-            key: {
-                id: string
-            },
-            type: {
-                id: string
-            }
-        }
+
     }
 }
