@@ -1,7 +1,5 @@
 import { AssetLoadedEvent } from "./AssetLoadedEvent";
 
-
-export interface VideoLoadedEvent extends AssetLoadedEvent
-{
-    video: HTMLVideoElement
+export interface VideoLoadedEvent extends AssetLoadedEvent {
+	video: HTMLVideoElement;
 }

@@ -3,172 +3,153 @@ import { Shape } from "./Shape";
 import { Vector } from "./Vector";
 import { Line } from "./Line";
 
+export class Polygon {
+	private vertices: Vector[];
 
-export class Polygon
-{
-    private vertices: Vector[];
+	constructor(vertices: Vector[] = []) {
+		this.vertices = vertices;
+	}
 
+	public static buildConvexHull(points: Vector[]): Polygon {
+		const polygon = new Polygon();
 
-    constructor(vertices: Vector[] = [])
-    {
-        this.vertices = vertices;
-    }
+		let previous = 0;
+		for (let current = 1; current < points.length; current++) {
+			if (points[current] < points[previous]) {
+				previous = current;
+			}
+		}
 
-    public static buildConvexHull(points: Vector[]): Polygon
-    {
-        const polygon = new Polygon();
+		const start = previous;
+		const used = Arrays.fillTuple(false, points.length);
 
-        let previous = 0;
-        for(let current = 1; current < points.length; current++) {
-            if(points[current] < points[previous]) {
-                previous = current;
-            }
-        }
+		do {
+			let next = -1;
+			let max = 0;
 
-        const start = previous;
-        const used = Arrays.fillTuple(false, points.length);
+			for (let current = 0; current < points.length; current++) {
+				if (current === previous) continue;
+				if (used[current]) continue;
 
-        do {
-            let next = -1;
-            let max = 0;
+				if (next === -1) next = current;
 
-            for(let current = 0; current < points.length; current++) {
-                if(current === previous) continue;
-                if(used[current]) continue;
+				const vector = points[previous].subtract(points[current]);
+				const other = points[previous].subtract(points[next]);
 
-                if(next === -1) next = current;
+				const distance = points[previous].distanceBetween(points[current]);
+				const result = vector.perpDot(other);
 
-                const vector = points[previous].subtract(points[current]);
-                const other = points[previous].subtract(points[next]);
+				if (result === 0) {
+					if (distance > max) {
+						next = current;
+						max = distance;
+					}
+				} else if (result < 0) {
+					next = current;
+					max = distance;
+				}
+			}
 
-                const distance = points[previous].distanceBetween(points[current]);
-                const result = vector.perpDot(other);
+			previous = next;
+			used[previous] = true;
 
-                if(result === 0) {
-                    if(distance > max) {
-                        next = current;
-                        max = distance;
-                    }
-                }
-                else if(result < 0) {
-                    next = current;
-                    max = distance;
-                }
-            }
+			polygon.addVertex(points[previous]);
+		} while (start !== previous);
 
-            previous = next;
-            used[previous] = true;
+		return polygon;
+	}
 
-            polygon.addVertex(points[previous]);
+	public contains(point: Vector): boolean {
+		let contains = false;
 
-        } while(start !== previous);
+		for (let current = 1; current < this.vertices.length; current++) {
+			const next = (current + 1) % this.vertices.length;
 
-        return polygon;
-    }
+			const vector = this.vertices[current];
+			const other = this.vertices[next];
 
+			const result = ((other.x - vector.x) * (point.y - vector.y)) / (other.y - vector.y) + vector.x;
 
-    public contains(point: Vector): boolean
-    {
-        let contains = false;
+			if ((vector.y >= point.y && other.y < point.y) || (vector.y < point.y && other.y >= point.y && point.x < result)) {
+				contains = !contains;
+			}
+		}
 
-        for(let current = 1; current < this.vertices.length; current++) {
-            const next = (current + 1) % this.vertices.length;
+		return contains;
+	}
 
-            const vector = this.vertices[current];
-            const other = this.vertices[next];
+	public intersects(other: Shape): boolean {
+		let intersects = false;
 
-            const result = (other.x - vector.x) * (point.y - vector.y) / (other.y - vector.y) + vector.x;
+		for (const side of this.getSides()) {
+			if (other.intersects(side)) {
+				intersects = true;
+			}
+		}
 
-            if((vector.y >= point.y && other.y < point.y) || (vector.y < point.y && other.y >= point.y) && (point.x < result)) {
-                contains = !contains;
-            }
-        }
+		return intersects;
+	}
 
-        return contains;
-    }
+	public getArea(): number {
+		let area = 0;
 
-    public intersects(other: Shape): boolean
-    {
-        let intersects = false;
+		for (let current = 1; current < this.vertices.length; current++) {
+			const next = (current + 1) % this.vertices.length;
 
-        for(const side of this.getSides()) {
-            if(other.intersects(side)) {
-                intersects = true;
-            }
-        }
+			const vector = this.vertices[0].subtract(this.vertices[current]);
+			const other = this.vertices[0].subtract(this.vertices[next]);
 
-        return intersects;
-    }
+			const result = vector.perpDot(other);
+			area += result;
+		}
 
+		return Math.abs(area) / 2;
+	}
 
-    public getArea(): number
-    {
-        let area = 0;
+	public getPerimeter(): number {
+		let perimeter = 0;
 
-        for(let current = 1; current < this.vertices.length; current++) {
-            const next = (current + 1) % this.vertices.length;
+		for (let current = 0; current < this.vertices.length; current++) {
+			const next = (current + 1) % this.vertices.length;
 
-            const vector = this.vertices[0].subtract(this.vertices[current]);
-            const other = this.vertices[0].subtract(this.vertices[next]);
+			const distance = this.vertices[current].distanceBetween(this.vertices[next]);
+			perimeter += distance;
+		}
 
-            const result = vector.perpDot(other);
-            area += result;
-        }
+		return perimeter;
+	}
 
-        return Math.abs(area) / 2;
-    }
+	public getSides(): Line[] {
+		const sides: Line[] = [];
 
-    public getPerimeter(): number
-    {
-        let perimeter = 0;
+		for (let current = 0; current < this.vertices.length; current++) {
+			const next = (current + 1) % this.vertices.length;
 
-        for(let current = 0; current < this.vertices.length; current++) {
-            const next = (current + 1) % this.vertices.length;
+			const start = this.vertices[current];
+			const end = this.vertices[next];
 
-            const distance = this.vertices[current].distanceBetween(this.vertices[next]);
-            perimeter += distance;
-        }
+			const side = Line.ofPoints(start, end);
+			sides.push(side);
+		}
 
-        return perimeter;
-    }
+		return sides;
+	}
 
-    public getSides(): Line[]
-    {
-        const sides: Line[] = [];
+	public addVertex(vertex: Vector): Polygon {
+		this.vertices.push(vertex);
+		return this;
+	}
 
-        for(let current = 0; current < this.vertices.length; current++) {
-            const next = (current + 1) % this.vertices.length;
+	public removeVertex(index: number) {
+		if (index < 0 || index >= this.vertices.length) return;
+		this.vertices.splice(index, 1);
+	}
 
-            const start = this.vertices[current];
-            const end = this.vertices[next];
+	public getVertex(index: number): Vector {
+		return index < 0 || index >= this.vertices.length ? new Vector(NaN, NaN) : this.vertices[index];
+	}
 
-            const side = Line.ofPoints(start, end);
-            sides.push(side);
-        }
-
-        return sides;
-    }
-
-
-    public addVertex(vertex: Vector): Polygon
-    {
-        this.vertices.push(vertex);
-        return this;
-    }
-
-    public removeVertex(index: number)
-    {
-        if(index < 0 || index >= this.vertices.length) return;
-        this.vertices.splice(index, 1);
-    }
-
-    public getVertex(index: number): Vector
-    {
-        return (index < 0 || index >= this.vertices.length)? new Vector(NaN, NaN) : this.vertices[index];
-    }
-
-    public getVertices(): Vector[]
-    {
-        return [...this.vertices];
-    }
+	public getVertices(): Vector[] {
+		return [...this.vertices];
+	}
 }

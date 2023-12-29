@@ -1,40 +1,34 @@
 import { GameEvent } from "./GameEvent";
 import { EventHandler, EventNames, GameEvents } from "./GameEvents";
 
+export class EventSystem {
+	private subscribers: Map<EventNames, EventHandler[]> = new Map<EventNames, EventHandler[]>();
 
-export class EventSystem
-{
-    private subscribers: Map<EventNames, EventHandler[]> = new Map<EventNames, EventHandler[]>();
+	public subscribe<Name extends EventNames>(eventName: Name, handler: EventHandler<Name>) {
+		const handlers = this.subscribers.get(eventName) || [];
+		handlers.push(handler);
 
+		this.subscribers.set(eventName, handlers);
+	}
 
-    public subscribe<Name extends EventNames>(eventName: Name, handler: EventHandler<Name>)
-    {
-        const handlers = this.subscribers.get(eventName) || [];
-        handlers.push(handler);
+	public unsubscribe<Name extends EventNames>(eventName: Name, handler: EventHandler<Name>) {
+		let handlers = this.subscribers.get(eventName) || [];
+		handlers = handlers.filter((subscriber) => subscriber !== handler);
 
-        this.subscribers.set(eventName, handlers);
-    }
+		this.subscribers.set(eventName, handlers);
+	}
 
-    public unsubscribe<Name extends EventNames>(eventName: Name, handler: EventHandler<Name>)
-    {
-        let handlers = this.subscribers.get(eventName) || [];
-        handlers = handlers.filter(subscriber => subscriber !== handler);
+	public dispatch<Name extends EventNames>(eventName: Name, data: Omit<GameEvents[Name], keyof GameEvent>) {
+		const handlers = this.subscribers.get(eventName) || [];
 
-        this.subscribers.set(eventName, handlers);
-    }
+		const event = {
+			type: eventName,
+			timestamp: Date.now(),
+			...data
+		} as GameEvents[Name];
 
-    public dispatch<Name extends EventNames>(eventName: Name, data: Omit<GameEvents[Name], keyof GameEvent>)
-    {
-        const handlers = this.subscribers.get(eventName) || [];
-
-        const event = {
-            type: eventName,
-            timestamp: Date.now(),
-            ...data
-        } as GameEvents[Name];
-        
-        for(const handler of handlers) {
-            handler(event);
-        }
-    }
+		for (const handler of handlers) {
+			handler(event);
+		}
+	}
 }

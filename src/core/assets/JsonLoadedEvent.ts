@@ -1,7 +1,5 @@
 import { AssetLoadedEvent } from "./AssetLoadedEvent";
 
-
-export interface JsonLoadedEvent extends AssetLoadedEvent
-{
-    json: object
+export interface JsonLoadedEvent extends AssetLoadedEvent {
+	json: object;
 }

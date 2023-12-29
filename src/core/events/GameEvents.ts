@@ -10,22 +10,19 @@ import { HtmlLoadedEvent } from "../assets/HtmlLoadedEvent";
 import { CssLoadedEvent } from "../assets/CssLoadedEvent";
 import { ScriptLoadedEvent } from "../assets/ScriptLoadedEvent";
 
-
 export type EventNames = keyof GameEvents;
 export type EventHandler<Name extends EventNames = any> = (event: GameEvents[Name]) => void;
 
-
-export interface GameEvents
-{
-    "entityChanged": WorldEvent,
-    "bundleLoaded": BundleLoadedEvent,
-    "imageLoaded": ImageLoadedEvent,
-    "audioLoaded": AudioLoadedEvent,
-    "videoLoaded": VideoLoadedEvent,
-    "fontLoaded": FontLoadedEvent,
-    "jsonLoaded": JsonLoadedEvent,
-    "xmlLoaded": XmlLoadedEvent,
-    "htmlLoaded": HtmlLoadedEvent,
-    "cssLoaded": CssLoadedEvent,
-    "scriptLoaded": ScriptLoadedEvent
+export interface GameEvents {
+	entityChanged: WorldEvent;
+	bundleLoaded: BundleLoadedEvent;
+	imageLoaded: ImageLoadedEvent;
+	audioLoaded: AudioLoadedEvent;
+	videoLoaded: VideoLoadedEvent;
+	fontLoaded: FontLoadedEvent;
+	jsonLoaded: JsonLoadedEvent;
+	xmlLoaded: XmlLoadedEvent;
+	htmlLoaded: HtmlLoadedEvent;
+	cssLoaded: CssLoadedEvent;
+	scriptLoaded: ScriptLoadedEvent;
 }

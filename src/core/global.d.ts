@@ -9,17 +9,15 @@ import { InputDevice } from "core/input/InputDevice";
 import { AudioDevice } from "./audio/AudioDevice";
 import { World } from "core/ecs/World";
 
-
-declare global
-{
-    var game: Game;
-    var eventSystem: EventSystem;
-    var localDatabase: LocalDatabase;
-    var assetStorage: AssetStorage;
-    var assetLoader: AssetLoader;
-    var stateManager: GameStateManager;
-    var display: Display;
-    var inputDevice: InputDevice;
-    var audioDevice: AudioDevice;
-    var world: World;
+declare global {
+	var game: Game;
+	var eventSystem: EventSystem;
+	var localDatabase: LocalDatabase;
+	var assetStorage: AssetStorage;
+	var assetLoader: AssetLoader;
+	var stateManager: GameStateManager;
+	var display: Display;
+	var inputDevice: InputDevice;
+	var audioDevice: AudioDevice;
+	var world: World;
 }

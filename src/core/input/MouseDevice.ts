@@ -2,141 +2,122 @@ import { Vector } from "core/math/Vector";
 import { Input, Pointer } from "./Input";
 import { MouseInput, MouseInputType } from "./MouseInput";
 
+export class MouseDevice {
+	private mouse: Map<MouseInputType, Pointer>;
+	private lastUsed: number;
 
-export class MouseDevice
-{
-    private mouse: Map<MouseInputType, Pointer>;
-    private lastUsed: number;
+	constructor() {
+		this.mouse = new Map<MouseInputType, Pointer>();
+		this.lastUsed = 0;
 
-    
-    constructor()
-    {
-        this.mouse = new Map<MouseInputType, Pointer>();
-        this.lastUsed = 0;
+		for (const value of Object.values(MouseInput)) {
+			this.mouse.set(value, this.initPointer());
+		}
 
-        for(const value of Object.values(MouseInput)) {
-            this.mouse.set(value, this.initPointer());
-        }
+		display.addMouseDownListener((event) => this.onMouseDown(event));
+		display.addMouseUpListener((event) => this.onMouseUp(event));
+		display.addMouseMoveListener((event) => this.onMouseMove(event));
+		display.addWheelChangeListener((event) => this.onMouseWheel(event));
+	}
 
-        display.addMouseDownListener(event => this.onMouseDown(event));
-        display.addMouseUpListener(event => this.onMouseUp(event));
-        display.addMouseMoveListener(event => this.onMouseMove(event));
-        display.addWheelChangeListener(event => this.onMouseWheel(event));
-    }
+	public update(): number {
+		for (const pointer of this.mouse.values()) {
+			pointer.state.previous = pointer.state.current;
+		}
 
+		return this.lastUsed;
+	}
 
-    public update(): number
-    {
-        for(const pointer of this.mouse.values()) {
-            pointer.state.previous = pointer.state.current;
-        }
+	public getInput(inputType: MouseInputType): Input {
+		const pointer = this.mouse.get(inputType);
 
-        return this.lastUsed;
-    }
+		if (!pointer) return { current: false, previous: false };
 
-    public getInput(inputType: MouseInputType): Input
-    {
-        const pointer = this.mouse.get(inputType);
+		return pointer.state;
+	}
 
-        if(!pointer) return { current: false, previous: false };
+	public getPointer(inputType: MouseInputType): Pointer {
+		const pointer = this.mouse.get(inputType);
 
-        return pointer.state;
-    }
+		if (!pointer) return this.initPointer();
 
-    public getPointer(inputType: MouseInputType): Pointer
-    {
-        const pointer = this.mouse.get(inputType);
+		return pointer;
+	}
 
-        if(!pointer) return this.initPointer();
+	private onMouseDown(event: MouseEvent) {
+		this.lastUsed = event.timeStamp;
 
-        return pointer;
-    }
+		const pointer = this.getPointer(event.button as MouseInputType);
+		this.pointerPressed(pointer, event.clientX, event.clientY, 0);
 
+		this.cancelEvent(event);
+	}
 
-    private onMouseDown(event: MouseEvent)
-    {
-        this.lastUsed = event.timeStamp;
+	private onMouseUp(event: MouseEvent) {
+		const pointer = this.getPointer(event.button as MouseInputType);
+		this.pointerReleased(pointer);
 
-        const pointer = this.getPointer(event.button as MouseInputType);
-        this.pointerPressed(pointer, event.clientX, event.clientY, 0);
+		this.cancelEvent(event);
+	}
 
-        this.cancelEvent(event);
-    }
+	private onMouseMove(event: MouseEvent) {
+		const pointer = this.getPointer(event.button as MouseInputType);
+		this.pointerMoved(pointer, event.clientX, event.clientY);
 
-    private onMouseUp(event: MouseEvent)
-    {
-        const pointer = this.getPointer(event.button as MouseInputType);
-        this.pointerReleased(pointer);
+		this.cancelEvent(event);
+	}
 
-        this.cancelEvent(event);
-    }
+	private onMouseWheel(event: WheelEvent) {
+		this.lastUsed = event.timeStamp;
 
-    private onMouseMove(event: MouseEvent)
-    {
-        const pointer = this.getPointer(event.button as MouseInputType);
-        this.pointerMoved(pointer, event.clientX, event.clientY);
+		const direction = Math.sign(event.deltaY);
+		const input = direction < 0 ? MouseInput.WHEEL_UP : MouseInput.WHEEL_DOWN;
 
-        this.cancelEvent(event);
-    }
+		const pointer = this.getPointer(input);
+		this.pointerMoved(pointer, event.clientX, event.clientY);
 
-    private onMouseWheel(event: WheelEvent)
-    {
-        this.lastUsed = event.timeStamp;
+		this.cancelEvent(event);
+	}
 
-        const direction = Math.sign(event.deltaY);
-        const input = (direction < 0) ? MouseInput.WHEEL_UP : MouseInput.WHEEL_DOWN;
+	private initPointer(): Pointer {
+		return {
+			identifier: -1,
+			position: {
+				current: new Vector(0, 0),
+				previous: new Vector(0, 0)
+			},
+			state: {
+				current: false,
+				previous: false
+			}
+		};
+	}
 
-        const pointer = this.getPointer(input);
-        this.pointerMoved(pointer, event.clientX, event.clientY);
+	private pointerPressed(pointer: Pointer, x: number, y: number, identifier: number) {
+		pointer.identifier = identifier;
+		pointer.state.previous = pointer.state.current;
+		pointer.state.current = true;
 
-        this.cancelEvent(event);
-    }
+		pointer.position.previous = pointer.position.current;
+		this.pointerMoved(pointer, x, y);
+	}
 
+	private pointerReleased(pointer: Pointer) {
+		pointer.identifier = -1;
+		pointer.state.previous = pointer.state.current;
+		pointer.state.current = false;
+	}
 
-    private initPointer(): Pointer
-    {
-        return {
-            identifier: -1,
-            position: {
-                current: new Vector(0, 0),
-                previous: new Vector(0, 0)
-            },
-            state: {
-                current: false,
-                previous: false
-            }
-        };
-    }
+	private pointerMoved(pointer: Pointer, x: number, y: number) {
+		const offset = display.getViewportOffset();
+		const viewportX = x - offset.x;
+		const viewportY = y - offset.y;
 
-    private pointerPressed(pointer: Pointer, x: number, y: number, identifier: number)
-    {
-        pointer.identifier = identifier;
-        pointer.state.previous = pointer.state.current;
-        pointer.state.current = true;
+		pointer.position.current = new Vector(viewportX, viewportY);
+	}
 
-        pointer.position.previous = pointer.position.current;
-        this.pointerMoved(pointer, x, y);
-    }
-
-    private pointerReleased(pointer: Pointer)
-    {
-        pointer.identifier = -1;
-        pointer.state.previous = pointer.state.current;
-        pointer.state.current = false;
-    }
-
-    private pointerMoved(pointer: Pointer, x: number, y: number)
-    {
-        const offset = display.getViewportOffset();
-        const viewportX = x - offset.x;
-        const viewportY = y - offset.y;
-
-        pointer.position.current = new Vector(viewportX, viewportY);
-    }
-    
-    private cancelEvent(event: Event)
-    {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-    }
+	private cancelEvent(event: Event) {
+		event.preventDefault();
+		event.stopImmediatePropagation();
+	}
 }

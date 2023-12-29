@@ -1,11 +1,9 @@
 import { AssetManifest } from "core/assets/AssetManifest";
 
-
 const assetManifest: AssetManifest = {
-    bundles: {
-        StartScreen: []
-    }
+	bundles: {
+		StartScreen: []
+	}
 };
-
 
 export { assetManifest };

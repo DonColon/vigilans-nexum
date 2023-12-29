@@ -4,403 +4,335 @@ import { Dimension } from "../math/Dimension";
 import { Graphics } from "./Graphics";
 import { DisplayOrientationType } from "./DisplayOrientation";
 
-
-export interface DisplayConfiguration
-{
-    dimension?: Dimension,
-    layers?: {
-        [order: number]: string
-    }
+export interface DisplayConfiguration {
+	dimension?: Dimension;
+	layers?: {
+		[order: number]: string;
+	};
 }
 
+export class Display {
+	private viewport: HTMLElement;
+	private viewportDimension: Dimension;
+	private viewportOffset: Vector;
+	private viewportCenter: Vector;
 
-export class Display
-{
-    private viewport: HTMLElement;
-    private viewportDimension: Dimension;
-    private viewportOffset: Vector;
-    private viewportCenter: Vector;
+	private layers: Map<string, Graphics>;
 
-    private layers: Map<string, Graphics>;
+	private dimension: Dimension;
+	private center: Vector;
 
-    private dimension: Dimension;
-    private center: Vector;
+	private orientationLocked: boolean;
 
-    private orientationLocked: boolean;
+	constructor(id: string, config?: DisplayConfiguration) {
+		this.viewport = document.createElement("main");
+		this.viewport.id = id;
 
+		this.viewport.style.position = "relative";
+		this.viewport.style.display = "block";
+		this.viewport.style.background = "#eee";
 
-    constructor(id: string, config?: DisplayConfiguration)
-    {
-        this.viewport = document.createElement("main");
-        this.viewport.id = id;
+		if (config && config.dimension) {
+			this.viewport.style.width = `${config.dimension.width}px`;
+			this.viewport.style.height = `${config.dimension.height}px`;
+		} else {
+			this.viewport.style.width = `${window.innerWidth}px`;
+			this.viewport.style.height = `${window.innerHeight}px`;
+		}
 
-        this.viewport.style.position = "relative";
-        this.viewport.style.display = "block";
-        this.viewport.style.background = "#eee";
+		document.body.append(this.viewport);
 
-        if(config && config.dimension) {
-            this.viewport.style.width = `${config.dimension.width}px`;
-            this.viewport.style.height = `${config.dimension.height}px`;
-        } else {
-            this.viewport.style.width = `${window.innerWidth}px`;
-            this.viewport.style.height = `${window.innerHeight}px`;
-        }
+		this.viewportDimension = {
+			width: parseFloat(this.viewport.style.width) * devicePixelRatio,
+			height: parseFloat(this.viewport.style.height) * devicePixelRatio
+		};
 
-        document.body.append(this.viewport);
+		this.viewportOffset = new Vector(this.viewport.offsetLeft * devicePixelRatio, this.viewport.offsetTop * devicePixelRatio);
 
+		this.viewportCenter = new Vector(this.viewportOffset.x + this.viewportDimension.width / 2, this.viewportOffset.y + this.viewportDimension.height / 2);
 
-        this.viewportDimension = {
-            width: parseFloat(this.viewport.style.width) * devicePixelRatio,
-            height: parseFloat(this.viewport.style.height) * devicePixelRatio
-        };
+		this.layers = new Map<string, Graphics>();
 
-        this.viewportOffset = new Vector(
-            this.viewport.offsetLeft * devicePixelRatio,
-            this.viewport.offsetTop * devicePixelRatio
-        );
+		if (config && config.layers) {
+			for (const [order, name] of Object.entries(config.layers)) {
+				this.addLayer(name, parseInt(order));
+			}
+		}
 
-        this.viewportCenter = new Vector(
-            this.viewportOffset.x + this.viewportDimension.width / 2,
-            this.viewportOffset.y + this.viewportDimension.height / 2
-        );
+		this.dimension = {
+			width: screen.width * devicePixelRatio,
+			height: screen.height * devicePixelRatio
+		};
 
+		this.center = new Vector(this.dimension.width / 2, this.dimension.height / 2);
 
-        this.layers = new Map<string, Graphics>();
+		this.orientationLocked = false;
+	}
 
-        if(config && config.layers) {
-            for(const [order, name] of Object.entries(config.layers)) {
-                this.addLayer(name, parseInt(order));
-            }
-        }
+	public async screenshot(): Promise<Blob> {
+		const layers = Array.from(this.layers.values());
+		layers.sort(Graphics.byLayerIndex);
 
+		const { width, height } = this.viewportDimension;
 
-        this.dimension = {
-            width: screen.width * devicePixelRatio,
-            height: screen.height * devicePixelRatio
-        };
+		const screenshot = document.createElement("canvas");
+		screenshot.width = width;
+		screenshot.height = height;
 
-        this.center = new Vector(
-            this.dimension.width / 2,
-            this.dimension.height / 2
-        );
+		const context = screenshot.getContext("2d");
 
-        this.orientationLocked = false;
-    }
+		if (!context) {
+			throw new GameError(`Rendering Context could not be created`);
+		}
 
+		for (const layer of layers) {
+			context.drawImage(layer.getCanvas(), 0, 0, width, height);
+		}
 
-    public async screenshot(): Promise<Blob>
-    {
-        const layers = Array.from(this.layers.values());
-        layers.sort(Graphics.byLayerIndex);
+		return new Promise<Blob>((resolve, reject) => {
+			screenshot.toBlob((blob) => {
+				if (blob === null) {
+					reject("Blob is null");
+					return;
+				}
 
-        const { width, height } = this.viewportDimension;
+				resolve(blob);
+			});
+		});
+	}
 
-        const screenshot = document.createElement("canvas");
-        screenshot.width = width;
-        screenshot.height = height;
+	public addLayer(name: string, order: number): this {
+		if (this.layers.has(name)) {
+			throw new GameError(`Layer ${name} already exists`);
+		}
 
-        const context = screenshot.getContext("2d");
+		const canvas = this.createCanvas(name, order);
+		const context = canvas.getContext("2d");
 
-        if(!context) {
-            throw new GameError(`Rendering Context could not be created`);
-        }
+		if (context === null) {
+			throw new GameError(`Rendering Context for layer ${name} could not be created`);
+		}
 
-        for(const layer of layers) {
-            context.drawImage(layer.getCanvas(), 0, 0, width, height);
-        }
+		const graphics = new Graphics(context);
 
-        return new Promise<Blob>((resolve, reject) => {
-            screenshot.toBlob(blob => {
-                if(blob === null) {
-                    reject("Blob is null");
-                    return;
-                }
+		this.layers.set(name, graphics);
+		this.viewport.append(canvas);
 
-                resolve(blob);
-            })
-        });
-    }
+		return this;
+	}
 
-    public addLayer(name: string, order: number): this
-    {
-        if(this.layers.has(name)) {
-            throw new GameError(`Layer ${name} already exists`);
-        }
+	public removeLayer(name: string): this {
+		const canvas = document.getElementById(name);
 
-        const canvas = this.createCanvas(name, order);
-        const context = canvas.getContext("2d");
+		if (canvas === null) {
+			throw new GameError(`Layer ${name} does not exist`);
+		}
 
-        if(context === null) {
-            throw new GameError(`Rendering Context for layer ${name} could not be created`);
-        }
+		this.layers.delete(name);
+		this.viewport.removeChild(canvas);
 
-        const graphics = new Graphics(context);
+		return this;
+	}
 
-        this.layers.set(name, graphics);
-        this.viewport.append(canvas);
+	public getLayer(name: string): Graphics {
+		const layer = this.layers.get(name);
 
-        return this;
-    }
+		if (layer === undefined) {
+			throw new GameError(`Layer ${name} does not exist`);
+		}
 
-    public removeLayer(name: string): this
-    {
-        const canvas = document.getElementById(name);
+		return layer;
+	}
 
-        if(canvas === null) {
-            throw new GameError(`Layer ${name} does not exist`);
-        }
+	private createCanvas(name: string, order: number): HTMLCanvasElement {
+		const canvas = document.createElement("canvas");
+		canvas.id = name;
 
-        this.layers.delete(name);
-        this.viewport.removeChild(canvas);
+		canvas.style.backgroundColor = "transparent";
+		canvas.style.position = "absolute";
+		canvas.style.zIndex = order.toString();
 
-        return this;
-    }
+		canvas.width = this.viewportDimension.width;
+		canvas.height = this.viewportDimension.height;
+		return canvas;
+	}
 
-    public getLayer(name: string): Graphics
-    {
-        const layer = this.layers.get(name);
+	public enterFullscreen() {
+		if (!this.isFullscreen()) {
+			this.viewport.requestFullscreen({ navigationUI: "hide" });
+		}
+	}
 
-        if(layer === undefined) {
-            throw new GameError(`Layer ${name} does not exist`);
-        }
+	public exitFullscreen() {
+		if (this.isFullscreen()) {
+			document.exitFullscreen();
+		}
+	}
 
-        return layer;
-    }
+	public isFullscreen(): boolean {
+		return document.fullscreenElement === this.viewport;
+	}
 
-    private createCanvas(name: string, order: number): HTMLCanvasElement
-    {
-        const canvas = document.createElement("canvas");
-        canvas.id = name;
+	public lockPointer() {
+		if (!this.isPointerLocked()) {
+			this.viewport.requestPointerLock();
+		}
+	}
 
-        canvas.style.backgroundColor = "transparent";
-        canvas.style.position = "absolute";
-        canvas.style.zIndex = order.toString();
+	public unlockPointer() {
+		if (this.isPointerLocked()) {
+			document.exitPointerLock();
+		}
+	}
 
-        canvas.width = this.viewportDimension.width;
-        canvas.height = this.viewportDimension.height;
-        return canvas;
-    }
+	public isPointerLocked() {
+		return document.pointerLockElement === this.viewport;
+	}
 
-
-    public enterFullscreen()
-    {
-        if(!this.isFullscreen()) {
-            this.viewport.requestFullscreen({ navigationUI: "hide" });
-        }
-    }
-
-    public exitFullscreen()
-    {
-        if(this.isFullscreen()) {
-            document.exitFullscreen();
-        }
-    }
-
-    public isFullscreen(): boolean
-    {
-        return document.fullscreenElement === this.viewport;
-    }
-
-    public lockPointer()
-    {
-        if(!this.isPointerLocked()) {
-            this.viewport.requestPointerLock();
-        }
-    }
-
-    public unlockPointer()
-    {
-        if(this.isPointerLocked()) {
-            document.exitPointerLock();
-        }
-    }
-
-    public isPointerLocked()
-    {
-        return document.pointerLockElement === this.viewport;
-    }
-
-    public lockOrientation(orientation: DisplayOrientationType)
-    {
-        if(!this.isOrientationLocked()) {
-            this.orientationLocked = true;
+	public lockOrientation(orientation: DisplayOrientationType) {
+		if (!this.isOrientationLocked()) {
+			this.orientationLocked = true;
 			// Currently unavailable with typescript 5.2.2
-            // screen.orientation.lock(orientation);
-        }
-    }
+			// screen.orientation.lock(orientation);
+		}
+	}
 
-    public unlockOrientation()
-    {
-        if(this.isOrientationLocked()) {
-            this.orientationLocked = false;
-            screen.orientation.unlock();
-        }
-    }
+	public unlockOrientation() {
+		if (this.isOrientationLocked()) {
+			this.orientationLocked = false;
+			screen.orientation.unlock();
+		}
+	}
 
-    public isOrientationLocked(): boolean
-    {
-        return this.orientationLocked;
-    }
+	public isOrientationLocked(): boolean {
+		return this.orientationLocked;
+	}
 
+	public addMouseDownListener(onDown: (event: MouseEvent) => any) {
+		this.viewport.addEventListener("mousedown", onDown);
+	}
 
-    public addMouseDownListener(onDown: (event: MouseEvent) => any)
-    {
-        this.viewport.addEventListener("mousedown", onDown);
-    }
+	public removeMouseDownListener(onDown: (event: MouseEvent) => any) {
+		this.viewport.removeEventListener("mousedown", onDown);
+	}
 
-    public removeMouseDownListener(onDown: (event: MouseEvent) => any)
-    {
-        this.viewport.removeEventListener("mousedown", onDown);
-    }
+	public addMouseUpListener(onUp: (event: MouseEvent) => any) {
+		this.viewport.addEventListener("mouseup", onUp);
+	}
 
-    public addMouseUpListener(onUp: (event: MouseEvent) => any)
-    {
-        this.viewport.addEventListener("mouseup", onUp);
-    }
+	public removeMouseUpListener(onUp: (event: MouseEvent) => any) {
+		this.viewport.removeEventListener("mouseup", onUp);
+	}
 
-    public removeMouseUpListener(onUp: (event: MouseEvent) => any)
-    {
-        this.viewport.removeEventListener("mouseup", onUp);
-    }
+	public addMouseMoveListener(onMove: (event: MouseEvent) => any) {
+		this.viewport.addEventListener("mousemove", onMove);
+	}
 
-    public addMouseMoveListener(onMove: (event: MouseEvent) => any)
-    {
-        this.viewport.addEventListener("mousemove", onMove);
-    }
+	public removeMouseMoveListener(onMove: (event: MouseEvent) => any) {
+		this.viewport.removeEventListener("mousemove", onMove);
+	}
 
-    public removeMouseMoveListener(onMove: (event: MouseEvent) => any)
-    {
-        this.viewport.removeEventListener("mousemove", onMove);
-    }
+	public addWheelChangeListener(onChange: (event: WheelEvent) => any) {
+		this.viewport.addEventListener("wheel", onChange);
+	}
 
-    public addWheelChangeListener(onChange: (event: WheelEvent) => any)
-    {
-        this.viewport.addEventListener("wheel", onChange);
-    }
+	public removeWheelChangeListener(onChange: (event: WheelEvent) => any) {
+		this.viewport.removeEventListener("wheel", onChange);
+	}
 
-    public removeWheelChangeListener(onChange: (event: WheelEvent) => any)
-    {
-        this.viewport.removeEventListener("wheel", onChange);
-    }
+	public addTouchStartListener(onStart: (event: TouchEvent) => any) {
+		this.viewport.addEventListener("touchstart", onStart);
+	}
 
-    public addTouchStartListener(onStart: (event: TouchEvent) => any)
-    {
-        this.viewport.addEventListener("touchstart", onStart);
-    }
+	public removeTouchStartListener(onStart: (event: TouchEvent) => any) {
+		this.viewport.addEventListener("touchstart", onStart);
+	}
 
-    public removeTouchStartListener(onStart: (event: TouchEvent) => any)
-    {
-        this.viewport.addEventListener("touchstart", onStart);
-    }
+	public addTouchEndListener(onEnd: (event: TouchEvent) => any) {
+		this.viewport.addEventListener("touchend", onEnd);
+	}
 
-    public addTouchEndListener(onEnd: (event: TouchEvent) => any)
-    {
-        this.viewport.addEventListener("touchend", onEnd);
-    }
+	public removeTouchEndListener(onEnd: (event: TouchEvent) => any) {
+		this.viewport.addEventListener("touchend", onEnd);
+	}
 
-    public removeTouchEndListener(onEnd: (event: TouchEvent) => any)
-    {
-        this.viewport.addEventListener("touchend", onEnd);
-    }
+	public addTouchMoveListener(onMove: (event: TouchEvent) => any) {
+		this.viewport.addEventListener("touchmove", onMove);
+	}
 
-    public addTouchMoveListener(onMove: (event: TouchEvent) => any)
-    {
-        this.viewport.addEventListener("touchmove", onMove);
-    }
+	public removeTouchMoveListener(onMove: (event: TouchEvent) => any) {
+		this.viewport.addEventListener("touchmove", onMove);
+	}
 
-    public removeTouchMoveListener(onMove: (event: TouchEvent) => any)
-    {
-        this.viewport.addEventListener("touchmove", onMove);
-    }
+	public addFullscreenChangeListener(onChange: (event: Event) => any) {
+		this.viewport.addEventListener("fullscreenchange", onChange);
+	}
 
-    public addFullscreenChangeListener(onChange: (event: Event) => any)
-    {
-        this.viewport.addEventListener("fullscreenchange", onChange);
-    }
+	public removeFullscreenChangeListener(onChange: (event: Event) => any) {
+		this.viewport.removeEventListener("fullscreenchange", onChange);
+	}
 
-    public removeFullscreenChangeListener(onChange: (event: Event) => any)
-    {
-        this.viewport.removeEventListener("fullscreenchange", onChange);
-    }
+	public addFullscreenErrorListener(onError: (event: Event) => any) {
+		this.viewport.addEventListener("fullscreenerror", onError);
+	}
 
-    public addFullscreenErrorListener(onError: (event: Event) => any)
-    {
-        this.viewport.addEventListener("fullscreenerror", onError);
-    }
+	public removeFullscreenErrorListener(onError: (event: Event) => any) {
+		this.viewport.removeEventListener("fullscreenerror", onError);
+	}
 
-    public removeFullscreenErrorListener(onError: (event: Event) => any)
-    {
-        this.viewport.removeEventListener("fullscreenerror", onError);
-    }
+	public addPointerLockChangeListener(onChange: (event: Event) => any) {
+		document.addEventListener("pointerlockchange", onChange);
+	}
 
-    public addPointerLockChangeListener(onChange: (event: Event) => any)
-    {
-        document.addEventListener("pointerlockchange", onChange);
-    }
+	public removePointerLockChangeListener(onChange: (event: Event) => any) {
+		document.removeEventListener("pointerlockchange", onChange);
+	}
 
-    public removePointerLockChangeListener(onChange: (event: Event) => any)
-    {
-        document.removeEventListener("pointerlockchange", onChange);
-    }
+	public addPointerLockErrorListener(onError: (event: Event) => any) {
+		document.addEventListener("pointerlockerror", onError);
+	}
 
-    public addPointerLockErrorListener(onError: (event: Event) => any)
-    {
-        document.addEventListener("pointerlockerror", onError);
-    }
+	public removePointerLockErrorListener(onError: (event: Event) => any) {
+		document.removeEventListener("pointerlockerror", onError);
+	}
 
-    public removePointerLockErrorListener(onError: (event: Event) => any)
-    {
-        document.removeEventListener("pointerlockerror", onError);
-    }
+	public addOrientationChangeListener(onChange: (event: Event) => any) {
+		screen.orientation.addEventListener("change", onChange);
+	}
 
-    public addOrientationChangeListener(onChange: (event: Event) => any)
-    {
-        screen.orientation.addEventListener("change", onChange)
-    }
+	public removeOrientationChangeListener(onChange: (event: Event) => any) {
+		screen.orientation.removeEventListener("change", onChange);
+	}
 
-    public removeOrientationChangeListener(onChange: (event: Event) => any)
-    {
-        screen.orientation.removeEventListener("change", onChange);
-    }
+	public getViewport(): HTMLElement {
+		return this.viewport;
+	}
 
+	public getViewportDimension(): Dimension {
+		return this.viewportDimension;
+	}
 
-    public getViewport(): HTMLElement
-    {
-        return this.viewport;
-    }
+	public getViewportOffset(): Vector {
+		return this.viewportOffset;
+	}
 
-    public getViewportDimension(): Dimension
-    {
-        return this.viewportDimension;
-    }
+	public getViewportCenter(): Vector {
+		return this.viewportCenter;
+	}
 
-    public getViewportOffset(): Vector
-    {
-        return this.viewportOffset;
-    }
+	public getDimension(): Dimension {
+		return this.dimension;
+	}
 
-    public getViewportCenter(): Vector
-    {
-        return this.viewportCenter;
-    }
+	public getCenter(): Vector {
+		return this.center;
+	}
 
-    public getDimension(): Dimension
-    {
-        return this.dimension;
-    }
+	public getOrientation(): DisplayOrientationType {
+		return screen.orientation.type;
+	}
 
-    public getCenter(): Vector
-    {
-        return this.center;
-    }
-
-    public getOrientation(): DisplayOrientationType
-    {
-        return screen.orientation.type;
-    }
-
-    public getOrientationAngle(): number
-    {
-        return screen.orientation.angle;
-    }
+	public getOrientationAngle(): number {
+		return screen.orientation.angle;
+	}
 }

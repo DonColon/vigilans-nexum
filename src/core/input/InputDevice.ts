@@ -13,138 +13,115 @@ import { SwipeInputType } from "./SwipeInput";
 import { TouchInputType } from "./TouchInput";
 import { GameCommand, GameCommandConstructor } from "./GameCommand";
 
+export class InputDevice {
+	private commands: Map<string, GameCommand>;
+	private channels: Map<InputChannelType, number>;
 
-export class InputDevice
-{
-    private commands: Map<string, GameCommand>;
-    private channels: Map<InputChannelType, number>;
+	private gamepad: GamepadDevice;
+	private keyboard: KeyboardDevice;
+	private mouse: MouseDevice;
+	private touchpad: TouchpadDevice;
 
-    private gamepad: GamepadDevice;
-    private keyboard: KeyboardDevice;
-    private mouse: MouseDevice;
-    private touchpad: TouchpadDevice;
+	constructor() {
+		this.commands = new Map<string, GameCommand>();
+		this.channels = new Map<InputChannelType, number>();
 
+		if (!this.isGamepadSupported()) {
+			throw new GameError("Gamepad not supported by browser");
+		}
 
-    constructor()
-    {
-        this.commands = new Map<string, GameCommand>();
-        this.channels = new Map<InputChannelType, number>();
+		this.gamepad = new GamepadDevice();
+		this.keyboard = new KeyboardDevice();
+		this.mouse = new MouseDevice();
+		this.touchpad = new TouchpadDevice();
 
-        if(!this.isGamepadSupported()) {
-            throw new GameError("Gamepad not supported by browser");
-        }
+		window.addEventListener("contextmenu", (event) => this.cancelEvent(event));
+		window.addEventListener("selectstart", (event) => this.cancelEvent(event));
+	}
 
-        this.gamepad = new GamepadDevice();
-        this.keyboard = new KeyboardDevice();
-        this.mouse = new MouseDevice();
-        this.touchpad = new TouchpadDevice();
+	public update() {
+		this.channels.set(InputChannel.GAMEPAD, this.gamepad.update());
+		this.channels.set(InputChannel.KEYBOARD, this.keyboard.update());
+		this.channels.set(InputChannel.MOUSE, this.mouse.update());
+		this.channels.set(InputChannel.TOUCHPAD, this.touchpad.update());
+	}
 
-        window.addEventListener( "contextmenu", event => this.cancelEvent(event));
-        window.addEventListener( "selectstart", event => this.cancelEvent(event));
-    }
+	public uses(channel: InputChannelType): boolean {
+		const max = Math.max(...this.channels.values());
+		const inputChannel = [...this.channels].find(([key, value]) => value === max);
 
+		if (!inputChannel) return false;
 
-    public update()
-    {
-        this.channels.set(InputChannel.GAMEPAD, this.gamepad.update());
-        this.channels.set(InputChannel.KEYBOARD, this.keyboard.update());
-        this.channels.set(InputChannel.MOUSE, this.mouse.update());
-        this.channels.set(InputChannel.TOUCHPAD, this.touchpad.update());
-    }
+		return inputChannel.at(0) === channel;
+	}
 
-    public uses(channel: InputChannelType): boolean
-    {
-        const max = Math.max(...this.channels.values());
-        const inputChannel = [...this.channels].find(([key, value]) => value === max);
-        
-        if(!inputChannel) return false;
+	public isState<K extends keyof InputTypeMap>(channel: K, inputType: InputTypeMap[K], state: InputStateType): boolean {
+		return this.getState(channel, inputType) === state;
+	}
 
-        return inputChannel.at(0) === channel;
-    }
+	public registerCommand(commandType: GameCommandConstructor): this {
+		if (this.commands.has(commandType.name)) {
+			throw new GameError(`Command ${commandType.name} is already registered`);
+		}
 
-    public isState<K extends keyof InputTypeMap>(channel: K, inputType: InputTypeMap[K], state: InputStateType): boolean
-    {
-        return this.getState(channel, inputType) === state;
-    }
+		const command = new commandType();
+		this.commands.set(commandType.name, command);
 
+		return this;
+	}
 
-    public registerCommand(commandType: GameCommandConstructor): this
-    {
-        if(this.commands.has(commandType.name)) {
-            throw new GameError(`Command ${commandType.name} is already registered`);
-        }
+	public unregisterCommand(commandType: GameCommandConstructor): this {
+		this.commands.delete(commandType.name);
+		return this;
+	}
 
-        const command = new commandType();
-        this.commands.set(commandType.name, command);
+	public getCommand(commandType: GameCommandConstructor | string): GameCommand {
+		const name = typeof commandType === "string" ? commandType : commandType.name;
+		const command = this.commands.get(name);
 
-        return this;
-    }
+		if (command === undefined) {
+			throw new GameError(`Command ${name} is not registered`);
+		}
 
-    public unregisterCommand(commandType: GameCommandConstructor): this
-    {
-        this.commands.delete(commandType.name);
-        return this;
-    }
+		return command;
+	}
 
-    public getCommand(commandType: GameCommandConstructor | string): GameCommand
-    {
-        const name = (typeof commandType === "string") ? commandType : commandType.name;
-        const command = this.commands.get(name);
+	private getState<K extends keyof InputTypeMap>(channel: K, inputType: InputTypeMap[K]): InputStateType {
+		const input = this.getInput(channel, inputType);
 
-        if(command === undefined) {
-            throw new GameError(`Command ${name} is not registered`);
-        }
+		if (input.previous === false && input.current === false) {
+			return InputState.STILL_RELEASED;
+		} else if (input.previous === false && input.current === true) {
+			return InputState.JUST_PRESSED;
+		} else if (input.previous === true && input.current === true) {
+			return InputState.STILL_PRESSED;
+		} else if (input.previous === true && input.current === false) {
+			return InputState.JUST_RELEASED;
+		}
 
-        return command;
-    }
+		return InputState.STILL_RELEASED;
+	}
 
+	private getInput<K extends keyof InputTypeMap>(channel: K, inputType: InputTypeMap[K]): Input {
+		if (channel === InputChannel.GAMEPAD) {
+			return this.gamepad.getInput(inputType as GamepadInputType);
+		} else if (channel === InputChannel.KEYBOARD) {
+			return this.keyboard.getInput(inputType as KeyboardInputType);
+		} else if (channel === InputChannel.MOUSE) {
+			return this.mouse.getInput(inputType as MouseInputType);
+		} else if (channel === InputChannel.TOUCHPAD) {
+			return this.touchpad.getInput(inputType as TouchInputType | SwipeInputType);
+		}
 
-    private getState<K extends keyof InputTypeMap>(channel: K, inputType: InputTypeMap[K]): InputStateType
-    {
-        const input = this.getInput(channel, inputType);
+		return { current: false, previous: false };
+	}
 
-        if(input.previous === false && input.current === false) {
-            return InputState.STILL_RELEASED;
-        }
-        else if(input.previous === false && input.current === true) {
-            return InputState.JUST_PRESSED;
-        }
-        else if(input.previous === true && input.current === true) {
-            return InputState.STILL_PRESSED;
-        }
-        else if(input.previous === true && input.current === false) {
-            return InputState.JUST_RELEASED;
-        }
+	private isGamepadSupported() {
+		return "getGamepads" in navigator;
+	}
 
-        return InputState.STILL_RELEASED;
-    }
-
-    private getInput<K extends keyof InputTypeMap>(channel: K, inputType: InputTypeMap[K]): Input
-    {
-        if(channel === InputChannel.GAMEPAD) {
-            return this.gamepad.getInput(inputType as GamepadInputType);
-        }
-        else if(channel === InputChannel.KEYBOARD) {
-            return this.keyboard.getInput(inputType as KeyboardInputType);
-        }
-        else if(channel === InputChannel.MOUSE) {
-            return this.mouse.getInput(inputType as MouseInputType);
-        }
-        else if(channel === InputChannel.TOUCHPAD) {
-            return this.touchpad.getInput(inputType as TouchInputType | SwipeInputType);
-        }
-
-        return { current: false, previous: false };
-    }
-    
-    private isGamepadSupported()
-    {
-        return "getGamepads" in navigator;
-    }
-
-    private cancelEvent(event: Event)
-    {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-    }
+	private cancelEvent(event: Event) {
+		event.preventDefault();
+		event.stopImmediatePropagation();
+	}
 }

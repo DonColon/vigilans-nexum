@@ -1,101 +1,88 @@
 import { GameError } from "./GameError";
 import { GameState, GameStateConstructor } from "./GameState";
 
+export class GameStateManager {
+	private states: Map<string, GameState> = new Map<string, GameState>();
+	private currentStates: GameState[] = [];
 
-export class GameStateManager
-{
-    private states: Map<string, GameState> = new Map<string, GameState>();
-    private currentStates: GameState[] = [];
+	public switch(stateType: GameStateConstructor | string) {
+		const currentState = this.peek();
+		const state = this.getState(stateType);
 
+		currentState.onExit();
+		state.onEnter();
 
-    public switch(stateType: GameStateConstructor | string)
-    {
-        const currentState = this.peek();
-        const state = this.getState(stateType);
+		this.currentStates.length = 0;
+		this.currentStates.push(state);
+	}
 
-        currentState.onExit();
-        state.onEnter();
+	public push(stateType: GameStateConstructor | string) {
+		const currentState = this.peek();
+		const state = this.getState(stateType);
 
-        this.currentStates.length = 0;
-        this.currentStates.push(state);
-    }
+		currentState.onExit();
+		state.onEnter();
 
-    public push(stateType: GameStateConstructor | string)
-    {
-        const currentState = this.peek();
-        const state = this.getState(stateType);
+		this.currentStates.push(state);
+	}
 
-        currentState.onExit();
-        state.onEnter();
+	public pop(): GameState {
+		const currentState = this.currentStates.pop();
+		const state = this.peek();
 
-        this.currentStates.push(state);
-    }
+		if (currentState === undefined) {
+			throw new GameError("No states defined in stack");
+		}
 
-    public pop(): GameState
-    {
-        const currentState = this.currentStates.pop();
-        const state = this.peek();
+		currentState.onExit();
+		state.onEnter();
 
-        if(currentState === undefined) {
-            throw new GameError("No states defined in stack");
-        }
-        
-        currentState.onExit();
-        state.onEnter();
+		return currentState;
+	}
 
-        return currentState;
-    }
+	public peek(): GameState {
+		const currentState = this.currentStates.at(-1);
 
-    public peek(): GameState
-    {
-        const currentState = this.currentStates.at(-1);
+		if (currentState === undefined) {
+			throw new GameError("No states defined in stack");
+		}
 
-        if(currentState === undefined) {
-            throw new GameError("No states defined in stack");
-        }
+		return currentState;
+	}
 
-        return currentState;
-    }
+	public clear() {
+		this.states.clear();
+		this.currentStates.length = 0;
+	}
 
-    public clear()
-    {
-        this.states.clear();
-        this.currentStates.length = 0;
-    }
+	public registerState(stateType: GameStateConstructor): this {
+		if (this.states.has(stateType.name)) {
+			throw new GameError(`State ${stateType.name} is already registered`);
+		}
 
+		const state = new stateType();
+		this.states.set(stateType.name, state);
 
-    public registerState(stateType: GameStateConstructor): this
-    {
-        if(this.states.has(stateType.name)) {
-            throw new GameError(`State ${stateType.name} is already registered`);
-        }
+		return this;
+	}
 
-        const state = new stateType();
-        this.states.set(stateType.name, state);
+	public unregisterState(stateType: GameStateConstructor): this {
+		this.states.delete(stateType.name);
+		return this;
+	}
 
-        return this;
-    }
+	public getState(stateType: GameStateConstructor | string): GameState {
+		const name = typeof stateType === "string" ? stateType : stateType.name;
+		const state = this.states.get(name);
 
-    public unregisterState(stateType: GameStateConstructor): this
-    {
-        this.states.delete(stateType.name);
-        return this;
-    }
+		if (state === undefined) {
+			throw new GameError(`State ${name} is not registered`);
+		}
 
-    public getState(stateType: GameStateConstructor | string): GameState
-    {
-        const name = (typeof stateType === "string") ? stateType : stateType.name;
-        const state = this.states.get(name);
+		return state;
+	}
 
-        if(state === undefined) {
-            throw new GameError(`State ${name} is not registered`);
-        }
-
-        return state;
-    }
-
-    public getCurrentStates(): GameState[]
-    {
-        return this.currentStates;
-    }
+	public getCurrentStates(): GameState[] {
+		return this.currentStates;
+	}
 }

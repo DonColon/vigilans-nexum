@@ -2,148 +2,130 @@ import { GameError } from "core/GameError";
 import { UserGestures } from "core/UserGestures";
 import { AudioChannel } from "./AudioChannel";
 
-
-export interface AudioConfiguration
-{
-    channels: string[]
+export interface AudioConfiguration {
+	channels: string[];
 }
 
+export class AudioDevice {
+	private context: AudioContext;
+	private channels: Map<string, AudioChannel>;
+	private masterVolume: GainNode;
 
-export class AudioDevice
-{
-    private context: AudioContext;
-    private channels: Map<string, AudioChannel>;
-    private masterVolume: GainNode;
+	constructor(config?: AudioConfiguration) {
+		this.context = new AudioContext();
+		this.channels = new Map<string, AudioChannel>();
 
+		this.masterVolume = this.context.createGain();
+		this.masterVolume.connect(this.context.destination);
 
-    constructor(config?: AudioConfiguration)
-    {
-        this.context = new AudioContext();
-        this.channels = new Map<string, AudioChannel>();
+		if (config) {
+			for (const channel of config.channels) {
+				this.addChannel(channel);
+			}
+		}
 
-        this.masterVolume = this.context.createGain();
-        this.masterVolume.connect(this.context.destination);
+		this.start();
+	}
 
-        if(config) {
-            for(const channel of config.channels) {
-                this.addChannel(channel);
-            }
-        }
+	private start() {
+		for (const userGesture of UserGestures) {
+			document.addEventListener(userGesture, (event) => this.unlock());
+		}
+	}
 
-        this.start();
-    }
+	private unlock() {
+		if (this.context.state === "suspended") {
+			this.context.resume();
+		}
 
-    private start()
-    {
-        for(const userGesture of UserGestures) {
-            document.addEventListener(userGesture, event => this.unlock());
-        }
-    }
+		if (this.context.state === "running") {
+			for (const userGesture of UserGestures) {
+				document.removeEventListener(userGesture, (event) => this.unlock());
+			}
+		}
+	}
 
-    private unlock()
-    {
-        if(this.context.state === "suspended") {
-            this.context.resume();
-        }
+	public play(id: string, loop: boolean = false) {
+		const track = assetStorage.getAudio(id);
+		const channel = this.getChannel(track.channel);
 
-        if(this.context.state === "running") {
-            for(const userGesture of UserGestures) {
-                document.removeEventListener(userGesture, event => this.unlock());
-            }
-        }
-    }
+		if (loop) {
+			assetStorage.setAudio(id, channel.loop(track));
+		} else {
+			assetStorage.setAudio(id, channel.play(track));
+		}
+	}
 
+	public pause(id: string) {
+		const track = assetStorage.getAudio(id);
 
-    public play(id: string, loop: boolean = false)
-    {
-        const track = assetStorage.getAudio(id);
-        const channel = this.getChannel(track.channel);
+		if (track.source && track.startedAt) {
+			track.source.stop();
 
-        if(loop) {
-            assetStorage.setAudio(id, channel.loop(track));
-        } else {
-            assetStorage.setAudio(id, channel.play(track));
-        }
-    }
+			track.offset = this.context.currentTime - track.startedAt;
+			delete track.source;
 
-    public pause(id: string)
-    {
-        const track = assetStorage.getAudio(id);
+			assetStorage.setAudio(id, track);
+		}
+	}
 
-        if(track.source && track.startedAt) {
-            track.source.stop();
+	public stop(id: string) {
+		const track = assetStorage.getAudio(id);
 
-            track.offset = this.context.currentTime - track.startedAt;
-            delete track.source;
+		if (track.source) {
+			track.source.stop();
+		}
 
-            assetStorage.setAudio(id, track);
-        }
-    }
+		delete track.offset;
+		delete track.startedAt;
+		delete track.source;
 
-    public stop(id: string)
-    {
-        const track = assetStorage.getAudio(id);
-        
-        if(track.source) {
-            track.source.stop();
-        }
+		assetStorage.setAudio(id, track);
+	}
 
-        delete track.offset;
-        delete track.startedAt;
-        delete track.source;
+	public volume(volume: number, channel?: string) {
+		if (channel) {
+			const audioChannel = this.getChannel(channel);
+			audioChannel.setVolume(volume);
+		} else {
+			this.setVolume(volume);
+		}
+	}
 
-        assetStorage.setAudio(id, track);
-    }
+	private setVolume(volume: number) {
+		if (volume < 0 || volume > 100) {
+			throw new RangeError("volume must be percentage");
+		}
 
-    public volume(volume: number, channel?: string)
-    {
-        if(channel) {
-            const audioChannel = this.getChannel(channel);
-            audioChannel.setVolume(volume);
-        } else {
-            this.setVolume(volume);
-        }
-    }
+		const value = this.masterVolume.gain.minValue + (volume / 100) * (this.masterVolume.gain.maxValue - this.masterVolume.gain.minValue);
 
-    private setVolume(volume: number)
-    {
-        if(volume < 0 || volume > 100) {
-            throw new RangeError("volume must be percentage");
-        }
+		this.masterVolume.gain.value = value;
+	}
 
-        const value = this.masterVolume.gain.minValue + (volume / 100) * (this.masterVolume.gain.maxValue - this.masterVolume.gain.minValue);
+	public addChannel(name: string): this {
+		if (this.channels.has(name)) {
+			throw new GameError(`Channel ${name} already exists`);
+		}
 
-        this.masterVolume.gain.value = value;
-    }
+		const channel = new AudioChannel(this.context);
+		channel.connect(this.masterVolume);
 
+		this.channels.set(name, channel);
+		return this;
+	}
 
-    public addChannel(name: string): this
-    {
-        if(this.channels.has(name)) {
-            throw new GameError(`Channel ${name} already exists`);
-        }
+	public removeChannel(name: string): this {
+		this.channels.delete(name);
+		return this;
+	}
 
-        const channel = new AudioChannel(this.context);
-        channel.connect(this.masterVolume);
+	private getChannel(name: string): AudioChannel {
+		const channel = this.channels.get(name);
 
-        this.channels.set(name, channel);
-        return this;
-    }
+		if (channel === undefined) {
+			throw new GameError(`Channel ${name} does not exist`);
+		}
 
-    public removeChannel(name: string): this
-    {
-        this.channels.delete(name);
-        return this;
-    }
-
-    private getChannel(name: string): AudioChannel
-    {
-        const channel = this.channels.get(name);
-
-        if(channel === undefined) {
-            throw new GameError(`Channel ${name} does not exist`);
-        }
-
-        return channel;
-    }
+		return channel;
+	}
 }

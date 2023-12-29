@@ -11,177 +11,150 @@ import { CssLoadedEvent } from "./CssLoadedEvent";
 import { ScriptLoadedEvent } from "./ScriptLoadedEvent";
 import { VideoLoadedEvent } from "./VideoLoadedEvent";
 
+export class AssetStorage {
+	private audio: Map<string, AudioTrack>;
+	private images: Map<string, Sprite>;
+	private videos: Map<string, HTMLVideoElement>;
+	private jsons: Map<string, object>;
+	private xmls: Map<string, XMLDocument>;
+	private htmls: Map<string, Document>;
 
-export class AssetStorage
-{
-    private audio: Map<string, AudioTrack>;
-    private images: Map<string, Sprite>;
-    private videos: Map<string, HTMLVideoElement>;
-    private jsons: Map<string, object>;
-    private xmls: Map<string, XMLDocument>;
-    private htmls: Map<string, Document>;
+	constructor() {
+		this.audio = new Map<string, AudioTrack>();
+		this.images = new Map<string, Sprite>();
+		this.videos = new Map<string, HTMLVideoElement>();
+		this.jsons = new Map<string, object>();
+		this.xmls = new Map<string, XMLDocument>();
+		this.htmls = new Map<string, Document>();
 
+		eventSystem.subscribe("audioLoaded", (event) => this.onAudioLoaded(event));
+		eventSystem.subscribe("imageLoaded", (event) => this.onImageLoaded(event));
+		eventSystem.subscribe("videoLoaded", (event) => this.onVideoLoaded(event));
+		eventSystem.subscribe("fontLoaded", (event) => this.onFontLoaded(event));
+		eventSystem.subscribe("jsonLoaded", (event) => this.onJsonLoaded(event));
+		eventSystem.subscribe("xmlLoaded", (event) => this.onXmlLoaded(event));
+		eventSystem.subscribe("htmlLoaded", (event) => this.onHtmlLoaded(event));
+		eventSystem.subscribe("cssLoaded", (event) => this.onCssLoaded(event));
+		eventSystem.subscribe("scriptLoaded", (event) => this.onScriptLoaded(event));
+	}
 
-    constructor()
-    {
-        this.audio = new Map<string, AudioTrack>();
-        this.images = new Map<string, Sprite>();
-        this.videos = new Map<string, HTMLVideoElement>();
-        this.jsons = new Map<string, object>();
-        this.xmls = new Map<string, XMLDocument>();
-        this.htmls = new Map<string, Document>();
+	private onImageLoaded(event: ImageLoadedEvent) {
+		this.images.set(event.assetID, event.image);
+	}
 
-        eventSystem.subscribe("audioLoaded", event => this.onAudioLoaded(event));
-        eventSystem.subscribe("imageLoaded", event => this.onImageLoaded(event));
-        eventSystem.subscribe("videoLoaded", event => this.onVideoLoaded(event));
-        eventSystem.subscribe("fontLoaded", event => this.onFontLoaded(event));
-        eventSystem.subscribe("jsonLoaded", event => this.onJsonLoaded(event));
-        eventSystem.subscribe("xmlLoaded", event => this.onXmlLoaded(event));
-        eventSystem.subscribe("htmlLoaded", event => this.onHtmlLoaded(event));
-        eventSystem.subscribe("cssLoaded", event => this.onCssLoaded(event));
-        eventSystem.subscribe("scriptLoaded", event => this.onScriptLoaded(event));
-    }
+	private onAudioLoaded(event: AudioLoadedEvent) {
+		this.audio.set(event.assetID, event.track);
+	}
 
+	private onVideoLoaded(event: VideoLoadedEvent) {
+		this.videos.set(event.assetID, event.video);
+	}
 
-    private onImageLoaded(event: ImageLoadedEvent)
-    {
-        this.images.set(event.assetID, event.image);
-    }
+	private onFontLoaded(event: FontLoadedEvent) {
+		document.fonts.add(event.font);
+	}
 
-    private onAudioLoaded(event: AudioLoadedEvent)
-    {
-        this.audio.set(event.assetID, event.track);
-    }
+	private onJsonLoaded(event: JsonLoadedEvent) {
+		this.jsons.set(event.assetID, event.json);
+	}
 
-    private onVideoLoaded(event: VideoLoadedEvent)
-    {
-        this.videos.set(event.assetID, event.video);
-    }
+	private onXmlLoaded(event: XmlLoadedEvent) {
+		this.xmls.set(event.assetID, event.xml);
+	}
 
-    private onFontLoaded(event: FontLoadedEvent)
-    {
-        document.fonts.add(event.font);
-    }
+	private onHtmlLoaded(event: HtmlLoadedEvent) {
+		this.htmls.set(event.assetID, event.html);
+	}
 
-    private onJsonLoaded(event: JsonLoadedEvent)
-    {
-        this.jsons.set(event.assetID, event.json);
-    }
+	private onCssLoaded(event: CssLoadedEvent) {
+		document.head.appendChild(event.css);
+	}
 
-    private onXmlLoaded(event: XmlLoadedEvent)
-    {
-        this.xmls.set(event.assetID, event.xml);
-    }
+	private onScriptLoaded(event: ScriptLoadedEvent) {
+		document.body.appendChild(event.script);
+	}
 
-    private onHtmlLoaded(event: HtmlLoadedEvent)
-    {
-        this.htmls.set(event.assetID, event.html);
-    }
+	public getAudio(id: string): AudioTrack {
+		const track = this.audio.get(id);
 
-    private onCssLoaded(event: CssLoadedEvent)
-    {
-        document.head.appendChild(event.css);
-    }
+		if (track === undefined) {
+			throw new GameError(`Track ${id} does not exist`);
+		}
 
-    private onScriptLoaded(event: ScriptLoadedEvent)
-    {
-        document.body.appendChild(event.script);
-    }
+		return track;
+	}
 
+	public setAudio(id: string, track: AudioTrack) {
+		this.audio.set(id, track);
+	}
 
-    public getAudio(id: string): AudioTrack
-    {
-        const track = this.audio.get(id);
+	public getImage(id: string): Sprite {
+		const image = this.images.get(id);
 
-        if(track === undefined) {
-            throw new GameError(`Track ${id} does not exist`);
-        }
+		if (image === undefined) {
+			throw new GameError(`Image ${id} does not exist`);
+		}
 
-        return track;
-    }
+		return image;
+	}
 
-    public setAudio(id: string, track: AudioTrack)
-    {
-        this.audio.set(id, track);
-    }
+	public setImage(id: string, image: Sprite) {
+		this.images.set(id, image);
+	}
 
-    public getImage(id: string): Sprite
-    {
-        const image = this.images.get(id);
+	public getVideo(id: string): HTMLVideoElement {
+		const video = this.videos.get(id);
 
-        if(image === undefined) {
-            throw new GameError(`Image ${id} does not exist`);
-        }
+		if (video === undefined) {
+			throw new GameError(`Video ${id} does not exist`);
+		}
 
-        return image;
-    }
+		return video;
+	}
 
-    public setImage(id: string, image: Sprite)
-    {
-        this.images.set(id, image);
-    }
+	public setVideo(id: string, video: HTMLVideoElement) {
+		this.videos.set(id, video);
+	}
 
-    public getVideo(id: string): HTMLVideoElement
-    {
-        const video = this.videos.get(id);
+	public getJson(id: string): object {
+		const json = this.jsons.get(id);
 
-        if(video === undefined) {
-            throw new GameError(`Video ${id} does not exist`);
-        }
+		if (json === undefined) {
+			throw new GameError(`JSON ${id} does not exist`);
+		}
 
-        return video;
-    }
+		return json;
+	}
 
-    public setVideo(id: string, video: HTMLVideoElement)
-    {
-        this.videos.set(id, video);
-    }
+	public setJson(id: string, json: object) {
+		this.jsons.set(id, json);
+	}
 
-    public getJson(id: string): object
-    {
-        const json = this.jsons.get(id);
+	public getXml(id: string): XMLDocument {
+		const xml = this.xmls.get(id);
 
-        if(json === undefined) {
-            throw new GameError(`JSON ${id} does not exist`);
-        }
+		if (xml === undefined) {
+			throw new GameError(`XML ${id} does not exist`);
+		}
 
-        return json;
-    }
+		return xml;
+	}
 
-    public setJson(id: string, json: object)
-    {
-        this.jsons.set(id, json);
-    }
+	public setXml(id: string, xml: XMLDocument) {
+		this.xmls.set(id, xml);
+	}
 
-    public getXml(id: string): XMLDocument
-    {
-        const xml = this.xmls.get(id);
+	public getHtml(id: string): Document {
+		const html = this.htmls.get(id);
 
-        if(xml === undefined) {
-            throw new GameError(`XML ${id} does not exist`);
-        }
+		if (html === undefined) {
+			throw new GameError(`HTML ${id} does not exist`);
+		}
 
-        return xml;
-    }
+		return html;
+	}
 
-    public setXml(id: string, xml: XMLDocument)
-    {
-        this.xmls.set(id, xml);
-    }
-
-    public getHtml(id: string): Document
-    {
-        const html = this.htmls.get(id);
-
-        if(html === undefined) {
-            throw new GameError(`HTML ${id} does not exist`);
-        }
-
-        return html;
-    }
-
-    public setHtml(id: string, html: Document)
-    {
-        this.htmls.set(id, html);
-    }
+	public setHtml(id: string, html: Document) {
+		this.htmls.set(id, html);
+	}
 }

@@ -2,118 +2,107 @@ import { GameError } from "core/GameError";
 import { Repository, RepositorySettings } from "./Repository";
 import { StoreNames } from "./DatabaseSchema";
 
-
-export interface DatabaseConfiguration
-{
-    version: number,
-    repositories: {
-        [Name in StoreNames]: RepositorySettings
-    }
+export interface DatabaseConfiguration {
+	version: number;
+	repositories: {
+		[Name in StoreNames]: RepositorySettings;
+	};
 }
 
+export class LocalDatabase {
+	private repositories: Map<StoreNames, Repository>;
+	private database!: IDBDatabase;
 
-export class LocalDatabase
-{
-    private repositories: Map<StoreNames, Repository>;
-    private database!: IDBDatabase;
+	constructor(
+		private id: string,
+		private config: DatabaseConfiguration
+	) {
+		this.repositories = new Map<StoreNames, Repository>();
+	}
 
+	public connect() {
+		return new Promise<void>((resolve, reject) => {
+			const request = indexedDB.open(this.id, this.config.version);
 
-    constructor(private id: string, private config: DatabaseConfiguration)
-    {
-        this.repositories = new Map<StoreNames, Repository>();
-    }
+			const unlisten = () => {
+				request.removeEventListener("upgradeneeded", upgrade);
+				request.removeEventListener("success", success);
+				request.removeEventListener("error", error);
+			};
 
+			const upgrade = () => {
+				this.database = request.result;
+				this.initialize();
+			};
 
-    public connect()
-    {
-        return new Promise<void>((resolve, reject) => {
-            const request = indexedDB.open(this.id, this.config.version);
+			const success = () => {
+				this.database = request.result;
+				this.load();
 
-            const unlisten = () => {
-                request.removeEventListener("upgradeneeded", upgrade);
-                request.removeEventListener("success", success);
-                request.removeEventListener("error", error);
-            };
+				resolve();
+				unlisten();
+			};
 
-            const upgrade = () => {
-                this.database = request.result;
-                this.initialize();
-            };
+			const error = () => {
+				reject(request.error);
+				unlisten();
+			};
 
-            const success = () => {
-                this.database = request.result;
-                this.load();
-                
-                resolve();
-                unlisten();
-            };
+			request.addEventListener("upgradeneeded", upgrade);
+			request.addEventListener("success", success);
+			request.addEventListener("error", error);
+		});
+	}
 
-            const error = () => {
-                reject(request.error);
-                unlisten();
-            };
+	private load() {
+		for (const name of Object.keys(this.config.repositories)) {
+			const repositoryName = this.asStoreName(name);
 
-            request.addEventListener("upgradeneeded", upgrade);
-            request.addEventListener("success", success);
-            request.addEventListener("error", error);
-        });
-    }
+			if (!repositoryName) {
+				throw new GameError(`The repository ${name} is not a valid store name`);
+			}
 
-    private load()
-    {
-        for(const name of Object.keys(this.config.repositories)) {
-            const repositoryName = this.asStoreName(name);
+			if (this.database.objectStoreNames.contains(name)) {
+				this.repositories.set(repositoryName, new Repository(repositoryName, this.database));
+			}
+		}
+	}
 
-            if(!repositoryName) {
-                throw new GameError(`The repository ${name} is not a valid store name`);
-            }
+	private initialize() {
+		for (const [name, settings] of Object.entries(this.config.repositories)) {
+			if (!this.database.objectStoreNames.contains(name)) {
+				this.database.createObjectStore(name, settings);
+			}
+		}
 
-            if(this.database.objectStoreNames.contains(name)) {
-                this.repositories.set(repositoryName, new Repository(repositoryName, this.database));
-            }
-        }
-    }
+		for (const name of this.database.objectStoreNames) {
+			const repositoryName = this.asStoreName(name);
 
-    private initialize()
-    {
-        for(const [name, settings] of Object.entries(this.config.repositories)) {
-            if(!this.database.objectStoreNames.contains(name)) {
-                this.database.createObjectStore(name, settings);
-            }
-        }
+			if (!repositoryName) {
+				this.database.deleteObjectStore(name);
+			}
+		}
+	}
 
-        for(const name of this.database.objectStoreNames) {
-            const repositoryName = this.asStoreName(name);
+	private asStoreName(name: string): StoreNames | null {
+		if (name in this.config.repositories) {
+			return name as StoreNames;
+		} else {
+			return null;
+		}
+	}
 
-            if(!repositoryName) {
-                this.database.deleteObjectStore(name);
-            }
-        }
-    }
+	public getRepository<Name extends StoreNames>(name: Name): Repository<Name> {
+		const repository = this.repositories.get(name);
 
-    private asStoreName(name: string): StoreNames | null
-    {
-        if(name in this.config.repositories) {
-            return name as StoreNames;
-        } else {
-            return null;
-        }
-    }
-    
+		if (repository === undefined) {
+			throw new GameError(`Repository ${name} does not exist`);
+		}
 
-    public getRepository<Name extends StoreNames>(name: Name): Repository<Name>
-    {
-        const repository = this.repositories.get(name);
+		return repository;
+	}
 
-        if(repository === undefined) {
-            throw new GameError(`Repository ${name} does not exist`);
-        }
-
-        return repository;
-    }
-
-    public disconnect()
-    {
-        this.database.close();
-    }
+	public disconnect() {
+		this.database.close();
+	}
 }

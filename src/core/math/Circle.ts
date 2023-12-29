@@ -4,121 +4,100 @@ import { Line } from "./Line";
 import { Rectangle } from "./Rectangle";
 import { Polygon } from "./Polygon";
 
+export class Circle {
+	private position: Vector;
+	private radius: number;
 
-export class Circle
-{
-    private position: Vector;
-    private radius: number;
+	constructor(x: number, y: number, radius: number) {
+		this.position = new Vector(x, y);
+		this.radius = radius;
+	}
 
+	public static ofPoints(start: Vector, center: Vector, end: Vector): Circle {
+		const startCenter = Line.ofPoints(start, center);
+		const endCenter = Line.ofPoints(center, end);
 
-    constructor(x: number, y: number, radius: number)
-    {
-        this.position = new Vector(x, y);
-        this.radius = radius;
-    }
+		const startBisector = startCenter.getVerticalBisector();
+		const endBisector = endCenter.getVerticalBisector();
 
-    public static ofPoints(start: Vector, center: Vector, end: Vector): Circle
-    {
-        const startCenter = Line.ofPoints(start, center);
-        const endCenter = Line.ofPoints(center, end);
+		const denominator = startBisector.A * endBisector.B - endBisector.A * startBisector.B;
 
-        const startBisector = startCenter.getVerticalBisector();
-        const endBisector = endCenter.getVerticalBisector();
+		const centerX = (endBisector.B * startBisector.C - startBisector.B * endBisector.C) / denominator;
+		const centerY = (startBisector.A * endBisector.C - endBisector.A * startBisector.C) / denominator;
 
-        const denominator = startBisector.A * endBisector.B - endBisector.A * startBisector.B;
+		const radius = start.distanceBetween(new Vector(centerX, centerY));
 
-        const centerX = (endBisector.B * startBisector.C - startBisector.B * endBisector.C) / denominator;
-        const centerY = (startBisector.A * endBisector.C - endBisector.A * startBisector.C) / denominator;
+		return new Circle(centerX - radius, centerY - radius, radius);
+	}
 
-        const radius = start.distanceBetween(new Vector(centerX, centerY));
+	public contains(point: Vector): boolean {
+		const distance = point.distanceBetween(this.getPosition());
+		return distance <= this.radius;
+	}
 
-        return new Circle(centerX - radius, centerY - radius, radius);
-    }
+	public intersects(other: Shape): boolean {
+		if (other instanceof Line) {
+			return this.intersectsWithLine(other);
+		} else if (other instanceof Circle) {
+			return this.intersectsWithCircle(other);
+		} else if (other instanceof Rectangle) {
+			return other.intersects(this);
+		} else if (other instanceof Polygon) {
+			return other.intersects(this);
+		}
 
+		return false;
+	}
 
-    public contains(point: Vector): boolean
-    {
-        const distance = point.distanceBetween(this.getPosition());
-        return distance <= this.radius;
-    }
+	private intersectsWithLine(other: Line): boolean {
+		const center = this.getPosition();
+		const start = other.getStart();
+		const end = other.getEnd();
 
-    public intersects(other: Shape): boolean
-    {
-        if(other instanceof Line) {
-            return this.intersectsWithLine(other);
-        }
-        else if(other instanceof Circle) {
-            return this.intersectsWithCircle(other);
-        }
-        else if(other instanceof Rectangle) {
-            return other.intersects(this);
-        }
-        else if(other instanceof Polygon) {
-            return other.intersects(this);
-        }
+		if (this.contains(start) || this.contains(end)) return true;
 
-        return false;
-    }
+		const direction = start.subtract(end);
+		const dot = direction.dot(center);
+		const closest = start.add(direction.multiply(dot));
 
-    private intersectsWithLine(other: Line): boolean
-    {
-        const center = this.getPosition();
-        const start = other.getStart();
-        const end = other.getEnd();
+		if (!other.contains(closest)) return false;
 
-        if(this.contains(start) || this.contains(end)) return true;
+		const distance = center.distanceBetween(closest);
 
-        const direction = start.subtract(end);
-        const dot = direction.dot(center);
-        const closest = start.add(direction.multiply(dot));
+		return distance <= this.radius;
+	}
 
-        if(!other.contains(closest)) return false;
+	private intersectsWithCircle(other: Circle): boolean {
+		const center = this.getPosition();
+		const otherCenter = other.getPosition();
 
-        const distance = center.distanceBetween(closest);
+		const distance = center.distanceBetween(otherCenter);
 
-        return distance <= this.radius;
-    }
+		return distance <= this.radius + other.radius;
+	}
 
-    private intersectsWithCircle(other: Circle): boolean
-    {
-        const center = this.getPosition();
-        const otherCenter = other.getPosition();
+	public getBorderPoint(angle: number): Vector {
+		const vector = Vector.ofAngle(angle);
+		return vector.multiply(this.radius);
+	}
 
-        const distance = center.distanceBetween(otherCenter);
+	public getArea(): number {
+		return Math.PI * this.radius * this.radius;
+	}
 
-        return distance <= this.radius + other.radius;
-    }
+	public getPerimeter(): number {
+		return 2 * this.radius * Math.PI;
+	}
 
+	public getPosition(): Vector {
+		return this.position;
+	}
 
-    public getBorderPoint(angle: number): Vector
-    {
-        const vector = Vector.ofAngle(angle);
-        return vector.multiply(this.radius);
-    }
+	public getRadius(): number {
+		return this.radius;
+	}
 
-    public getArea(): number
-    {
-        return Math.PI * this.radius * this.radius;
-    }
-
-    public getPerimeter(): number
-    {
-        return 2 * this.radius * Math.PI;
-    }
-
-
-    public getPosition(): Vector
-    {
-        return this.position;
-    }
-    
-    public getRadius(): number
-    {
-        return this.radius;
-    }
-
-    public getDiameter(): number
-    {
-        return this.radius * 2;
-    }
+	public getDiameter(): number {
+		return this.radius * 2;
+	}
 }

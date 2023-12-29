@@ -5,176 +5,149 @@ import { Component, ComponentConstructor } from "./Component";
 import { GameStateManager } from "core/GameStateManager";
 import { GameStateConstructor } from "core/GameState";
 
-
-export interface EntityType
-{
-    id: string,
-    enabled: boolean,
-    states: string[],
-    components: JsonSchema
+export interface EntityType {
+	id: string;
+	enabled: boolean;
+	states: string[];
+	components: JsonSchema;
 }
 
+export class Entity {
+	private components: Map<string, Component<JsonSchema>>;
+	private stateManager: GameStateManager;
+	private enabled: boolean;
 
-export class Entity
-{
-    private components: Map<string, Component<JsonSchema>>;
-    private stateManager: GameStateManager;
-    private enabled: boolean;
+	constructor(private id: string = Randomizer.randomUUID()) {
+		this.components = new Map<string, Component<JsonSchema>>();
+		this.stateManager = new GameStateManager();
+		this.enabled = true;
+	}
 
+	public static parse(json: EntityType | string): Entity {
+		const entityType: EntityType = typeof json === "string" ? JSON.parse(json) : json;
+		const entity = new Entity(entityType.id);
 
-    constructor(private id: string = Randomizer.randomUUID())
-    {
-        this.components = new Map<string, Component<JsonSchema>>();
-        this.stateManager = new GameStateManager();
-        this.enabled = true;
-    }
+		for (const state of entityType.states) {
+			const stateType = world.getEntityState(state);
+			entity.addState(stateType);
+		}
 
-    public static parse(json: EntityType | string): Entity
-    {
-        const entityType: EntityType = (typeof json === "string") ? JSON.parse(json) : json;
-        const entity = new Entity(entityType.id);
+		for (const [name, data] of Object.entries(entityType.components)) {
+			const componentType = world.getComponent(name);
+			entity.addComponent(componentType, data);
+		}
 
-        for(const state of entityType.states) {
-            const stateType = world.getEntityState(state);
-            entity.addState(stateType);
-        }
+		return entity;
+	}
 
-        for(const [name, data] of Object.entries(entityType.components)) {
-            const componentType = world.getComponent(name);
-            entity.addComponent(componentType, data);
-        }
+	public addComponent<T extends JsonSchema>(componentType: ComponentConstructor<T>, data: T): this {
+		if (!world.hasComponent(componentType)) {
+			return this;
+		}
 
-        return entity;
-    }
+		const component = new componentType(data);
+		this.components.set(componentType.name, component);
 
+		eventSystem.dispatch("entityChanged", { entity: this });
+		return this;
+	}
 
-    public addComponent<T extends JsonSchema>(componentType: ComponentConstructor<T>, data: T): this
-    {
-        if(!world.hasComponent(componentType)) {
-            return this;
-        }
+	public removeComponent<T extends JsonSchema>(componentType: ComponentConstructor<T>): this {
+		this.components.delete(componentType.name);
 
-        const component = new componentType(data);
-        this.components.set(componentType.name, component);
+		eventSystem.dispatch("entityChanged", { entity: this });
+		return this;
+	}
 
-        eventSystem.dispatch("entityChanged", { entity: this });
-        return this;
-    }
+	public getComponent<T extends JsonSchema>(componentType: ComponentConstructor<T>): Component<T> {
+		const component = this.components.get(componentType.name);
 
-    public removeComponent<T extends JsonSchema>(componentType: ComponentConstructor<T>): this
-    {
-        this.components.delete(componentType.name);
+		if (component === undefined) {
+			throw new GameError(`Component not defined on entity ${this.id}`);
+		}
 
-        eventSystem.dispatch("entityChanged", { entity: this });
-        return this;
-    }
+		return component as Component<T>;
+	}
 
-    public getComponent<T extends JsonSchema>(componentType: ComponentConstructor<T>): Component<T>
-    {
-        const component = this.components.get(componentType.name);
+	public getComponentData<T extends JsonSchema>(componentType: ComponentConstructor<T>): T {
+		const component = this.getComponent(componentType);
+		return component.toObject();
+	}
 
-        if(component === undefined) {
-            throw new GameError(`Component not defined on entity ${this.id}`);
-        }
+	public hasComponent<T extends JsonSchema>(componentType: ComponentConstructor<T>): boolean {
+		return this.components.has(componentType.name);
+	}
 
-        return component as Component<T>;
-    }
+	public hasAllComponent<T extends JsonSchema>(componentTypes: ComponentConstructor<T>[]): boolean {
+		return componentTypes.every((componentType) => this.hasComponent(componentType));
+	}
 
-    public getComponentData<T extends JsonSchema>(componentType: ComponentConstructor<T>): T
-    {
-        const component = this.getComponent(componentType);
-        return component.toObject();
-    }
+	public hasAnyComponent<T extends JsonSchema>(componentTypes: ComponentConstructor<T>[]): boolean {
+		return componentTypes.some((componentType) => this.hasComponent(componentType));
+	}
 
-    public hasComponent<T extends JsonSchema>(componentType: ComponentConstructor<T>): boolean
-    {
-        return this.components.has(componentType.name);
-    }
+	public addState(stateType: GameStateConstructor): this {
+		if (!world.hasEntityState(stateType)) {
+			return this;
+		}
 
-    public hasAllComponent<T extends JsonSchema>(componentTypes: ComponentConstructor<T>[]): boolean
-    {
-        return componentTypes.every(componentType => this.hasComponent(componentType));
-    }
+		this.stateManager.registerState(stateType);
+		return this;
+	}
 
-    public hasAnyComponent<T extends JsonSchema>(componentTypes: ComponentConstructor<T>[]): boolean
-    {
-        return componentTypes.some(componentType => this.hasComponent(componentType));
-    }
+	public removeState(stateType: GameStateConstructor): this {
+		this.stateManager.unregisterState(stateType);
+		return this;
+	}
 
+	public getStateManager(): GameStateManager {
+		return this.stateManager;
+	}
 
-    public addState(stateType: GameStateConstructor): this
-    {
-        if(!world.hasEntityState(stateType)) {
-            return this;
-        }
+	public reset(): this {
+		this.components.clear();
+		this.stateManager.clear();
 
-        this.stateManager.registerState(stateType);
-        return this;
-    }
+		eventSystem.dispatch("entityChanged", { entity: this });
+		return this;
+	}
 
-    public removeState(stateType: GameStateConstructor): this
-    {
-        this.stateManager.unregisterState(stateType);
-        return this;
-    }
+	public toObject(): EntityType {
+		const entity: EntityType = {
+			id: this.id,
+			enabled: this.enabled,
+			states: [],
+			components: {}
+		};
 
-    public getStateManager(): GameStateManager
-    {
-        return this.stateManager;
-    }
+		const states = this.stateManager.getCurrentStates();
+		entity.states = states.map((state) => state.constructor.name);
 
+		for (const [name, component] of this.components.entries()) {
+			entity.components[name] = component.toObject();
+		}
 
-    public reset(): this
-    {
-        this.components.clear();
-        this.stateManager.clear();
+		return entity;
+	}
 
-        eventSystem.dispatch("entityChanged", { entity: this });
-        return this;
-    }
+	public toString(): string {
+		const data = this.toObject();
+		return JSON.stringify(data, null, "\t");
+	}
 
-    public toObject(): EntityType
-    {
-        const entity: EntityType = {
-            id: this.id,
-            enabled: this.enabled,
-            states: [],
-            components: {}
-        };
+	public getID(): string {
+		return this.id;
+	}
 
-        const states = this.stateManager.getCurrentStates();
-        entity.states = states.map(state => state.constructor.name);
+	public isEnabled(): boolean {
+		return this.enabled;
+	}
 
-        for (const [name, component] of this.components.entries()) {
-            entity.components[name] = component.toObject();
-        }
+	public enable() {
+		this.enabled = true;
+	}
 
-        return entity;
-    }
-
-    public toString(): string
-    {
-        const data = this.toObject();
-        return JSON.stringify(data, null, "\t");
-    }
-
-    public getID(): string
-    {
-        return this.id;
-    }
-
-    public isEnabled(): boolean
-    {
-        return this.enabled;
-    }
-
-    public enable()
-    {
-        this.enabled = true;
-    }
-
-    public disable()
-    {
-        this.enabled = false;
-    }
+	public disable() {
+		this.enabled = false;
+	}
 }

@@ -2,7 +2,6 @@ import { describe, test, expect } from "vitest";
 import { Vector } from "../../../src/core/math/Vector";
 
 describe("Vector Operations", () => {
-
 	test("addition", () => {
 		const value = new Vector(0, 5);
 		const other = new Vector(0, 5);
@@ -40,5 +39,4 @@ describe("Vector Operations", () => {
 		expect(result.y).toBe(2);
 		expect(result.z).toBe(0);
 	});
-
 });
