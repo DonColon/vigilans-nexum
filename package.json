@@ -25,15 +25,15 @@
 	"homepage": "https://github.com/DonColon/vigilans-nexum#readme",
 	"scripts": {
 		"clean": "rimraf dist coverage",
-		"lint": "eslint src test",
-		"lint:fix": "eslint src test --fix",
 		"format": "prettier --config .prettierrc {src,test}/**/*.{ts,html,css,json} --write",
 		"format:check": "prettier --config .prettierrc {src,test}/**/*.{ts,html,css,json} --check",
+		"lint": "eslint src test",
+		"lint:fix": "eslint src test --fix",
+		"build": "tsc && vite build",
+		"build:preview": "vite preview",
 		"test": "vitest",
 		"test:coverage": "vitest run --coverage",
-		"start": "vite",
-		"build": "tsc && vite build",
-		"build:preview": "vite preview"
+		"start": "vite"
 	},
 	"devDependencies": {
 		"@typescript-eslint/eslint-plugin": "^6.16.0",

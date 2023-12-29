@@ -2,9 +2,9 @@ name: Node CI Build
 
 on:
   push:
-    branches: [ "main", "dev", "feature/**" ]
+    branches: ["main", "dev", "feature**"]
   pull_request:
-    branches: [ "main", "dev" ]
+    branches: ["main", "dev"]
 
 jobs:
   build:
@@ -12,19 +12,20 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [14.x, 16.x, 18.x]
+        node-version: [18.x]
 
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Setup Node Version ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
+			- uses: actions/checkout@v3
 
-    - run: npm run format:check
+			- name: Setup Node Version ${{ matrix.node-version }}
+				uses: actions/setup-node@v3
+				with:
+					node-version: ${{ matrix.node-version }}
+					cache: "npm"
 
-    # - run: npm ci
-    # - run: npm run build --if-present
-    # - run: npm test
+			- run: npm ci
+			- run: npm run format:check
+
+        # - run: npm ci
+        # - run: npm run build --if-present
+        # - run: npm test
