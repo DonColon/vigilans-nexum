@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { GameEvent } from "./GameEvent";
 import { EventHandler, EventNames, GameEvents } from "./GameEvents";
 
 export class EventSystem {
-	private subscribers: Map<EventNames, EventHandler[]> = new Map<EventNames, EventHandler[]>();
+	private subscribers: Map<EventNames, EventHandler<any>[]> = new Map<EventNames, EventHandler<any>[]>();
 
 	public subscribe<Name extends EventNames>(eventName: Name, handler: EventHandler<Name>) {
 		const handlers = this.subscribers.get(eventName) || [];

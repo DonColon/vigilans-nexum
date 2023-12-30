@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { GameError } from "core/GameError";
 import { Repository, RepositorySettings } from "./Repository";
 import { StoreNames } from "./DatabaseSchema";
@@ -10,14 +12,14 @@ export interface DatabaseConfiguration {
 }
 
 export class LocalDatabase {
-	private repositories: Map<StoreNames, Repository>;
+	private repositories: Map<StoreNames, Repository<any>>;
 	private database!: IDBDatabase;
 
 	constructor(
 		private id: string,
 		private config: DatabaseConfiguration
 	) {
-		this.repositories = new Map<StoreNames, Repository>();
+		this.repositories = new Map<StoreNames, Repository<any>>();
 	}
 
 	public connect() {
