@@ -1,3 +1,5 @@
+/* eslint-disable no-var */
+
 import { Game } from "core/Game";
 import { EventSystem } from "./events/EventSystem";
 import { LocalDatabase } from "./database/LocalDatabase";

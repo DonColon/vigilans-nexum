@@ -1,5 +1,5 @@
 import { GameError } from "core/GameError";
-import { Randomizer } from "core/utils/Randomizer";
+import { randomUUID } from "core/utils/Randomizer";
 import { JsonSchema } from "./JsonSchema";
 import { Component, ComponentConstructor } from "./Component";
 import { GameStateManager } from "core/GameStateManager";
@@ -17,7 +17,7 @@ export class Entity {
 	private stateManager: GameStateManager;
 	private enabled: boolean;
 
-	constructor(private id: string = Randomizer.randomUUID()) {
+	constructor(private id: string = randomUUID()) {
 		this.components = new Map<string, Component<JsonSchema>>();
 		this.stateManager = new GameStateManager();
 		this.enabled = true;

@@ -11,7 +11,7 @@ import { CssLoadedEvent } from "../assets/CssLoadedEvent";
 import { ScriptLoadedEvent } from "../assets/ScriptLoadedEvent";
 
 export type EventNames = keyof GameEvents;
-export type EventHandler<Name extends EventNames = any> = (event: GameEvents[Name]) => void;
+export type EventHandler<Name extends EventNames> = (event: GameEvents[Name]) => void;
 
 export interface GameEvents {
 	entityChanged: WorldEvent;

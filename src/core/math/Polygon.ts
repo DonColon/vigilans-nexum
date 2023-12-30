@@ -1,4 +1,4 @@
-import { Arrays } from "core/utils/Arrays";
+import { fillTuple } from "core/utils/Arrays";
 import { Shape } from "./Shape";
 import { Vector } from "./Vector";
 import { Line } from "./Line";
@@ -21,7 +21,7 @@ export class Polygon {
 		}
 
 		const start = previous;
-		const used = Arrays.fillTuple(false, points.length);
+		const used = fillTuple(false, points.length);
 
 		do {
 			let next = -1;

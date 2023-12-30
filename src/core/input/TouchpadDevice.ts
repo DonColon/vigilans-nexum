@@ -1,7 +1,7 @@
 import { Matrix } from "core/math/Matrix";
 import { Vector } from "core/math/Vector";
 import { Input, Pointer } from "./Input";
-import { SwipeInput, SwipeInputs, SwipeInputType } from "./SwipeInput";
+import { SwipeInput, SwipeInputType, ofAngle } from "./SwipeInput";
 import { TouchInput, TouchInputType } from "./TouchInput";
 
 export class TouchpadDevice {
@@ -31,7 +31,7 @@ export class TouchpadDevice {
 			const swipe = Matrix.reflectY(position.current.subtract(position.previous));
 			const angle = swipe.heading();
 
-			const input = this.touchpad.get(SwipeInputs.ofAngle(angle)) as Input;
+			const input = this.touchpad.get(ofAngle(angle)) as Input;
 			input.previous = input.current;
 			input.current = true;
 

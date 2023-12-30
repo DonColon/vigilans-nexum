@@ -5,77 +5,75 @@ interface Range {
 	max?: number;
 }
 
-export namespace Randomizer {
-	export function randomInteger(range: Range): number {
-		const min = range.min || 0;
-		const max = range.max || Number.MAX_SAFE_INTEGER;
+export function randomInteger(range: Range): number {
+	const min = range.min || 0;
+	const max = range.max || Number.MAX_SAFE_INTEGER;
 
-		return Math.floor(Math.random() * (max - min + 1)) + min;
+	return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+export function randomIntegers<L extends number>(length: L, range: Range): Tuple<number, L> {
+	const values = [];
+
+	for (let i = 0; i < length; i++) {
+		const value = randomInteger(range);
+		values.push(value);
 	}
 
-	export function randomIntegers<L extends number>(length: L, range: Range): Tuple<number, L> {
-		const values = [];
+	return values as Tuple<number, L>;
+}
 
-		for (let i = 0; i < length; i++) {
-			const value = randomInteger(range);
-			values.push(value);
-		}
+export function randomDecimal(range: Range): number {
+	const min = range.min || 0;
+	const max = range.max || Number.MAX_VALUE;
 
-		return values as Tuple<number, L>;
+	return Math.random() * (max - min + 1) + min;
+}
+
+export function randomDecimals<L extends number>(length: L, range: Range): Tuple<number, L> {
+	const values = [];
+
+	for (let i = 0; i < length; i++) {
+		const value = randomDecimal(range);
+		values.push(value);
 	}
 
-	export function randomDecimal(range: Range): number {
-		const min = range.min || 0;
-		const max = range.max || Number.MAX_VALUE;
+	return values as Tuple<number, L>;
+}
 
-		return Math.random() * (max - min + 1) + min;
+export function randomBoolean(): boolean {
+	return Math.round(Math.random()) === 1;
+}
+
+export function randomBooleans<L extends number>(length: L): Tuple<boolean, L> {
+	const values = [];
+
+	for (let i = 0; i < length; i++) {
+		const value = randomBoolean();
+		values.push(value);
 	}
 
-	export function randomDecimals<L extends number>(length: L, range: Range): Tuple<number, L> {
-		const values = [];
+	return values as Tuple<boolean, L>;
+}
 
-		for (let i = 0; i < length; i++) {
-			const value = randomDecimal(range);
-			values.push(value);
-		}
+export function randomUUID(): string {
+	let current = Date.now();
 
-		return values as Tuple<number, L>;
-	}
+	const uuid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (value) => {
+		const random = randomInteger({ max: 16 });
 
-	export function randomBoolean(): boolean {
-		return Math.round(Math.random()) === 1;
-	}
+		const hexCode = (current + random) % 16;
+		current = Math.floor(current / 16);
 
-	export function randomBooleans<L extends number>(length: L): Tuple<boolean, L> {
-		const values = [];
+		if (current === 0) current = Date.now();
 
-		for (let i = 0; i < length; i++) {
-			const value = randomBoolean();
-			values.push(value);
-		}
+		return (value === "x" ? hexCode : (hexCode % 4) + 8).toString(16);
+	});
 
-		return values as Tuple<boolean, L>;
-	}
+	return uuid;
+}
 
-	export function randomUUID(): string {
-		let current = Date.now();
-
-		const uuid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (value) => {
-			const random = randomInteger({ max: 16 });
-
-			const hexCode = (current + random) % 16;
-			current = Math.floor(current / 16);
-
-			if (current === 0) current = Date.now();
-
-			return (value === "x" ? hexCode : (hexCode % 4) + 8).toString(16);
-		});
-
-		return uuid;
-	}
-
-	export function anyOf<T>(items: T[]): T | undefined {
-		const index = randomInteger({ max: items.length - 1 });
-		return items.at(index);
-	}
+export function anyOf<T>(items: T[]): T | undefined {
+	const index = randomInteger({ max: items.length - 1 });
+	return items.at(index);
 }

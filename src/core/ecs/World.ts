@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { GameError } from "core/GameError";
 import { JsonSchema } from "./JsonSchema";
 import { ComponentConstructor } from "./Component";

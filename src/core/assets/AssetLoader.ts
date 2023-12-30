@@ -92,11 +92,7 @@ export class AssetLoader {
 	}
 
 	private async fetchAll(requests: RequestInfo[]): Promise<Response[]> {
-		try {
-			return await Promise.all(requests.map((request) => fetch(request)));
-		} catch (error) {
-			throw error;
-		}
+		return await Promise.all(requests.map((request) => fetch(request)));
 	}
 
 	private async loadImage(asset: ImageAsset) {

@@ -1,38 +1,38 @@
-import { ColorSpaces } from "./ColorSpaces";
+import { HEX, HSL, HWB, RGB, hex2rgb, hsl2hwb, hsl2rgb, hwb2hsl, rgb2hex, rgb2hsl } from "./ColorSpaces";
 
-type ColorSettings = ColorSpaces.HEX & ColorSpaces.RGB & ColorSpaces.HSL & ColorSpaces.HWB;
+type ColorSettings = HEX & RGB & HSL & HWB;
 
 export class Color {
 	private constructor(private settings: ColorSettings) {}
 
 	public static hex(code: string): Color {
-		const { red, green, blue, alpha } = ColorSpaces.hex2rgb(code);
-		const { hue, saturation, lightness } = ColorSpaces.rgb2hsl(red, green, blue, alpha);
-		const { whiteness, blackness } = ColorSpaces.hsl2hwb(hue, saturation, lightness, alpha);
+		const { red, green, blue, alpha } = hex2rgb(code);
+		const { hue, saturation, lightness } = rgb2hsl(red, green, blue, alpha);
+		const { whiteness, blackness } = hsl2hwb(hue, saturation, lightness, alpha);
 
 		return new Color({ code, red, green, blue, hue, saturation, lightness, whiteness, blackness, alpha });
 	}
 
 	public static rgb(red: number, green: number, blue: number, alpha?: number): Color {
-		const code = ColorSpaces.rgb2hex(red, green, blue, alpha);
-		const { hue, saturation, lightness } = ColorSpaces.rgb2hsl(red, green, blue, alpha);
-		const { whiteness, blackness } = ColorSpaces.hsl2hwb(hue, saturation, lightness, alpha);
+		const code = rgb2hex(red, green, blue, alpha);
+		const { hue, saturation, lightness } = rgb2hsl(red, green, blue, alpha);
+		const { whiteness, blackness } = hsl2hwb(hue, saturation, lightness, alpha);
 
 		return new Color({ code, red, green, blue, hue, saturation, lightness, whiteness, blackness, alpha });
 	}
 
 	public static hsl(hue: number, saturation: number, lightness: number, alpha?: number): Color {
-		const { red, green, blue } = ColorSpaces.hsl2rgb(hue, saturation, lightness, alpha);
-		const { whiteness, blackness } = ColorSpaces.hsl2hwb(hue, saturation, lightness, alpha);
-		const code = ColorSpaces.rgb2hex(red, green, blue, alpha);
+		const { red, green, blue } = hsl2rgb(hue, saturation, lightness, alpha);
+		const { whiteness, blackness } = hsl2hwb(hue, saturation, lightness, alpha);
+		const code = rgb2hex(red, green, blue, alpha);
 
 		return new Color({ code, red, green, blue, hue, saturation, lightness, whiteness, blackness, alpha });
 	}
 
 	public static hwb(hue: number, whiteness: number, blackness: number, alpha?: number): Color {
-		const { saturation, lightness } = ColorSpaces.hwb2hsl(hue, whiteness, blackness, alpha);
-		const { red, green, blue } = ColorSpaces.hsl2rgb(hue, saturation, lightness, alpha);
-		const code = ColorSpaces.rgb2hex(red, green, blue, alpha);
+		const { saturation, lightness } = hwb2hsl(hue, whiteness, blackness, alpha);
+		const { red, green, blue } = hsl2rgb(hue, saturation, lightness, alpha);
+		const code = rgb2hex(red, green, blue, alpha);
 
 		return new Color({ code, red, green, blue, hue, saturation, lightness, whiteness, blackness, alpha });
 	}
@@ -218,7 +218,7 @@ export class Color {
 		return this.settings.code;
 	}
 
-	public asRGB(): ColorSpaces.RGB {
+	public asRGB(): RGB {
 		return {
 			red: this.settings.red,
 			green: this.settings.green,
@@ -227,7 +227,7 @@ export class Color {
 		};
 	}
 
-	public asHSL(): ColorSpaces.HSL {
+	public asHSL(): HSL {
 		return {
 			hue: this.settings.hue,
 			saturation: this.settings.saturation,
@@ -236,7 +236,7 @@ export class Color {
 		};
 	}
 
-	public asHWB(): ColorSpaces.HWB {
+	public asHWB(): HWB {
 		return {
 			hue: this.settings.hue,
 			whiteness: this.settings.whiteness,

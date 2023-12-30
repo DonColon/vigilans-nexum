@@ -1,12 +1,12 @@
-import { Arrays, Matrix as MatrixLike } from "core/utils/Arrays";
-import { Maths } from "core/utils/Maths";
+import { fillMatrix, Matrix as MatrixLike } from "core/utils/Arrays";
+import { toRadians } from "core/utils/Maths";
 import { Vector } from "./Vector";
 
 export class Matrix {
 	private values: MatrixLike<number, 3, 3>;
 
 	constructor(values: number[][]) {
-		this.values = Arrays.fillMatrix(0, 3, 3);
+		this.values = fillMatrix(0, 3, 3);
 
 		for (let row = 0; row < this.values.length; row++) {
 			for (let column = 0; column < this.values[row].length; column++) {
@@ -45,7 +45,7 @@ export class Matrix {
 	}
 
 	public static identity(): Matrix {
-		const values = Arrays.fillMatrix(0, 3, 3);
+		const values = fillMatrix(0, 3, 3);
 
 		for (let index = 0; index < values.length; index++) {
 			values[index][index] = 1;
@@ -90,7 +90,7 @@ export class Matrix {
 
 	public static rotate(vector: Vector, angle: number, clockwise: boolean = false): Vector {
 		const other = Matrix.ofColumnVector(vector);
-		const radian = Maths.toRadians(angle);
+		const radian = toRadians(angle);
 
 		const transformation = new Matrix([
 			[Math.cos(radian), Math.sin(radian), 0],
@@ -109,7 +109,7 @@ export class Matrix {
 
 	public static shear(vector: Vector, angle: number): Vector {
 		const other = Matrix.ofColumnVector(vector);
-		const radian = Maths.toRadians(angle);
+		const radian = toRadians(angle);
 
 		const transformation = new Matrix([
 			[1, Math.tan(radian), 0],
@@ -122,7 +122,7 @@ export class Matrix {
 
 	public static shearX(vector: Vector, angle: number): Vector {
 		const other = Matrix.ofColumnVector(vector);
-		const radian = Maths.toRadians(angle);
+		const radian = toRadians(angle);
 
 		const transformation = new Matrix([
 			[1, Math.tan(radian), 0],
@@ -135,7 +135,7 @@ export class Matrix {
 
 	public static shearY(vector: Vector, angle: number): Vector {
 		const other = Matrix.ofColumnVector(vector);
-		const radian = Maths.toRadians(angle);
+		const radian = toRadians(angle);
 
 		const transformation = new Matrix([
 			[1, 0, 0],
@@ -195,7 +195,7 @@ export class Matrix {
 	}
 
 	public add(other: Matrix): Matrix {
-		const values = Arrays.fillMatrix(0, 3, 3);
+		const values = fillMatrix(0, 3, 3);
 
 		for (let row = 0; row < values.length; row++) {
 			for (let column = 0; column < values[row].length; column++) {
@@ -227,7 +227,7 @@ export class Matrix {
 	}
 
 	public subtract(other: Matrix): Matrix {
-		const values = Arrays.fillMatrix(0, 3, 3);
+		const values = fillMatrix(0, 3, 3);
 
 		for (let row = 0; row < values.length; row++) {
 			for (let column = 0; column < values[row].length; column++) {
@@ -259,7 +259,7 @@ export class Matrix {
 	}
 
 	public multiply(scalar: number): Matrix {
-		const values = Arrays.fillMatrix(0, 3, 3);
+		const values = fillMatrix(0, 3, 3);
 
 		for (let row = 0; row < values.length; row++) {
 			for (let column = 0; column < values[row].length; column++) {
@@ -291,7 +291,7 @@ export class Matrix {
 	}
 
 	public divide(scalar: number): Matrix {
-		const values = Arrays.fillMatrix(0, 3, 3);
+		const values = fillMatrix(0, 3, 3);
 
 		for (let row = 0; row < values.length; row++) {
 			for (let column = 0; column < values[row].length; column++) {
@@ -345,7 +345,7 @@ export class Matrix {
 	}
 
 	public product(other: Matrix): Matrix {
-		const values = Arrays.fillMatrix(0, 3, 3);
+		const values = fillMatrix(0, 3, 3);
 
 		for (let row = 0; row < this.values.length; row++) {
 			for (let column = 0; column < other.values[0].length; column++) {
@@ -359,7 +359,7 @@ export class Matrix {
 	}
 
 	public transpose(): Matrix {
-		const values = Arrays.fillMatrix(0, 3, 3);
+		const values = fillMatrix(0, 3, 3);
 
 		for (let row = 0; row < values.length; row++) {
 			for (let column = 0; column < values[row].length; column++) {
@@ -393,7 +393,7 @@ export class Matrix {
 	}
 
 	public cofactor(): Matrix {
-		const values = Arrays.fillMatrix(0, 3, 3);
+		const values = fillMatrix(0, 3, 3);
 
 		for (let row = 0; row < values.length; row++) {
 			for (let column = 0; column < values[row].length; column++) {

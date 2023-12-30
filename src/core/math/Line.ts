@@ -1,4 +1,4 @@
-import { Maths } from "core/utils/Maths";
+import { toDegrees } from "core/utils/Maths";
 import { Shape } from "./Shape";
 import { Vector } from "./Vector";
 import { Circle } from "./Circle";
@@ -114,7 +114,7 @@ export class Line {
 
 	public getAngle(): number {
 		const slope = this.getSlope();
-		return Maths.toDegrees(Math.atan(slope));
+		return toDegrees(Math.atan(slope));
 	}
 
 	public getSlope(): number {

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { WorldEvent } from "./WorldEvent";
 import { ComponentConstructor } from "./Component";
 import { Entity } from "./Entity";

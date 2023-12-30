@@ -189,13 +189,13 @@ export class Display {
 		return document.pointerLockElement === this.viewport;
 	}
 
-	public lockOrientation(orientation: DisplayOrientationType) {
-		if (!this.isOrientationLocked()) {
-			this.orientationLocked = true;
-			// Currently unavailable with typescript 5.2.2
-			// screen.orientation.lock(orientation);
-		}
-	}
+	// public lockOrientation(orientation: DisplayOrientationType) {
+	// 	if (!this.isOrientationLocked()) {
+	// 		this.orientationLocked = true;
+	// 		// Currently unavailable with typescript 5.2.2
+	// 		// screen.orientation.lock(orientation);
+	// 	}
+	// }
 
 	public unlockOrientation() {
 		if (this.isOrientationLocked()) {
@@ -208,99 +208,99 @@ export class Display {
 		return this.orientationLocked;
 	}
 
-	public addMouseDownListener(onDown: (event: MouseEvent) => any) {
+	public addMouseDownListener(onDown: (event: MouseEvent) => void) {
 		this.viewport.addEventListener("mousedown", onDown);
 	}
 
-	public removeMouseDownListener(onDown: (event: MouseEvent) => any) {
+	public removeMouseDownListener(onDown: (event: MouseEvent) => void) {
 		this.viewport.removeEventListener("mousedown", onDown);
 	}
 
-	public addMouseUpListener(onUp: (event: MouseEvent) => any) {
+	public addMouseUpListener(onUp: (event: MouseEvent) => void) {
 		this.viewport.addEventListener("mouseup", onUp);
 	}
 
-	public removeMouseUpListener(onUp: (event: MouseEvent) => any) {
+	public removeMouseUpListener(onUp: (event: MouseEvent) => void) {
 		this.viewport.removeEventListener("mouseup", onUp);
 	}
 
-	public addMouseMoveListener(onMove: (event: MouseEvent) => any) {
+	public addMouseMoveListener(onMove: (event: MouseEvent) => void) {
 		this.viewport.addEventListener("mousemove", onMove);
 	}
 
-	public removeMouseMoveListener(onMove: (event: MouseEvent) => any) {
+	public removeMouseMoveListener(onMove: (event: MouseEvent) => void) {
 		this.viewport.removeEventListener("mousemove", onMove);
 	}
 
-	public addWheelChangeListener(onChange: (event: WheelEvent) => any) {
+	public addWheelChangeListener(onChange: (event: WheelEvent) => void) {
 		this.viewport.addEventListener("wheel", onChange);
 	}
 
-	public removeWheelChangeListener(onChange: (event: WheelEvent) => any) {
+	public removeWheelChangeListener(onChange: (event: WheelEvent) => void) {
 		this.viewport.removeEventListener("wheel", onChange);
 	}
 
-	public addTouchStartListener(onStart: (event: TouchEvent) => any) {
+	public addTouchStartListener(onStart: (event: TouchEvent) => void) {
 		this.viewport.addEventListener("touchstart", onStart);
 	}
 
-	public removeTouchStartListener(onStart: (event: TouchEvent) => any) {
+	public removeTouchStartListener(onStart: (event: TouchEvent) => void) {
 		this.viewport.addEventListener("touchstart", onStart);
 	}
 
-	public addTouchEndListener(onEnd: (event: TouchEvent) => any) {
+	public addTouchEndListener(onEnd: (event: TouchEvent) => void) {
 		this.viewport.addEventListener("touchend", onEnd);
 	}
 
-	public removeTouchEndListener(onEnd: (event: TouchEvent) => any) {
+	public removeTouchEndListener(onEnd: (event: TouchEvent) => void) {
 		this.viewport.addEventListener("touchend", onEnd);
 	}
 
-	public addTouchMoveListener(onMove: (event: TouchEvent) => any) {
+	public addTouchMoveListener(onMove: (event: TouchEvent) => void) {
 		this.viewport.addEventListener("touchmove", onMove);
 	}
 
-	public removeTouchMoveListener(onMove: (event: TouchEvent) => any) {
+	public removeTouchMoveListener(onMove: (event: TouchEvent) => void) {
 		this.viewport.addEventListener("touchmove", onMove);
 	}
 
-	public addFullscreenChangeListener(onChange: (event: Event) => any) {
+	public addFullscreenChangeListener(onChange: (event: Event) => void) {
 		this.viewport.addEventListener("fullscreenchange", onChange);
 	}
 
-	public removeFullscreenChangeListener(onChange: (event: Event) => any) {
+	public removeFullscreenChangeListener(onChange: (event: Event) => void) {
 		this.viewport.removeEventListener("fullscreenchange", onChange);
 	}
 
-	public addFullscreenErrorListener(onError: (event: Event) => any) {
+	public addFullscreenErrorListener(onError: (event: Event) => void) {
 		this.viewport.addEventListener("fullscreenerror", onError);
 	}
 
-	public removeFullscreenErrorListener(onError: (event: Event) => any) {
+	public removeFullscreenErrorListener(onError: (event: Event) => void) {
 		this.viewport.removeEventListener("fullscreenerror", onError);
 	}
 
-	public addPointerLockChangeListener(onChange: (event: Event) => any) {
+	public addPointerLockChangeListener(onChange: (event: Event) => void) {
 		document.addEventListener("pointerlockchange", onChange);
 	}
 
-	public removePointerLockChangeListener(onChange: (event: Event) => any) {
+	public removePointerLockChangeListener(onChange: (event: Event) => void) {
 		document.removeEventListener("pointerlockchange", onChange);
 	}
 
-	public addPointerLockErrorListener(onError: (event: Event) => any) {
+	public addPointerLockErrorListener(onError: (event: Event) => void) {
 		document.addEventListener("pointerlockerror", onError);
 	}
 
-	public removePointerLockErrorListener(onError: (event: Event) => any) {
+	public removePointerLockErrorListener(onError: (event: Event) => void) {
 		document.removeEventListener("pointerlockerror", onError);
 	}
 
-	public addOrientationChangeListener(onChange: (event: Event) => any) {
+	public addOrientationChangeListener(onChange: (event: Event) => void) {
 		screen.orientation.addEventListener("change", onChange);
 	}
 
-	public removeOrientationChangeListener(onChange: (event: Event) => any) {
+	public removeOrientationChangeListener(onChange: (event: Event) => void) {
 		screen.orientation.removeEventListener("change", onChange);
 	}
 

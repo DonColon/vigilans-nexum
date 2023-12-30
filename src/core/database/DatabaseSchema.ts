@@ -13,7 +13,7 @@ interface DatabaseKeys {
 
 interface DatabaseStore {
 	key: DatabaseKeys;
-	type: any;
+	type: unknown;
 }
 
 interface DatabaseSchema {

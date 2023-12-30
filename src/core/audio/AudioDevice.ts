@@ -29,7 +29,7 @@ export class AudioDevice {
 
 	private start() {
 		for (const userGesture of UserGestures) {
-			document.addEventListener(userGesture, (event) => this.unlock());
+			document.addEventListener(userGesture, () => this.unlock());
 		}
 	}
 
@@ -40,7 +40,7 @@ export class AudioDevice {
 
 		if (this.context.state === "running") {
 			for (const userGesture of UserGestures) {
-				document.removeEventListener(userGesture, (event) => this.unlock());
+				document.removeEventListener(userGesture, () => this.unlock());
 			}
 		}
 	}

@@ -48,7 +48,7 @@ export class InputDevice {
 
 	public uses(channel: InputChannelType): boolean {
 		const max = Math.max(...this.channels.values());
-		const inputChannel = [...this.channels].find(([key, value]) => value === max);
+		const inputChannel = [...this.channels].find(([, value]) => value === max);
 
 		if (!inputChannel) return false;
 

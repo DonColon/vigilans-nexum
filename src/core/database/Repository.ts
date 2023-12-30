@@ -5,7 +5,7 @@ export interface RepositorySettings {
 	key?: string | string[];
 }
 
-export class Repository<Name extends StoreNames = any> {
+export class Repository<Name extends StoreNames> {
 	constructor(
 		private name: Name,
 		private database: IDBDatabase
@@ -18,7 +18,7 @@ export class Repository<Name extends StoreNames = any> {
 		const store = transaction.objectStore(this.name);
 		const operation = this.promisifyRequest(store.add(data));
 
-		const [result, _] = await Promise.all([operation, done]);
+		const [result] = await Promise.all([operation, done]);
 		return result;
 	}
 
@@ -29,7 +29,7 @@ export class Repository<Name extends StoreNames = any> {
 		const store = transaction.objectStore(this.name);
 		const operation = this.promisifyRequest(store.get(key));
 
-		const [result, _] = await Promise.all([operation, done]);
+		const [result] = await Promise.all([operation, done]);
 		return result;
 	}
 
@@ -40,7 +40,7 @@ export class Repository<Name extends StoreNames = any> {
 		const store = transaction.objectStore(this.name);
 		const operation = this.promisifyRequest(store.put(data));
 
-		const [result, _] = await Promise.all([operation, done]);
+		const [result] = await Promise.all([operation, done]);
 		return result;
 	}
 
@@ -51,7 +51,7 @@ export class Repository<Name extends StoreNames = any> {
 		const store = transaction.objectStore(this.name);
 		const operation = this.promisifyRequest(store.delete(key));
 
-		const [result, _] = await Promise.all([operation, done]);
+		const [result] = await Promise.all([operation, done]);
 		return result === undefined;
 	}
 
@@ -62,7 +62,7 @@ export class Repository<Name extends StoreNames = any> {
 		const store = transaction.objectStore(this.name);
 		const operation = this.promisifyRequest(store.getAll());
 
-		const [result, _] = await Promise.all([operation, done]);
+		const [result] = await Promise.all([operation, done]);
 		return result;
 	}
 
@@ -79,7 +79,7 @@ export class Repository<Name extends StoreNames = any> {
 
 		const operation = this.promisifyRequest(store.getKey(key));
 
-		const [result, _] = await Promise.all([operation, done]);
+		const [result] = await Promise.all([operation, done]);
 		return result !== undefined;
 	}
 
@@ -177,7 +177,7 @@ export class Repository<Name extends StoreNames = any> {
 		});
 	}
 
-	private isValidKey(key: any): key is IDBValidKey {
+	private isValidKey(key: unknown): key is IDBValidKey {
 		return (
 			typeof key === "string" ||
 			typeof key === "number" ||
