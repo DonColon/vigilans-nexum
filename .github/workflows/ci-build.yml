@@ -10,18 +10,17 @@ jobs:
   build:
     runs-on: windows-latest
 
-    strategy:
-      matrix:
-        node-version: [18.x]
+    env:
+      node-version: 18.x
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Node Version ${{ matrix.node-version }}
+      - name: Setup Node Version ${{ env.node-version }}
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: ${{ env.node-version }}
           cache: "npm"
 
       - name: Install Dependencies
