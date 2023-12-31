@@ -38,7 +38,7 @@ export function isPrime(value: number): boolean {
 }
 
 export function isPerfectSquare(value: number): boolean {
-	const side = Math.sqrt(value);
+	const side = Math.floor(Math.sqrt(value));
 	return side * side === value;
 }
 
