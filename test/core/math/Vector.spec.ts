@@ -1,4 +1,4 @@
-import { describe, test, expect } from "vitest";
+import { test, expect } from "vitest";
 import { Vector } from "../../../src/core/math/Vector";
 
 test("Create vector from array", () => {
