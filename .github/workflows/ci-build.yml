@@ -10,17 +10,18 @@ jobs:
   build:
     runs-on: windows-latest
 
-    env:
-      node-version: 18.x
+    strategy:
+      matrix:
+        node-version: [18.x]
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Node Version $node-version
+      - name: Setup Node Version ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
-          node-version: $node-version
+          node-version: ${{ matrix.node-version }}
           cache: "npm"
 
       - name: Install Dependencies
@@ -44,7 +45,7 @@ jobs:
       - name: Test Application with Coverage Report
         run: npm run test:coverage --if-present
 
-      - name: Upload Build Artifact
+      - name: Upload Coverage Report Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.event.repository.name }}-coverage
