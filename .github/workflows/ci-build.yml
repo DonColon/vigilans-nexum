@@ -45,7 +45,7 @@ jobs:
         run: npm run test:coverage --if-present
 
       - name: Upload Coverage Report Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-pages-artifact@v3
         with:
           name: ${{ github.event.repository.name }}-coverage
           path: coverage
@@ -68,4 +68,4 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
         with:
-          artifact_name: ${{ github.event.repository.name }}-build
+          artifact_name: ${{ github.event.repository.name }}-coverage
