@@ -27,7 +27,11 @@ export function randomDecimal(range: Range): number {
 	const min = range.min || 0;
 	const max = range.max || Number.MAX_VALUE;
 
-	return Math.random() * (max - min + 1) + min;
+	const value = Math.random() * (max - min + 1) + min;
+
+	if (value > max) return max;
+
+	return value;
 }
 
 export function randomDecimals<L extends number>(length: L, range: Range): Tuple<number, L> {

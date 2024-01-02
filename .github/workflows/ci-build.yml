@@ -36,7 +36,7 @@ jobs:
         run: npm run build --if-present
 
       - name: Upload Build Artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ github.event.repository.name }}-build
           path: dist
@@ -50,7 +50,7 @@ jobs:
           name: ${{ github.event.repository.name }}-coverage
           path: coverage
 
-  deploy:
+  deploy-coverage:
     needs: build
 
     runs-on: windows-latest
