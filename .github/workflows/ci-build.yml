@@ -29,13 +29,13 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Check Prettier Format
-        run: npm run format:check --if-present
-
       - name: Check ESLint Rules
         run: npm run lint --if-present
 
-      - name: SonarCloud Scan
+      - name: Check Prettier Format
+        run: npm run format:check --if-present
+
+      - name: Check Sonarcloud Rules
         uses: SonarSource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
