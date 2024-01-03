@@ -9,7 +9,7 @@ on:
 jobs:
   code_quality:
     name: Check Code Quality
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     env:
       node_version: 18.x
