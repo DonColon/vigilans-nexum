@@ -17,6 +17,8 @@ jobs:
     steps:
       - name: Checkout Repository ${{ github.event.repository.name }}
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node Version ${{ env.node_version }}
         uses: actions/setup-node@v4
@@ -32,6 +34,12 @@ jobs:
 
       - name: Check ESLint Rules
         run: npm run lint --if-present
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   build:
     name: Build Application
@@ -105,7 +113,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      - name: Deploy App to Github Pages
+      - name: Deploy Test Coverage to Github Pages
         id: deployment
         uses: actions/deploy-pages@v4
         with:
