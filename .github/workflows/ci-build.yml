@@ -93,10 +93,8 @@ jobs:
       - name: Test Application with Coverage Report
         run: npm run test:coverage --if-present
 
-      - name: Upload coverage reports to Codecov
+      - name: Publish Test Coverage
         uses: codecov/codecov-action@v3
-        with:
-          files: coverage
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
