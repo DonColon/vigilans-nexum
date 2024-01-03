@@ -1,26 +1,27 @@
 name: Node CI Build
 
 on:
-  push:
-    branches: ["main", "dev", "feature**"]
   pull_request:
     branches: ["main", "dev"]
+  push:
+    branches: ["feature**"]
 
 jobs:
-  build:
+  code_quality:
+    name: Check Code Quality
     runs-on: windows-latest
 
     env:
-      node-version: 18.x
+      node_version: 18.x
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout Repository ${{ github.event.repository.name }}
         uses: actions/checkout@v4
 
-      - name: Setup Node Version ${{ env.node-version }}
+      - name: Setup Node Version ${{ env.node_version }}
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.node-version }}
+          node-version: ${{ env.node_version }}
           cache: "npm"
 
       - name: Install Dependencies
@@ -32,6 +33,26 @@ jobs:
       - name: Check ESLint Rules
         run: npm run lint --if-present
 
+  build:
+    name: Build Application
+    runs-on: windows-latest
+
+    env:
+      node_version: 18.x
+
+    steps:
+      - name: Checkout Repository ${{ github.event.repository.name }}
+        uses: actions/checkout@v4
+
+      - name: Setup Node Version ${{ env.node_version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.node_version }}
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
       - name: Build Application
         run: npm run build --if-present
 
@@ -40,6 +61,26 @@ jobs:
         with:
           name: ${{ github.event.repository.name }}-build
           path: dist
+
+  test:
+    name: Test Application
+    runs-on: windows-latest
+
+    env:
+      node_version: 18.x
+
+    steps:
+      - name: Checkout Repository ${{ github.event.repository.name }}
+        uses: actions/checkout@v4
+
+      - name: Setup Node Version ${{ env.node_version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.node_version }}
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
 
       - name: Test Application with Coverage Report
         run: npm run test:coverage --if-present
@@ -51,9 +92,9 @@ jobs:
           path: coverage
 
   deploy-coverage:
-    needs: build
-
+    name: Publish Test Coverage
     runs-on: windows-latest
+    needs: build
 
     permissions:
       pages: write
