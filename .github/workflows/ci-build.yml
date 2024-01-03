@@ -94,7 +94,7 @@ jobs:
   deploy-coverage:
     name: Publish Test Coverage
     runs-on: windows-latest
-    needs: build
+    needs: test
 
     permissions:
       pages: write
