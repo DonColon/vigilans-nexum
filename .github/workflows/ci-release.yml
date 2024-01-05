@@ -19,11 +19,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Application Version
+      - name: Release Application
         uses: actions/github-script@v7
-        id: app_version
+        id: release_app
         with:
-          result-encoding: string
           script: |
-            const script = require('./.github/scripts/release-app.cjs');
-            script({github, context, core});
+            const releaseApp = await import('${{ github.workspace }}/.github/scripts/release-app.js');
+            await releaseApp({ core, context });
