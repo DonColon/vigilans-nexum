@@ -25,4 +25,4 @@ jobs:
         with:
           script: |
             const { default: releaseApp } = await import('${{ github.workspace }}/.github/scripts/release-app.js');
-            await releaseApp({ core, context });
+            await releaseApp({ core, context, github });
