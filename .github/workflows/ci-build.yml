@@ -76,7 +76,7 @@ jobs:
           script: |
             const pkg = require('./package.json');
             core.info(`Application Version: ${pkg.version}`);
-            return pkg.version
+            return `v${pkg.version}`;
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
