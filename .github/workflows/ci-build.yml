@@ -74,8 +74,6 @@ jobs:
         with:
           script: |
             const pkg = require('./package.json');
-            const core = require('@actions/core');
-
             core.info(pkg.version);
 
       - name: Upload Build Artifact
