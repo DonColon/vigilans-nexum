@@ -1,0 +1,29 @@
+name: GitHub CI Release
+
+on:
+  # pull_request:
+  #   types: ["closed"]
+  #   branches: ["main"]
+  push:
+    branches: ["feature**"]
+
+jobs:
+  release:
+    name: Release Application
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout Repository ${{ github.event.repository.name }}
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Application Version
+        uses: actions/github-script@v7
+        id: app_version
+        with:
+          result-encoding: string
+          script: |
+            const script = require('./.github/scripts/release-app.js');
+            console.log(script({github, context}));
