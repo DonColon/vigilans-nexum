@@ -25,5 +25,5 @@ jobs:
         with:
           result-encoding: string
           script: |
-            const script = require('./.github/scripts/release-app.js');
+            const script = require('./.github/scripts/release-app.cjs');
             console.log(script({github, context}));
