@@ -26,4 +26,4 @@ jobs:
           result-encoding: string
           script: |
             const script = require('./.github/scripts/release-app.cjs');
-            console.log(script({github, context}));
+            script({github, context, core});

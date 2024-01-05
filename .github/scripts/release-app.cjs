@@ -1,3 +1,5 @@
+const pkg = require("../../package.json");
+
 module.exports = ({github, context, core}) => {
-	return "Hello World";
+	return pkg.version;
 }
