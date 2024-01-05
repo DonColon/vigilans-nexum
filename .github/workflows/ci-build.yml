@@ -70,17 +70,19 @@ jobs:
 
       - name: Application Version
         uses: actions/github-script@v7
-        id: application_version
+        id: app_version
         with:
+          result-encoding: string
           script: |
             const pkg = require('./package.json');
-            core.info(pkg.version);
+            core.info(`Application Version: ${pkg.version}`);
+            return pkg.version
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         if: ${{ matrix.node_version == '20.x' }}
         with:
-          name: ${{ github.event.repository.name }}
+          name: ${{ github.event.repository.name }}-${{steps.app_version.outputs.result}}
           path: dist
 
   test:
