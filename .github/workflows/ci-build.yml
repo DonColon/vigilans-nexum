@@ -68,14 +68,21 @@ jobs:
       - name: Build Application
         run: npm run build --if-present
 
-      - name: Get package.json
-        run: echo "PACKAGE_JSON=$(npm pkg get)" >> $GITHUB_ENV
+      - name: Application Version
+        uses: actions/github-script@v7
+        id: application_version
+        with:
+          script: |
+            const pkg = require('./package.json');
+            const core = require('@actions/core');
+
+            core.info(pkg.version);
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         if: ${{ matrix.node_version == '20.x' }}
         with:
-          name: ${{ github.event.repository.name }}-${{ fromJson(env.PACKAGE_JSON).version }}
+          name: ${{ github.event.repository.name }}
           path: dist
 
   test:
