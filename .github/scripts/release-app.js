@@ -26,7 +26,8 @@ export default async ({ core, context, github }) => {
 			owner,
 			repo,
 			tag_name: appVersion,
-			name: appVersion
+			name: appVersion,
+			target_commitish: process.env.GITHUB_SHA,
 		});
 
 		core.info(`Created release ${appVersion}`);
