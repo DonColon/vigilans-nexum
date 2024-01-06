@@ -45,7 +45,7 @@ export default async ({ core, context, github }) => {
 	const artifactName = `${repo}-${appVersion}`;
 	core.info(`Download build artifact ${artifactName}`);
 
-	const buildArtifact = await github.rest.actions.listArtifactsForRepo({
+	const { data: [buildArtifact]  } = await github.rest.actions.listArtifactsForRepo({
 		owner,
 		repo,
 		name: artifactName,
