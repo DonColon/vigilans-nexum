@@ -33,4 +33,5 @@ jobs:
         with:
           script: |
             const { default: uploadReleaseAsset } = await import('${{ github.workspace }}/.github/scripts/upload-release-asset.js')
-            await uploadReleaseAsset({ core, context, github });
+            const stepOutput = ${{ steps.create_release.outputs }};
+            await uploadReleaseAsset({ core, context, github, stepOutput });

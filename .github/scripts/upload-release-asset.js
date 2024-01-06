@@ -1,11 +1,11 @@
 import { formatRepositoryName } from "./utils.js";
 import pkg from "../../package.json" assert { type: "json" };
 
-export default async ({ core, context, github }) => {
+export default async ({ core, context, github, stepOutput }) => {
 	// const appVersion = `v${pkg.version}`;
 	// const { owner, repo } = context.repo;
 
-	console.log(process.env.GITHUB_OUTPUT);
+	console.log(stepOutput);
 
 	// const artifactName = `${repo}-build-${appVersion}`;
 	// core.info(`Download build artifact ${artifactName}`);
