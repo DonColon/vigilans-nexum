@@ -1,4 +1,4 @@
-import { formatRepositoryName } from "./utils.js";
+import { formatRepositoryTitle } from "./utils.js";
 import pkg from "../../package.json" assert { type: "json" };
 
 export default async ({ core, context, github }) => {
@@ -28,18 +28,19 @@ export default async ({ core, context, github }) => {
 		process.exit();
 	}
 
-	const releaseName = `${formatRepositoryName(repo)} ${appVersion}`;
+	const releaseName = `${formatRepositoryTitle(repo)} ${appVersion}`;
 	const { data: release } = await github.rest.repos.createRelease({
 		owner,
 		repo,
 		tag_name: appVersion,
 		name: releaseName,
 		target_commitish: process.env.GITHUB_SHA,
+		draft: true
 	});
 
-	core.info(`Created release ${appVersion}`);
+	core.info(`Created draft release ${appVersion}`);
 	core.setOutput("released", true);
-	core.setOutput("release_id", release.id);
-	core.setOutput("release_version", appVersion);
-	core.setOutput("upload_url", release.upload_url);
+	core.setOutput("releaseID", release.id);
+	core.setOutput("releaseVersion", appVersion);
+	core.setOutput("releaseUploadUrl", release.upload_url);
 };

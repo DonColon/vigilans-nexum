@@ -1,4 +1,4 @@
-export function formatRepositoryName(repo) {
+export function formatRepositoryTitle(repo) {
 	return repo.split("-").map(value => capitalize(value)).join(" ");
 }
 
