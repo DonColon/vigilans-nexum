@@ -52,7 +52,7 @@ export default async ({ core, context, github }) => {
 		per_page: 1
 	});
 
-	const artifact = await github.rest.actions.downloadArtifact({
+	const { data: artifact } = await github.rest.actions.downloadArtifact({
 		owner,
 		repo,
 		artifact_id: artifactMetadata.id,
