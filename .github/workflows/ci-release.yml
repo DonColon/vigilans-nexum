@@ -1,11 +1,9 @@
 name: GitHub CI Release
 
 on:
-  # pull_request:
-  #   types: ["closed"]
-  #   branches: ["main"]
-  push:
-    branches: ["feature**"]
+  pull_request:
+    types: ["closed"]
+    branches: ["main"]
 
 jobs:
   release:
