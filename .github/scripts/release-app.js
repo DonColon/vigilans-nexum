@@ -61,12 +61,15 @@ export default async ({ core, context, github }) => {
 
 	core.info(`Upload build artifact ${artifactName} to release ${release.name}`);
 
-	const response = await github.rest.repos.uploadReleaseAsset({
-		owner,
-		repo,
-		release_id: release.id,
+	const response = await github.request({
+		method: "POST",
+		url: release.upload_url,
+		headers: {
+			"content-type": "application/zip"
+		},
+		data: artifact,
 		name: artifactName,
-		data: artifact
+		label: `${repo} build ${appVersion}`
 	});
 
 	console.log(response);
