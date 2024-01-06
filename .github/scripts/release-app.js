@@ -68,7 +68,7 @@ export default async ({ core, context, github }) => {
 			"content-type": "application/zip"
 		},
 		data: artifact,
-		name: artifactName,
+		name: `${artifactName}.zip`,
 		label: `${repo} build ${appVersion}`
 	});
 
