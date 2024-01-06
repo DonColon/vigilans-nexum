@@ -19,10 +19,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Release Application
+      - name: Create Release
         uses: actions/github-script@v7
-        id: release_app
+        id: create_release
         with:
           script: |
-            const { default: releaseApp } = await import('${{ github.workspace }}/.github/scripts/release-app.js');
-            await releaseApp({ core, context, github });
+            const { default: createRelease } = await import('${{ github.workspace }}/.github/scripts/create-release.js');
+            await createRelease({ core, context, github });
+
+      - name: Upload Release Asset
+        uses: actions/github-script@v7
+        id: upload_release_asset
+        with:
+          script: |
+            const { default: uploadReleaseAsset } = await import('${{ github.workspace }}/.github/scripts/upload-release-asset.js')
+            await uploadReleaseAsset({ core, context, github });
