@@ -1,4 +1,4 @@
-import { formatRepositoryName } from "./utils";
+import { formatRepositoryName } from "./utils.js";
 
 export default async ({ core, context, github }) => {
 	const { owner, repo } = context.repo;

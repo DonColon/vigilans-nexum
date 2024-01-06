@@ -1,4 +1,4 @@
-import { formatRepositoryName } from "./utils";
+import { formatRepositoryName } from "./utils.js";
 import pkg from "../../package.json" assert { type: "json" };
 
 export default async ({ core, context, github }) => {
