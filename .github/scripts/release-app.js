@@ -26,7 +26,7 @@ export default async ({ core, context, github }) => {
 		process.exit();
 	}
 
-	const { data } = await github.rest.repos.createRelease({
+	const { data: release } = await github.rest.repos.createRelease({
 		owner,
 		repo,
 		tag_name: appVersion,
@@ -36,11 +36,11 @@ export default async ({ core, context, github }) => {
 
 	core.info(`Created release ${appVersion}`);
 	core.setOutput("released", true);
-	core.setOutput("html_url", data.html_url);
-	core.setOutput("upload_url", data.upload_url);
-	core.setOutput("release_id", data.id);
-	core.setOutput("release_tag", data.tag_name);
-	core.setOutput("release_name", data.name);
+	core.setOutput("html_url", release.html_url);
+	core.setOutput("upload_url", release.upload_url);
+	core.setOutput("release_id", release.id);
+	core.setOutput("release_tag", release.tag_name);
+	core.setOutput("release_name", release.name);
 
 	const artifactName = `${repo}-${appVersion}`;
 	core.info(`Download build artifact ${artifactName}`);
@@ -59,5 +59,15 @@ export default async ({ core, context, github }) => {
 		archive_format: "zip"
 	});
 
-	console.log(artifact);
+	core.info(`Upload build artifact ${artifactName} to release ${release.name}`);
+
+	const response = await github.rest.repos.uploadReleaseAsset({
+		owner,
+		repo,
+		release_id: release.id,
+		name: artifactName,
+		data: artifact
+	});
+
+	console.log(response);
 };
