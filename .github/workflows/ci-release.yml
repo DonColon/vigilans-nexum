@@ -35,17 +35,17 @@ jobs:
         with:
           script: |
             const scriptPath = '${{ github.workspace }}/.github/scripts/upload-release-asset.js';
-            const release = ${{ toJson(steps.create_draft_release.outputs) }};
+            const release = ${{ steps.create_draft_release.outputs }};
             const { default: uploadReleaseAsset } = await import(scriptPath);
             await uploadReleaseAsset({ core, context, github, release });
 
       - name: Publish Draft Release
         uses: actions/github-script@v7
-        id: publish-draft-release
+        id: publish_draft_release
         if: ${{ steps.create_draft_release.outputs.released == 'true' }}
         with:
           script: |
             const scriptPath = '${{ github.workspace }}/.github/scripts/publish-draft-release.js';
-            const release = ${{ toJson(steps.create_draft_release.outputs) }};
+            const release = ${{ steps.create_draft_release.outputs }};
             const { default: publishDraftRelease } = await import(scriptPath);
             await publishDraftRelease({ core, context, github, release });
