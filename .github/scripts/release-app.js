@@ -4,11 +4,13 @@ export default async ({ core, context, github }) => {
 	const appVersion = `v${pkg.version}`;
 	const { owner, repo } = context.repo;
 
-	const { data: [latestRelease]  } = await github.rest.repos.listReleases({
+	const releases = await github.rest.repos.listReleases({
 		owner,
 		repo,
 		per_page: 1
 	});
+
+	const [latestRelease] = releases.data;
 
 	let isFirstRelease = false;
 	let previousVersion = appVersion;
@@ -45,12 +47,12 @@ export default async ({ core, context, github }) => {
 	const artifactName = `${repo}-${appVersion}`;
 	core.info(`Download build artifact ${artifactName}`);
 
-	const { data: [buildArtifact]  } = await github.rest.actions.listArtifactsForRepo({
+	const artifacts = await github.rest.actions.listArtifactsForRepo({
 		owner,
 		repo,
 		name: artifactName,
 		per_page: 1
 	});
 
-	console.log(buildArtifact);
+	console.log(artifacts.data);
 };
