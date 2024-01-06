@@ -4,6 +4,8 @@ export default async ({ core, context, github, release }) => {
 	const { releaseVersion, releaseUploadUrl } = release;
 	const { owner, repo } = context.repo;
 
+	console.log(release);
+
 	const artifactName = `${repo}-build-${releaseVersion}`;
 	core.info(`Download build artifact ${artifactName}`);
 
