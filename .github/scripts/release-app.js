@@ -23,26 +23,25 @@ export default async ({ core, context, github }) => {
 
 	if (!isFirstRelease && appVersion <= previousVersion) {
 		core.info("Version has not changed");
+		core.setOutput("released", false);
 		process.exit();
 	}
 
+	const releaseName = `${createDisplayName(repo)} ${appVersion}`;
 	const { data: release } = await github.rest.repos.createRelease({
 		owner,
 		repo,
 		tag_name: appVersion,
-		name: appVersion,
+		name: releaseName,
 		target_commitish: process.env.GITHUB_SHA,
 	});
 
 	core.info(`Created release ${appVersion}`);
 	core.setOutput("released", true);
-	core.setOutput("html_url", release.html_url);
 	core.setOutput("upload_url", release.upload_url);
 	core.setOutput("release_id", release.id);
-	core.setOutput("release_tag", release.tag_name);
-	core.setOutput("release_name", release.name);
 
-	const artifactName = `${repo}-${appVersion}`;
+	const artifactName = `${repo}-build-${appVersion}`;
 	core.info(`Download build artifact ${artifactName}`);
 
 	const { data: { artifacts: [artifactMetadata] }  } = await github.rest.actions.listArtifactsForRepo({
@@ -59,18 +58,28 @@ export default async ({ core, context, github }) => {
 		archive_format: "zip"
 	});
 
-	core.info(`Upload build artifact ${artifactName} to release ${release.name}`);
+	core.info(`Upload build artifact ${artifactName}`);
+	const assetLabel = `${createDisplayName(repo)} Build ${appVersion}`;
+	const assetName = `${artifactName}.zip`;
 
-	const response = await github.request({
+	await github.request({
 		method: "POST",
 		url: release.upload_url,
 		headers: {
 			"content-type": "application/zip"
 		},
 		data: artifact,
-		name: `${artifactName}.zip`,
-		label: `${repo} build ${appVersion}`
+		name: assetName,
+		label: assetLabel
 	});
 
-	console.log(response);
+	core.info(`Created release asset ${assetName}`);
 };
+
+function createDisplayName(repo) {
+	return repo.split("-").map(value => capitalize(value)).join(" ");
+}
+
+function capitalize(value) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
