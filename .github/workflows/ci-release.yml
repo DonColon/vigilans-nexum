@@ -35,7 +35,7 @@ jobs:
         with:
           script: |
             const scriptPath = '${{ github.workspace }}/.github/scripts/upload-release-asset.js';
-            const release = ${{ steps.create_draft_release.outputs }};
+            const release = ${{ toJson(steps.create_draft_release.outputs) }};
             const { default: uploadReleaseAsset } = await import(scriptPath);
             await uploadReleaseAsset({ core, context, github, release });
 
@@ -46,6 +46,6 @@ jobs:
         with:
           script: |
             const scriptPath = '${{ github.workspace }}/.github/scripts/publish-draft-release.js';
-            const release = ${{ steps.create_draft_release.outputs }};
+            const release = ${{ toJson(steps.create_draft_release.outputs) }};
             const { default: publishDraftRelease } = await import(scriptPath);
             await publishDraftRelease({ core, context, github, release });
