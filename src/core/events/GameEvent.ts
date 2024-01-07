@@ -1,5 +1,1 @@
-export interface GameEvent
-{
-    type: string,
-    timestamp: number
-}
+export interface GameEvent {	type: string;	timestamp: number;}

@@ -1,30 +1,118 @@
 name: Node CI Build
 
 on:
-  push:
-    branches: [ "main", "dev", "feature/**" ]
   pull_request:
-    branches: [ "main", "dev" ]
+    branches: ["main", "dev"]
+  push:
+    branches: ["feature**"]
 
 jobs:
-  build:
+  code_quality:
+    name: Check Code Quality
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
-    strategy:
-      matrix:
-        node-version: [14.x, 16.x, 18.x]
+    env:
+      node_version: 20.x
 
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Setup Node Version ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
+      - name: Checkout Repository ${{ github.event.repository.name }}
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - run: npm run format:check
+      - name: Setup Node Version ${{ env.node_version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.node_version }}
+          cache: "npm"
 
-    # - run: npm ci
-    # - run: npm run build --if-present
-    # - run: npm test
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Check Prettier Rules
+        run: npm run format:check --if-present
+
+      - name: Check ESLint Rules
+        run: npm run lint --if-present
+
+      - name: Check Sonarcloud Rules
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node_version: [16.x, 18.x, 20.x]
+
+    steps:
+      - name: Checkout Repository ${{ github.event.repository.name }}
+        uses: actions/checkout@v4
+
+      - name: Setup Node Version ${{ matrix.node_version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node_version }}
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Application
+        run: npm run build --if-present
+
+      - name: Application Version
+        uses: actions/github-script@v7
+        id: app_version
+        with:
+          result-encoding: string
+          script: |
+            const pkg = require('./package.json');
+            core.info(`Application Version: ${pkg.version}`);
+            return `v${pkg.version}`;
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        if: ${{ matrix.node_version == '20.x' }}
+        with:
+          name: ${{ github.event.repository.name }}-build-${{steps.app_version.outputs.result}}
+          path: dist
+
+  test:
+    name: Test Application
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node_version: [16.x, 18.x, 20.x]
+
+    steps:
+      - name: Checkout Repository ${{ github.event.repository.name }}
+        uses: actions/checkout@v4
+
+      - name: Setup Node Version ${{ matrix.node_version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node_version }}
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Test Application with Coverage Report
+        run: npm run test:coverage --if-present
+
+      - name: Publish Coverage Report
+        uses: codecov/codecov-action@v3
+        if: ${{ matrix.node_version == '20.x' }}
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
