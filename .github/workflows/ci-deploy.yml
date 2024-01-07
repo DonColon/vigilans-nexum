@@ -1,0 +1,18 @@
+name: Netlify CI Deploy
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    name: Deploy Application
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    environment:
+      name: netlify
+      url: https://thriving-torte-efc3b5.netlify.app/
+
+    steps:
+      - run: echo ${{ secrets.NETLIFY_SITE }}
