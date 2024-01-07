@@ -1,4 +1,1 @@
-import { Component } from "./Component"
-
-
-export abstract class TagComponent extends Component<{}> {}
+import { Component } from "./Component";type NoData = Record<string, never>;export abstract class TagComponent extends Component<NoData> {}

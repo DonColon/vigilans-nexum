@@ -1,4 +1,1 @@
-import { System } from "./System";
-
-
-export abstract class RenderSystem extends System {}
+import { System } from "./System";export abstract class RenderSystem extends System {}

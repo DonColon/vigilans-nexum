@@ -1,22 +1,1 @@
-{
-    "name": "Vigilans Nexum",
-    "short_name": "Vigilans Nexum",
-    "description": "A tactical RPG inspired by the fire emblem franchise",
-    "start_url": "/",
-    "orientation": "landscape",
-    "display": "fullscreen",
-    "icons": [
-        {
-            "src": "assets/icons/android-chrome-192x192.png",
-            "sizes": "192x192",
-            "type": "image/png"
-        },
-        {
-            "src": "assets/icons/android-chrome-512x512.png",
-            "sizes": "512x512",
-            "type": "image/png"
-        }
-    ],
-    "theme_color": "#203864",
-    "background_color": "#161616"
-}
+{	"name": "Vigilans Nexum",	"short_name": "Vigilans Nexum",	"description": "A tactical RPG inspired by the fire emblem franchise",	"start_url": "/",	"orientation": "landscape",	"display": "fullscreen",	"icons": [		{			"src": "assets/icons/android-chrome-192x192.png",			"sizes": "192x192",			"type": "image/png"		},		{			"src": "assets/icons/android-chrome-512x512.png",			"sizes": "512x512",			"type": "image/png"		}	],	"theme_color": "#203864",	"background_color": "#161616"}
