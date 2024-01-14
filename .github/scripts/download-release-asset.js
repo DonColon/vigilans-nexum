@@ -1,4 +1,5 @@
 import pkg from "../../package.json" assert { type: "json" };
+import fs from "fs";
 
 export default async ({ core, context, github }) => {
     const appVersion = `v${pkg.version}`;
@@ -18,10 +19,10 @@ export default async ({ core, context, github }) => {
     const assetName = `${repo}-build-${appVersion}.zip`;
     const assetMetadata = latestRelease.assets.find((asset) => asset.name === assetName);
 
-    const asset = await github.request({
+    const { data: asset } = await github.request({
         method: "GET",
         url: assetMetadata.browser_download_url
     });
 
-    console.log(asset);
+    console.log(github.workspace);
 };
