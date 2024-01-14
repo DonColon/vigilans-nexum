@@ -1,7 +1,7 @@
 import pkg from "../../package.json" assert { type: "json" };
 import fs from "fs";
 
-export default async ({ core, context, github }) => {
+export default async ({ core, context, github, workspacePath }) => {
     const appVersion = `v${pkg.version}`;
 	const { owner, repo } = context.repo;
 
@@ -24,7 +24,7 @@ export default async ({ core, context, github }) => {
         url: assetMetadata.browser_download_url
     });
 
-    fs.appendFile(`${GITHUB_WORKSPACE}`, asset);
+    fs.appendFile(`${workspacePath}/${assetName}`, asset);
 
-    console.log(`${GITHUB_WORKSPACE}`);
+    console.log(`${workspacePath}/${assetName}`);
 };
