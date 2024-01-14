@@ -24,5 +24,7 @@ export default async ({ core, context, github }) => {
         url: assetMetadata.browser_download_url
     });
 
-    console.log(github.workspace);
+    fs.appendFile(`${GITHUB_WORKSPACE}`, asset);
+
+    console.log(`${GITHUB_WORKSPACE}`);
 };
