@@ -1,5 +1,5 @@
 import pkg from "../../package.json" assert { type: "json" };
-import fs from "fs";
+import { appendFile } from "node:fs/promises";
 
 export default async ({ core, context, github, workspacePath }) => {
     const appVersion = `v${pkg.version}`;
@@ -24,7 +24,7 @@ export default async ({ core, context, github, workspacePath }) => {
         url: assetMetadata.browser_download_url
     });
 
-    fs.appendFile(`${workspacePath}/${assetName}`, asset);
-
     console.log(`${workspacePath}/${assetName}`);
+
+    await appendFile(`${workspacePath}/${assetName}`, asset);
 };
