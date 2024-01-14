@@ -16,7 +16,13 @@ export default async ({ core, context, github }) => {
     }
 
     const assetName = `${repo}-build-${appVersion}.zip`;
-    const asset = latestRelease.assets.find((asset) => asset.name === assetName);
+    const assetMetadata = latestRelease.assets.find((asset) => asset.name === assetName);
+
+    const asset = await github.rest.repos.getReleaseAsset({
+        owner,
+        repo,
+        asset_id: assetMetadata.id,
+    });
 
     console.log(asset);
 };
