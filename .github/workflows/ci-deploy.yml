@@ -52,4 +52,9 @@ jobs:
             const scriptPath = '${{ github.workspace }}/.github/scripts/deploy-app-netlify.js';
             const { default: deployApp } = await import(scriptPath);
 
-            await deployApp({ core, context, github, exec });
+            const netlify = {
+              site: '${{ secrets.NETLIFY_SITE }}',
+              token: '${{ secrets.NETLIFY_TOKEN }}'
+            }
+
+            await deployApp({ core, context, github, exec, netlify });
