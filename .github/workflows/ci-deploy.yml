@@ -57,10 +57,7 @@ jobs:
               token: '${{ secrets.NETLIFY_TOKEN }}'
             };
 
-            const deployInfo = await deployApp({ core, context, github, exec, netlify });
-            core.info(JSON.stringify(deployInfo));
-
-            return deployInfo;
+            return await deployApp({ core, context, github, exec, netlify });
 
       - name: Get result
         run: echo "${{toJson(steps.deploy_app.outputs)}}"

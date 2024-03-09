@@ -5,5 +5,5 @@ export default async ({ core, context, github, exec, netlify }) => {
     const deployInfo = JSON.parse(stdout);
     core.info(`\nDeployed app at url: ${deployInfo.deploy_url}`);
     
-    return deployInfo;
+    return deployInfo.deploy_url;
 };
