@@ -58,6 +58,6 @@ jobs:
             };
 
             const deployInfo = await deployApp({ core, context, github, exec, netlify });
-            core.info(deployInfo);
+            core.info(JSON.stringify(deployInfo));
 
             return deployInfo;
