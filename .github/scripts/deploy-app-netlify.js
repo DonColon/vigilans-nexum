@@ -3,10 +3,11 @@ export default async ({ core, context, github, exec, netlify }) => {
 
     options.listeners = {
         stdout: (data) => {
-            core.info(data.toString());
+            const deployInfo = JSON.parse(data.toString());
+            console.log(deployInfo.deploy_url);
         },
         stderr: (data) => {
-            core.info(data.toString());
+            core.error(data.toString());
         }
     };
 
