@@ -1,7 +1,7 @@
-import pkg from "../../package.json" assert { type: "json" };
+const pkg = require("../../package.json");
 const decompress = require("decompress");
 
-export default async ({ core, context, github }) => {
+module.exports = async ({ core, context, github }) => {
     const appVersion = `v${pkg.version}`;
 	const { owner, repo } = context.repo;
 
