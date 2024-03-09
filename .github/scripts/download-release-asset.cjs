@@ -24,5 +24,7 @@ module.exports = async ({ core, context, github }) => {
         url: assetMetadata.browser_download_url
     });
 
-    await decompress(Buffer.from(asset), "dist")
+    const files = await decompress(Buffer.from(asset), "dist")
+    const filePaths = files.map((file) => file.path);
+    core.info(`Unzipped files: ${filePaths}`);
 };
