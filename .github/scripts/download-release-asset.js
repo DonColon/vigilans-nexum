@@ -1,5 +1,5 @@
 import pkg from "../../package.json" assert { type: "json" };
-import decompress from "decompress";
+import { decompress } from "decompress";
 
 export default async ({ core, context, github }) => {
     const appVersion = `v${pkg.version}`;
