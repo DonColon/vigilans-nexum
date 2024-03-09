@@ -1,6 +1,7 @@
 const pkg = require("../../package.json");
+const decompress = require("decompress");
 
-module.exports = async ({ core, context, github, decompress }) => {
+module.exports = async ({ core, context, github }) => {
     const appVersion = `v${pkg.version}`;
 	const { owner, repo } = context.repo;
 
