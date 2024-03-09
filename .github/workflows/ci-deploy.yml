@@ -57,4 +57,7 @@ jobs:
               token: '${{ secrets.NETLIFY_TOKEN }}'
             };
 
-            return await deployApp({ core, context, github, exec, netlify });
+            const deployInfo = await deployApp({ core, context, github, exec, netlify });
+            context.info(deployInfo);
+
+            return deployInfo;
