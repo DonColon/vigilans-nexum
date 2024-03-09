@@ -24,6 +24,6 @@ module.exports = async ({ core, context, github }) => {
         url: assetMetadata.browser_download_url
     });
 
-    const files = await decompress(asset, "dist")
+    const files = await decompress(Buffer.from(asset), "dist")
     console.log(files)
 };
