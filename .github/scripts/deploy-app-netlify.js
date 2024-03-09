@@ -11,10 +11,10 @@ export default async ({ core, context, github, exec, netlify }) => {
     };
 
     exec.exec("netlify deploy", [
-        `--dir dist`,
-        `--site ${netlify.site}`,
-        `--auth ${netlify.token}`
-    ]);
+        `dir=dist`,
+        `site=${netlify.site}`,
+        `auth=${netlify.token}`
+    ], options);
 
     core.info("Finished deployment to netlify");
 };
