@@ -41,7 +41,7 @@ jobs:
         id: download_release_asset
         with:
           script: |
-            const scriptPath = '${{ github.workspace }}/.github/scripts/download-release-asset.js';
+            const scriptPath = '${{ github.workspace }}/.github/scripts/download-release-asset.cjs';
             const { default: downloadReleaseAsset } = await import(scriptPath);
             await downloadReleaseAsset({ core, context, github });
 
