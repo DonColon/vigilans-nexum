@@ -1,4 +1,4 @@
-export default async ({ core, context, github, exec, netlify }) => {
+export default async ({ core, context, github, exec, netlifyID, netlifyToken }) => {
     const options = {};
 
     options.listeners = {
@@ -12,8 +12,8 @@ export default async ({ core, context, github, exec, netlify }) => {
 
     exec.exec("netlify deploy", [
         `-d dist`,
-        `-s ${netlify.site}`,
-        `-a ${netlify.token}`
+        `-s ${netlifyID}`,
+        `-a ${netlifyToken}`
     ], options);
 
     core.info("Finished deployment to netlify");
