@@ -31,10 +31,9 @@ jobs:
           cache: "npm"
 
       - name: Setup Netlify Version ${{ env.netlify_version }}
-        run: npm install -g netlify-cli@${{ env.netlify_version }}
-      
-      - name: Install decompress
-        run: npm install decompress
+        run: |
+          npm install -g netlify-cli@${{ env.netlify_version }}
+          npm install decompress
 
       - name: Download Release Asset
         uses: actions/github-script@v7
