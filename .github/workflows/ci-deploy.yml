@@ -18,7 +18,7 @@ jobs:
 
     environment:
       name: netlify
-      url: ${{ steps.deploy_app.outputs.deploy_url }}
+      url: ${{ steps.deploy_app.outputs.result }}
 
     steps:
       - name: Checkout Repository ${{ github.event.repository.name }}
@@ -58,6 +58,3 @@ jobs:
             };
 
             return await deployApp({ core, context, github, exec, netlify });
-
-      - name: Get result
-        run: echo "${{toJson(steps.deploy_app.outputs)}}"
