@@ -32,6 +32,9 @@ jobs:
 
       - name: Setup Netlify Version ${{ env.netlify_version }}
         run: npm install -g netlify-cli@${{ env.netlify_version }}
+      
+      - name: Install decompress
+        run: npm install -g decompress
 
       - name: Download Release Asset
         uses: actions/github-script@v7

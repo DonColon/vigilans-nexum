@@ -1,7 +1,4 @@
 import pkg from "../../package.json" assert { type: "json" };
-import { createWriteStream } from "node:fs";
-import { createGunzip } from "node:zlib";
-import { Readable } from "node:stream";
 
 export default async ({ core, context, github }) => {
     const appVersion = `v${pkg.version}`;
@@ -26,9 +23,7 @@ export default async ({ core, context, github }) => {
         url: assetMetadata.browser_download_url
     });
 
-    const input = Readable.from(asset);
-    const output = createWriteStream("./dist");
-    const unzip = createGunzip();
+    console.log(asset);
 
-    input.pipe(unzip).pipe(output);
+
 };
