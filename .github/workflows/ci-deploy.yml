@@ -55,6 +55,6 @@ jobs:
             const netlify = {
               site: '${{ secrets.NETLIFY_SITE }}',
               token: '${{ secrets.NETLIFY_TOKEN }}'
-            }
+            };
 
             await deployApp({ core, context, github, exec, netlify });
