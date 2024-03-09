@@ -61,3 +61,6 @@ jobs:
             core.info(JSON.stringify(deployInfo));
 
             return deployInfo;
+
+      - name: Get result
+        run: echo "${{steps.deploy_app.outputs}}"
