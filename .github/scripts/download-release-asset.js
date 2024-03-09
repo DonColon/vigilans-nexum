@@ -1,4 +1,5 @@
 import pkg from "../../package.json" assert { type: "json" };
+import decompress from "decompress";
 
 export default async ({ core, context, github }) => {
     const appVersion = `v${pkg.version}`;
@@ -23,7 +24,6 @@ export default async ({ core, context, github }) => {
         url: assetMetadata.browser_download_url
     });
 
-    console.log(asset);
-
-
+    const files = await decompress(asset, "dist")
+    console.log(files)
 };
