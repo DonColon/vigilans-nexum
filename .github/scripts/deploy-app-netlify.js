@@ -4,7 +4,7 @@ export default async ({ core, context, github, exec, netlify }) => {
     options.listeners = {
         stdout: (data) => {
             const deployInfo = JSON.parse(data.toString());
-            console.log(deployInfo.deploy_url);
+            core.info(deployInfo.deploy_url);
         },
         stderr: (data) => {
             core.error(data.toString());
