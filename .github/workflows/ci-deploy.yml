@@ -1,10 +1,8 @@
 name: Netlify CI Deploy
 
 on:
-  # release:
-  #   types: [published]
-  push:
-    branches: ["feature**"]
+  release:
+    types: [published]
 
 jobs:
   deploy:
@@ -57,4 +55,4 @@ jobs:
               token: '${{ secrets.NETLIFY_TOKEN }}'
             };
 
-            await deployApp({ core, github, exec, netlify });
+            await deployApp({ core, exec, netlify });

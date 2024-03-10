@@ -1,7 +1,10 @@
-export default async ({ core, github, exec, netlify }) => {
-    core.info(process.env.GITHUB_REF_NAME);
+export default async ({ core, exec, netlify }) => {
+    const dir = `--dir dist`;
+    const site = `--site ${netlify.site}`;
+    const auth = `--auth ${netlify.token}`;
+    const prod = (process.env.GITHUB_REF_NAME === "main") ? "--prod" : "";
 
-    const command = `netlify deploy --dir dist --site ${netlify.site} --auth ${netlify.token} --json`;
+    const command = `netlify deploy --json ${dir} ${site} ${auth} ${prod}`;
     const { stdout } = await exec.getExecOutput(command);
 
     const { site_name, deploy_id, deploy_url, logs } = JSON.parse(stdout);
