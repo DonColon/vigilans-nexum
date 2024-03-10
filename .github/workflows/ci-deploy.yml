@@ -18,7 +18,7 @@ jobs:
 
     environment:
       name: netlify
-      url: ${{ steps.deploy_app.outputs.result }}
+      url: ${{ steps.deploy_app.outputs.deployUrl }}
 
     steps:
       - name: Checkout Repository ${{ github.event.repository.name }}
@@ -57,4 +57,4 @@ jobs:
               token: '${{ secrets.NETLIFY_TOKEN }}'
             };
 
-            return await deployApp({ core, context, github, exec, netlify });
+            await deployApp({ core, context, github, exec, netlify });
