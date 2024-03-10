@@ -2,14 +2,16 @@ name: GitHub CI Release
 
 on:
   pull_request:
-    types: ["closed"]
     branches: ["main"]
+    types: ["closed"]
 
 jobs:
   release:
     name: Release Application
     runs-on: ubuntu-latest
     timeout-minutes: 30
+
+    if: ${{ github.event.pull_request.merged == true }}
 
     steps:
       - name: Checkout Repository ${{ github.event.repository.name }}
