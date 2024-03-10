@@ -1,4 +1,6 @@
-export default async ({ core, context, github, exec, netlify }) => {
+export default async ({ core, github, exec, netlify }) => {
+    core.info(github.ref_name);
+
     const command = `netlify deploy --dir dist --site ${netlify.site} --auth ${netlify.token} --json`;
     const { stdout } = await exec.getExecOutput(command);
 

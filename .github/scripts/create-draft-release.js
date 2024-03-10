@@ -39,6 +39,7 @@ export default async ({ core, context, github }) => {
 	});
 
 	core.info(`Created draft release ${appVersion}`);
+
 	core.setOutput("released", true);
 	core.setOutput("releaseID", release.id);
 	core.setOutput("releaseName", releaseName);

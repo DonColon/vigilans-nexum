@@ -57,4 +57,4 @@ jobs:
               token: '${{ secrets.NETLIFY_TOKEN }}'
             };
 
-            await deployApp({ core, context, github, exec, netlify });
+            await deployApp({ core, github, exec, netlify });
