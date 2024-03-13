@@ -45,10 +45,9 @@ export default async ({ core, context, github }) => {
 		core.setOutput("release", latestRelease);
 	}
 	else if(isFullRelease(latestRelease) && appVersion === latestVersion) {
-		core.setFailed("A full release can not be overriden");
+		core.setFailed("A full release can not be overwritten. Please increment version number.");
 	}
 };
-
 
 const isFullRelease = (release) => {
 	return !release.draft && !release.prerelease;

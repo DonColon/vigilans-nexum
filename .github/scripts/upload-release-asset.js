@@ -1,10 +1,9 @@
 import { formatRepositoryTitle } from "./utils.js";
 
 export default async ({ core, context, github, release }) => {
-	const { releaseVersion, releaseUploadUrl } = release;
 	const { owner, repo } = context.repo;
 
-	const artifactName = `${repo}-build-${releaseVersion}`;
+	const artifactName = `${repo}-build-${release.tag_name}`;
 	core.info(`Download build artifact ${artifactName}`);
 
 	const { data: { artifacts: [artifactMetadata] }  } = await github.rest.actions.listArtifactsForRepo({
@@ -22,12 +21,12 @@ export default async ({ core, context, github, release }) => {
 	});
 
 	core.info(`Upload build artifact ${artifactName}`);
-	const assetLabel = `${formatRepositoryTitle(repo)} Build ${releaseVersion}`;
+	const assetLabel = `${formatRepositoryTitle(repo)} Build ${release.tag_name}`;
 	const assetName = `${artifactName}.zip`;
 
 	await github.request({
 		method: "POST",
-		url: releaseUploadUrl,
+		url: release.upload_url,
 		headers: {
 			"content-type": "application/zip"
 		},

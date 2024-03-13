@@ -29,15 +29,15 @@ jobs:
             const { default: retrieveLatestRelease } = await import(scriptPath);
             await retrieveLatestRelease({ core, context, github });
 
-      # - name: Upload Release Asset
-      #   uses: actions/github-script@v7
-      #   id: upload_release_asset
-      #   with:
-      #     script: |
-      #       const scriptPath = '${{ github.workspace }}/.github/scripts/upload-release-asset.js';
-      #       const release = ${{ steps.retrieve_latest_release.outputs.release }};
-      #       const { default: uploadReleaseAsset } = await import(scriptPath);
-      #       await uploadReleaseAsset({ core, context, github, release });
+      - name: Upload Release Asset
+        uses: actions/github-script@v7
+        id: upload_release_asset
+        with:
+          script: |
+            const scriptPath = '${{ github.workspace }}/.github/scripts/upload-release-asset.js';
+            const release = ${{ steps.retrieve_latest_release.outputs.release }};
+            const { default: uploadReleaseAsset } = await import(scriptPath);
+            await uploadReleaseAsset({ core, context, github, release });
 
       # - name: Publish Draft Release
       #   uses: actions/github-script@v7
