@@ -33,13 +33,13 @@ export default async ({ core, context, github }) => {
 			draft: true
 		});
 
-		core.info(`Created draft release ${appVersion}`);
+		core.info(`Create draft release ${appVersion}`);
 		core.info(JSON.stringify(newRelease, undefined, "\t"));
 
 		core.setOutput("release", newRelease);
 	}
 	else if(isDraftRelease(latestRelease) && appVersion === latestVersion) {
-		core.info(`Updated draft release ${appVersion}`);
+		core.info(`Update draft release ${appVersion}`);
 		core.info(JSON.stringify(latestRelease, undefined, "\t"));
 
 		core.setOutput("release", latestRelease);

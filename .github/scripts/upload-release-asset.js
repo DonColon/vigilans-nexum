@@ -34,6 +34,4 @@ export default async ({ core, context, github, release }) => {
 		name: assetName,
 		data: artifact
 	});
-
-	core.info(`Created release asset ${assetName}`);
 };
