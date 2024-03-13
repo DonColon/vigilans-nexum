@@ -11,40 +11,45 @@ export default async ({ core, context, github }) => {
 		per_page: 1
 	});
 
+	let latestVersion = appVersion;
 	let isFirstRelease = false;
-	let previousVersion = appVersion;
 
-	if (latestRelease) {
-		previousVersion = latestRelease.tag_name;
-		core.info(`Previous release version: ${previousVersion}`);
+	if(latestRelease) {
+		latestVersion = latestRelease.tag_name;
+		core.info(`Latest release version ${latestVersion}`);
 	} else {
 		isFirstRelease = true;
-		core.info(`First release version: ${appVersion}`);
+		core.info(`First release version ${appVersion}`);
 	}
 
-	console.log(latestRelease)
+	if(isFirstRelease || appVersion > latestVersion) {
+		const releaseName = `${formatRepositoryTitle(repo)} ${appVersion}`;
+		const { data: newRelease } = await github.rest.repos.createRelease({
+			owner,
+			repo,
+			tag_name: appVersion,
+			name: releaseName,
+			target_commitish: process.env.GITHUB_SHA,
+			draft: true
+		});
 
-	if (!isFirstRelease && appVersion <= previousVersion) {
-		core.info("Version has not changed");
-		core.setOutput("released", false);
-		process.exit();
+		core.info(`Created draft release ${appVersion}`);
+		core.setOutput("release", newRelease);
 	}
+	else if(isDraftRelease(latestRelease) && appVersion === latestVersion) {
+		core.info(`Updated draft release ${appVersion}`);
+		core.setOutput("release", latestRelease);
+	}
+	else if(isFullRelease(latestRelease) && appVersion === latestVersion) {
+		core.setFailed("A full release can not be overriden");
+	}
+};
 
-	const releaseName = `${formatRepositoryTitle(repo)} ${appVersion}`;
-	const { data: release } = await github.rest.repos.createRelease({
-		owner,
-		repo,
-		tag_name: appVersion,
-		name: releaseName,
-		target_commitish: process.env.GITHUB_SHA,
-		draft: true
-	});
 
-	core.info(`Created draft release ${appVersion}`);
+const isFullRelease = (release) => {
+	return !release.draft && !release.prerelease;
+};
 
-	core.setOutput("released", true);
-	core.setOutput("releaseID", release.id);
-	core.setOutput("releaseName", releaseName);
-	core.setOutput("releaseVersion", appVersion);
-	core.setOutput("releaseUploadUrl", release.upload_url);
+const isDraftRelease = (release) => {
+	return release.draft || release.prerelease;
 };
