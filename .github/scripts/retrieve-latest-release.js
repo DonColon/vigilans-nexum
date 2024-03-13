@@ -22,6 +22,8 @@ export default async ({ core, context, github }) => {
 		core.info(`First release version: ${appVersion}`);
 	}
 
+	console.log(latestRelease)
+
 	if (!isFirstRelease && appVersion <= previousVersion) {
 		core.info("Version has not changed");
 		core.setOutput("released", false);
