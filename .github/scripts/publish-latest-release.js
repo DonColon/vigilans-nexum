@@ -1,7 +1,7 @@
 export default async ({ core, context, github, release }) => {
 	const { owner, repo } = context.repo;
 
-	console.log(github);
+	console.log(process.env);
 
 	// await github.rest.repos.updateRelease({
 	// 	owner,
