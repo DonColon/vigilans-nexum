@@ -8,7 +8,8 @@ export default async ({ core, exec, netlify }) => {
     const { stdout } = await exec.getExecOutput(command);
 
     const deployInfo = JSON.parse(stdout);
-    core.info(`\nDeployed app at url: ${deployInfo.deploy_url}`);
-    
+    deployInfo.environmentUrl = deployInfo.url || deployInfo.deploy_url;
+
+    core.info(`\nDeployed app at url: ${deployInfo.environmentUrl}`);
     core.setOutput("deployInfo", deployInfo);
 };
