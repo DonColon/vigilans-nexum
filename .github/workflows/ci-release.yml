@@ -1,9 +1,10 @@
 name: GitHub CI Release
 
 on:
-  pull_request:
-    branches: ["main"]
-    types: ["closed"]
+  workflow_run:
+    workflows: ["Node CI Build"]
+    types: ["completed"]
+    branches: ["main", "dev", "feature**"]
 
 jobs:
   release:
@@ -11,41 +12,37 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
-    if: ${{ github.event.pull_request.merged == true }}
-
     steps:
       - name: Checkout Repository ${{ github.event.repository.name }}
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Create Draft Release
+      - name: Retrieve Latest Release
         uses: actions/github-script@v7
-        id: create_draft_release
+        id: retrieve_latest_release
         with:
           script: |
-            const scriptPath = '${{ github.workspace }}/.github/scripts/create-draft-release.js';
-            const { default: createDraftRelease } = await import(scriptPath);
-            await createDraftRelease({ core, context, github });
+            const scriptPath = '${{ github.workspace }}/.github/scripts/retrieve-latest-release.js';
+            const { default: retrieveLatestRelease } = await import(scriptPath);
+            await retrieveLatestRelease({ core, context, github });
 
       - name: Upload Release Asset
         uses: actions/github-script@v7
         id: upload_release_asset
-        if: ${{ steps.create_draft_release.outputs.released == 'true' }}
         with:
           script: |
             const scriptPath = '${{ github.workspace }}/.github/scripts/upload-release-asset.js';
-            const release = ${{ toJson(steps.create_draft_release.outputs) }};
+            const release = ${{ steps.retrieve_latest_release.outputs.release }};
             const { default: uploadReleaseAsset } = await import(scriptPath);
             await uploadReleaseAsset({ core, context, github, release });
 
-      - name: Publish Draft Release
+      - name: Publish Latest Release
         uses: actions/github-script@v7
-        id: publish_draft_release
-        if: ${{ steps.create_draft_release.outputs.released == 'true' }}
+        id: publish_latest_release
         with:
           script: |
-            const scriptPath = '${{ github.workspace }}/.github/scripts/publish-draft-release.js';
-            const release = ${{ toJson(steps.create_draft_release.outputs) }};
-            const { default: publishDraftRelease } = await import(scriptPath);
-            await publishDraftRelease({ core, context, github, release });
+            const scriptPath = '${{ github.workspace }}/.github/scripts/publish-latest-release.js';
+            const release = ${{ steps.retrieve_latest_release.outputs.release }};
+            const { default: publishLatestRelease } = await import(scriptPath);
+            await publishLatestRelease({ core, context, github, release });

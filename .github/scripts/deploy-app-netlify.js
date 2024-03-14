@@ -7,11 +7,8 @@ export default async ({ core, exec, netlify }) => {
     const command = `netlify deploy --json ${dir} ${site} ${auth} ${prod}`;
     const { stdout } = await exec.getExecOutput(command);
 
-    const { site_name, deploy_id, deploy_url, logs } = JSON.parse(stdout);
-    core.info(`\nDeployed app at url: ${deploy_url}`);
+    const deployInfo = JSON.parse(stdout);
+    core.info(`\nDeployed app at url: ${deployInfo.deploy_url}`);
     
-    core.setOutput("siteName", site_name);
-	core.setOutput("deployID", deploy_id);
-	core.setOutput("deployUrl", deploy_url);
-	core.setOutput("logs", logs);
+    core.setOutput("deployInfo", deployInfo);
 };

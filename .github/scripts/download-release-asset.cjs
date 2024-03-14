@@ -12,8 +12,7 @@ module.exports = async ({ core, context, github }) => {
     });
 
     if(appVersion !== latestRelease.tag_name) {
-        core.info("Different version number between package.json and release");
-        process.exit();
+        core.setFailed("Different version number between package.json and release");
     }
 
     const assetName = `${repo}-build-${appVersion}.zip`;
