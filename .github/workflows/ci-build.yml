@@ -114,3 +114,99 @@ jobs:
         if: ${{ matrix.node_version == '20.x' }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    
+  release:
+    name: Release Application
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    needs: [code_quality, build, test]
+
+    steps:
+      - name: Checkout Repository ${{ github.event.repository.name }}
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Retrieve Latest Release
+        uses: actions/github-script@v7
+        id: retrieve_latest_release
+        with:
+          script: |
+            const scriptPath = '${{ github.workspace }}/.github/scripts/retrieve-latest-release.js';
+            const { default: retrieveLatestRelease } = await import(scriptPath);
+            await retrieveLatestRelease({ core, context, github });
+
+      - name: Upload Release Asset
+        uses: actions/github-script@v7
+        id: upload_release_asset
+        with:
+          script: |
+            const scriptPath = '${{ github.workspace }}/.github/scripts/upload-release-asset.js';
+            const release = ${{ steps.retrieve_latest_release.outputs.release }};
+            const { default: uploadReleaseAsset } = await import(scriptPath);
+            await uploadReleaseAsset({ core, context, github, release });
+
+      - name: Publish Latest Release
+        uses: actions/github-script@v7
+        id: publish_latest_release
+        with:
+          script: |
+            const scriptPath = '${{ github.workspace }}/.github/scripts/publish-latest-release.js';
+            const release = ${{ steps.retrieve_latest_release.outputs.release }};
+            const { default: publishLatestRelease } = await import(scriptPath);
+            await publishLatestRelease({ core, context, github, release });
+
+  deploy:
+    name: Deploy Application
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    needs: [release]
+
+    env:
+      node_version: 20.x
+      netlify_version: 17.13.2
+
+    environment:
+      name: netlify
+      url: ${{ steps.deploy_app.outputs.deployInfo.environmentUrl }}
+
+    steps:
+      - name: Checkout Repository ${{ github.event.repository.name }}
+        uses: actions/checkout@v4
+
+      - name: Setup Node Version ${{ env.node_version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.node_version }}
+          cache: "npm"
+
+      - name: Setup Netlify Version ${{ env.netlify_version }}
+        run: |
+          npm install -g netlify-cli@${{ env.netlify_version }}
+          npm install decompress
+
+      - name: Download Release Asset
+        uses: actions/github-script@v7
+        id: download_release_asset
+        with:
+          script: |
+            const scriptPath = '${{ github.workspace }}/.github/scripts/download-release-asset.cjs';
+            const { default: downloadReleaseAsset } = await import(scriptPath);
+            await downloadReleaseAsset({ core, context, github });
+
+      - name: Deploy Application
+        uses: actions/github-script@v7
+        id: deploy_app
+        with:
+          script: |
+            const scriptPath = '${{ github.workspace }}/.github/scripts/deploy-app-netlify.js';
+            const { default: deployApp } = await import(scriptPath);
+
+            const netlify = {
+              site: '${{ secrets.NETLIFY_SITE }}',
+              token: '${{ secrets.NETLIFY_TOKEN }}'
+            };
+
+            await deployApp({ core, exec, netlify });
