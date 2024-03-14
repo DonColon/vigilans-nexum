@@ -18,7 +18,7 @@ jobs:
 
     environment:
       name: netlify
-      url: ${{ steps.deploy_app.outputs.deployInfo.deployUrl }}
+      url: ${{ steps.deploy_app.outputs.deployInfo.environmentUrl }}
 
     steps:
       - name: Checkout Repository ${{ github.event.repository.name }}
