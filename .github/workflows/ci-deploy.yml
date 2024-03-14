@@ -1,10 +1,10 @@
 name: Netlify CI Deploy
 
-on:
-  workflow_run:
-    workflows: ["GitHub CI Release"]
-    types: ["completed"]
-    branches: ["main", "dev", "feature**"]
+# on:
+#   workflow_run:
+#     workflows: ["GitHub CI Release"]
+#     types: ["completed"]
+#     branches: ["main", "dev", "feature**"]
 
 jobs:
   deploy:

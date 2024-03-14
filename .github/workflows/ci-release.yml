@@ -1,10 +1,10 @@
 name: GitHub CI Release
 
-on:
-  workflow_run:
-    workflows: ["Node CI Build"]
-    types: ["completed"]
-    branches: ["main", "dev", "feature**"]
+# on:
+#   workflow_run:
+#     workflows: ["Node CI Build"]
+#     types: ["completed"]
+#     branches: ["main", "dev", "feature**"]
 
 jobs:
   release:
