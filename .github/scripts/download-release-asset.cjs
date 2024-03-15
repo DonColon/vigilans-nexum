@@ -20,7 +20,7 @@ module.exports = async ({ core, context, github }) => {
     const assetName = `${repo}-build-${appVersion}.zip`;
     const assetMetadata = latestRelease.assets.find((asset) => asset.name === assetName);
 
-    const { data: asset } = await github.request({
+    const { data: asset } = await github.request.fetch({
         method: "GET",
         url: assetMetadata.browser_download_url,
         headers: {
