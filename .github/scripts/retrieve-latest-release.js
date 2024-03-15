@@ -1,4 +1,3 @@
-import { formatRepositoryTitle } from "./utils.js";
 import pkg from "../../package.json" assert { type: "json" };
 
 export default async ({ core, context, github }) => {
@@ -15,7 +14,7 @@ export default async ({ core, context, github }) => {
 	let isFirstRelease = false;
 
 	if(latestRelease) {
-		latestVersion = latestRelease.tag_name;
+		latestVersion = latestRelease.name;
 		core.info(`Latest release version ${latestVersion}`);
 	} else {
 		isFirstRelease = true;
@@ -23,12 +22,11 @@ export default async ({ core, context, github }) => {
 	}
 
 	if(isFirstRelease || appVersion > latestVersion) {
-		const releaseName = `${formatRepositoryTitle(repo)} ${appVersion}`;
 		const { data: newRelease } = await github.rest.repos.createRelease({
 			owner,
 			repo,
 			tag_name: appVersion,
-			name: releaseName,
+			name: appVersion,
 			target_commitish: process.env.GITHUB_SHA,
 			draft: true
 		});

@@ -13,7 +13,7 @@ module.exports = async ({ core, context, github }) => {
 
     core.info(JSON.stringify(latestRelease, undefined, "\t"));
 
-    if(appVersion !== latestRelease.tag_name) {
+    if(appVersion !== latestRelease.name) {
         core.setFailed("Different version number between package.json and release");
     }
 
