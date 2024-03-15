@@ -22,7 +22,10 @@ module.exports = async ({ core, context, github }) => {
 
     const { data: asset } = await github.request({
         method: "GET",
-        url: assetMetadata.browser_download_url
+        url: assetMetadata.browser_download_url,
+        headers: {
+            authorization: `Bearer ${process.env.GITHUB_TOKEN}`
+        }
     });
 
     const files = await decompress(Buffer.from(asset), "dist")
