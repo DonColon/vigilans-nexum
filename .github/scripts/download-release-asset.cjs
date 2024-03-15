@@ -29,6 +29,7 @@ module.exports = async ({ core, context, github }) => {
     });
 
     const data = await asset.arrayBuffer();
+    console.log(data);
     const files = await decompress(Buffer.from(data), "dist")
 
     const filePaths = files.map((file) => file.path);
