@@ -22,9 +22,7 @@ module.exports = async ({ core, context, github }) => {
 
     console.log(assetMetadata.browser_download_url)
 
-    const { data: asset } = await fetch({
-        method: "GET",
-        url: assetMetadata.browser_download_url,
+    const { data: asset } = await fetch(assetMetadata.browser_download_url, {
         headers: {
             authorization: `Bearer ${process.env.GITHUB_TOKEN}`
         }
