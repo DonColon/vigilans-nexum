@@ -28,6 +28,8 @@ module.exports = async ({ core, context, github }) => {
         }
     });
 
+    console.log(asset);
+
     const files = await decompress(Buffer.from(asset), "dist")
     const filePaths = files.map((file) => file.path);
     core.info(`Unzipped files: \n${filePaths.join("\n")}`);
