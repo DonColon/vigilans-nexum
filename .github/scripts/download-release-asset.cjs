@@ -22,15 +22,13 @@ module.exports = async ({ core, context, github }) => {
 
     console.log(assetMetadata.browser_download_url)
 
-    const test = await fetch(assetMetadata.browser_download_url, {
+    const asset = await fetch(assetMetadata.browser_download_url, {
         headers: {
             Authorization: `Bearer ${process.env.GITHUB_TOKEN}`
         }
     });
 
-    console.log(test);
-
-    const files = await decompress(Buffer.from(asset), "dist")
+    const files = await decompress(Buffer.from(asset.arrayBuffer()), "dist")
     const filePaths = files.map((file) => file.path);
     core.info(`Unzipped files: \n${filePaths.join("\n")}`);
 };
