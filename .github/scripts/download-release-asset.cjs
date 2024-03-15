@@ -24,7 +24,7 @@ module.exports = async ({ core, context, github }) => {
 
     const { data: asset } = await fetch(assetMetadata.browser_download_url, {
         headers: {
-            authorization: `Bearer ${process.env.GITHUB_TOKEN}`
+            Authorization: `Bearer ${process.env.GITHUB_TOKEN}`
         }
     });
 
