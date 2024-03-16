@@ -8,6 +8,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
+    permissions:
+      actions: write
+
     steps:
       - name: Checkout Repository ${{ github.event.repository.name }}
         uses: actions/checkout@v4
