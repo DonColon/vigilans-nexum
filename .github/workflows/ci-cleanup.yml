@@ -1,0 +1,22 @@
+name: Github CI Cleanup
+
+on: workflow_dispatch
+
+jobs:
+  cleanup:
+    name: Cleanup Repository ${{ github.event.repository.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout Repository ${{ github.event.repository.name }}
+        uses: actions/checkout@v4
+
+      - name: Cleanup Workflow Runs
+        uses: actions/github-script@v7
+        id: cleanup_workflow_runs
+        with:
+          script: |
+            const scriptPath = '${{ github.workspace }}/.github/scripts/cleanup-workflow-runs.js';
+            const { default: cleanupWorkflowRuns } = await import(scriptPath);
+            await cleanupWorkflowRuns({ core, context, github });

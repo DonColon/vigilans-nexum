@@ -1,4 +1,3 @@
-import { formatRepositoryTitle } from "./utils.js";
 import pkg from "../../package.json" assert { type: "json" };
 
 export default async ({ core, context, github }) => {
@@ -15,7 +14,7 @@ export default async ({ core, context, github }) => {
 	let isFirstRelease = false;
 
 	if(latestRelease) {
-		latestVersion = latestRelease.tag_name;
+		latestVersion = latestRelease.name;
 		core.info(`Latest release version ${latestVersion}`);
 	} else {
 		isFirstRelease = true;
@@ -23,12 +22,11 @@ export default async ({ core, context, github }) => {
 	}
 
 	if(isFirstRelease || appVersion > latestVersion) {
-		const releaseName = `${formatRepositoryTitle(repo)} ${appVersion}`;
 		const { data: newRelease } = await github.rest.repos.createRelease({
 			owner,
 			repo,
 			tag_name: appVersion,
-			name: releaseName,
+			name: appVersion,
 			target_commitish: process.env.GITHUB_SHA,
 			draft: true
 		});
@@ -41,7 +39,11 @@ export default async ({ core, context, github }) => {
 	else if(isDraftRelease(latestRelease) && appVersion === latestVersion) {
 		core.info(`Update draft release ${appVersion}`);
 		core.info(JSON.stringify(latestRelease, undefined, "\t"));
-
+		core.setOutput("release", latestRelease);
+	}
+	else if(isPreRelease(latestRelease) && appVersion === latestVersion) {
+		core.info(`Update pre release ${appVersion}`);
+		core.info(JSON.stringify(latestRelease, undefined, "\t"));
 		core.setOutput("release", latestRelease);
 	}
 	else if(isFullRelease(latestRelease) && appVersion === latestVersion) {
@@ -53,6 +55,10 @@ const isFullRelease = (release) => {
 	return !release.draft && !release.prerelease;
 };
 
+const isPreRelease = (release) => {
+	return release.prerelease;
+};
+
 const isDraftRelease = (release) => {
-	return release.draft || release.prerelease;
+	return release.draft;
 };

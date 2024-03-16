@@ -11,7 +11,9 @@ module.exports = async ({ core, context, github }) => {
         per_page: 1
     });
 
-    if(appVersion !== latestRelease.tag_name) {
+    core.info(JSON.stringify(latestRelease, undefined, "\t"));
+
+    if(appVersion !== latestRelease.name) {
         core.setFailed("Different version number between package.json and release");
     }
 

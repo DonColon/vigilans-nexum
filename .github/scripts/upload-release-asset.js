@@ -3,7 +3,7 @@ import { formatRepositoryTitle } from "./utils.js";
 export default async ({ core, context, github, release }) => {
 	const { owner, repo } = context.repo;
 
-	const artifactName = `${repo}-build-${release.tag_name}`;
+	const artifactName = `${repo}-build-${release.name}`;
 	core.info(`Download build artifact ${artifactName}`);
 
 	const { data: { artifacts: [artifactMetadata] }  } = await github.rest.actions.listArtifactsForRepo({
@@ -21,8 +21,20 @@ export default async ({ core, context, github, release }) => {
 	});
 
 	core.info(`Upload build artifact ${artifactName}`);
-	const assetLabel = `${formatRepositoryTitle(repo)} Build ${release.tag_name}`;
+	const assetLabel = `${formatRepositoryTitle(repo)} Build ${release.name}`;
 	const assetName = `${artifactName}.zip`;
+
+	if(release.assets.length !== 0) {
+    	const assetMetadata = release.assets.find((asset) => asset.name === assetName);
+
+		if(assetMetadata) {
+			await github.rest.repos.deleteReleaseAsset({
+				owner,
+				repo,
+				asset_id: assetMetadata.id
+			});
+		}
+	}
 
 	await github.request({
 		method: "POST",
