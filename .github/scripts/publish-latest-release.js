@@ -7,7 +7,7 @@ export default async ({ core, context, github, release }) => {
 		release_id: release.id,
 		// draft: process.env.GITHUB_REF_NAME.includes("feature"),
 		// prerelease: process.env.GITHUB_REF_NAME === "dev"
-		draft: false,
+		draft: true,
 		prerelease: true
 	});
 
