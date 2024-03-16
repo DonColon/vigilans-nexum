@@ -39,7 +39,11 @@ export default async ({ core, context, github }) => {
 	else if(isDraftRelease(latestRelease) && appVersion === latestVersion) {
 		core.info(`Update draft release ${appVersion}`);
 		core.info(JSON.stringify(latestRelease, undefined, "\t"));
-
+		core.setOutput("release", latestRelease);
+	}
+	else if(isPreRelease(latestRelease) && appVersion === latestVersion) {
+		core.info(`Update pre release ${appVersion}`);
+		core.info(JSON.stringify(latestRelease, undefined, "\t"));
 		core.setOutput("release", latestRelease);
 	}
 	else if(isFullRelease(latestRelease) && appVersion === latestVersion) {
@@ -51,6 +55,10 @@ const isFullRelease = (release) => {
 	return !release.draft && !release.prerelease;
 };
 
+const isPreRelease = (release) => {
+	return !release.draft && release.prerelease;
+};
+
 const isDraftRelease = (release) => {
-	return release.draft || release.prerelease;
+	return release.draft && !release.prerelease;
 };
