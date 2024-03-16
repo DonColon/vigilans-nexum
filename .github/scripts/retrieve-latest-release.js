@@ -56,9 +56,9 @@ const isFullRelease = (release) => {
 };
 
 const isPreRelease = (release) => {
-	return !release.draft && release.prerelease;
+	return release.prerelease;
 };
 
 const isDraftRelease = (release) => {
-	return release.draft && !release.prerelease;
+	return release.draft;
 };
