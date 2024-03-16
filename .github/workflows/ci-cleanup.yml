@@ -23,3 +23,12 @@ jobs:
             const scriptPath = '${{ github.workspace }}/.github/scripts/cleanup-workflow-runs.js';
             const { default: cleanupWorkflowRuns } = await import(scriptPath);
             await cleanupWorkflowRuns({ core, context, github });
+
+      - name: Cleanup Deployments
+        uses: actions/github-script@v7
+        id: cleanup_deployments
+        with:
+          script: |
+            const scriptPath = '${{ github.workspace }}/.github/scripts/cleanup-deployments.js';
+            const { default: cleanupDeployments } = await import(scriptPath);
+            await cleanupDeployments({ core, context, github });

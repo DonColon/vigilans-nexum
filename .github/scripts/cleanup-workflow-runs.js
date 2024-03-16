@@ -9,7 +9,6 @@ export default async ({ core, context, github }) => {
     }
 
     for await(const response of github.paginate.iterator(github.rest.actions.listWorkflowRunsForRepo, parameters)) {
-        console.log(response)
         const { data: workflowRuns } = response;
 
         core.info(`${workflowRuns.length} workflow runs found`);
