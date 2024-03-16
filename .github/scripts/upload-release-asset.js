@@ -31,7 +31,7 @@ export default async ({ core, context, github, release }) => {
 			await github.rest.repos.deleteReleaseAsset({
 				owner,
 				repo,
-				asset_id: artifactMetadata.id
+				asset_id: assetMetadata.id
 			});
 		}
 	}
