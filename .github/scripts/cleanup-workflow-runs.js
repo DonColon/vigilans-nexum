@@ -3,7 +3,8 @@ export default async ({ core, context, github }) => {
 
     const { data: { workflow_runs: workflowRuns } } = await github.rest.actions.listWorkflowRunsForRepo({
         owner,
-        repo
+        repo,
+        status: ["completed"]
     });
 
     console.log(workflowRuns);
