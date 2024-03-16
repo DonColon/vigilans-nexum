@@ -24,6 +24,18 @@ export default async ({ core, context, github, release }) => {
 	const assetLabel = `${formatRepositoryTitle(repo)} Build ${release.name}`;
 	const assetName = `${artifactName}.zip`;
 
+	if(release.assets.length !== 0) {
+    	const assetMetadata = release.assets.find((asset) => asset.name === assetName);
+
+		if(assetMetadata) {
+			await github.rest.repos.deleteReleaseAsset({
+				owner,
+				repo,
+				asset_id: artifactMetadata.id
+			});
+		}
+	}
+
 	await github.request({
 		method: "POST",
 		url: release.upload_url,
