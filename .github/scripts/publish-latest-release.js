@@ -5,10 +5,8 @@ export default async ({ core, context, github, release }) => {
 		owner,
 		repo,
 		release_id: release.id,
-		// draft: process.env.GITHUB_REF_NAME.includes("feature"),
-		// prerelease: process.env.GITHUB_REF_NAME === "dev"
-		draft: true,
-		prerelease: true
+		draft: process.env.GITHUB_REF_NAME.includes("feature"),
+		prerelease: process.env.GITHUB_REF_NAME === "dev"
 	});
 
 	core.info(`Published release ${release.name}`);

@@ -20,18 +20,12 @@ module.exports = async ({ core, context, github }) => {
     const assetName = `${repo}-build-${appVersion}.zip`;
     const assetMetadata = latestRelease.assets.find((asset) => asset.name === assetName);
 
-    console.log(assetMetadata.browser_download_url)
-
-    const asset = await fetch(assetMetadata.browser_download_url, {
-        headers: {
-            Authorization: `Bearer ${process.env.GITHUB_TOKEN}`
-        }
+    const { data: asset } = await github.request({
+        method: "GET",
+        url: assetMetadata.browser_download_url
     });
 
-    const data = await asset.arrayBuffer();
-    console.log(data);
-    const files = await decompress(Buffer.from(data), "dist")
-
+    const files = await decompress(Buffer.from(asset), "dist")
     const filePaths = files.map((file) => file.path);
     core.info(`Unzipped files: \n${filePaths.join("\n")}`);
 };
