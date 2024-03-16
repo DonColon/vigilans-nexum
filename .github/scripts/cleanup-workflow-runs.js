@@ -6,6 +6,8 @@ export default async ({ core, context, github }) => {
         repo
     });
 
+    console.log(workflowRuns);
+
     core.info(`${workflowRuns.length} workflow runs found`);
 
     for(const workflowRun of workflowRuns) {
