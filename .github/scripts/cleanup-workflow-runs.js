@@ -1,12 +1,12 @@
 export default async ({ core, context, github }) => {
     const { owner, repo } = context.repo;
 
-    const response = await github.rest.actions.listWorkflowRunsForRepo({
+    const { data: { workflow_runs: workflowRuns } } = await github.rest.actions.listWorkflowRunsForRepo({
         owner,
         repo
     });
 
-    console.log(response);
+    core.info(`${workflowRuns.length} workflow runs found`);
 
     for(const workflowRun of workflowRuns) {
         await github.rest.actions.deleteWorkflowRun({
@@ -15,4 +15,6 @@ export default async ({ core, context, github }) => {
             run_id: workflowRun.id,
         });
     }
+
+    core.info(`Deleted all workflow runs`);
 };
