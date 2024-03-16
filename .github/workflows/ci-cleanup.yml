@@ -4,7 +4,7 @@ on: workflow_dispatch
 
 jobs:
   cleanup:
-    name: Cleanup Workflow Runs
+    name: Cleanup Repository ${{ github.event.repository.name }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -12,7 +12,7 @@ jobs:
       - name: Checkout Repository ${{ github.event.repository.name }}
         uses: actions/checkout@v4
 
-      - name: Retrieve Latest Release
+      - name: Cleanup Workflow Runs
         uses: actions/github-script@v7
         id: cleanup_workflow_runs
         with:
