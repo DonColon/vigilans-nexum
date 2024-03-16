@@ -1,14 +1,11 @@
 export default async ({ core, context, github }) => {
     const { owner, repo } = context.repo;
 
-    const reponse = await github.rest.actions.listWorkflowRunsForRepo({
-        owner,
-        repo,
-        status: "completed",
-        per_page: 100
-    });
 
-    console.log(reponse)
+
+
+
+    console.log(github)
 
     // core.info(`${workflowRuns.length} workflow runs found`);
 
