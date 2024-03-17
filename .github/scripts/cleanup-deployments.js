@@ -14,6 +14,7 @@ export default async ({ core, context, github }) => {
         core.info(`${deployments.length} deployments found`);
 
         for(const deployment of deployments) {
+            console.log(deployment);
             await github.rest.repos.deleteDeployment({
                 owner,
                 repo,
