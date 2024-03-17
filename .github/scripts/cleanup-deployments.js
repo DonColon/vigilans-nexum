@@ -20,8 +20,8 @@ export default async ({ core, context, github }) => {
                     repo,
                     deployment_id: deployment.id,
                 });
-            } catch(exception) {
-                core.info(`Deployment: ${deployment.id}`);
+            } catch(error) {
+                core.info(`Deployment ${deployment.id}: ${error.message}`);
             }
         }
     }
