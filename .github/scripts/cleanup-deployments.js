@@ -21,7 +21,7 @@ export default async ({ core, context, github }) => {
                     deployment_id: deployment.id,
                 });
             } catch(exception) {
-                // Do nothing
+                core.info(`Deployment: ${deployment.id}`);
             }
         }
     }
