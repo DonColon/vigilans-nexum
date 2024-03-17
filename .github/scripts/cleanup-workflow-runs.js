@@ -1,16 +1,26 @@
 export default async ({ core, context, github }) => {
     const { owner, repo } = context.repo;
 
-    const { data: workflowRuns } = await github.rest.actions.listWorkflowRunsForRepo({
+    const parameters = {
         owner,
-        repo
-    });
-
-    for(const workflowRun of workflowRuns) {
-        await github.rest.actions.deleteWorkflowRun({
-            owner,
-            repo,
-            run_id: workflowRun.id,
-        });
+        repo,
+        per_page: 100,
+        status: "completed"
     }
+
+    for await(const response of github.paginate.iterator(github.rest.actions.listWorkflowRunsForRepo, parameters)) {
+        const { data: workflowRuns } = response;
+
+        core.info(`${workflowRuns.length} workflow runs found`);
+
+        for(const workflowRun of workflowRuns) {
+            await github.rest.actions.deleteWorkflowRun({
+                owner,
+                repo,
+                run_id: workflowRun.id,
+            });
+        }
+    }
+
+    core.info(`Deleted all workflow runs`);
 };
