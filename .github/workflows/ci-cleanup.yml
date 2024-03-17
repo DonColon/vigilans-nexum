@@ -10,6 +10,7 @@ jobs:
 
     permissions:
       actions: write
+      deployments: write
 
     steps:
       - name: Checkout Repository ${{ github.event.repository.name }}

@@ -9,7 +9,6 @@ export default async ({ core, context, github }) => {
     }
 
     for await(const response of github.paginate.iterator(github.rest.repos.listDeployments, parameters)) {
-        console.log(response);
         const { data: deployments } = response;
 
         core.info(`${deployments.length} deployments found`);
