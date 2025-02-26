@@ -27,10 +27,7 @@ suite("World Test Suite", () => {
 
     class MovementSystem extends UpdateSystem {
         queries = {
-            query: new Query({
-                allowlist: [],
-                blocklist: []
-            })
+            query: new Query({})
         };
 
         public initialize(): void {}
