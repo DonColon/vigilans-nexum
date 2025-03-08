@@ -17,6 +17,8 @@
 	],
 	"rules": {
 		"no-console": "error",
-		"prettier/prettier": "error"
+		"prettier/prettier": "error",
+		"no-var": "off",
+		"@typescript-eslint/no-explicit-any": "off"
 	}
 }
