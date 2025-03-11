@@ -7,9 +7,7 @@ export default defineConfig({
 	root: "src",
 	publicDir: "src/assets",
 	build: {
-    	outDir: "../dist"
-  	},
-	plugins: [
-		tsconfigPaths()
-	]
+		outDir: "../dist"
+	},
+	plugins: [tsconfigPaths()]
 });
