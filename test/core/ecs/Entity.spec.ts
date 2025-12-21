@@ -2,23 +2,12 @@ import { test, expect, suite } from "vitest";
 import { Entity } from "../../../src/core/ecs/Entity";
 import { Component } from "../../../src/core/ecs/Component";
 import { World } from "../../../src/core/ecs/World";
-import { EventSystem } from "../../../src/core/events/EventSystem";
 import { GameState } from "../../../src/core/GameState";
 import { GameStateManager } from "../../../src/core/GameStateManager";
 import { GameError } from "../../../src/core/GameError";
-
-declare global {
-	var world: World;
-	var eventSystem: EventSystem;
-}
+import { ServiceRegistry } from "../../../src/core/service/ServiceRegistry";
 
 suite("Entity Test Suite", () => {
-	const world = new World();
-	globalThis.world = world;
-
-	const eventSystem = new EventSystem();
-	globalThis.eventSystem = eventSystem;
-
 	class PointComponent extends Component<{
 		x: number;
 		y: number;
@@ -39,6 +28,7 @@ suite("Entity Test Suite", () => {
 		onExit() {}
 	}
 
+	const world = ServiceRegistry.get<World>(World.name);
 	world.registerComponent(PointComponent);
 	world.registerEntityState(JumpState);
 

@@ -4,6 +4,10 @@ import { JsonSchema } from "./JsonSchema";
 import { Component, ComponentConstructor } from "./Component";
 import { GameStateManager } from "core/GameStateManager";
 import { GameStateConstructor } from "core/GameState";
+import { EventSystem } from "../events/EventSystem";
+import { GameCoreService } from "../service/GameCoreService";
+import { World } from "./World";
+import { ServiceRegistry } from "../service/ServiceRegistry";
 
 export interface EntityType {
 	id: string;
@@ -17,6 +21,12 @@ export class Entity {
 	private readonly stateManager: GameStateManager;
 	private enabled: boolean;
 
+	@GameCoreService(EventSystem)
+	private eventSystem!: EventSystem;
+
+	@GameCoreService(World)
+	private world!: World;
+
 	constructor(private readonly id: string = randomUUID()) {
 		this.components = new Map<string, Component<JsonSchema>>();
 		this.stateManager = new GameStateManager();
@@ -27,6 +37,8 @@ export class Entity {
 		const entityType: EntityType = typeof json === "string" ? JSON.parse(json) : json;
 		const entity = new Entity(entityType.id);
 		const stateManager = entity.getStateManager();
+
+		const world = ServiceRegistry.get<World>(World.name);
 
 		for (const state of entityType.states) {
 			const stateType = world.getEntityState(state);
@@ -43,6 +55,8 @@ export class Entity {
 	}
 
 	public addComponent<T extends JsonSchema>(componentType: ComponentConstructor<T>, data: T): this {
+		const world = this.world ?? ServiceRegistry.get<World>(World.name);
+
 		if (!world.hasComponent(componentType)) {
 			throw new GameError(`${componentType.name} not defined in world`);
 		}
@@ -50,14 +64,14 @@ export class Entity {
 		const component = new componentType(data);
 		this.components.set(componentType.name, component);
 
-		eventSystem.dispatch("entityChanged", { entity: this });
+		this.eventSystem.dispatch("entityChanged", { entity: this });
 		return this;
 	}
 
 	public removeComponent<T extends JsonSchema>(componentType: ComponentConstructor<T>): this {
 		this.components.delete(componentType.name);
 
-		eventSystem.dispatch("entityChanged", { entity: this });
+		this.eventSystem.dispatch("entityChanged", { entity: this });
 		return this;
 	}
 
@@ -90,6 +104,8 @@ export class Entity {
 	}
 
 	public addState(stateType: GameStateConstructor): this {
+		const world = this.world ?? ServiceRegistry.get<World>(World.name);
+
 		if (!world.hasEntityState(stateType)) {
 			throw new GameError(`${stateType.name} not defined in world`);
 		}
@@ -111,7 +127,7 @@ export class Entity {
 		this.components.clear();
 		this.stateManager.clear();
 
-		eventSystem.dispatch("entityChanged", { entity: this });
+		this.eventSystem.dispatch("entityChanged", { entity: this });
 		return this;
 	}
 

@@ -8,7 +8,9 @@ import { System, SystemConstructor } from "./System";
 import { UpdateSystem } from "./UpdateSystem";
 import { RenderSystem } from "./RenderSystem";
 import { GameStateConstructor } from "core/GameState";
+import { GameCoreService } from "../service/GameCoreService";
 
+@GameCoreService()
 export class World {
 	private readonly components: Map<string, ComponentConstructor<any>>;
 	private readonly states: Map<string, GameStateConstructor>;

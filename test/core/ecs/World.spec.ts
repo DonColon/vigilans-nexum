@@ -5,14 +5,9 @@ import { GameError } from "../../../src/core/GameError";
 import { GameState } from "../../../src/core/GameState";
 import { EntityType } from "../../../src/core/ecs/Entity";
 import { Query } from "../../../src/core/ecs/Query";
-import { EventSystem } from "../../../src/core/events/EventSystem";
 import { UpdateSystem } from "../../../src/core/ecs/UpdateSystem";
 import { RenderSystem } from "../../../src/core/ecs/RenderSystem";
-
-declare global {
-	var world: World;
-	var eventSystem: EventSystem;
-}
+import { ServiceRegistry } from "../../../src/core/service/ServiceRegistry";
 
 suite("World Test Suite", () => {
 	class PointComponent extends Component<{
@@ -59,12 +54,7 @@ suite("World Test Suite", () => {
 	}
 
 	test("Update the world one frame", () => {
-		const world = new World();
-		globalThis.world = world;
-
-		const eventSystem = new EventSystem();
-		globalThis.eventSystem = eventSystem;
-
+		const world = ServiceRegistry.get<World>(World.name);
 		world.registerSystem(MovementSystem, 0);
 		world.registerSystem(MapSystem, 0);
 
@@ -214,11 +204,6 @@ suite("World Test Suite", () => {
 
 	test("Register a system to the world", () => {
 		const world = new World();
-		globalThis.world = world;
-
-		const eventSystem = new EventSystem();
-		globalThis.eventSystem = eventSystem;
-
 		world.registerSystem(MapSystem, 0);
 		world.registerSystem(MovementSystem, 0);
 		expect(() => world.registerSystem(MovementSystem, 0)).toThrowError(GameError);
@@ -235,11 +220,6 @@ suite("World Test Suite", () => {
 
 	test("Unregister a system from the world", () => {
 		const world = new World();
-		globalThis.world = world;
-
-		const eventSystem = new EventSystem();
-		globalThis.eventSystem = eventSystem;
-
 		world.registerSystem(MovementSystem, 0);
 		world.unregisterSystem(MovementSystem);
 

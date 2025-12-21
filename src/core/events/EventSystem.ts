@@ -1,6 +1,8 @@
+import { GameCoreService } from "../service/GameCoreService";
 import { GameEvent } from "./GameEvent";
 import { EventHandler, EventNames, GameEvents } from "./GameEvents";
 
+@GameCoreService()
 export class EventSystem {
 	private readonly subscribers: Map<EventNames, EventHandler<any>[]> = new Map<EventNames, EventHandler<any>[]>();
 

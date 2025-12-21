@@ -3,6 +3,7 @@ import { Vector } from "../math/Vector";
 import { Dimension } from "../math/Dimension";
 import { Graphics } from "./Graphics";
 import { DisplayOrientationType } from "./DisplayOrientation";
+import { GameCoreService } from "../service/GameCoreService";
 
 export interface DisplayConfiguration {
 	dimension?: Dimension;
@@ -11,6 +12,7 @@ export interface DisplayConfiguration {
 	};
 }
 
+@GameCoreService()
 export class Display {
 	private readonly viewport: HTMLElement;
 	private readonly viewportDimension: Dimension;

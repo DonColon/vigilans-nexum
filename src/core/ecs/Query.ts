@@ -2,6 +2,9 @@
 
 import { WorldEvent } from "./WorldEvent";
 import { Entity } from "./Entity";
+import { EventSystem } from "../events/EventSystem";
+import { GameCoreService } from "../service/GameCoreService";
+import { World } from "./World";
 
 export interface QueryList {
 	[queryName: string]: Query;
@@ -17,18 +20,24 @@ export class Query {
 	private readonly blocklist: string[];
 	private readonly entities: Entity[];
 
+	@GameCoreService(EventSystem)
+	private eventSystem!: EventSystem;
+
+	@GameCoreService(World)
+	private world!: World;
+
 	constructor(settings: QuerySettings) {
 		this.allowlist = settings.allowlist || [];
 		this.blocklist = settings.blocklist || [];
 		this.entities = [];
 
-		for (const entity of world.getEntities()) {
+		for (const entity of this.world.getEntities()) {
 			if (this.match(entity)) {
 				this.entities.push(entity);
 			}
 		}
 
-		eventSystem.subscribe("entityChanged", (event) => this.onEntityChanged(event));
+		this.eventSystem.subscribe("entityChanged", (event) => this.onEntityChanged(event));
 	}
 
 	private onEntityChanged(event: WorldEvent) {
