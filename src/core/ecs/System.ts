@@ -33,4 +33,10 @@ export abstract class System {
 	public disable() {
 		this.enabled = false;
 	}
+
+	public dispose(): void {
+		for (const query of Object.values(this.queries)) {
+			query.dispose();
+		}
+	}
 }

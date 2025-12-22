@@ -9,6 +9,7 @@ import { UpdateSystem } from "./UpdateSystem";
 import { RenderSystem } from "./RenderSystem";
 import { GameStateConstructor } from "core/GameState";
 import { GameCoreService } from "../service/GameCoreService";
+import { EventSystem } from "../events/EventSystem";
 
 @GameCoreService()
 export class World {
@@ -19,6 +20,9 @@ export class World {
 
 	private updateSchedule: System[];
 	private renderSchedule: System[];
+
+	@GameCoreService(EventSystem)
+	private eventSystem!: EventSystem;
 
 	constructor() {
 		this.components = new Map<string, ComponentConstructor<any>>();
@@ -134,6 +138,7 @@ export class World {
 
 	public unregisterEntity(entity: Entity): this {
 		this.entities.delete(entity.getID());
+		this.eventSystem.dispatch("entityRemoved", { entity: entity });
 		return this;
 	}
 
@@ -179,6 +184,9 @@ export class World {
 	}
 
 	public unregisterSystem(systemType: SystemConstructor): this {
+		const system = this.getSystem(systemType);
+		system.dispose();
+
 		this.systems.delete(systemType.name);
 		this.scheduleUpdateSystems();
 		this.scheduleRenderSystems();

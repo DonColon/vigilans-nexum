@@ -23,7 +23,7 @@ export class Component<T extends JsonSchema> {
 	}
 
 	public toObject(): T {
-		return this.data;
+		return structuredClone(this.data);
 	}
 
 	public toString(): string {

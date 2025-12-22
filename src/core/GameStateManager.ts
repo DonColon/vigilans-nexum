@@ -8,10 +8,16 @@ export class GameStateManager {
 	private readonly currentStates: GameState[] = [];
 
 	public switch(stateType: GameStateConstructor | string) {
-		const currentState = this.peek();
 		const state = this.getState(stateType);
 
-		if (currentState !== null) currentState.onExit();
+		if (this.currentStates.length > 0) {
+			const currentState = this.peek();
+
+			if (currentState !== null) {
+				currentState.onExit();
+			}
+		}
+
 		state.onEnter();
 
 		this.currentStates.length = 0;
@@ -19,25 +25,33 @@ export class GameStateManager {
 	}
 
 	public push(stateType: GameStateConstructor | string) {
-		const currentState = this.peek();
 		const state = this.getState(stateType);
 
-		if (currentState !== null) currentState.onExit();
-		state.onEnter();
+		if (this.currentStates.length > 0) {
+			const currentState = this.peek();
 
+			if (currentState !== null) { 
+				currentState.onPause(); 
+			}
+		}
+
+		state.onEnter();
 		this.currentStates.push(state);
 	}
 
 	public pop(): GameState {
 		const currentState = this.currentStates.pop();
 		const state = this.peek();
-
+		
 		if (currentState === undefined) {
 			throw new GameError("No states defined in stack");
 		}
-
+		
 		currentState.onExit();
-		state?.onEnter();
+
+		if (state !== null) {
+			state.onResume();
+		}
 
 		return currentState;
 	}

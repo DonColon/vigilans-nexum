@@ -21,11 +21,15 @@ suite("Entity Test Suite", () => {
 	class JumpState extends GameState {
 		onEnter() {}
 		onExit() {}
+		onPause() {}
+		onResume() {}
 	}
 
 	class FallState extends GameState {
 		onEnter() {}
 		onExit() {}
+		onPause() {}
+		onResume() {}
 	}
 
 	const world = ServiceRegistry.get<World>(World.name);
