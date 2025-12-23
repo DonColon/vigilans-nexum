@@ -58,9 +58,10 @@ export class AssetLoader {
 	}
 
 	private async loadAssets(bundle: AssetType[], bundleName: string) {
+		const assets = this.resolveDependencies(bundle);
 		let loadedCount = 0;
 
-		const assetPromises = bundle.map(async (asset) => {
+		const assetPromises = assets.map(async (asset) => {
 			try {
 				await this.loadAsset(asset);
 				loadedCount++;
@@ -88,10 +89,88 @@ export class AssetLoader {
 		};
 
 		const loader = loaders[asset.type];
-		
+
 		if (loader) {
 			await loader(asset);
 		}
+	}
+
+	private resolveDependencies(bundle: AssetType[]): AssetType[] {
+		// Asset-Map für schnellen Zugriff nach ID erstellen
+		const assetMap = new Map<string, AssetType>();
+		bundle.forEach(asset => assetMap.set(asset.id, asset));
+
+		// Validierung: Alle Dependencies müssen im Bundle existieren
+		for (const asset of bundle) {
+			if (asset.dependencies) {
+				for (const depId of asset.dependencies) {
+					if (!assetMap.has(depId)) {
+						throw new GameError(
+							`Asset ${asset.id} depends on ${depId}, but ${depId} is not in the bundle`
+						);
+					}
+				}
+			}
+		}
+
+		// Topologische Sortierung mit Kahn's Algorithmus
+		const sorted: AssetType[] = [];
+		const inDegree = new Map<string, number>();
+		const adjacencyList = new Map<string, string[]>();
+
+		// Initialisierung
+		for (const asset of bundle) {
+			inDegree.set(asset.id, 0);
+			adjacencyList.set(asset.id, []);
+		}
+
+		// Graph aufbauen: Wenn A von B abhängt, dann B -> A
+		for (const asset of bundle) {
+			if (asset.dependencies) {
+				for (const depId of asset.dependencies) {
+					adjacencyList.get(depId)!.push(asset.id);
+					inDegree.set(asset.id, inDegree.get(asset.id)! + 1);
+				}
+			}
+		}
+
+		// Queue mit Assets ohne Dependencies
+		const queue: string[] = [];
+		for (const [assetId, degree] of inDegree) {
+			if (degree === 0) {
+				queue.push(assetId);
+			}
+		}
+
+		// Topologische Sortierung durchführen
+		while (queue.length > 0) {
+			const currentId = queue.shift()!;
+			const currentAsset = assetMap.get(currentId)!;
+			sorted.push(currentAsset);
+
+			// Nachfolger verarbeiten
+			for (const neighborId of adjacencyList.get(currentId)!) {
+				inDegree.set(neighborId, inDegree.get(neighborId)! - 1);
+
+				if (inDegree.get(neighborId) === 0) {
+					queue.push(neighborId);
+				}
+			}
+		}
+
+		// Zirkuläre Dependencies prüfen
+		if (sorted.length !== bundle.length) {
+			const remaining = bundle
+				.filter(asset => !sorted.includes(asset))
+				.map(asset => asset.id)
+				.join(', ');
+
+			throw new GameError(
+				`Circular dependency detected in bundle. Affected assets: ${remaining}`
+			);
+		}
+
+		return sorted;
 	}
 
 	private dispatchBundleProgress(bundleName: string, current: number, total: number) {
