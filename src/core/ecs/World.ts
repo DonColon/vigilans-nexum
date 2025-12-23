@@ -10,6 +10,7 @@ import { RenderSystem } from "./RenderSystem";
 import { GameStateConstructor } from "core/GameState";
 import { GameCoreService } from "../service/GameCoreService";
 import { EventSystem } from "../events/EventSystem";
+import { binaryInsert } from "../utils/Arrays";
 
 @GameCoreService()
 export class World {
@@ -178,9 +179,16 @@ export class World {
 		const system = new systemType(priority);
 		this.systems.set(systemType.name, system);
 
-		this.scheduleUpdateSystems();
-		this.scheduleRenderSystems();
+		this.scheduleSystem(system);
 		return this;
+	}
+
+	private scheduleSystem(system: System) {
+		if (system instanceof UpdateSystem) {
+			binaryInsert(this.updateSchedule, system, System.byPriority);
+		} else if (system instanceof RenderSystem) {
+			binaryInsert(this.renderSchedule, system, System.byPriority);
+		}
 	}
 
 	public unregisterSystem(systemType: SystemConstructor): this {
@@ -188,21 +196,16 @@ export class World {
 		system.dispose();
 
 		this.systems.delete(systemType.name);
-		this.scheduleUpdateSystems();
-		this.scheduleRenderSystems();
+		this.unscheduleSystem(system);
 		return this;
 	}
 
-	private scheduleUpdateSystems() {
-		const systems = Array.from(this.systems.values());
-		this.updateSchedule = systems.filter((system) => system instanceof UpdateSystem);
-		this.updateSchedule.sort(System.byPriority);
-	}
-
-	private scheduleRenderSystems() {
-		const systems = Array.from(this.systems.values());
-		this.renderSchedule = systems.filter((system) => system instanceof RenderSystem);
-		this.renderSchedule.sort(System.byPriority);
+	private unscheduleSystem(system: System) {
+		if (system instanceof UpdateSystem) {
+			this.updateSchedule = this.updateSchedule.filter(s => s !== system);
+		} else if (system instanceof RenderSystem) {
+			this.renderSchedule = this.renderSchedule.filter(s => s !== system);
+		}
 	}
 
 	public getSystem(systemType: SystemConstructor): System {

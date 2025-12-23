@@ -3,17 +3,23 @@ import { Input, Pointer } from "./Input";
 import { MouseInput, MouseInputType } from "./MouseInput";
 import { Display } from "../graphics/Display";
 import { GameCoreService } from "../service/GameCoreService";
+import { InputBuffer } from "./InputBuffer";
+import { InputChannel } from "./InputChannel";
+import { InputState } from "./InputState";
 
 export class MouseDevice {
 	private mouse: Map<MouseInputType, Pointer>;
 	private lastUsed: number;
+	private buffer: InputBuffer;
 
 	@GameCoreService(Display)
 	private display!: Display;
 
-	constructor() {
+	constructor(buffer: InputBuffer) {
 		this.mouse = new Map<MouseInputType, Pointer>();
 		this.lastUsed = 0;
+
+		this.buffer = buffer;
 
 		for (const value of Object.values(MouseInput)) {
 			this.mouse.set(value, this.initPointer());
@@ -103,6 +109,10 @@ export class MouseDevice {
 		pointer.state.previous = pointer.state.current;
 		pointer.state.current = true;
 
+		if (pointer.state.previous === false && pointer.state.current === true) {
+			this.buffer.add(InputChannel.MOUSE, pointer.identifier as MouseInputType, InputState.JUST_PRESSED);
+		}
+
 		pointer.position.previous = pointer.position.current;
 		this.pointerMoved(pointer, x, y);
 	}
@@ -111,6 +121,10 @@ export class MouseDevice {
 		pointer.identifier = -1;
 		pointer.state.previous = pointer.state.current;
 		pointer.state.current = false;
+
+		if (pointer.state.previous === true && pointer.state.current === false) {
+			this.buffer.add(InputChannel.MOUSE, pointer.identifier as MouseInputType, InputState.JUST_RELEASED);
+		}
 	}
 
 	private pointerMoved(pointer: Pointer, x: number, y: number) {

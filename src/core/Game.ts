@@ -4,7 +4,7 @@ import { AssetStorage } from "./assets/AssetStorage";
 import { AssetLoader, LoaderConfiguration } from "./assets/AssetLoader";
 import { GameStateManager } from "./GameStateManager";
 import { Display, DisplayConfiguration } from "./graphics/Display";
-import { InputDevice } from "./input/InputDevice";
+import { InputDevice, InputDeviceConfig } from "./input/InputDevice";
 import { AudioDevice, AudioConfiguration } from "./audio/AudioDevice";
 import { World } from "./ecs/World";
 import { ComponentConstructor } from "./ecs/Component";
@@ -23,6 +23,7 @@ export interface GameConfiguration {
 		state: GameStateConstructor | string;
 		bundle: string;
 	};
+	inputDevice: InputDeviceConfig;
 	assetLoader: LoaderConfiguration;
 	localDatabase: DatabaseConfiguration;
 	display?: DisplayConfiguration;
@@ -63,7 +64,7 @@ export class Game {
 		this.assetLoader = new AssetLoader(config.id, config.assetLoader);
 		this.stateManager = new GameStateManager();
 		this.display = new Display(config.id, config.display);
-		this.inputDevice = new InputDevice();
+		this.inputDevice = new InputDevice(config.inputDevice);
 		this.audioDevice = new AudioDevice(config.audioDevice);
 		this.world = new World();
 	}

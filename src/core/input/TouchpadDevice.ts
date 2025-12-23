@@ -5,19 +5,26 @@ import { SwipeInput, SwipeInputType, ofAngle } from "./SwipeInput";
 import { TouchInput, TouchInputType } from "./TouchInput";
 import { GameCoreService } from "../service/GameCoreService";
 import { Display } from "../graphics/Display";
+import { InputBuffer } from "./InputBuffer";
+import { InputChannel } from "./InputChannel";
+import { InputState } from "./InputState";
 
 export class TouchpadDevice {
 	private touchpad: Map<SwipeInputType, Input>;
 	private touch: Pointer;
 	private lastUsed: number;
 
+	private buffer: InputBuffer;
+
 	@GameCoreService(Display)
 	private display!: Display;
 
-	constructor() {
+	constructor(buffer: InputBuffer) {
 		this.touchpad = new Map<SwipeInputType, Input>();
 		this.touch = this.initPointer();
 		this.lastUsed = 0;
+
+		this.buffer = buffer;
 
 		for (const value of Object.values(SwipeInput)) {
 			this.touchpad.set(value, { current: false, previous: false });
@@ -118,6 +125,10 @@ export class TouchpadDevice {
 		pointer.state.previous = pointer.state.current;
 		pointer.state.current = true;
 
+		if (pointer.state.previous === false && pointer.state.current === true) {
+			this.buffer.add(InputChannel.TOUCHPAD, TouchInput.TOUCH, InputState.JUST_PRESSED);
+		}
+
 		pointer.position.previous = pointer.position.current;
 		this.pointerMoved(pointer, x, y);
 	}
@@ -126,6 +137,10 @@ export class TouchpadDevice {
 		pointer.identifier = -1;
 		pointer.state.previous = pointer.state.current;
 		pointer.state.current = false;
+
+		if (pointer.state.previous === true && pointer.state.current === false) {
+			this.buffer.add(InputChannel.TOUCHPAD, TouchInput.TOUCH, InputState.JUST_RELEASED);
+		}
 	}
 
 	private pointerMoved(pointer: Pointer, x: number, y: number) {
