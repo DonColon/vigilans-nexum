@@ -1,8 +1,5 @@
 import { WorldEvent } from "../ecs/WorldEvent";
-import { BundleLoadedEvent } from "../assets/BundleLoadedEvent";
-import { AssetLoadedEvent } from "../assets/AssetLoadedEvent";
-import { AssetFailedEvent } from "../assets/AssetFailedEvent";
-import { BundleProgressEvent } from "../assets/BundleProgressEvent";
+import { BundleLoadedEvent, BundleProgressEvent, BundleUnloadedEvent } from "../assets/BundleEvents";
 
 export type EventNames = keyof GameEvents;
 export type EventHandler<Name extends EventNames> = (event: GameEvents[Name]) => void;
@@ -11,7 +8,6 @@ export interface GameEvents {
 	entityChanged: WorldEvent;
 	entityRemoved: WorldEvent;
 	bundleLoaded: BundleLoadedEvent;
+	bundleUnloaded: BundleUnloadedEvent;
 	bundleProgress: BundleProgressEvent;
-	assetLoaded: AssetLoadedEvent;
-	assetFailed: AssetFailedEvent;
 }

@@ -4,7 +4,7 @@ interface Asset {
 	dependencies?: string[];
 }
 
-export type AssetType = ImageAsset | AudioAsset | VideoAsset | FontAsset | JsonAsset | XmlAsset | HtmlAsset | CssAsset | JavaScriptAsset;
+export type AssetType = ImageAsset | AudioAsset | VideoAsset | FontAsset | JsonAsset | XmlAsset | HtmlAsset | StylesheetAsset | JavaScriptAsset;
 
 export interface ImageAsset extends Asset {
 	type: "image";
@@ -36,7 +36,7 @@ export interface HtmlAsset extends Asset {
 	type: "html";
 }
 
-export interface CssAsset extends Asset {
+export interface StylesheetAsset extends Asset {
 	type: "css";
 }
 

@@ -2,52 +2,29 @@ import { AudioTrack } from "core/audio/AudioTrack";
 import { Sprite } from "core/graphics/Sprite";
 import { GameError } from "core/GameError";
 import { GameCoreService } from "../service/GameCoreService";
-import { EventSystem } from "../events/EventSystem";
-import { AssetLoadedEvent } from "./AssetLoadedEvent";
 
 @GameCoreService()
 export class AssetStorage {
 	private audio: Map<string, AudioTrack>;
 	private images: Map<string, Sprite>;
 	private videos: Map<string, HTMLVideoElement>;
+	private fonts: Map<string, FontFace>;
 	private jsons: Map<string, object>;
 	private xmls: Map<string, XMLDocument>;
 	private htmls: Map<string, Document>;
-
-	@GameCoreService(EventSystem)
-	private eventSystem!: EventSystem;
+	private stylesheets: Map<string, HTMLStyleElement>;
+	private scripts: Map<string, HTMLScriptElement>;
 
 	constructor() {
 		this.audio = new Map<string, AudioTrack>();
 		this.images = new Map<string, Sprite>();
 		this.videos = new Map<string, HTMLVideoElement>();
+		this.fonts = new Map<string, FontFace>();
 		this.jsons = new Map<string, object>();
 		this.xmls = new Map<string, XMLDocument>();
 		this.htmls = new Map<string, Document>();
-
-		this.eventSystem.subscribe("assetLoaded", (event) => this.onAssetLoaded(event));
-	}
-
-	private onAssetLoaded(event: AssetLoadedEvent) {
-		if (event.assetType === "image") {
-			this.images.set(event.assetID, event.payload);
-		} else if (event.assetType === "audio") {
-			this.audio.set(event.assetID, event.payload);
-		} else if (event.assetType === "video") {
-			this.videos.set(event.assetID, event.payload);
-		} else if (event.assetType === "font") {
-			document.fonts.add(event.payload);
-		} else if (event.assetType === "json") {
-			this.jsons.set(event.assetID, event.payload);
-		} else if (event.assetType === "xml") {
-			this.xmls.set(event.assetID, event.payload);
-		} else if (event.assetType === "html") {
-			this.htmls.set(event.assetID, event.payload);
-		} else if (event.assetType === "css") {
-			document.head.appendChild(event.payload);
-		} else if (event.assetType === "javascript") {
-			document.body.appendChild(event.payload);
-		}
+		this.stylesheets = new Map<string, HTMLStyleElement>();
+		this.scripts = new Map<string, HTMLScriptElement>();
 	}
 
 	public getAudio(id: string): AudioTrack {
@@ -64,6 +41,10 @@ export class AssetStorage {
 		this.audio.set(id, track);
 	}
 
+	public deleteAudio(id: string): boolean {
+		return this.audio.delete(id);
+	}
+
 	public getImage(id: string): Sprite {
 		const image = this.images.get(id);
 
@@ -76,6 +57,10 @@ export class AssetStorage {
 
 	public setImage(id: string, image: Sprite) {
 		this.images.set(id, image);
+	}
+
+	public deleteImage(id: string): boolean {
+		return this.images.delete(id);
 	}
 
 	public getVideo(id: string): HTMLVideoElement {
@@ -92,6 +77,26 @@ export class AssetStorage {
 		this.videos.set(id, video);
 	}
 
+	public deleteVideo(id: string): boolean {
+		return this.videos.delete(id);
+	}
+
+	public setFont(id: string, font: FontFace) {
+		this.fonts.set(id, font);
+		document.fonts.add(font);
+	}
+
+	public deleteFont(id: string): boolean {
+		const font = this.fonts.get(id);
+
+		if (font) {
+			document.fonts.delete(font);
+			return this.fonts.delete(id);
+		}
+
+		return false;
+	}
+
 	public getJson<T extends object>(id: string): T {
 		const json = this.jsons.get(id);
 
@@ -104,6 +109,10 @@ export class AssetStorage {
 
 	public setJson<T extends object>(id: string, json: T) {
 		this.jsons.set(id, json);
+	}
+
+	public deleteJson(id: string): boolean {
+		return this.jsons.delete(id);
 	}
 
 	public getXml(id: string): XMLDocument {
@@ -120,6 +129,10 @@ export class AssetStorage {
 		this.xmls.set(id, xml);
 	}
 
+	public deleteXml(id: string): boolean {
+		return this.xmls.delete(id);
+	}
+
 	public getHtml(id: string): Document {
 		const html = this.htmls.get(id);
 
@@ -132,5 +145,61 @@ export class AssetStorage {
 
 	public setHtml(id: string, html: Document) {
 		this.htmls.set(id, html);
+	}
+
+	public deleteHtml(id: string): boolean {
+		return this.htmls.delete(id);
+	}
+
+	public getStylesheet(id: string): HTMLStyleElement {
+		const css = this.stylesheets.get(id);
+
+		if (css === undefined) {
+			throw new GameError(`Stylesheet ${id} does not exist`);
+		}
+
+		return css;
+	}
+
+	public setStylesheet(id: string, css: HTMLStyleElement) {
+		this.stylesheets.set(id, css);
+		document.head.appendChild(css);
+	}
+
+	public deleteStylesheet(id: string): boolean {
+		const css = this.stylesheets.get(id);
+
+		if (css) {
+			document.head.removeChild(css);
+			return this.stylesheets.delete(id);
+		}
+
+		return false;
+	}
+
+	public getScript(id: string): HTMLScriptElement { 
+		const script = this.scripts.get(id);
+
+		if (script === undefined) {
+			throw new GameError(`Script ${id} does not exist`);
+		}
+
+		return script;
+	}
+
+	public setScript(id: string, script: HTMLScriptElement) {
+		this.scripts.set(id, script);
+		document.body.appendChild(script);
+	}
+
+	public deleteScript(id: string): boolean {
+		const script = this.scripts.get(id);
+
+		if (script) {
+			document.body.removeChild(script);
+			return this.scripts.delete(id);
+		}
+
+		return false;
 	}
 }

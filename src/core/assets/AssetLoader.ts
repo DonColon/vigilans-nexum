@@ -1,9 +1,13 @@
 import { GameError } from "core/GameError";
 import { AssetManifest } from "./AssetManifest";
-import { AssetType, AudioAsset, CssAsset, FontAsset, HtmlAsset, ImageAsset, JavaScriptAsset, JsonAsset, VideoAsset, XmlAsset } from "./Asset";
+import { AssetType, AudioAsset, StylesheetAsset, FontAsset, HtmlAsset, ImageAsset, JavaScriptAsset, JsonAsset, VideoAsset, XmlAsset } from "./Asset";
 import { Sprite } from "core/graphics/Sprite";
 import { GameCoreService } from "../service/GameCoreService";
 import { EventSystem } from "../events/EventSystem";
+import { AssetStorage } from "./AssetStorage";
+
+type LoaderMap = Record<AssetType['type'], (asset: any) => Promise<void>>
+type UnloaderMap = Record<AssetType['type'], (id: string) => void>
 
 export interface LoaderConfiguration {
 	manifest: AssetManifest;
@@ -22,6 +26,9 @@ export class AssetLoader {
 	private renderContext: CanvasRenderingContext2D;
 	private audioContext: AudioContext;
 	private domParser: DOMParser;
+
+	@GameCoreService(AssetStorage)
+	private assetStorage!: AssetStorage;
 
 	@GameCoreService(EventSystem)
 	private eventSystem!: EventSystem;
@@ -45,6 +52,44 @@ export class AssetLoader {
 		this.domParser = new DOMParser();
 	}
 
+	public async unload(bundleName: string) {
+		const bundle = this.manifest.bundles[bundleName];
+
+		if (!bundle) {
+			throw new GameError(`Bundle ${bundleName} does not exist in asset manifest`);
+		}
+
+		if (this.useCache && this.cache) {
+			const deletePromises = bundle.map(asset => this.cache.delete(asset.url));
+			await Promise.all(deletePromises);
+		}
+
+		const unloaders: UnloaderMap = {
+			image: (id) => this.assetStorage.deleteImage(id),
+			audio: (id) => this.assetStorage.deleteAudio(id),
+			video: (id) => this.assetStorage.deleteVideo(id),
+			font: (id) => this.assetStorage.deleteFont(id),
+			json: (id) => this.assetStorage.deleteJson(id),
+			xml: (id) => this.assetStorage.deleteXml(id),
+			html: (id) => this.assetStorage.deleteHtml(id),
+			css: (id) => this.assetStorage.deleteStylesheet(id),
+			javascript: (id) => this.assetStorage.deleteScript(id)
+		};
+
+		for (const asset of bundle) {
+			const unloader = unloaders[asset.type];
+
+			if (unloader) {
+				unloader(asset.id);
+			}
+		}
+
+		this.eventSystem.dispatch("bundleUnloaded", { 
+			bundle: bundleName,
+			removed: bundle.length
+		});
+	}
+
 	public async load(bundleName: string) {
 		const bundle = this.manifest.bundles[bundleName];
 
@@ -53,11 +98,7 @@ export class AssetLoader {
 		}
 
 		await this.loadBundle(bundle);
-		await this.loadAssets(bundle, bundleName);
-		this.eventSystem.dispatch("bundleLoaded", { bundle: bundleName });
-	}
-
-	private async loadAssets(bundle: AssetType[], bundleName: string) {
+		
 		const assets = this.resolveDependencies(bundle);
 		let loadedCount = 0;
 
@@ -68,15 +109,23 @@ export class AssetLoader {
 
 				this.dispatchBundleProgress(bundleName, loadedCount, bundle.length);
 			} catch (error) {
-				this.dispatchAssetError(asset, error);
+				throw new GameError(`Failed to load asset ${asset.id} of type ${asset.type}: ${error}`);
 			}
-		});
+		});	
 
-		await Promise.all(assetPromises);
+		const results = await Promise.allSettled(assetPromises);
+		const loaded = results.filter(result => result.status === "fulfilled");
+		const failed = results.filter(result => result.status === "rejected");
+
+		this.eventSystem.dispatch("bundleLoaded", { 
+			bundle: bundleName,
+			loaded: loaded.length,
+			failed: failed.length
+		});
 	}
 
 	private async loadAsset(asset: AssetType) {
-		const loaders: Record<AssetType['type'], (asset: any) => Promise<void>> = {
+		const loaders: LoaderMap = {
 			image: this.loadImage.bind(this),
 			audio: this.loadAudio.bind(this),
 			video: this.loadVideo.bind(this),
@@ -84,7 +133,7 @@ export class AssetLoader {
 			json: this.loadJson.bind(this),
 			xml: this.loadXml.bind(this),
 			html: this.loadHtml.bind(this),
-			css: this.loadCss.bind(this),
+			css: this.loadStylesheet.bind(this),
 			javascript: this.loadJavaScript.bind(this)
 		};
 
@@ -175,18 +224,10 @@ export class AssetLoader {
 
 	private dispatchBundleProgress(bundleName: string, current: number, total: number) {
 		this.eventSystem.dispatch("bundleProgress", {
-			bundleName,
+			bundle: bundleName,
 			current,
 			total,
 			progress: (current / total) * 100
-		});
-	}
-
-	private dispatchAssetError(asset: AssetType, error: unknown) {
-		this.eventSystem.dispatch("assetFailed", {
-			code: 500,
-			message: `Failed to load asset ${asset.id} of type ${asset.type}`,
-			error
 		});
 	}
 
@@ -223,59 +264,66 @@ export class AssetLoader {
 		const blob = await response.blob();
 		const url = URL.createObjectURL(blob);
 
-		const image = new Image();
-		image.src = url;
-		image.onload = () => {
-			URL.revokeObjectURL(url);
-		};
-		image.onerror = () => {
-			URL.revokeObjectURL(url);
-		};
+		try {
+			const image = await this.createImage(url);
+			const sprite = new Sprite(image);
+			this.assetStorage.setImage(asset.id, sprite);
 
-		const sprite = new Sprite(image);
+		} catch (error) {
+			throw new GameError(`Image load failed: ${asset.url}`);
+		} finally {
+			URL.revokeObjectURL(url);
+		}
+	}
 
-		this.eventSystem.dispatch("assetLoaded", {
-			assetID: asset.id,
-			assetType: "image",
-			payload: sprite
+	private createImage(url: string): Promise<HTMLImageElement> {
+		return new Promise((resolve, reject) => {
+			const image = new Image();
+			image.onload = () => resolve(image);
+			image.onerror = () => reject(new GameError(`Image failed to load: ${url}`));
+			image.src = url;
 		});
 	}
 
 	private async loadAudio(asset: AudioAsset) {
 		const response = await this.getResponse(asset.url);
 		const buffer = await response.arrayBuffer();
-		const audioBuffer = await this.audioContext.decodeAudioData(buffer);
 
-		const audioTrack = {
-			buffer: audioBuffer,
-			channel: asset.subtype
-		};
+		try {
+			const audioBuffer = await this.audioContext.decodeAudioData(buffer);
 
-		this.eventSystem.dispatch("assetLoaded", {
-			assetID: asset.id,
-			assetType: "audio",
-			payload: audioTrack
-		});
+			this.assetStorage.setAudio(asset.id, {
+				buffer: audioBuffer,
+				channel: asset.subtype
+			});
+		} catch (error) {
+			throw new GameError(`Audio decode failed: ${asset.url}`);
+		}
 	}
 
 	private async loadVideo(asset: VideoAsset) {
 		const response = await this.getResponse(asset.url);
 		const blob = await response.blob();
 		const url = URL.createObjectURL(blob);
+		
+		try {
+			const video = await this.createVideo(url);
+			this.assetStorage.setVideo(asset.id, video);
 
-		const video = document.createElement("video");
-		video.onload = () => {
+		} catch (error) {
+			throw new GameError(`Video load failed: ${asset.url}`);
+		} finally {
 			URL.revokeObjectURL(url);
-		};
-		video.onerror = () => {
-			URL.revokeObjectURL(url);
-		};
-		video.src = url;
+		}
+	}
 
-		this.eventSystem.dispatch("assetLoaded", {
-			assetID: asset.id,
-			assetType: "video",
-			payload: video
+	private async createVideo(url: string): Promise<HTMLVideoElement> {
+		return new Promise((resolve, reject) => {
+			const video = document.createElement("video");
+			video.preload = "auto";
+			video.onloadeddata = () => resolve(video);
+			video.onerror = () => reject(new GameError(`Video failed to load: ${url}`));
+			video.src = url;
 		});
 	}
 
@@ -286,22 +334,13 @@ export class AssetLoader {
 		const font = new FontFace(asset.id, buffer);
 		await font.load();
 
-		this.eventSystem.dispatch("assetLoaded", {
-			assetID: asset.id,
-			assetType: "font",
-			payload: font
-		});
+		this.assetStorage.setFont(asset.id, font);
 	}
 
 	private async loadJson(asset: JsonAsset) {
 		const response = await this.getResponse(asset.url);
 		const json = await response.json();
-
-		this.eventSystem.dispatch("assetLoaded", {
-			assetID: asset.id,
-			assetType: "json",
-			payload: json
-		});
+		this.assetStorage.setJson(asset.id, json);
 	}
 
 	private async loadXml(asset: XmlAsset) {
@@ -309,12 +348,7 @@ export class AssetLoader {
 		const text = await response.text();
 
 		const xml = this.domParser.parseFromString(text, "application/xml") as XMLDocument;
-
-		this.eventSystem.dispatch("assetLoaded", {
-			assetID: asset.id,
-			assetType: "xml",
-			payload: xml
-		});
+		this.assetStorage.setXml(asset.id, xml);
 	}
 
 	private async loadHtml(asset: HtmlAsset) {
@@ -322,33 +356,32 @@ export class AssetLoader {
 		const text = await response.text();
 
 		const html = this.domParser.parseFromString(text, "text/html");
-
-		this.eventSystem.dispatch("assetLoaded", {
-			assetID: asset.id,
-			assetType: "html",
-			payload: html
-		});
+		this.assetStorage.setHtml(asset.id, html);
 	}
 
-	private async loadCss(asset: CssAsset) {
+	private async loadStylesheet(asset: StylesheetAsset) {
 		const response = await this.getResponse(asset.url);
 		const blob = await response.blob();
 		const url = URL.createObjectURL(blob);
 
-		const css = document.createElement("link");
-		css.rel = "stylesheet";
-		css.onload = () => {
-			URL.revokeObjectURL(url);
-		};
-		css.onerror = () => {
-			URL.revokeObjectURL(url);
-		};
-		css.href = url;
+		try {
+			const stylesheet = await this.createStylesheet(url);
+			this.assetStorage.setStylesheet(asset.id, stylesheet);
 
-		this.eventSystem.dispatch("assetLoaded", {
-			assetID: asset.id,
-			assetType: "css",
-			payload: css
+		} catch (error) {
+			throw new GameError(`Stylesheet load failed: ${asset.url}`);
+		} finally {
+			URL.revokeObjectURL(url);
+		}
+	}
+
+	private createStylesheet(url: string): Promise<HTMLLinkElement> {
+		return new Promise((resolve, reject) => {
+			const link = document.createElement("link");
+			link.rel = "stylesheet";
+			link.onload = () => resolve(link);
+			link.onerror = () => reject(new GameError(`CSS failed to load: ${url}`));
+			link.href = url;
 		});
 	}
 
@@ -357,25 +390,25 @@ export class AssetLoader {
 		const blob = await response.blob();
 		const url = URL.createObjectURL(blob);
 
-		const script = document.createElement("script");
+		try {
+			const script = await this.createScript(url, asset.subtype);
+			this.assetStorage.setScript(asset.id, script);
 
-		if (asset.subtype === "module") {
-			script.type = asset.subtype;
-		}
-
-		script.async = true;
-		script.onload = () => {
-			URL.revokeObjectURL(url);
-		};
-		script.onerror = (e) => {
+		} catch (error) {
+			throw new GameError(`JavaScript load failed: ${asset.url}`);
+		} finally {
 			URL.revokeObjectURL(url);
 		}
-		script.src = url;
+	}
 
-		this.eventSystem.dispatch("assetLoaded", {
-			assetID: asset.id,
-			assetType: "javascript",
-			payload: script
+	private createScript(url: string, subtype: string): Promise<HTMLScriptElement> {
+		return new Promise((resolve, reject) => {
+			const script = document.createElement("script");
+			script.type = subtype === "module" ? "module" : "text/javascript";
+			script.async = true;
+			script.onload = () => resolve(script);
+			script.onerror = () => reject(new GameError(`JavaScript failed to load: ${url}`));
+			script.src = url;
 		});
 	}
 
