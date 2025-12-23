@@ -1,1 +1,10 @@
-import { GameEvent } from "core/events/GameEvent";export interface AssetLoadedEvent extends GameEvent {	assetID: string;}
+import { GameEvent } from "core/events/GameEvent";
+import { LoadableAssets } from "./LoadableAssets";
+
+export type AssetLoadedEvent = {
+    [K in keyof LoadableAssets]: GameEvent & {
+        assetID: string;
+        assetType: K;
+        payload: LoadableAssets[K];
+    }
+}[keyof LoadableAssets];

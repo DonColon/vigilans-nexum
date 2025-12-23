@@ -53,30 +53,62 @@ export class AssetLoader {
 		}
 
 		await this.loadBundle(bundle);
-
-		for (const asset of bundle) {
-			if (asset.type === "image") {
-				await this.loadImage(asset);
-			} else if (asset.type === "audio") {
-				await this.loadAudio(asset);
-			} else if (asset.type === "video") {
-				await this.loadVideo(asset);
-			} else if (asset.type === "font") {
-				await this.loadFont(asset);
-			} else if (asset.type === "json") {
-				await this.loadJson(asset);
-			} else if (asset.type === "xml") {
-				await this.loadXml(asset);
-			} else if (asset.type === "html") {
-				await this.loadHtml(asset);
-			} else if (asset.type === "css") {
-				await this.loadCss(asset);
-			} else if (asset.type === "javascript") {
-				await this.loadJavaScript(asset);
-			}
-		}
-
+		await this.loadAssets(bundle, bundleName);
 		this.eventSystem.dispatch("bundleLoaded", { bundle: bundleName });
+	}
+
+	private async loadAssets(bundle: AssetType[], bundleName: string) {
+		let loadedCount = 0;
+
+		const assetPromises = bundle.map(async (asset) => {
+			try {
+				await this.loadAsset(asset);
+				loadedCount++;
+
+				this.dispatchBundleProgress(bundleName, loadedCount, bundle.length);
+			} catch (error) {
+				this.dispatchAssetError(asset, error);
+			}
+		});
+
+		await Promise.all(assetPromises);
+	}
+
+	private async loadAsset(asset: AssetType) {
+		const loaders: Record<AssetType['type'], (asset: any) => Promise<void>> = {
+			image: this.loadImage.bind(this),
+			audio: this.loadAudio.bind(this),
+			video: this.loadVideo.bind(this),
+			font: this.loadFont.bind(this),
+			json: this.loadJson.bind(this),
+			xml: this.loadXml.bind(this),
+			html: this.loadHtml.bind(this),
+			css: this.loadCss.bind(this),
+			javascript: this.loadJavaScript.bind(this)
+		};
+
+		const loader = loaders[asset.type];
+		
+		if (loader) {
+			await loader(asset);
+		}
+	}
+
+	private dispatchBundleProgress(bundleName: string, current: number, total: number) {
+		this.eventSystem.dispatch("bundleProgress", {
+			bundleName,
+			current,
+			total,
+			progress: (current / total) * 100
+		});
+	}
+
+	private dispatchAssetError(asset: AssetType, error: unknown) {
+		this.eventSystem.dispatch("assetFailed", {
+			code: 500,
+			message: `Failed to load asset ${asset.id} of type ${asset.type}`,
+			error
+		});
 	}
 
 	private async loadBundle(bundle: AssetType[]) {
@@ -114,9 +146,20 @@ export class AssetLoader {
 
 		const image = new Image();
 		image.src = url;
+		image.onload = () => {
+			URL.revokeObjectURL(url);
+		};
+		image.onerror = () => {
+			URL.revokeObjectURL(url);
+		};
 
 		const sprite = new Sprite(image);
-		this.eventSystem.dispatch("imageLoaded", { assetID: asset.id, image: sprite });
+
+		this.eventSystem.dispatch("assetLoaded", {
+			assetID: asset.id,
+			assetType: "image",
+			payload: sprite
+		});
 	}
 
 	private async loadAudio(asset: AudioAsset) {
@@ -129,7 +172,11 @@ export class AssetLoader {
 			channel: asset.subtype
 		};
 
-		this.eventSystem.dispatch("audioLoaded", { assetID: asset.id, track: audioTrack });
+		this.eventSystem.dispatch("assetLoaded", {
+			assetID: asset.id,
+			assetType: "audio",
+			payload: audioTrack
+		});
 	}
 
 	private async loadVideo(asset: VideoAsset) {
@@ -138,9 +185,19 @@ export class AssetLoader {
 		const url = URL.createObjectURL(blob);
 
 		const video = document.createElement("video");
+		video.onload = () => {
+			URL.revokeObjectURL(url);
+		};
+		video.onerror = () => {
+			URL.revokeObjectURL(url);
+		};
 		video.src = url;
 
-		this.eventSystem.dispatch("videoLoaded", { assetID: asset.id, video: video });
+		this.eventSystem.dispatch("assetLoaded", {
+			assetID: asset.id,
+			assetType: "video",
+			payload: video
+		});
 	}
 
 	private async loadFont(asset: FontAsset) {
@@ -150,14 +207,22 @@ export class AssetLoader {
 		const font = new FontFace(asset.id, buffer);
 		await font.load();
 
-		this.eventSystem.dispatch("fontLoaded", { assetID: asset.id, font: font });
+		this.eventSystem.dispatch("assetLoaded", {
+			assetID: asset.id,
+			assetType: "font",
+			payload: font
+		});
 	}
 
 	private async loadJson(asset: JsonAsset) {
 		const response = await this.getResponse(asset.url);
 		const json = await response.json();
 
-		this.eventSystem.dispatch("jsonLoaded", { assetID: asset.id, json: json });
+		this.eventSystem.dispatch("assetLoaded", {
+			assetID: asset.id,
+			assetType: "json",
+			payload: json
+		});
 	}
 
 	private async loadXml(asset: XmlAsset) {
@@ -166,7 +231,11 @@ export class AssetLoader {
 
 		const xml = this.domParser.parseFromString(text, "application/xml") as XMLDocument;
 
-		this.eventSystem.dispatch("xmlLoaded", { assetID: asset.id, xml: xml });
+		this.eventSystem.dispatch("assetLoaded", {
+			assetID: asset.id,
+			assetType: "xml",
+			payload: xml
+		});
 	}
 
 	private async loadHtml(asset: HtmlAsset) {
@@ -175,7 +244,11 @@ export class AssetLoader {
 
 		const html = this.domParser.parseFromString(text, "text/html");
 
-		this.eventSystem.dispatch("htmlLoaded", { assetID: asset.id, html: html });
+		this.eventSystem.dispatch("assetLoaded", {
+			assetID: asset.id,
+			assetType: "html",
+			payload: html
+		});
 	}
 
 	private async loadCss(asset: CssAsset) {
@@ -185,9 +258,19 @@ export class AssetLoader {
 
 		const css = document.createElement("link");
 		css.rel = "stylesheet";
+		css.onload = () => {
+			URL.revokeObjectURL(url);
+		};
+		css.onerror = () => {
+			URL.revokeObjectURL(url);
+		};
 		css.href = url;
 
-		this.eventSystem.dispatch("cssLoaded", { assetID: asset.id, css: css });
+		this.eventSystem.dispatch("assetLoaded", {
+			assetID: asset.id,
+			assetType: "css",
+			payload: css
+		});
 	}
 
 	private async loadJavaScript(asset: JavaScriptAsset) {
@@ -202,9 +285,19 @@ export class AssetLoader {
 		}
 
 		script.async = true;
+		script.onload = () => {
+			URL.revokeObjectURL(url);
+		};
+		script.onerror = (e) => {
+			URL.revokeObjectURL(url);
+		}
 		script.src = url;
 
-		this.eventSystem.dispatch("scriptLoaded", { assetID: asset.id, script: script });
+		this.eventSystem.dispatch("assetLoaded", {
+			assetID: asset.id,
+			assetType: "javascript",
+			payload: script
+		});
 	}
 
 	private async getResponse(request: RequestInfo): Promise<Response> {
@@ -222,7 +315,7 @@ export class AssetLoader {
 
 			if (!response) {
 				response = await fetch(request);
-				this.responses.set(request, response);
+				this.responses.set(request, response.clone());
 			}
 
 			return response;

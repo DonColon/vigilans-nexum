@@ -1,17 +1,9 @@
 import { AudioTrack } from "core/audio/AudioTrack";
 import { Sprite } from "core/graphics/Sprite";
 import { GameError } from "core/GameError";
-import { AudioLoadedEvent } from "./AudioLoadedEvent";
-import { ImageLoadedEvent } from "./ImageLoadedEvent";
-import { FontLoadedEvent } from "./FontLoadedEvent";
-import { JsonLoadedEvent } from "./JsonLoadedEvent";
-import { XmlLoadedEvent } from "./XmlLoadedEvent";
-import { HtmlLoadedEvent } from "./HtmlLoadedEvent";
-import { CssLoadedEvent } from "./CssLoadedEvent";
-import { ScriptLoadedEvent } from "./ScriptLoadedEvent";
-import { VideoLoadedEvent } from "./VideoLoadedEvent";
 import { GameCoreService } from "../service/GameCoreService";
 import { EventSystem } from "../events/EventSystem";
+import { AssetLoadedEvent } from "./AssetLoadedEvent";
 
 @GameCoreService()
 export class AssetStorage {
@@ -33,51 +25,29 @@ export class AssetStorage {
 		this.xmls = new Map<string, XMLDocument>();
 		this.htmls = new Map<string, Document>();
 
-		this.eventSystem.subscribe("audioLoaded", (event) => this.onAudioLoaded(event));
-		this.eventSystem.subscribe("imageLoaded", (event) => this.onImageLoaded(event));
-		this.eventSystem.subscribe("videoLoaded", (event) => this.onVideoLoaded(event));
-		this.eventSystem.subscribe("fontLoaded", (event) => this.onFontLoaded(event));
-		this.eventSystem.subscribe("jsonLoaded", (event) => this.onJsonLoaded(event));
-		this.eventSystem.subscribe("xmlLoaded", (event) => this.onXmlLoaded(event));
-		this.eventSystem.subscribe("htmlLoaded", (event) => this.onHtmlLoaded(event));
-		this.eventSystem.subscribe("cssLoaded", (event) => this.onCssLoaded(event));
-		this.eventSystem.subscribe("scriptLoaded", (event) => this.onScriptLoaded(event));
+		this.eventSystem.subscribe("assetLoaded", (event) => this.onAssetLoaded(event));
 	}
 
-	private onImageLoaded(event: ImageLoadedEvent) {
-		this.images.set(event.assetID, event.image);
-	}
-
-	private onAudioLoaded(event: AudioLoadedEvent) {
-		this.audio.set(event.assetID, event.track);
-	}
-
-	private onVideoLoaded(event: VideoLoadedEvent) {
-		this.videos.set(event.assetID, event.video);
-	}
-
-	private onFontLoaded(event: FontLoadedEvent) {
-		document.fonts.add(event.font);
-	}
-
-	private onJsonLoaded(event: JsonLoadedEvent) {
-		this.jsons.set(event.assetID, event.json);
-	}
-
-	private onXmlLoaded(event: XmlLoadedEvent) {
-		this.xmls.set(event.assetID, event.xml);
-	}
-
-	private onHtmlLoaded(event: HtmlLoadedEvent) {
-		this.htmls.set(event.assetID, event.html);
-	}
-
-	private onCssLoaded(event: CssLoadedEvent) {
-		document.head.appendChild(event.css);
-	}
-
-	private onScriptLoaded(event: ScriptLoadedEvent) {
-		document.body.appendChild(event.script);
+	private onAssetLoaded(event: AssetLoadedEvent) {
+		if (event.assetType === "image") {
+			this.images.set(event.assetID, event.payload);
+		} else if (event.assetType === "audio") {
+			this.audio.set(event.assetID, event.payload);
+		} else if (event.assetType === "video") {
+			this.videos.set(event.assetID, event.payload);
+		} else if (event.assetType === "font") {
+			document.fonts.add(event.payload);
+		} else if (event.assetType === "json") {
+			this.jsons.set(event.assetID, event.payload);
+		} else if (event.assetType === "xml") {
+			this.xmls.set(event.assetID, event.payload);
+		} else if (event.assetType === "html") {
+			this.htmls.set(event.assetID, event.payload);
+		} else if (event.assetType === "css") {
+			document.head.appendChild(event.payload);
+		} else if (event.assetType === "javascript") {
+			document.body.appendChild(event.payload);
+		}
 	}
 
 	public getAudio(id: string): AudioTrack {
@@ -122,17 +92,17 @@ export class AssetStorage {
 		this.videos.set(id, video);
 	}
 
-	public getJson(id: string): object {
+	public getJson<T extends object>(id: string): T {
 		const json = this.jsons.get(id);
 
 		if (json === undefined) {
 			throw new GameError(`JSON ${id} does not exist`);
 		}
 
-		return json;
+		return json as T;
 	}
 
-	public setJson(id: string, json: object) {
+	public setJson<T extends object>(id: string, json: T) {
 		this.jsons.set(id, json);
 	}
 
