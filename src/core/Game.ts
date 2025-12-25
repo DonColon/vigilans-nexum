@@ -1,4 +1,4 @@
-import { EventSystem } from "./events/EventSystem";
+import { EventSystem, EventSystemConfig } from "./events/EventSystem";
 import { LocalDatabase, DatabaseConfiguration } from "./database/LocalDatabase";
 import { AssetStorage } from "./assets/AssetStorage";
 import { AssetLoader, LoaderConfiguration } from "./assets/AssetLoader";
@@ -23,6 +23,7 @@ export interface GameConfiguration {
 		state: GameStateConstructor | string;
 		bundle: string;
 	};
+	eventSystem: EventSystemConfig;
 	inputDevice: InputDeviceConfig;
 	assetLoader: LoaderConfiguration;
 	localDatabase: DatabaseConfiguration;
@@ -58,7 +59,7 @@ export class Game {
 		this.isRunning = false;
 		this.timer = 0;
 
-		this.eventSystem = new EventSystem();
+		this.eventSystem = new EventSystem(config.eventSystem);
 		this.localDatabase = new LocalDatabase(config.id, config.localDatabase);
 		this.assetStorage = new AssetStorage();
 		this.assetLoader = new AssetLoader(config.id, config.assetLoader);
