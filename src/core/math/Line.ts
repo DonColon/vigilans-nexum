@@ -24,13 +24,11 @@ export class Line {
 		return new Line(start.x, start.y, end.x, end.y);
 	}
 
-	public contains(point: Vector): boolean {
+	public contains(point: Vector, tolerance: number = 0.001): boolean {
 		const distanceStart = point.distanceBetween(this.start);
 		const distanceEnd = point.distanceBetween(this.end);
-
 		const length = this.getLength();
-		const tolerance = 0.1;
-
+		
 		return distanceStart + distanceEnd >= length - tolerance && distanceStart + distanceEnd <= length + tolerance;
 	}
 

@@ -110,8 +110,8 @@ export class Matrix {
 		const radian = toRadians(angle);
 
 		const transformation = new Matrix([
-			[1, Math.atan(radian), 0],
-			[Math.atan(radian), 1, 0],
+			[1, Math.tan(radian), 0],
+			[Math.tan(radian), 1, 0],
 			[0, 0, 1]
 		]);
 
@@ -123,7 +123,7 @@ export class Matrix {
 		const radian = toRadians(angle);
 
 		const transformation = new Matrix([
-			[1, Math.atan(radian), 0],
+			[1, Math.tan(radian), 0],
 			[0, 1, 0],
 			[0, 0, 1]
 		]);
@@ -137,7 +137,7 @@ export class Matrix {
 
 		const transformation = new Matrix([
 			[1, 0, 0],
-			[Math.atan(radian), 0, 0],
+			[Math.tan(radian), 1, 0],
 			[0, 0, 1]
 		]);
 
