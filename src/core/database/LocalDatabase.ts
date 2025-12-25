@@ -72,11 +72,15 @@ export class LocalDatabase {
 
 		try {
 			const result = await callback(accessor);
+
 			await promisifyTransaction(tx);
+
 			return result;
+
 		} catch (error) {
 			tx.abort();
-			throw new GameError(`Transaction failed: ${(error as Error).message}`);
+			throw new GameError(`Transaction failed: ${error}`);
+
 		} finally {
 			this.clearTransactions(stores);
 		}
