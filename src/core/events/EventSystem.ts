@@ -1,16 +1,27 @@
 import { GameCoreService } from "../service/GameCoreService";
 import { GameEvent } from "./GameEvent";
-import { EventHandler, EventNames, GameEvents } from "./GameEvents";
+import { EventHandler, EventNames, GameEvents, UnsubscribeFunction } from "./GameEvents";
 
 @GameCoreService()
 export class EventSystem {
 	private readonly subscribers: Map<EventNames, EventHandler<any>[]> = new Map<EventNames, EventHandler<any>[]>();
 
-	public subscribe<Name extends EventNames>(eventName: Name, handler: EventHandler<Name>) {
+	public subscribe<Name extends EventNames>(eventName: Name, handler: EventHandler<Name>): UnsubscribeFunction {
 		const handlers = this.subscribers.get(eventName) || [];
 		handlers.push(handler);
 
 		this.subscribers.set(eventName, handlers);
+
+		return () => this.unsubscribe(eventName, handler);
+	}
+
+	public subscribeOnce<Name extends EventNames>(eventName: Name, handler: EventHandler<Name>) {
+		const wrapper: EventHandler<Name> = (event) => {
+			handler(event);
+			this.unsubscribe(eventName, wrapper);
+		};
+
++		this.subscribe(eventName, wrapper);
 	}
 
 	public unsubscribe<Name extends EventNames>(eventName: Name, handler: EventHandler<Name>) {
@@ -30,7 +41,11 @@ export class EventSystem {
 		} as GameEvents[Name];
 
 		for (const handler of handlers) {
-			handler(event);
+			try {
+				handler(event);
+			} catch (error) {
+				console.error(`Error in event handler for event "${eventName}":`, error);
+			}
 		}
 	}
 

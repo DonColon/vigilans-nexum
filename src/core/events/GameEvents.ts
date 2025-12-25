@@ -3,6 +3,7 @@ import { BundleLoadedEvent, BundleProgressEvent, BundleUnloadedEvent } from "../
 
 export type EventNames = keyof GameEvents;
 export type EventHandler<Name extends EventNames> = (event: GameEvents[Name]) => void;
+export type UnsubscribeFunction = () => void;
 
 export interface GameEvents {
 	entityChanged: WorldEvent;
