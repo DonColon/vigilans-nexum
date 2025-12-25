@@ -11,7 +11,7 @@ interface LineParameters {
 	C: number;
 }
 
-export class Line {
+export class Line implements Shape {
 	private readonly start: Vector;
 	private readonly end: Vector;
 
@@ -111,6 +111,15 @@ export class Line {
 		const C = A * this.start.x + B * this.start.y;
 
 		return { A, B, C };
+	}
+
+	public getBounds(): Rectangle {
+		const minX = Math.min(this.start.x, this.end.x);
+        const minY = Math.min(this.start.y, this.end.y);
+        const maxX = Math.max(this.start.x, this.end.x);
+        const maxY = Math.max(this.start.y, this.end.y);
+		
+        return new Rectangle(minX, minY, maxX - minX, maxY - minY);
 	}
 
 	public getAngle(): number {

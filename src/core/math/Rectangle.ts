@@ -19,7 +19,7 @@ interface RectangleSides {
 	left: Line;
 }
 
-export class Rectangle {
+export class Rectangle implements Shape {
 	private readonly position: Vector;
 	private readonly dimension: Dimension;
 
@@ -114,6 +114,10 @@ export class Rectangle {
 			bottomLeft: this.position.add(new Vector(0, height)),
 			bottomRight: this.position.add(new Vector(width, height))
 		};
+	}
+
+	public getBounds(): Rectangle {
+		return this;
 	}
 
 	public getCenter(): Vector {

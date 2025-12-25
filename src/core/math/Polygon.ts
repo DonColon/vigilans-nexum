@@ -2,8 +2,9 @@ import { fillTuple } from "core/utils/Arrays";
 import { Shape } from "./Shape";
 import { Vector } from "./Vector";
 import { Line } from "./Line";
+import { Rectangle } from "./Rectangle";
 
-export class Polygon {
+export class Polygon implements Shape {
 	private readonly vertices: Vector[];
 
 	constructor(vertices: Vector[] = []) {
@@ -141,6 +142,27 @@ export class Polygon {
 		}
 
 		return sides;
+	}
+
+	public getBounds(): Rectangle {
+		if (this.vertices.length === 0) {
+            return new Rectangle(0, 0, 0, 0);
+        }
+
+        let minX = this.vertices[0].x;
+        let minY = this.vertices[0].y;
+        let maxX = this.vertices[0].x;
+        let maxY = this.vertices[0].y;
+
+        for (let i = 1; i < this.vertices.length; i++) {
+            const vertex = this.vertices[i];
+            minX = Math.min(minX, vertex.x);
+            minY = Math.min(minY, vertex.y);
+            maxX = Math.max(maxX, vertex.x);
+            maxY = Math.max(maxY, vertex.y);
+        }
+
+        return new Rectangle(minX, minY, maxX - minX, maxY - minY);
 	}
 
 	public addVertex(vertex: Vector): this {

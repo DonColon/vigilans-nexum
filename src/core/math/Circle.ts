@@ -4,7 +4,7 @@ import { Line } from "./Line";
 import { Rectangle } from "./Rectangle";
 import { Polygon } from "./Polygon";
 
-export class Circle {
+export class Circle implements Shape {
 	private readonly position: Vector;
 	private readonly radius: number;
 
@@ -78,6 +78,17 @@ export class Circle {
 	public getBorderPoint(angle: number): Vector {
 		const vector = Vector.ofAngle(angle);
 		return vector.multiply(this.radius).subtract(this.position);
+	}
+
+	public getBounds(): Rectangle {
+		const diameter = this.getDiameter();
+
+        return new Rectangle(
+            this.position.x - this.radius,
+            this.position.y - this.radius,
+            diameter,
+            diameter
+        );
 	}
 
 	public getArea(): number {
