@@ -1,12 +1,24 @@
 import { GameCoreService } from "../service/GameCoreService";
+import { EventHistory, EventHistoryConfig } from "./EventHistory";
 import { EventQueue } from "./EventQueue";
 import { GameEvent } from "./GameEvent";
 import { EventHandler, EventNames, EventSubscriber, GameEvents, UnsubscribeFunction } from "./GameEvents";
 
+export interface EventSystemConfig {
+	history: EventHistoryConfig;
+}
+
 @GameCoreService()
 export class EventSystem {
-	private readonly subscribers: Map<EventNames, EventSubscriber<any>[]> = new Map<EventNames, EventSubscriber<any>[]>();
-	private readonly queue: EventQueue = new EventQueue();
+	private readonly subscribers: Map<EventNames, EventSubscriber<any>[]>;
+	private readonly queue: EventQueue;
+	private readonly history: EventHistory;
+
+	constructor(config: EventSystemConfig) {
+		this.subscribers = new Map<EventNames, EventSubscriber<any>[]>();
+		this.queue = new EventQueue();
+		this.history = new EventHistory(config.history);
+	}
 
 	public subscribe<Name extends EventNames>(
 		eventName: Name, 
@@ -72,6 +84,7 @@ export class EventSystem {
 
 	private processEvent(event: GameEvent) {
 		const subscribers = this.subscribers.get(event.type) || [];
+		const startTime = performance.now();
 
 		for (const subscriber of subscribers) {
 			if (event.isPropagationStopped()) break;
@@ -82,6 +95,21 @@ export class EventSystem {
 				console.error(`Error in event handler for event "${event.type}":`, error);
 			}
 		}
+
+		const processingTime = performance.now() - startTime;
+		this.history.record(event, subscribers.length, processingTime);
+	}
+
+	public enableHistory() {
+		this.history.enable();
+	}
+
+	public disableHistory() {
+		this.history.disable();
+	}
+
+	public printEventStatistics() {
+		this.history.printStatistics();
 	}
 
 	public getSubscribers(name: EventNames): EventSubscriber<any>[] {
