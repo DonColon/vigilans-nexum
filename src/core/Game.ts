@@ -213,6 +213,9 @@ export class Game {
 
 	private update(elapsed: number, frame: number) {
 		this.inputDevice.update();
+
+		this.eventSystem.processQueue();
+
 		this.world.update(elapsed, frame);
 	}
 
