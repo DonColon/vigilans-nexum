@@ -1,5 +1,8 @@
+import { EventNames } from "core/events/GameEvents";
+
 export interface GameEvent {
-	type: string;
+	type: EventNames;
 	timestamp: number;
 	stopPropagation(): void;
+	isPropagationStopped: () => boolean;
 }

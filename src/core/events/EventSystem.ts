@@ -1,10 +1,12 @@
 import { GameCoreService } from "../service/GameCoreService";
+import { EventQueue } from "./EventQueue";
 import { GameEvent } from "./GameEvent";
 import { EventHandler, EventNames, EventSubscriber, GameEvents, UnsubscribeFunction } from "./GameEvents";
 
 @GameCoreService()
 export class EventSystem {
 	private readonly subscribers: Map<EventNames, EventSubscriber<any>[]> = new Map<EventNames, EventSubscriber<any>[]>();
+	private readonly queue: EventQueue = new EventQueue();
 
 	public subscribe<Name extends EventNames>(
 		eventName: Name, 
@@ -13,7 +15,7 @@ export class EventSystem {
 	): UnsubscribeFunction {
 		const subscribers = this.subscribers.get(eventName) || [];
 		subscribers.push({ priority, handler });
-		subscribers.sort((a, b) => (a.priority || 0) - (b.priority || 0));
+		subscribers.sort((value, other) => other.priority - value.priority);
 
 		this.subscribers.set(eventName, subscribers);
 
@@ -47,23 +49,37 @@ export class EventSystem {
 		eventName: Name, 
 		data: Omit<GameEvents[Name], keyof GameEvent>
 	) {
-		const subscribers = this.subscribers.get(eventName) || [];
 		let stopped = false;
 
 		const event = {
 			type: eventName,
 			timestamp: Date.now(),
 			stopPropagation: () => { stopped = true; },
+			isPropagationStopped: () => stopped,
 			...data
 		} as GameEvents[Name];
 
+		this.queue.enqueue(event);
+	}
+
+	public processQueue() {
+		const events = this.queue.dequeueAll();
+
+		for (const event of events) {
+			this.processEvent(event);
+		}
+	}
+
+	private processEvent(event: GameEvent) {
+		const subscribers = this.subscribers.get(event.type) || [];
+
 		for (const subscriber of subscribers) {
-			if (stopped) break;
-			
+			if (event.isPropagationStopped()) break;
+
 			try {
 				subscriber.handler(event);
 			} catch (error) {
-				console.error(`Error in event handler for event "${eventName}":`, error);
+				console.error(`Error in event handler for event "${event.type}":`, error);
 			}
 		}
 	}
