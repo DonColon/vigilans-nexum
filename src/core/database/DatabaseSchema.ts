@@ -1,48 +1,25 @@
 import { Savegame } from "core/model/Savegame";
 
-/**
- * Utility type that converts object keys to their literal types,
- * excluding string and number index signatures.
- */
-type LiteralKeysOnly<T> = {
-	[K in keyof T]: string extends K ? never : number extends K ? never : K;
+type KeysAsValues<Type> = {
+	[Key in keyof Type]: string extends Key ? never : number extends Key ? never : Key;
 };
 
-/**
- * Extracts all value types from an object type.
- */
-type ValueTypes<T> = T[keyof T];
+type ValuesOf<Type> = Type extends { [Key in keyof Type]: infer Value } ? Value : never;
+type KeysOf<Type> = ValuesOf<KeysAsValues<Type>> extends keyof Type ? ValuesOf<KeysAsValues<Type>> : never;
 
-/**
- * Extracts literal keys from a type.
- */
-type LiteralKeys<T> = ValueTypes<LiteralKeysOnly<T>>;
-
-/**
- * Represents the composite key structure for a database store.
- */
-interface StoreKey {
+interface DatabaseKeys {
 	[name: string]: IDBValidKey;
 }
 
-/**
- * Defines the structure of a database store.
- */
-interface StoreDefinition {
-	key: StoreKey;
+interface DatabaseStore {
+	key: DatabaseKeys;
 	type: unknown;
 }
 
-/**
- * Base schema interface for IndexedDB databases.
- */
 interface DatabaseSchema {
-	[storeName: string]: StoreDefinition;
+	[store: string]: DatabaseStore;
 }
 
-/**
- * Application-specific database schema.
- */
 export interface LocalDatabaseSchema extends DatabaseSchema {
 	savegames: {
 		key: {
@@ -52,7 +29,6 @@ export interface LocalDatabaseSchema extends DatabaseSchema {
 	};
 }
 
-// Type helpers for working with stores
-export type StoreNames = LiteralKeys<LocalDatabaseSchema>;
+export type StoreNames = KeysOf<LocalDatabaseSchema>;
 export type StoreType<Name extends StoreNames> = LocalDatabaseSchema[Name]["type"];
-export type StoreProperties<Name extends StoreNames> = LiteralKeys<StoreType<Name>>;
+export type StoreProperties<Name extends StoreNames> = KeysOf<StoreType<Name>>;
