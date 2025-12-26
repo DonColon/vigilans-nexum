@@ -2,6 +2,7 @@ import { toDegrees } from "core/utils/Maths";
 import { Shape } from "./Shape";
 import { Vector } from "./Vector";
 import { Circle } from "./Circle";
+import { Ellipse } from "./Ellipse";
 import { Rectangle } from "./Rectangle";
 import { Polygon } from "./Polygon";
 
@@ -36,6 +37,8 @@ export class Line implements Shape {
 		if (other instanceof Line) {
 			return this.intersectsWithLine(other);
 		} else if (other instanceof Circle) {
+			return other.intersects(this);
+		} else if (other instanceof Ellipse) {
 			return other.intersects(this);
 		} else if (other instanceof Rectangle) {
 			return other.intersects(this);

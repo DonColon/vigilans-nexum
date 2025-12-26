@@ -1,6 +1,7 @@
 import { Shape } from "./Shape";
 import { Vector } from "./Vector";
 import { Line } from "./Line";
+import { Ellipse } from "./Ellipse";
 import { Rectangle } from "./Rectangle";
 import { Polygon } from "./Polygon";
 
@@ -39,6 +40,8 @@ export class Circle implements Shape {
 			return this.intersectsWithLine(other);
 		} else if (other instanceof Circle) {
 			return this.intersectsWithCircle(other);
+		} else if (other instanceof Ellipse) {
+			return other.intersects(this);
 		} else if (other instanceof Rectangle) {
 			return other.intersects(this);
 		} else if (other instanceof Polygon) {

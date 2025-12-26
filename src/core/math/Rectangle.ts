@@ -3,6 +3,7 @@ import { Shape } from "./Shape";
 import { Vector } from "./Vector";
 import { Line } from "./Line";
 import { Circle } from "./Circle";
+import { Ellipse } from "./Ellipse";
 import { Polygon } from "./Polygon";
 
 interface RectangleCorners {
@@ -39,6 +40,8 @@ export class Rectangle implements Shape {
 			return this.intersectsWithLine(other);
 		} else if (other instanceof Circle) {
 			return this.intersectsWithCircle(other);
+		} else if (other instanceof Ellipse) {
+			return other.intersects(this);
 		} else if (other instanceof Rectangle) {
 			return this.intersectsWithRectangle(other);
 		} else if (other instanceof Polygon) {
