@@ -40,6 +40,12 @@ export class QuadTree {
             this.subdivide();
         }
 
+        // If subdivision failed (max depth reached), add to this node
+        if (!this.divided) {
+            this.entities.push(entity);
+            return true;
+        }
+
         // Try to insert into children
         return (
             this.northWest!.insert(entity) ||

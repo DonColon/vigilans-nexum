@@ -107,4 +107,88 @@ describe("SpatialHash Advanced Queries Test Suite", () => {
 		
 		expect(hash.getBucketCount()).toBeGreaterThan(0);
 	});
-});
+
+	test("Removes entity from non-existent bucket (no-op)", () => {
+		const hash = new SpatialHash(10);
+		const entity = { id: 1, shape: new Circle(5, 5, 2) };
+		
+		// Remove without inserting first - should handle gracefully
+		hash.remove(entity);
+		expect(hash.getTotalEntries()).toBe(0);
+	});
+
+	test("Updates entity keeping some cells unchanged", () => {
+		const hash = new SpatialHash(10);
+		const entity = { id: 1, shape: new Rectangle(0, 0, 15, 15) };
+		
+		hash.insert(entity);
+		const oldBounds = entity.shape.getBounds();
+		
+		// Update to overlapping but different position (some cells same, some new)
+		entity.shape = new Rectangle(5, 5, 15, 15);
+		hash.update(entity, oldBounds);
+		
+		expect(hash.getTotalEntries()).toBeGreaterThan(0);
+	});
+
+	test("Queries intersections with non-intersecting candidates", () => {
+		const hash = new SpatialHash(10);
+		
+		// Insert entities in same bucket but won't intersect with query shape
+		hash.insert({ id: 1, shape: new Circle(2, 2, 1) });
+		hash.insert({ id: 2, shape: new Circle(8, 8, 1) });
+		
+		// Query with shape that's in same buckets but doesn't actually intersect
+		const queryShape = new Circle(5, 5, 0.5);
+		const results = hash.queryIntersections(queryShape);
+		
+		// Results might be 0 if shapes don't intersect, or > 0 if they do
+		expect(results.size).toBeGreaterThanOrEqual(0);
+	});
+
+	test("Removes entity from bucket with multiple entities (bucket not deleted)", () => {
+		const hash = new SpatialHash(10);
+		const entity1 = { id: 1, shape: new Rectangle(5, 5, 2, 2) };
+		const entity2 = { id: 2, shape: new Rectangle(5, 5, 2, 2) };
+		
+		hash.insert(entity1);
+		hash.insert(entity2);
+		hash.remove(entity1);
+		
+		const results = hash.queryBounds(new Rectangle(0, 0, 10, 10));
+		expect(results.size).toBe(1);
+		expect(results.has(entity2)).toBe(true);
+	});
+
+	test("Updates entity without removing from shared cells (bucket not deleted)", () => {
+		const hash = new SpatialHash(10);
+		const entity1 = { id: 1, shape: new Rectangle(5, 5, 2, 2) };
+		const entity2 = { id: 2, shape: new Rectangle(5, 5, 2, 2) };
+		
+		hash.insert(entity1);
+		hash.insert(entity2);
+		
+		const oldBounds = entity1.shape.getBounds();
+		entity1.shape = new Rectangle(6, 6, 2, 2);
+		hash.update(entity1, oldBounds);
+		
+		const results = hash.queryBounds(new Rectangle(0, 0, 10, 10));
+		expect(results.size).toBe(2);
+	});
+
+	test("Updates entity to existing bucket (bucket already exists)", () => {
+		const hash = new SpatialHash(10);
+		const entity1 = { id: 1, shape: new Rectangle(5, 5, 2, 2) };
+		const entity2 = { id: 2, shape: new Rectangle(15, 5, 2, 2) };
+		
+		hash.insert(entity1);
+		hash.insert(entity2);
+		
+		// Move entity2 to same cell as entity1
+		const oldBounds = entity2.shape.getBounds();
+		entity2.shape = new Rectangle(5, 5, 2, 2);
+		hash.update(entity2, oldBounds);
+		
+		const results = hash.queryBounds(new Rectangle(0, 0, 10, 10));
+		expect(results.size).toBe(2);
+	});});

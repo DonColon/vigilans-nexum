@@ -53,8 +53,8 @@ describe("Ray Test Suite", () => {
 	});
 
 	test("Casts ray against line and misses", () => {
-		const ray = new Ray(new Vector(0, 0), new Vector(1, 0));
-		const line = Line.ofPoints(new Vector(-5, -5), new Vector(-5, 5));
+		const ray = new Ray(new Vector(0, 0), new Vector(1, 0)); // Ray going right
+		const line = Line.ofPoints(new Vector(-10, 5), new Vector(-5, 5)); // Line segment behind and above ray
 		
 		const hit = ray.castLine(line);
 		expect(hit).toBeNull();
