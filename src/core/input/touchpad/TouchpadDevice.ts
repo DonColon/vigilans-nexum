@@ -1,8 +1,8 @@
 import { Matrix } from "@/core/math/geometry/Matrix";
 import { Vector } from "@/core/math/geometry/Vector";
 import { Input, Pointer } from "@/core/input/Input";
-import { SwipeInput, SwipeInputType, ofAngle } from "@/core/input/SwipeInput";
-import { TouchInput, TouchInputType } from "@/core/input/TouchInput";
+import { SwipeInput, SwipeInputType, ofAngle } from "@/core/input/touchpad/SwipeInput";
+import { TouchInput, TouchInputType } from "@/core/input/touchpad/TouchInput";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { Display } from "@/core/graphics/Display";
 import { InputBuffer } from "@/core/input/InputBuffer";

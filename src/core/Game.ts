@@ -12,7 +12,7 @@ import { JsonSchema } from "@/core/ecs/JsonSchema";
 import { Entity, EntityType } from "@/core/ecs/Entity";
 import { SystemConstructor } from "@/core/ecs/System";
 import { GameStateConstructor } from "@/core/GameState";
-import { GameCommandConstructor } from "@/core/input/GameCommand";
+import { GameCommandConstructor } from "@/core/input/commands/GameCommand";
 import { Savegame } from "@/core/model/Savegame";
 
 export interface GameConfiguration {

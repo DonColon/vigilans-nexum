@@ -1,4 +1,4 @@
-import { GamepadInput, GamepadInputType } from "@/core/input/GamepadInput";
+import { GamepadInput, GamepadInputType } from "@/core/input/gamepad/GamepadInput";
 import { Input } from "@/core/input/Input";
 import { InputBuffer } from "@/core/input/InputBuffer";
 import { InputChannel } from "@/core/input/InputChannel";

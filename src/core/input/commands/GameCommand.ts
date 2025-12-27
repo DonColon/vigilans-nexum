@@ -1,4 +1,4 @@
-import { InputBinding } from "@/core/input/InputBinding";
+import { InputBinding } from "@/core/input/commands/InputBinding";
 
 export interface GameCommandConstructor {
 	new (): GameCommand;

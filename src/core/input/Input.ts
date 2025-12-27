@@ -1,10 +1,10 @@
 import { Vector } from "@/core/math/geometry/Vector";
 import { InputChannel } from "@/core/input/InputChannel";
-import { GamepadInputType } from "@/core/input/GamepadInput";
-import { KeyboardInputType } from "@/core/input/KeyboardInput";
-import { MouseInputType } from "@/core/input/MouseInput";
-import { SwipeInputType } from "@/core/input/SwipeInput";
-import { TouchInputType } from "@/core/input/TouchInput";
+import { GamepadInputType } from "@/core/input/gamepad/GamepadInput";
+import { KeyboardInputType } from "@/core/input/keyboard/KeyboardInput";
+import { MouseInputType } from "@/core/input/mouse/MouseInput";
+import { SwipeInputType } from "@/core/input/touchpad/SwipeInput";
+import { TouchInputType } from "@/core/input/touchpad/TouchInput";
 
 export type InputType = GamepadInputType | KeyboardInputType | MouseInputType | TouchInputType | SwipeInputType;
 

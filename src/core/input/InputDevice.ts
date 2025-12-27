@@ -2,16 +2,16 @@ import { GameError } from "@/core/GameError";
 import { Input, InputTypeMap } from "@/core/input/Input";
 import { InputState, InputStateType } from "@/core/input/InputState";
 import { InputChannel, InputChannelType } from "@/core/input/InputChannel";
-import { GamepadConfig, GamepadDevice } from "@/core/input/GamepadDevice";
-import { GamepadInputType } from "@/core/input/GamepadInput";
-import { KeyboardDevice } from "@/core/input/KeyboardDevice";
-import { KeyboardInputType } from "@/core/input/KeyboardInput";
-import { MouseDevice } from "@/core/input/MouseDevice";
-import { MouseInputType } from "@/core/input/MouseInput";
-import { TouchpadDevice } from "@/core/input/TouchpadDevice";
-import { SwipeInputType } from "@/core/input/SwipeInput";
-import { TouchInputType } from "@/core/input/TouchInput";
-import { GameCommand, GameCommandConstructor } from "@/core/input/GameCommand";
+import { GamepadConfig, GamepadDevice } from "@/core/input/gamepad/GamepadDevice";
+import { GamepadInputType } from "@/core/input/gamepad/GamepadInput";
+import { KeyboardDevice } from "@/core/input/keyboard/KeyboardDevice";
+import { KeyboardInputType } from "@/core/input/keyboard/KeyboardInput";
+import { MouseDevice } from "@/core/input/mouse/MouseDevice";
+import { MouseInputType } from "@/core/input/mouse/MouseInput";
+import { TouchpadDevice } from "@/core/input/touchpad/TouchpadDevice";
+import { SwipeInputType } from "@/core/input/touchpad/SwipeInput";
+import { TouchInputType } from "@/core/input/touchpad/TouchInput";
+import { GameCommand, GameCommandConstructor } from "@/core/input/commands/GameCommand";
 import { InputBuffer, InputBufferConfig } from "@/core/input/InputBuffer";
 
 export interface InputDeviceConfig {

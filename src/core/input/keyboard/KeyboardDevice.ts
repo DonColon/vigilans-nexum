@@ -2,7 +2,7 @@ import { Input } from "@/core/input/Input";
 import { InputBuffer } from "@/core/input/InputBuffer";
 import { InputChannel } from "@/core/input/InputChannel";
 import { InputState } from "@/core/input/InputState";
-import { KeyboardInput, KeyboardInputType } from "@/core/input/KeyboardInput";
+import { KeyboardInput, KeyboardInputType } from "@/core/input/keyboard/KeyboardInput";
 
 export class KeyboardDevice {
 	private keyboard: Map<KeyboardInputType, Input>;

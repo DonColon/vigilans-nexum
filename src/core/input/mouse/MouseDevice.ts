@@ -1,6 +1,6 @@
 import { Vector } from "@/core/math/geometry/Vector";
 import { Input, Pointer } from "@/core/input/Input";
-import { MouseInput, MouseInputType } from "@/core/input/MouseInput";
+import { MouseInput, MouseInputType } from "@/core/input/mouse/MouseInput";
 import { Display } from "@/core/graphics/Display";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { InputBuffer } from "@/core/input/InputBuffer";
