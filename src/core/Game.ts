@@ -1,19 +1,19 @@
-import { EventSystem, EventSystemConfig } from "./events/EventSystem";
-import { LocalDatabase, DatabaseConfiguration } from "./database/LocalDatabase";
-import { AssetStorage } from "./assets/AssetStorage";
-import { AssetLoader, LoaderConfiguration } from "./assets/AssetLoader";
-import { GameStateManager } from "./GameStateManager";
-import { Display, DisplayConfiguration } from "./graphics/Display";
-import { InputDevice, InputDeviceConfig } from "./input/InputDevice";
-import { AudioDevice, AudioConfiguration } from "./audio/AudioDevice";
-import { World } from "./ecs/World";
-import { ComponentConstructor } from "./ecs/Component";
-import { JsonSchema } from "./ecs/JsonSchema";
-import { Entity, EntityType } from "./ecs/Entity";
-import { SystemConstructor } from "./ecs/System";
-import { GameStateConstructor } from "./GameState";
-import { GameCommandConstructor } from "./input/GameCommand";
-import { Savegame } from "./model/Savegame";
+import { EventSystem, EventSystemConfig } from "@/core/events/EventSystem";
+import { LocalDatabase, DatabaseConfiguration } from "@/core/database/LocalDatabase";
+import { AssetStorage } from "@/core/assets/AssetStorage";
+import { AssetLoader, LoaderConfiguration } from "@/core/assets/AssetLoader";
+import { GameStateManager } from "@/core/GameStateManager";
+import { Display, DisplayConfiguration } from "@/core/graphics/Display";
+import { InputDevice, InputDeviceConfig } from "@/core/input/InputDevice";
+import { AudioDevice, AudioConfiguration } from "@/core/audio/AudioDevice";
+import { World } from "@/core/ecs/World";
+import { ComponentConstructor } from "@/core/ecs/Component";
+import { JsonSchema } from "@/core/ecs/JsonSchema";
+import { Entity, EntityType } from "@/core/ecs/Entity";
+import { SystemConstructor } from "@/core/ecs/System";
+import { GameStateConstructor } from "@/core/GameState";
+import { GameCommandConstructor } from "@/core/input/GameCommand";
+import { Savegame } from "@/core/model/Savegame";
 
 export interface GameConfiguration {
 	id: string;

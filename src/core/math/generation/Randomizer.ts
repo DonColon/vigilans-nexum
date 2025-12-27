@@ -1,4 +1,4 @@
-import { Tuple } from "./Arrays";
+import { Tuple } from "@/core/utils/Arrays";
 
 interface Range {
 	min?: number;

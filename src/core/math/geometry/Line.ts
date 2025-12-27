@@ -1,10 +1,10 @@
-import { toDegrees } from "core/utils/Maths";
-import { Shape } from "./Shape";
-import { Vector } from "./Vector";
-import { Circle } from "./Circle";
-import { Ellipse } from "./Ellipse";
-import { Rectangle } from "./Rectangle";
-import { Polygon } from "./Polygon";
+import { Angle } from "@/core/math/geometry/Angle";
+import { Shape } from "@/core/math/geometry/Shape";
+import { Vector } from "@/core/math/geometry/Vector";
+import { Circle } from "@/core/math/geometry/Circle";
+import { Ellipse } from "@/core/math/geometry/Ellipse";
+import { Rectangle } from "@/core/math/geometry/Rectangle";
+import { Polygon } from "@/core/math/geometry/Polygon";
 
 interface LineParameters {
 	A: number;
@@ -127,7 +127,7 @@ export class Line implements Shape {
 
 	public getAngle(): number {
 		const slope = this.getSlope();
-		return toDegrees(Math.atan(slope));
+		return Angle.toDegrees(Math.atan(slope));
 	}
 
 	public getSlope(): number {

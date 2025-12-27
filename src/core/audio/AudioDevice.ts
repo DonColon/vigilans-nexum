@@ -1,8 +1,8 @@
-import { GameError } from "core/GameError";
-import { UserGestures } from "core/UserGestures";
-import { AudioChannel } from "./AudioChannel";
-import { GameCoreService } from "../service/GameCoreService";
-import { AssetStorage } from "../assets/AssetStorage";
+import { GameError } from "@/core/GameError";
+import { UserGestures } from "@/core/UserGestures";
+import { AudioChannel } from "@/core/audio/AudioChannel";
+import { GameCoreService } from "@/core/service/GameCoreService";
+import { AssetStorage } from "@/core/assets/AssetStorage";
 
 export interface AudioConfiguration {
 	channels: string[];

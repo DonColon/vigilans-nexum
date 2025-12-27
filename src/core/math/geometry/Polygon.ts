@@ -1,8 +1,8 @@
-import { fillTuple } from "core/utils/Arrays";
-import { Shape } from "./Shape";
-import { Vector } from "./Vector";
-import { Line } from "./Line";
-import { Rectangle } from "./Rectangle";
+import { fillTuple } from "@/core/utils/Arrays";
+import { Shape } from "@/core/math/geometry/Shape";
+import { Vector } from "@/core/math/geometry/Vector";
+import { Line } from "@/core/math/geometry/Line";
+import { Rectangle } from "@/core/math/geometry/Rectangle";
 
 export class Polygon implements Shape {
 	private readonly vertices: Vector[];

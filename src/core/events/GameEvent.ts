@@ -1,4 +1,4 @@
-import { EventNames } from "core/events/GameEvents";
+import { EventNames } from "@/core/events/GameEvents";
 
 export interface GameEvent {
 	type: EventNames;

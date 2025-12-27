@@ -1,8 +1,8 @@
-import { GameCoreService } from "../service/GameCoreService";
-import { EventHistory, EventHistoryConfig } from "./EventHistory";
-import { EventQueue } from "./EventQueue";
-import { GameEvent } from "./GameEvent";
-import { EventHandler, EventNames, EventSubscriber, GameEvents, UnsubscribeFunction } from "./GameEvents";
+import { GameCoreService } from "@/core/service/GameCoreService";
+import { EventHistory, EventHistoryConfig } from "@/core/events/EventHistory";
+import { EventQueue } from "@/core/events/EventQueue";
+import { GameEvent } from "@/core/events/GameEvent";
+import { EventHandler, EventNames, EventSubscriber, GameEvents, UnsubscribeFunction } from "@/core/events/GameEvents";
 
 export interface EventSystemConfig {
 	history: EventHistoryConfig;

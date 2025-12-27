@@ -1,6 +1,6 @@
-import { Vector } from "./Vector";
-import { Rectangle } from "./Rectangle";
-import { Line } from "./Line";
+import { Vector } from "@/core/math/geometry/Vector";
+import { Rectangle } from "@/core/math/geometry/Rectangle";
+import { Line } from "@/core/math/geometry/Line";
 
 /**
  * Represents a Bezier curve with support for quadratic and cubic curves.

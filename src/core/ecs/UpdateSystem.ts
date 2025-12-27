@@ -1,1 +1,3 @@
-import { System } from "./System";export abstract class UpdateSystem extends System {}
+import { System } from "@/core/ecs/System";
+
+export abstract class UpdateSystem extends System {}

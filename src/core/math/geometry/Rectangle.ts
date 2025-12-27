@@ -1,10 +1,10 @@
-import { Dimension } from "./Dimension";
-import { Shape } from "./Shape";
-import { Vector } from "./Vector";
-import { Line } from "./Line";
-import { Circle } from "./Circle";
-import { Ellipse } from "./Ellipse";
-import { Polygon } from "./Polygon";
+import { Dimension } from "@/core/math/geometry/Dimension";
+import { Shape } from "@/core/math/geometry/Shape";
+import { Vector } from "@/core/math/geometry/Vector";
+import { Line } from "@/core/math/geometry/Line";
+import { Circle } from "@/core/math/geometry/Circle";
+import { Ellipse } from "@/core/math/geometry/Ellipse";
+import { Polygon } from "@/core/math/geometry/Polygon";
 
 interface RectangleCorners {
 	topLeft: Vector;

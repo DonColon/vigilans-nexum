@@ -1,9 +1,9 @@
-import { Shape } from "./Shape";
-import { Vector } from "./Vector";
-import { Line } from "./Line";
-import { Rectangle } from "./Rectangle";
-import { Circle } from "./Circle";
-import { Polygon } from "./Polygon";
+import { Shape } from "@/core/math/geometry/Shape";
+import { Vector } from "@/core/math/geometry/Vector";
+import { Line } from "@/core/math/geometry/Line";
+import { Rectangle } from "@/core/math/geometry/Rectangle";
+import { Circle } from "@/core/math/geometry/Circle";
+import { Polygon } from "@/core/math/geometry/Polygon";
 
 export class Ellipse implements Shape {
     private readonly center: Vector;

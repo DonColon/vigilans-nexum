@@ -1,8 +1,8 @@
-import { Input } from "./Input";
-import { InputBuffer } from "./InputBuffer";
-import { InputChannel } from "./InputChannel";
-import { InputState } from "./InputState";
-import { KeyboardInput, KeyboardInputType } from "./KeyboardInput";
+import { Input } from "@/core/input/Input";
+import { InputBuffer } from "@/core/input/InputBuffer";
+import { InputChannel } from "@/core/input/InputChannel";
+import { InputState } from "@/core/input/InputState";
+import { KeyboardInput, KeyboardInputType } from "@/core/input/KeyboardInput";
 
 export class KeyboardDevice {
 	private keyboard: Map<KeyboardInputType, Input>;

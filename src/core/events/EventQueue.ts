@@ -1,5 +1,5 @@
-import { EventNames, GameEvents } from "core/events/GameEvents";
-import { GameEvent } from "./GameEvent";
+import { EventNames, GameEvents } from "@/core/events/GameEvents";
+import { GameEvent } from "@/core/events/GameEvent";
 
 export class EventQueue {
     private readonly queue: GameEvent[] = [];

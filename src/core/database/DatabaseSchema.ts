@@ -1,4 +1,4 @@
-import { Savegame } from "core/model/Savegame";
+import { Savegame } from "@/core/model/Savegame";
 
 type KeysAsValues<Type> = {
 	[Key in keyof Type]: string extends Key ? never : number extends Key ? never : Key;

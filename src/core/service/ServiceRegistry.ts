@@ -1,4 +1,4 @@
-import { Constructor } from "./ConstructorType";
+import { Constructor } from "@/core/service/ConstructorType";
 
 export class ServiceRegistry {
     private static services = new Map<string, any>();

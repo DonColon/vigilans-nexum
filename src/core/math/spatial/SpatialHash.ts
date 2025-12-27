@@ -1,6 +1,6 @@
-import { Rectangle } from "./Rectangle";
-import { Vector } from "./Vector";
-import { Shape } from "./Shape";
+import { Rectangle } from "@/core/math/geometry/Rectangle";
+import { Vector } from "@/core/math/geometry/Vector";
+import { Shape } from "@/core/math/geometry/Shape";
 
 export interface ShapeEntity {
     id: string | number;

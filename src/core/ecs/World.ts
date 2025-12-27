@@ -1,16 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { GameError } from "core/GameError";
-import { JsonSchema } from "./JsonSchema";
-import { ComponentConstructor } from "./Component";
-import { Entity, EntityType } from "./Entity";
-import { System, SystemConstructor } from "./System";
-import { UpdateSystem } from "./UpdateSystem";
-import { RenderSystem } from "./RenderSystem";
-import { GameStateConstructor } from "core/GameState";
-import { GameCoreService } from "../service/GameCoreService";
-import { EventSystem } from "../events/EventSystem";
-import { binaryInsert } from "../utils/Arrays";
+import { GameError } from "@/core/GameError";
+import { JsonSchema } from "@/core/ecs/JsonSchema";
+import { ComponentConstructor } from "@/core/ecs/Component";
+import { Entity, EntityType } from "@/core/ecs/Entity";
+import { System, SystemConstructor } from "@/core/ecs/System";
+import { UpdateSystem } from "@/core/ecs/UpdateSystem";
+import { RenderSystem } from "@/core/ecs/RenderSystem";
+import { GameStateConstructor } from "@/core/GameState";
+import { GameCoreService } from "@/core/service/GameCoreService";
+import { EventSystem } from "@/core/events/EventSystem";
+import { binaryInsert } from "@/core/utils/Arrays";
 
 @GameCoreService()
 export class World {

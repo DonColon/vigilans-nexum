@@ -1,4 +1,4 @@
-import { JsonSchema } from "./JsonSchema";
+import { JsonSchema } from "@/core/ecs/JsonSchema";
 
 export type ComponentConstructor<T extends JsonSchema> = new (data: T) => Component<T>;
 

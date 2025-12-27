@@ -1,4 +1,4 @@
-import { Vector } from "./Vector";
+import { Vector } from "@/core/math/geometry/Vector";
 
 /**
  * Represents a node in the pathfinding grid

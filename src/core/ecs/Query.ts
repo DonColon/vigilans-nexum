@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { WorldEvent } from "./WorldEvent";
-import { Entity } from "./Entity";
-import { EventSystem } from "../events/EventSystem";
-import { GameCoreService } from "../service/GameCoreService";
-import { World } from "./World";
+import { WorldEvent } from "@/core/ecs/WorldEvent";
+import { Entity } from "@/core/ecs/Entity";
+import { EventSystem } from "@/core/events/EventSystem";
+import { GameCoreService } from "@/core/service/GameCoreService";
+import { World } from "@/core/ecs/World";
 
 export interface QueryList {
 	[queryName: string]: Query;

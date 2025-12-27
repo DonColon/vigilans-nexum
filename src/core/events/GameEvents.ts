@@ -1,5 +1,5 @@
-import { WorldEvent } from "../ecs/WorldEvent";
-import { BundleLoadedEvent, BundleProgressEvent, BundleUnloadedEvent } from "../assets/BundleEvents";
+import { WorldEvent } from "@/core/ecs/WorldEvent";
+import { BundleLoadedEvent, BundleProgressEvent, BundleUnloadedEvent } from "@/core/assets/BundleEvents";
 
 export type EventNames = keyof GameEvents;
 export type EventHandler<Name extends EventNames> = (event: GameEvents[Name]) => void;

@@ -1,8 +1,8 @@
-import { GameCoreService } from "../service/GameCoreService";
-import { InputType } from "./Input";
-import { InputChannelType } from "./InputChannel";
-import { InputDevice } from "./InputDevice";
-import { InputStateType } from "./InputState";
+import { GameCoreService } from "@/core/service/GameCoreService";
+import { InputType } from "@/core/input/Input";
+import { InputChannelType } from "@/core/input/InputChannel";
+import { InputDevice } from "@/core/input/InputDevice";
+import { InputStateType } from "@/core/input/InputState";
 
 interface SimpleInputBinding {
 	channel: InputChannelType;

@@ -1,4 +1,4 @@
-import { Vector } from "core/math/Vector";
+import { Vector } from "@/core/math/geometry/Vector";
 
 /**
  * Perlin Noise implementation for procedural generation.

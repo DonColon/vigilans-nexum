@@ -1,4 +1,4 @@
-import { GameError } from "../GameError";
+import { GameError } from "@/core/GameError";
 
 /**
  * Represents a numeric range with min and max values.

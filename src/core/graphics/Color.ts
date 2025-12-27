@@ -1,4 +1,4 @@
-import { HEX, HSL, HWB, RGB, hex2rgb, hsl2hwb, hsl2rgb, hwb2hsl, rgb2hex, rgb2hsl } from "./ColorSpaces";
+import { HEX, HSL, HWB, RGB, hex2rgb, hsl2hwb, hsl2rgb, hwb2hsl, rgb2hex, rgb2hsl } from "@/core/graphics/ColorSpaces";
 
 type ColorSettings = HEX & RGB & HSL & HWB;
 

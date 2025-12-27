@@ -1,6 +1,6 @@
-import { EventSystem } from "../events/EventSystem";
-import { GameCoreService } from "../service/GameCoreService";
-import { UpdateSystem } from "./UpdateSystem";
+import { EventSystem } from "@/core/events/EventSystem";
+import { GameCoreService } from "@/core/service/GameCoreService";
+import { UpdateSystem } from "@/core/ecs/UpdateSystem";
 
 export abstract class ReactiveSystem extends UpdateSystem {
     @GameCoreService(EventSystem)

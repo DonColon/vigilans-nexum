@@ -1,4 +1,4 @@
-import { QueryList } from "./Query";
+import { QueryList } from "@/core/ecs/Query";
 
 export type SystemConstructor = new (priority: number) => System;
 

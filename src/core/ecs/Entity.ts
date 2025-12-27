@@ -1,13 +1,13 @@
-import { GameError } from "core/GameError";
-import { randomUUID } from "core/utils/Randomizer";
-import { JsonSchema } from "./JsonSchema";
-import { Component, ComponentConstructor } from "./Component";
-import { GameStateManager } from "core/GameStateManager";
-import { GameStateConstructor } from "core/GameState";
-import { EventSystem } from "../events/EventSystem";
-import { GameCoreService } from "../service/GameCoreService";
-import { World } from "./World";
-import { ServiceRegistry } from "../service/ServiceRegistry";
+import { GameError } from "@/core/GameError";
+import { randomUUID } from "@/core/math/generation/Randomizer";
+import { JsonSchema } from "@/core/ecs/JsonSchema";
+import { Component, ComponentConstructor } from "@/core/ecs/Component";
+import { GameStateManager } from "@/core/GameStateManager";
+import { GameStateConstructor } from "@/core/GameState";
+import { EventSystem } from "@/core/events/EventSystem";
+import { GameCoreService } from "@/core/service/GameCoreService";
+import { World } from "@/core/ecs/World";
+import { ServiceRegistry } from "@/core/service/ServiceRegistry";
 
 export interface EntityType {
 	id: string;

@@ -1,4 +1,4 @@
-import { Vector } from "./Vector";
+import { Vector } from "@/core/math/geometry/Vector";
 
 /**
  * Represents a single waypoint in a path

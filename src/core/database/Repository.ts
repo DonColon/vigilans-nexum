@@ -1,5 +1,5 @@
-import { StoreNames, StoreProperties, StoreType } from "./DatabaseSchema";
-import { promisifyRequest, promisifyTransaction } from "./PromiseUtils";
+import { StoreNames, StoreProperties, StoreType } from "@/core/database/DatabaseSchema";
+import { promisifyRequest, promisifyTransaction } from "@/core/database/PromiseUtils";
 
 export interface RepositorySettings {
     autoIncrement?: boolean;

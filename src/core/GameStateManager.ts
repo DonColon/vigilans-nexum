@@ -1,6 +1,6 @@
-import { GameError } from "./GameError";
-import { GameState, GameStateConstructor } from "./GameState";
-import { GameCoreService } from "./service/GameCoreService";
+import { GameError } from "@/core/GameError";
+import { GameState, GameStateConstructor } from "@/core/GameState";
+import { GameCoreService } from "@/core/service/GameCoreService";
 
 @GameCoreService()
 export class GameStateManager {

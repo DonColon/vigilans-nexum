@@ -1,6 +1,6 @@
 // ========== src/core/di/GameCoreService.ts ==========
-import { Constructor } from './ConstructorType';
-import { ServiceRegistry } from './ServiceRegistry';
+import { Constructor } from '@/core/service/ConstructorType';
+import { ServiceRegistry } from '@/core/service/ServiceRegistry';
 
 /**
  * @GameCoreService - Multi-Purpose Decorator

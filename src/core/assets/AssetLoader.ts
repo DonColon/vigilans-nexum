@@ -1,10 +1,10 @@
-import { GameError } from "core/GameError";
-import { AssetManifest } from "./AssetManifest";
-import { AssetType, AudioAsset, StylesheetAsset, FontAsset, HtmlAsset, ImageAsset, JavaScriptAsset, JsonAsset, VideoAsset, XmlAsset } from "./Asset";
-import { Sprite } from "core/graphics/Sprite";
-import { GameCoreService } from "../service/GameCoreService";
-import { EventSystem } from "../events/EventSystem";
-import { AssetStorage } from "./AssetStorage";
+import { GameError } from "@/core/GameError";
+import { AssetManifest } from "@/core/assets/AssetManifest";
+import { AssetType, AudioAsset, StylesheetAsset, FontAsset, HtmlAsset, ImageAsset, JavaScriptAsset, JsonAsset, VideoAsset, XmlAsset } from "@/core/assets/Asset";
+import { Sprite } from "@/core/graphics/Sprite";
+import { GameCoreService } from "@/core/service/GameCoreService";
+import { EventSystem } from "@/core/events/EventSystem";
+import { AssetStorage } from "@/core/assets/AssetStorage";
 
 type LoaderMap = Record<AssetType['type'], (asset: any) => Promise<void>>
 type UnloaderMap = Record<AssetType['type'], (id: string) => void>

@@ -1,5 +1,5 @@
-import { Rectangle } from "./Rectangle";
-import { ShapeEntity } from "./SpatialHash";
+import { Rectangle } from "@/core/math/geometry/Rectangle";
+import { ShapeEntity } from "@/core/math/spatial/SpatialHash";
 
 export class QuadTree {
     private readonly bounds: Rectangle;

@@ -1,5 +1,5 @@
-import { EventNames } from "core/events/GameEvents";
-import { GameEvent } from "./GameEvent";
+import { EventNames } from "@/core/events/GameEvents";
+import { GameEvent } from "@/core/events/GameEvent";
 
 export interface EventRecord {
     event: GameEvent;

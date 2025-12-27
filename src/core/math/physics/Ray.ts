@@ -1,10 +1,10 @@
-import { Vector } from "./Vector";
-import { Line } from "./Line";
-import { Circle } from "./Circle";
-import { Rectangle } from "./Rectangle";
-import { Ellipse } from "./Ellipse";
-import { Polygon } from "./Polygon";
-import { Shape } from "./Shape";
+import { Vector } from "@/core/math/geometry/Vector";
+import { Line } from "@/core/math/geometry/Line";
+import { Circle } from "@/core/math/geometry/Circle";
+import { Rectangle } from "@/core/math/geometry/Rectangle";
+import { Ellipse } from "@/core/math/geometry/Ellipse";
+import { Polygon } from "@/core/math/geometry/Polygon";
+import { Shape } from "@/core/math/geometry/Shape";
 
 /**
  * Represents the result of a ray intersection test

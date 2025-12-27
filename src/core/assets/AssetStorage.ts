@@ -1,7 +1,7 @@
-import { AudioTrack } from "core/audio/AudioTrack";
-import { Sprite } from "core/graphics/Sprite";
-import { GameError } from "core/GameError";
-import { GameCoreService } from "../service/GameCoreService";
+import { AudioTrack } from "@/core/audio/AudioTrack";
+import { Sprite } from "@/core/graphics/Sprite";
+import { GameError } from "@/core/GameError";
+import { GameCoreService } from "@/core/service/GameCoreService";
 
 @GameCoreService()
 export class AssetStorage {

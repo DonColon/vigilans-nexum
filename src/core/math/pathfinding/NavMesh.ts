@@ -1,6 +1,6 @@
-import { Vector } from "./Vector";
-import { Polygon } from "./Polygon";
-import { Rectangle } from "./Rectangle";
+import { Vector } from "@/core/math/geometry/Vector";
+import { Polygon } from "@/core/math/geometry/Polygon";
+import { Rectangle } from "@/core/math/geometry/Rectangle";
 
 /**
  * Simple navigation polygon

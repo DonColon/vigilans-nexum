@@ -1,9 +1,9 @@
-import { Shape } from "./Shape";
-import { Vector } from "./Vector";
-import { Line } from "./Line";
-import { Ellipse } from "./Ellipse";
-import { Rectangle } from "./Rectangle";
-import { Polygon } from "./Polygon";
+import { Shape } from "@/core/math/geometry/Shape";
+import { Vector } from "@/core/math/geometry/Vector";
+import { Line } from "@/core/math/geometry/Line";
+import { Ellipse } from "@/core/math/geometry/Ellipse";
+import { Rectangle } from "@/core/math/geometry/Rectangle";
+import { Polygon } from "@/core/math/geometry/Polygon";
 
 export class Circle implements Shape {
 	private readonly position: Vector;

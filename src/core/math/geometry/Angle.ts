@@ -1,4 +1,4 @@
-import { Vector } from "core/math/Vector";
+import { Vector } from "@/core/math/geometry/Vector";
 
 /**
  * Represents an angle with automatic normalization and useful operations.

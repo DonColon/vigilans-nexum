@@ -1,8 +1,8 @@
-import { GamepadInput, GamepadInputType } from "./GamepadInput";
-import { Input } from "./Input";
-import { InputBuffer } from "./InputBuffer";
-import { InputChannel } from "./InputChannel";
-import { InputState } from "./InputState";
+import { GamepadInput, GamepadInputType } from "@/core/input/GamepadInput";
+import { Input } from "@/core/input/Input";
+import { InputBuffer } from "@/core/input/InputBuffer";
+import { InputChannel } from "@/core/input/InputChannel";
+import { InputState } from "@/core/input/InputState";
 
 export interface GamepadConfig {
 	axisThreshold: number;

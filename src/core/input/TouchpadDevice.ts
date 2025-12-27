@@ -1,13 +1,13 @@
-import { Matrix } from "core/math/Matrix";
-import { Vector } from "core/math/Vector";
-import { Input, Pointer } from "./Input";
-import { SwipeInput, SwipeInputType, ofAngle } from "./SwipeInput";
-import { TouchInput, TouchInputType } from "./TouchInput";
-import { GameCoreService } from "../service/GameCoreService";
-import { Display } from "../graphics/Display";
-import { InputBuffer } from "./InputBuffer";
-import { InputChannel } from "./InputChannel";
-import { InputState } from "./InputState";
+import { Matrix } from "@/core/math/geometry/Matrix";
+import { Vector } from "@/core/math/geometry/Vector";
+import { Input, Pointer } from "@/core/input/Input";
+import { SwipeInput, SwipeInputType, ofAngle } from "@/core/input/SwipeInput";
+import { TouchInput, TouchInputType } from "@/core/input/TouchInput";
+import { GameCoreService } from "@/core/service/GameCoreService";
+import { Display } from "@/core/graphics/Display";
+import { InputBuffer } from "@/core/input/InputBuffer";
+import { InputChannel } from "@/core/input/InputChannel";
+import { InputState } from "@/core/input/InputState";
 
 export class TouchpadDevice {
 	private touchpad: Map<SwipeInputType, Input>;

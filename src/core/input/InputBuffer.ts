@@ -1,6 +1,6 @@
-import { InputType } from "./Input";
-import { InputChannelType } from "./InputChannel";
-import { InputState, InputStateType } from "./InputState";
+import { InputType } from "@/core/input/Input";
+import { InputChannelType } from "@/core/input/InputChannel";
+import { InputState, InputStateType } from "@/core/input/InputState";
 
 interface BufferedInput {
     channel: InputChannelType;

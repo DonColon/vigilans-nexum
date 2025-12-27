@@ -1,7 +1,7 @@
-import { Vector } from "./Vector";
-import { BezierCurve } from "./BezierCurve";
-import { Rectangle } from "./Rectangle";
-import { Line } from "./Line";
+import { Vector } from "@/core/math/geometry/Vector";
+import { BezierCurve } from "@/core/math/curves/BezierCurve";
+import { Rectangle } from "@/core/math/geometry/Rectangle";
+import { Line } from "@/core/math/geometry/Line";
 
 /**
  * Represents a path composed of multiple Bezier curves.

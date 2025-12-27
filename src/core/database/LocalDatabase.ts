@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { GameError } from "core/GameError";
-import { Repository, RepositorySettings } from "./Repository";
-import { StoreNames } from "./DatabaseSchema";
-import { GameCoreService } from "../service/GameCoreService";
-import { promisifyTransaction } from "./PromiseUtils";
+import { GameError } from "@/core/GameError";
+import { Repository, RepositorySettings } from "@/core/database/Repository";
+import { StoreNames } from "@/core/database/DatabaseSchema";
+import { GameCoreService } from "@/core/service/GameCoreService";
+import { promisifyTransaction } from "@/core/database/PromiseUtils";
 
 export interface DatabaseConfiguration {
 	version: number;

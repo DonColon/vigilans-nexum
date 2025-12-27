@@ -1,4 +1,4 @@
-import { GameEvent } from "core/events/GameEvent";
+import { GameEvent } from "@/core/events/GameEvent";
 
 interface BundleEvent extends GameEvent {
 	bundle: string;

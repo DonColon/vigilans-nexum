@@ -1,9 +1,9 @@
-import { GameError } from "../GameError";
-import { Vector } from "../math/Vector";
-import { Dimension } from "../math/Dimension";
-import { Graphics } from "./Graphics";
-import { DisplayOrientationType } from "./DisplayOrientation";
-import { GameCoreService } from "../service/GameCoreService";
+import { GameError } from "@/core/GameError";
+import { Vector } from "@/core/math/geometry/Vector";
+import { Dimension } from "@/core/math/geometry/Dimension";
+import { Graphics } from "@/core/graphics/Graphics";
+import { DisplayOrientationType } from "@/core/graphics/DisplayOrientation";
+import { GameCoreService } from "@/core/service/GameCoreService";
 
 export interface DisplayConfiguration {
 	dimension?: Dimension;

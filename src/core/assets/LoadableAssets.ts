@@ -1,5 +1,5 @@
-import { AudioTrack } from "../audio/AudioTrack";
-import { Sprite } from "../graphics/Sprite";
+import { AudioTrack } from "@/core/audio/AudioTrack";
+import { Sprite } from "@/core/graphics/Sprite";
 
 export interface LoadableAssets {
     "image": Sprite;
