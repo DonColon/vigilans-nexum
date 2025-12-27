@@ -9,6 +9,22 @@ const gameConfiguration: GameConfiguration = {
 		state: "StartScreen",
 		bundle: "StartScreen"
 	},
+	eventSystem: {
+		history: {
+			enabled: true,
+			maxSize: 100
+		}	
+	},
+	inputDevice: {
+		gamepad: {
+			axisThreshold: 0.5,
+			deadZone: 0.1
+		},
+		buffer: {
+			bufferFrames: 5,
+			bufferTime: 200
+		}
+	},
 	assetLoader: {
 		manifest: assetManifest,
 		useCache: true

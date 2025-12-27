@@ -24,7 +24,7 @@ export class Entity {
 	@GameCoreService(EventSystem)
 	private eventSystem!: EventSystem;
 
-	@GameCoreService(World)
+	@GameCoreService("World")
 	private world!: World;
 
 	constructor(private readonly id: string = randomUUID()) {
