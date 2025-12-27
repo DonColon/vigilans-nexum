@@ -3,6 +3,7 @@ import { Component } from "../../../src/core/ecs/Component";
 import { World } from "../../../src/core/ecs/World";
 import { Query } from "../../../src/core/ecs/Query";
 import { ServiceRegistry } from "../../../src/core/service/ServiceRegistry";
+import { EventSystem } from "../../../src/core/events/EventSystem";
 
 suite("Query Test Suite", () => {
 	class PointComponent extends Component<{
@@ -16,21 +17,24 @@ suite("Query Test Suite", () => {
 	}> {}
 
 	const world = ServiceRegistry.get<World>(World.name);
+	const eventSystem = ServiceRegistry.get<EventSystem>(EventSystem.name);
 	world.registerComponent(PointComponent);
 	world.registerComponent(MoveComponent);
 
-	const query = new Query({
-		allowlist: ["PointComponent"],
-		blocklist: ["MoveComponent"]
-	});
-
 	test("Query updates when entity changes", () => {
+		const query = new Query({
+			allowlist: ["PointComponent"],
+			blocklist: ["MoveComponent"]
+		});
+
 		const entity = world.createEntity("1337");
 		entity.addComponent(PointComponent, { x: 10, y: 20 });
 
 		const other = world.createEntity("4711");
 		other.addComponent(PointComponent, { x: 10, y: 20 });
 		other.addComponent(MoveComponent, { dx: 1, dy: 2 });
+
+		eventSystem.processQueue();
 
 		const results = query.getResult();
 		expect(results[0].getID()).toEqual("1337");
@@ -48,6 +52,8 @@ suite("Query Test Suite", () => {
 			allowlist: ["PointComponent"],
 			blocklist: ["MoveComponent"]
 		});
+
+		eventSystem.processQueue();
 
 		const results = otherQuery.getResult();
 		expect(results[0].getID()).toEqual("1337");

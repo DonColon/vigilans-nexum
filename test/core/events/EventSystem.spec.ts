@@ -16,8 +16,11 @@ suite("EventSystem Test Suite", () => {
 		eventSystem.subscribe("bundleLoaded", handler);
 
 		const subscribers = eventSystem.getSubscribers("bundleLoaded");
-		expect(subscribers[0]).toBe(handler);
+		expect(subscribers[0].handler).toBe(handler);
 		expect(subscribers).toHaveLength(1);
+
+		// Cleanup: unsubscribe to not affect other tests
+		eventSystem.unsubscribe("bundleLoaded", handler);
 	});
 
 	test("Unsubscribe event handler from an event", () => {
@@ -28,7 +31,7 @@ suite("EventSystem Test Suite", () => {
 
 		let subscribers = eventSystem.getSubscribers("bundleLoaded");
 		expect(subscribers).toHaveLength(0);
-		eventSystem.unsubscribe("bundleLoaded", handler);
+
 
 		eventSystem.subscribe("bundleLoaded", handler);
 		eventSystem.unsubscribe("bundleLoaded", handler);
