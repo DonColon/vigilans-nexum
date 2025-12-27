@@ -1,5 +1,5 @@
 import { Dimension } from "@/core/math/geometry/Dimension";
-import { Graphics } from "@/core/graphics/Graphics";
+import { Graphics } from "@/core/graphics/rendering/Graphics";
 
 export class Sprite {
 	private dimension: Dimension;

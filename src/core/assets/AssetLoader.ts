@@ -1,7 +1,7 @@
 import { GameError } from "@/core/GameError";
 import { AssetManifest } from "@/core/assets/AssetManifest";
 import { AssetType, AudioAsset, StylesheetAsset, FontAsset, HtmlAsset, ImageAsset, JavaScriptAsset, JsonAsset, VideoAsset, XmlAsset } from "@/core/assets/Asset";
-import { Sprite } from "@/core/graphics/Sprite";
+import { Sprite } from "@/core/graphics/components/Sprite";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { EventSystem } from "@/core/events/EventSystem";
 import { AssetStorage } from "@/core/assets/AssetStorage";

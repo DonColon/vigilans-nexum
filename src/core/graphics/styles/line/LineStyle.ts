@@ -1,5 +1,5 @@
-import { LineCap, LineCapType } from "@/core/graphics/LineCap";
-import { LineJoin, LineJoinType } from "@/core/graphics/LineJoin";
+import { LineCap, LineCapType } from "@/core/graphics/styles/line/LineCap";
+import { LineJoin, LineJoinType } from "@/core/graphics/styles/line/LineJoin";
 
 export interface LineStyleSettings {
 	width?: number;

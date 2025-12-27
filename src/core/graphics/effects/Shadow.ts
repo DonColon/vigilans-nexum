@@ -1,4 +1,4 @@
-import { Color } from "@/core/graphics/Color";
+import { Color } from "@/core/graphics/color/Color";
 
 export interface ShadowSettings {
 	color?: Color;

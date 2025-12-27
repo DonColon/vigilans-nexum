@@ -1,7 +1,7 @@
 import { Dimension } from "@/core/math/geometry/Dimension";
 import { Vector } from "@/core/math/geometry/Vector";
-import { FontStyle } from "@/core/graphics/FontStyle";
-import { TextStyle } from "@/core/graphics/TextStyle";
+import { FontStyle } from "@/core/graphics/styles/text/FontStyle";
+import { TextStyle } from "@/core/graphics/styles/text/TextStyle";
 
 export interface LabelSettings {
 	text: string;

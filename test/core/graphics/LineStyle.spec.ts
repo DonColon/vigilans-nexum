@@ -1,8 +1,8 @@
 import { test, expect, suite } from "vitest";
 
-import { LineStyle } from "../../../src/core/graphics/LineStyle";
-import { LineCap } from "../../../src/core/graphics/LineCap";
-import { LineJoin } from "../../../src/core/graphics/LineJoin";
+import { LineStyle } from "../../../src/core/graphics/styles/line/LineStyle";
+import { LineCap } from "../../../src/core/graphics/styles/line/LineCap";
+import { LineJoin } from "../../../src/core/graphics/styles/line/LineJoin";
 
 suite("LineStyle Class Unit Tests", () => {
 	test("should create a line style object", () => {

@@ -1,18 +1,20 @@
-import { GraphicsContext } from "@/core/graphics/GraphicsContext";
-import { CompositeOperationType } from "@/core/graphics/CompositeOperation";
-import { SmoothingQualityType } from "@/core/graphics/SmoothingQuality";
+import { GraphicsContext } from "@/core/graphics/rendering/GraphicsContext";
+import { CompositeOperationType } from "@/core/graphics/rendering/CompositeOperation";
+import { SmoothingQualityType } from "@/core/graphics/rendering/SmoothingQuality";
 
 import { Line } from "@/core/math/geometry/Line";
 import { Circle } from "@/core/math/geometry/Circle";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { Polygon } from "@/core/math/geometry/Polygon";
 
-import { Color } from "@/core/graphics/Color";
-import { Shadow, ShadowSettings } from "@/core/graphics/Shadow";
-import { LineStyle, LineStyleSettings } from "@/core/graphics/LineStyle";
-import { TextStyle, TextStyleSettings } from "@/core/graphics/TextStyle";
-import { FontStyle, FontStyleSettings } from "@/core/graphics/FontStyle";
-import { Label, LabelSettings } from "@/core/graphics/Label";
+import { Color } from "@/core/graphics/color/Color";
+import { Shadow, ShadowSettings } from "@/core/graphics/effects/Shadow";
+import { LineStyle, LineStyleSettings } from "@/core/graphics/styles/line/LineStyle";
+import { TextStyle, TextStyleSettings } from "@/core/graphics/styles/text/TextStyle";
+import { FontStyle, FontStyleSettings } from "@/core/graphics/styles/text/FontStyle";
+import { Label, LabelSettings } from "@/core/graphics/components/Label";
+import { AssetStorage } from "@/core/assets/AssetStorage";
+import { GameCoreService } from "@/core/service/GameCoreService";
 
 export class Graphics extends GraphicsContext {
 	private globalShadowStyle: Shadow;
@@ -22,6 +24,9 @@ export class Graphics extends GraphicsContext {
 
 	private globalFillColor: Color;
 	private globalStrokeColor: Color;
+
+	@GameCoreService(AssetStorage)
+	private assetStorage!: AssetStorage
 
 	constructor(context: CanvasRenderingContext2D) {
 		super(context);
@@ -308,7 +313,7 @@ export class Graphics extends GraphicsContext {
 	}
 
 	public drawSprite(id: string, x: number, y: number): this {
-		const image = assetStorage.getImage(id);
+		const image = this.assetStorage.getImage(id);
 		image.display(this, x, y);
 		return this;
 	}

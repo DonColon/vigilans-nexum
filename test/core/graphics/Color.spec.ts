@@ -1,5 +1,5 @@
 import { test, expect, suite } from "vitest";
-import { Color } from "../../../src/core/graphics/Color";
+import { Color } from "../../../src/core/graphics/color/Color";
 
 suite("Color Test Suite", () => {
 	test("Create a color with hex code", () => {

@@ -1,6 +1,6 @@
-import { TextAlign, TextAlignType } from "@/core/graphics/TextAlign";
-import { TextBaseline, TextBaselineType } from "@/core/graphics/TextBaseline";
-import { TextDirection, TextDirectionType } from "@/core/graphics/TextDirection";
+import { TextAlign, TextAlignType } from "@/core/graphics/styles/text/TextAlign";
+import { TextBaseline, TextBaselineType } from "@/core/graphics/styles/text/TextBaseline";
+import { TextDirection, TextDirectionType } from "@/core/graphics/styles/text/TextDirection";
 
 export interface TextStyleSettings {
 	align?: TextAlignType;

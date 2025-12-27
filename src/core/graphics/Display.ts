@@ -1,7 +1,7 @@
 import { GameError } from "@/core/GameError";
 import { Vector } from "@/core/math/geometry/Vector";
 import { Dimension } from "@/core/math/geometry/Dimension";
-import { Graphics } from "@/core/graphics/Graphics";
+import { Graphics } from "@/core/graphics/rendering/Graphics";
 import { DisplayOrientationType } from "@/core/graphics/DisplayOrientation";
 import { GameCoreService } from "@/core/service/GameCoreService";
 
