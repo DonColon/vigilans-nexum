@@ -1,5 +1,5 @@
 import { test, expect } from "vitest";
-import { anyOf, randomBoolean, randomBooleans, randomDecimal, randomDecimals, randomInteger, randomIntegers, randomUUID } from "../../../src/core/math/generation/Randomizer";
+import { anyOf, randomBoolean, randomBooleans, randomDecimal, randomDecimals, randomInteger, randomIntegers, randomUUID } from "@/core/math/generation/Randomizer";
 
 test("Generate random integer", () => {
 	const value = randomInteger({

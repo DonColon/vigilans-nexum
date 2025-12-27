@@ -1,8 +1,9 @@
 import { test, expect } from "vitest";
-import { Vector } from "../../../src/core/math/geometry/Vector";
-import { Circle } from "../../../src/core/math/geometry/Circle";
-import { Rectangle } from "../../../src/core/math/geometry/Rectangle";
-import { Polygon } from "../../../src/core/math/geometry/Polygon";
+import { Vector } from "@/core/math/geometry/Vector";
+import { Circle } from "@/core/math/geometry/Circle";
+import { Rectangle } from "@/core/math/geometry/Rectangle";
+import { Polygon } from "@/core/math/geometry/Polygon";
+import { Ellipse } from "@/core/math/geometry/Ellipse";
 
 test("Create circle from three points", () => {
 	const start = new Vector(0, 6);
@@ -93,4 +94,16 @@ test("Get diameter of circle", () => {
 	const result = value.getDiameter();
 
 	expect(result).toBe(12);
+});
+
+test("Circle intersects with ellipse", () => {
+	const value = new Circle(0, 0, 4);
+	const positiveValue = new Ellipse(0, 0, 10, 5);
+	const negativeValue = new Ellipse(100, 100, 10, 5);
+
+	let result = value.intersects(positiveValue);
+	expect(result).toBeTruthy();
+
+	result = value.intersects(negativeValue);
+	expect(result).toBeFalsy();
 });

@@ -1,6 +1,6 @@
 import { test, expect } from "vitest";
-import { Vector } from "../../../src/core/math/geometry/Vector";
-import { Polygon } from "../../../src/core/math/geometry/Polygon";
+import { Vector } from "@/core/math/geometry/Vector";
+import { Polygon } from "@/core/math/geometry/Polygon";
 
 test("Create convex hull from points", () => {
 	const negativeValue = new Vector(2, 3);
@@ -104,4 +104,24 @@ test("Remove vertex from polygon", () => {
 
 	const vertices = value.getVertices();
 	expect(vertices).toHaveLength(3);
+});
+
+test("Get bounds of empty polygon", () => {
+	const value = new Polygon([]);
+	const bounds = value.getBounds();
+
+	expect(bounds.getPosition().x).toBe(0);
+	expect(bounds.getPosition().y).toBe(0);
+	expect(bounds.getWidth()).toBe(0);
+	expect(bounds.getHeight()).toBe(0);
+});
+
+test("Get bounds of polygon", () => {
+	const value = new Polygon([new Vector(0, 0), new Vector(10, 0), new Vector(10, 5), new Vector(0, 5)]);
+	const bounds = value.getBounds();
+
+	expect(bounds.getPosition().x).toBe(0);
+	expect(bounds.getPosition().y).toBe(0);
+	expect(bounds.getWidth()).toBe(10);
+	expect(bounds.getHeight()).toBe(5);
 });

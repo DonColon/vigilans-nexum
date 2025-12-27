@@ -1,8 +1,9 @@
 import { test, expect } from "vitest";
-import { Vector } from "../../../src/core/math/geometry/Vector";
-import { Rectangle } from "../../../src/core/math/geometry/Rectangle";
-import { Polygon } from "../../../src/core/math/geometry/Polygon";
-import { Circle } from "../../../src/core/math/geometry/Circle";
+import { Vector } from "@/core/math/geometry/Vector";
+import { Rectangle } from "@/core/math/geometry/Rectangle";
+import { Polygon } from "@/core/math/geometry/Polygon";
+import { Circle } from "@/core/math/geometry/Circle";
+import { Ellipse } from "@/core/math/geometry/Ellipse";
 
 test("Rectangle contains point", () => {
 	const value = new Rectangle(0, 0, 10, 5);
@@ -114,4 +115,16 @@ test("Get height of rectangle", () => {
 	const result = value.getHeight();
 
 	expect(result).toBe(5);
+});
+
+test("Rectangle intersects with ellipse", () => {
+	const value = new Rectangle(0, 0, 10, 5);
+	const positiveValue = new Ellipse(0, 0, 15, 8);
+	const negativeValue = new Ellipse(100, 100, 10, 5);
+
+	let result = value.intersects(positiveValue);
+	expect(result).toBeTruthy();
+
+	result = value.intersects(negativeValue);
+	expect(result).toBeFalsy();
 });

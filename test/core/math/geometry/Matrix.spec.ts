@@ -1,6 +1,6 @@
 import { test, expect } from "vitest";
-import { Matrix } from "../../../src/core/math/geometry/Matrix";
-import { Vector } from "../../../src/core/math/geometry/Vector";
+import { Matrix } from "@/core/math/geometry/Matrix";
+import { Vector } from "@/core/math/geometry/Vector";
 
 test("Create matrix from array", () => {
 	const array = [

@@ -1,5 +1,5 @@
 import { test, expect } from "vitest";
-import { Vector } from "../../../src/core/math/geometry/Vector";
+import { Vector } from "@/core/math/geometry/Vector";
 
 test("Create vector from array", () => {
 	const values = [2, 3, 4];

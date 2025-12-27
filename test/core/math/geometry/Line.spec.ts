@@ -1,9 +1,10 @@
 import { test, expect } from "vitest";
-import { Line } from "../../../src/core/math/geometry/Line";
-import { Vector } from "../../../src/core/math/geometry/Vector";
-import { Circle } from "../../../src/core/math/geometry/Circle";
-import { Rectangle } from "../../../src/core/math/geometry/Rectangle";
-import { Polygon } from "../../../src/core/math/geometry/Polygon";
+import { Line } from "@/core/math/geometry/Line";
+import { Vector } from "@/core/math/geometry/Vector";
+import { Circle } from "@/core/math/geometry/Circle";
+import { Rectangle } from "@/core/math/geometry/Rectangle";
+import { Polygon } from "@/core/math/geometry/Polygon";
+import { Ellipse } from "@/core/math/geometry/Ellipse";
 
 test("Create line from two points", () => {
 	const start = new Vector(0, 0);
@@ -142,4 +143,26 @@ test("Get center of line", () => {
 	expect(result.x).toBe(3);
 	expect(result.y).toBe(0);
 	expect(result.z).toBe(0);
+});
+
+test("Get bounds of line", () => {
+	const value = new Line(2, 3, 8, 10);
+	const bounds = value.getBounds();
+
+	expect(bounds.getPosition().x).toBe(2);
+	expect(bounds.getPosition().y).toBe(3);
+	expect(bounds.getWidth()).toBe(6);
+	expect(bounds.getHeight()).toBe(7);
+});
+
+test("Line intersects with ellipse", () => {
+	const value = new Line(0, 0, 10, 0);
+	const positiveValue = new Ellipse(5, 0, 8, 4);
+	const negativeValue = new Ellipse(100, 100, 10, 5);
+
+	let result = value.intersects(positiveValue);
+	expect(result).toBeTruthy();
+
+	result = value.intersects(negativeValue);
+	expect(result).toBeFalsy();
 });
