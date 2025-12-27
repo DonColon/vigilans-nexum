@@ -1,11 +1,11 @@
 import { test, expect, suite } from "vitest";
-import { Entity } from "../../../src/core/ecs/Entity";
-import { Component } from "../../../src/core/ecs/Component";
-import { World } from "../../../src/core/ecs/World";
-import { GameState } from "../../../src/core/GameState";
-import { GameStateManager } from "../../../src/core/GameStateManager";
-import { GameError } from "../../../src/core/GameError";
-import { ServiceRegistry } from "../../../src/core/service/ServiceRegistry";
+import { Entity } from "@/core/ecs/Entity";
+import { Component } from "@/core/ecs/Component";
+import { World } from "@/core/ecs/World";
+import { GameState } from "@/core/GameState";
+import { GameStateManager } from "@/core/GameStateManager";
+import { GameError } from "@/core/GameError";
+import { ServiceRegistry } from "@/core/service/ServiceRegistry";
 
 suite("Entity Test Suite", () => {
 	class PointComponent extends Component<{
@@ -179,5 +179,17 @@ suite("Entity Test Suite", () => {
 
 		entity.enable();
 		expect(entity.isEnabled()).toBeTruthy();
+	});
+
+	test("Add component and state without world service", () => {
+		// Test that accessing world property directly works when injected
+		const entity = new Entity();
+		entity.addComponent(PointComponent, { x: 100, y: 200 });
+		expect(entity.getComponentData(PointComponent)).toEqual({ x: 100, y: 200 });
+
+		entity.addState(JumpState);
+		const stateManager = entity.getStateManager();
+		const registeredStates = stateManager.getRegisteredStates();
+		expect(registeredStates[0]).toBeInstanceOf(JumpState);
 	});
 });

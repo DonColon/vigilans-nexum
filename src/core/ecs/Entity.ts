@@ -55,9 +55,7 @@ export class Entity {
 	}
 
 	public addComponent<T extends JsonSchema>(componentType: ComponentConstructor<T>, data: T): this {
-		const world = this.world ?? ServiceRegistry.get<World>(World.name);
-
-		if (!world.hasComponent(componentType)) {
+		if (!this.world.hasComponent(componentType)) {
 			throw new GameError(`${componentType.name} not defined in world`);
 		}
 
@@ -104,9 +102,7 @@ export class Entity {
 	}
 
 	public addState(stateType: GameStateConstructor): this {
-		const world = this.world ?? ServiceRegistry.get<World>(World.name);
-
-		if (!world.hasEntityState(stateType)) {
+		if (!this.world.hasEntityState(stateType)) {
 			throw new GameError(`${stateType.name} not defined in world`);
 		}
 

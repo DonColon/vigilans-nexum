@@ -1,13 +1,14 @@
 import { test, expect, suite, vi } from "vitest";
-import { World } from "../../../src/core/ecs/World";
-import { Component } from "../../../src/core/ecs/Component";
-import { GameError } from "../../../src/core/GameError";
-import { GameState } from "../../../src/core/GameState";
-import { EntityType } from "../../../src/core/ecs/Entity";
-import { Query } from "../../../src/core/ecs/Query";
-import { UpdateSystem } from "../../../src/core/ecs/UpdateSystem";
-import { RenderSystem } from "../../../src/core/ecs/RenderSystem";
-import { ServiceRegistry } from "../../../src/core/service/ServiceRegistry";
+import { World } from "@/core/ecs/World";
+import { Component } from "@/core/ecs/Component";
+import { GameError } from "@/core/GameError";
+import { GameState } from "@/core/GameState";
+import { EntityType } from "@/core/ecs/Entity";
+import { Query } from "@/core/ecs/Query";
+import { UpdateSystem } from "@/core/ecs/UpdateSystem";
+import { RenderSystem } from "@/core/ecs/RenderSystem";
+import { System } from "@/core/ecs/System";
+import { ServiceRegistry } from "@/core/service/ServiceRegistry";
 
 suite("World Test Suite", () => {
 	class PointComponent extends Component<{
@@ -16,6 +17,8 @@ suite("World Test Suite", () => {
 	}> {}
 
 	class JumpState extends GameState {
+		onPause(): void {}
+		onResume(): void {}
 		onEnter() {}
 		onExit() {}
 	}
@@ -229,11 +232,52 @@ suite("World Test Suite", () => {
 		expect(updateSystems).toHaveLength(0);
 	});
 
+	test("Unregister a render system from the world (unscheduleSystem else branch)", () => {
+		const world = new World();
+		world.registerSystem(MapSystem, 0);
+		world.unregisterSystem(MapSystem);
+
+		expect(() => world.getSystem(MapSystem)).toThrowError(GameError);
+
+		const renderSystems = world.getRenderSchedule();
+		expect(renderSystems).toHaveLength(0);
+	});
+
 	test("World has a system", () => {
 		const world = new World();
 		world.registerSystem(MovementSystem, 0);
 
 		expect(world.hasSystem(MovementSystem)).toBeTruthy();
 		expect(world.hasSystem("MovementSystem")).toBeTruthy();
+	});
+
+	test("Throw error when registering system that is neither UpdateSystem nor RenderSystem", () => {
+		// Create a system that extends System directly but is neither UpdateSystem nor RenderSystem
+		class InvalidSystem extends System {
+			queries = {};
+			public initialize(): void {}
+			public execute(): void {}
+		}
+
+		const world = new World();
+		expect(() => world.registerSystem(InvalidSystem, 0))
+			.toThrowError("System InvalidSystem is neither an UpdateSystem nor a RenderSystem");
+	});
+
+	test("Throw error when unregistering system that is neither UpdateSystem nor RenderSystem", () => {
+		// Create a system that extends System directly
+		class InvalidSystem extends System {
+			queries = {};
+			public initialize(): void {}
+			public execute(): void {}
+		}
+
+		const world = new World();
+		// We need to bypass the scheduleSystem check to test unscheduleSystem
+		const invalidSystem = new InvalidSystem(0);
+		(world as any).systems.set(InvalidSystem.name, invalidSystem);
+
+		expect(() => world.unregisterSystem(InvalidSystem))
+			.toThrowError("System InvalidSystem is neither an UpdateSystem nor a RenderSystem");
 	});
 });

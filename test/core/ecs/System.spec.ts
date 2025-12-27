@@ -1,6 +1,6 @@
 import { test, expect, suite } from "vitest";
-import { System } from "../../../src/core/ecs/System";
-import { Query } from "../../../src/core/ecs/Query";
+import { System } from "@/core/ecs/System";
+import { Query } from "@/core/ecs/Query";
 
 suite("System Test Suite", () => {
 	class MovementSystem extends System {

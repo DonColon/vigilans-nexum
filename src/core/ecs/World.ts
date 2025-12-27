@@ -188,6 +188,8 @@ export class World {
 			binaryInsert(this.updateSchedule, system, System.byPriority);
 		} else if (system instanceof RenderSystem) {
 			binaryInsert(this.renderSchedule, system, System.byPriority);
+		} else {
+			throw new GameError(`System ${system.constructor.name} is neither an UpdateSystem nor a RenderSystem`);
 		}
 	}
 
@@ -205,6 +207,8 @@ export class World {
 			this.updateSchedule = this.updateSchedule.filter(s => s !== system);
 		} else if (system instanceof RenderSystem) {
 			this.renderSchedule = this.renderSchedule.filter(s => s !== system);
+		} else {
+			throw new GameError(`System ${system.constructor.name} is neither an UpdateSystem nor a RenderSystem`);
 		}
 	}
 
