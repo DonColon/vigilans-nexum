@@ -14,6 +14,7 @@ import { SystemConstructor } from "@/core/ecs/System";
 import { GameStateConstructor } from "@/core/GameState";
 import { GameCommandConstructor } from "@/core/input/commands/GameCommand";
 import { Savegame } from "@/core/model/Savegame";
+import { GameFeature, GameFeatureConstructor } from "./GameFeature";
 
 export interface GameConfiguration {
 	id: string;
@@ -40,6 +41,8 @@ export class Game {
 	private isRunning: boolean;
 	private timer: number;
 
+	private features: Map<string, GameFeature>;
+
 	private eventSystem: EventSystem;
 	private localDatabase: LocalDatabase;
 	private assetStorage: AssetStorage;
@@ -58,6 +61,8 @@ export class Game {
 
 		this.isRunning = false;
 		this.timer = 0;
+
+		this.features = new Map<string, GameFeature>();
 
 		this.eventSystem = new EventSystem(config.eventSystem);
 		this.localDatabase = new LocalDatabase(config.id, config.localDatabase);
@@ -128,6 +133,23 @@ export class Game {
 		this.isRunning = false;
 
 		window.cancelAnimationFrame(this.animationFrame);
+	}
+
+	public install(feature: GameFeature): this {
+		feature.install();
+		this.features.set(feature.constructor.name, feature);
+		return this;
+	}
+
+	public uninstall(feature: GameFeature): this {
+		feature.uninstall();
+		this.features.delete(feature.constructor.name);
+		return this;
+	}
+
+	public getFeature<T extends GameFeature>(featureType: GameFeatureConstructor): T | null {
+		const feature = this.features.get(featureType.name);
+		return feature ? (feature as T) : null;
 	}
 
 	public registerComponent<T extends JsonSchema>(compenentType: ComponentConstructor<T>): this {
