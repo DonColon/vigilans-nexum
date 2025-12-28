@@ -15,6 +15,8 @@ import { GameStateConstructor } from "@/core/GameState";
 import { GameCommandConstructor } from "@/core/input/commands/GameCommand";
 import { Savegame } from "@/core/model/Savegame";
 import { GameFeature, GameFeatureConstructor } from "./GameFeature";
+import { TimerManager } from "./timer/TimerManager";
+import { CooldownManager } from "./timer/CooldownManager";
 
 export interface GameConfiguration {
 	id: string;
@@ -51,6 +53,8 @@ export class Game {
 	private display: Display;
 	private inputDevice: InputDevice;
 	private audioDevice: AudioDevice;
+	private timerManager: TimerManager;
+	private cooldownManager: CooldownManager;
 	private world: World;
 
 	constructor(private config: GameConfiguration) {
@@ -72,6 +76,8 @@ export class Game {
 		this.display = new Display(config.id, config.display);
 		this.inputDevice = new InputDevice(config.inputDevice);
 		this.audioDevice = new AudioDevice(config.audioDevice);
+		this.timerManager = new TimerManager();
+		this.cooldownManager = new CooldownManager();
 		this.world = new World();
 	}
 
@@ -235,10 +241,10 @@ export class Game {
 	}
 
 	private update(elapsed: number, frame: number) {
+		this.timerManager.update(elapsed);
+		this.cooldownManager.update(elapsed);
 		this.inputDevice.update();
-
 		this.eventSystem.processQueue();
-
 		this.world.update(elapsed, frame);
 	}
 

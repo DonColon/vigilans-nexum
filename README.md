@@ -36,6 +36,7 @@ vigilans-nexum
 │   │   ├── math
 │   │   ├── model
 │   │   ├── service
+│   │   ├── timer
 │   │   ├── utils
 │   │   ├── Game.ts
 │   │   ├── GameError.ts
