@@ -17,6 +17,7 @@ import { Savegame } from "@/core/model/Savegame";
 import { GameFeature, GameFeatureConstructor } from "./GameFeature";
 import { TimerManager } from "./timer/TimerManager";
 import { CooldownManager } from "./timer/CooldownManager";
+import { PoolManager } from "./pool/PoolManager";
 
 export interface GameConfiguration {
 	id: string;
@@ -46,6 +47,7 @@ export class Game {
 	private features: Map<string, GameFeature>;
 
 	private eventSystem: EventSystem;
+	private poolManager: PoolManager;
 	private localDatabase: LocalDatabase;
 	private assetStorage: AssetStorage;
 	private assetLoader: AssetLoader;
@@ -69,6 +71,7 @@ export class Game {
 		this.features = new Map<string, GameFeature>();
 
 		this.eventSystem = new EventSystem(config.eventSystem);
+		this.poolManager = new PoolManager();
 		this.localDatabase = new LocalDatabase(config.id, config.localDatabase);
 		this.assetStorage = new AssetStorage();
 		this.assetLoader = new AssetLoader(config.id, config.assetLoader);
