@@ -1,4 +1,4 @@
-import { Vector } from "@/core/math/geometry/Vector";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { InputChannel } from "@/core/input/InputChannel";
 import { GamepadInputType } from "@/core/input/gamepad/GamepadInput";
 import { KeyboardInputType } from "@/core/input/keyboard/KeyboardInput";
@@ -23,8 +23,8 @@ export interface Input {
 export interface Pointer {
 	identifier: number;
 	position: {
-		current: Vector;
-		previous: Vector;
+		current: Vector2D;
+		previous: Vector2D;
 	};
 	state: Input;
 }

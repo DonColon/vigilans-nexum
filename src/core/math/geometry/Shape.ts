@@ -1,8 +1,8 @@
 import { Rectangle } from "@/core/math/geometry/Rectangle";
-import { Vector } from "@/core/math/geometry/Vector";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 
 export interface Shape {
-    contains(point: Vector): boolean;
+    contains(point: Vector2D): boolean;
     intersects(other: Shape): boolean;
     getBounds(): Rectangle;
 }

@@ -1,6 +1,6 @@
 import { Angle } from "@/core/math/geometry/Angle";
 import { Shape } from "@/core/math/geometry/Shape";
-import { Vector } from "@/core/math/geometry/Vector";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { Circle } from "@/core/math/geometry/Circle";
 import { Ellipse } from "@/core/math/geometry/Ellipse";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
@@ -13,19 +13,19 @@ interface LineParameters {
 }
 
 export class Line implements Shape {
-	private readonly start: Vector;
-	private readonly end: Vector;
+	private readonly start: Vector2D;
+	private readonly end: Vector2D;
 
 	constructor(startX: number, startY: number, endX: number, endY: number) {
-		this.start = new Vector(startX, startY);
-		this.end = new Vector(endX, endY);
+		this.start = new Vector2D(startX, startY);
+		this.end = new Vector2D(endX, endY);
 	}
 
-	public static ofPoints(start: Vector, end: Vector): Line {
+	public static ofPoints(start: Vector2D, end: Vector2D): Line {
 		return new Line(start.x, start.y, end.x, end.y);
 	}
 
-	public contains(point: Vector, tolerance: number = 0.001): boolean {
+	public contains(point: Vector2D, tolerance: number = 0.001): boolean {
 		const distanceStart = point.distanceBetween(this.start);
 		const distanceEnd = point.distanceBetween(this.end);
 		const length = this.getLength();
@@ -61,7 +61,7 @@ export class Line implements Shape {
 		return this.contains(intersection) && other.contains(intersection);
 	}
 
-	public reflect(point: Vector): Vector {
+	public reflect(point: Vector2D): Vector2D {
 		const self = this.getLineParameters();
 		const bisector = this.getVerticalBisector(point);
 
@@ -70,7 +70,7 @@ export class Line implements Shape {
 		const x = (bisector.B * self.C - self.B * bisector.C) / denominator;
 		const y = (self.A * bisector.C - bisector.A * self.C) / denominator;
 
-		const intersection = new Vector(x, y);
+		const intersection = new Vector2D(x, y);
 		const reflect = intersection.subtract(point);
 
 		return reflect.subtract(intersection);
@@ -85,7 +85,7 @@ export class Line implements Shape {
 		return denominator === 0;
 	}
 
-	public getIntersection(other: Line): Vector {
+	public getIntersection(other: Line): Vector2D {
 		const self = this.getLineParameters();
 		const line = other.getLineParameters();
 
@@ -94,10 +94,10 @@ export class Line implements Shape {
 		const x = (line.B * self.C - self.B * line.C) / denominator;
 		const y = (self.A * line.C - line.A * self.C) / denominator;
 
-		return new Vector(x, y);
+		return new Vector2D(x, y);
 	}
 
-	public getVerticalBisector(point?: Vector): LineParameters {
+	public getVerticalBisector(point?: Vector2D): LineParameters {
 		const self = this.getLineParameters();
 		const other = point || this.getCenter();
 
@@ -139,15 +139,15 @@ export class Line implements Shape {
 		return this.start.distanceBetween(this.end);
 	}
 
-	public getCenter(): Vector {
+	public getCenter(): Vector2D {
 		return this.start.add(this.end).divide(2);
 	}
 
-	public getStart(): Vector {
+	public getStart(): Vector2D {
 		return this.start;
 	}
 
-	public getEnd(): Vector {
+	public getEnd(): Vector2D {
 		return this.end;
 	}
 }

@@ -1,4 +1,4 @@
-import { Vector } from "@/core/math/geometry/Vector";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { Polygon } from "@/core/math/geometry/Polygon";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 
@@ -7,26 +7,26 @@ import { Rectangle } from "@/core/math/geometry/Rectangle";
  */
 export class NavPolygon {
     public readonly id: number;
-    public readonly vertices: Vector[];
-    public readonly center: Vector;
+    public readonly vertices: Vector2D[];
+    public readonly center: Vector2D;
     public readonly neighbors: Set<number> = new Set();
 
-    constructor(id: number, vertices: Vector[]) {
+    constructor(id: number, vertices: Vector2D[]) {
         this.id = id;
         this.vertices = [...vertices];
         this.center = this.calculateCenter(vertices);
     }
 
-    private calculateCenter(vertices: Vector[]): Vector {
+    private calculateCenter(vertices: Vector2D[]): Vector2D {
         let x = 0, y = 0;
         for (const v of vertices) {
             x += v.x;
             y += v.y;
         }
-        return new Vector(x / vertices.length, y / vertices.length);
+        return new Vector2D(x / vertices.length, y / vertices.length);
     }
 
-    public contains(point: Vector): boolean {
+    public contains(point: Vector2D): boolean {
         // Simple point-in-polygon test
         let inside = false;
         const n = this.vertices.length;
@@ -88,10 +88,10 @@ export class NavMesh {
                     const y2 = (y + 1) * cellSize;
                     
                     mesh.addPolygon([
-                        new Vector(x1, y1),
-                        new Vector(x2, y1),
-                        new Vector(x2, y2),
-                        new Vector(x1, y2)
+                        new Vector2D(x1, y1),
+                        new Vector2D(x2, y1),
+                        new Vector2D(x2, y2),
+                        new Vector2D(x1, y2)
                     ]);
                 }
             }
@@ -104,7 +104,7 @@ export class NavMesh {
     /**
      * Adds a polygon to the mesh
      */
-    public addPolygon(vertices: Vector[]): number {
+    public addPolygon(vertices: Vector2D[]): number {
         const id = this.nextId++;
         this.polygons.set(id, new NavPolygon(id, vertices));
         return id;
@@ -129,7 +129,7 @@ export class NavMesh {
     /**
      * Finds path from start to goal
      */
-    public findPath(start: Vector, goal: Vector): Vector[] {
+    public findPath(start: Vector2D, goal: Vector2D): Vector2D[] {
         // Find polygons
         const startPoly = this.getPolyAt(start);
         const goalPoly = this.getPolyAt(goal);
@@ -156,14 +156,14 @@ export class NavMesh {
     /**
      * Checks if point is walkable
      */
-    public isWalkable(point: Vector): boolean {
+    public isWalkable(point: Vector2D): boolean {
         return this.getPolyAt(point) !== null;
     }
 
     /**
      * Gets polygon at position
      */
-    public getPolyAt(point: Vector): NavPolygon | null {
+    public getPolyAt(point: Vector2D): NavPolygon | null {
         for (const poly of this.polygons.values()) {
             if (poly.contains(point)) {
                 return poly;
@@ -252,7 +252,7 @@ export class NavMesh {
         return path;
     }
 
-    private makePositionPath(start: Vector, goal: Vector, polyPath: NavPolygon[]): Vector[] {
+    private makePositionPath(start: Vector2D, goal: Vector2D, polyPath: NavPolygon[]): Vector2D[] {
         // Simple: just use polygon centers
         const path = [start];
         

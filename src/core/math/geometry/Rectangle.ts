@@ -1,16 +1,16 @@
 import { Dimension } from "@/core/math/geometry/Dimension";
 import { Shape } from "@/core/math/geometry/Shape";
-import { Vector } from "@/core/math/geometry/Vector";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { Line } from "@/core/math/geometry/Line";
 import { Circle } from "@/core/math/geometry/Circle";
 import { Ellipse } from "@/core/math/geometry/Ellipse";
 import { Polygon } from "@/core/math/geometry/Polygon";
 
 interface RectangleCorners {
-	topLeft: Vector;
-	topRight: Vector;
-	bottomLeft: Vector;
-	bottomRight: Vector;
+	topLeft: Vector2D;
+	topRight: Vector2D;
+	bottomLeft: Vector2D;
+	bottomRight: Vector2D;
 }
 
 interface RectangleSides {
@@ -21,15 +21,15 @@ interface RectangleSides {
 }
 
 export class Rectangle implements Shape {
-	private readonly position: Vector;
+	private readonly position: Vector2D;
 	private readonly dimension: Dimension;
 
 	constructor(x: number, y: number, width: number, height: number) {
-		this.position = new Vector(x, y);
+		this.position = new Vector2D(x, y);
 		this.dimension = { width, height };
 	}
 
-	public contains(point: Vector): boolean {
+	public contains(point: Vector2D): boolean {
 		const { width, height } = this.dimension;
 
 		return point.x >= this.position.x && point.x <= this.position.x + width && point.y >= this.position.y && point.y <= this.position.y + height;
@@ -75,7 +75,7 @@ export class Rectangle implements Shape {
 			checkY = this.position.y + this.dimension.height;
 		}
 
-		const distance = center.distanceBetween(new Vector(checkX, checkY));
+		const distance = center.distanceBetween(new Vector2D(checkX, checkY));
 
 		return distance <= other.getRadius();
 	}
@@ -113,9 +113,9 @@ export class Rectangle implements Shape {
 
 		return {
 			topLeft: this.position,
-			topRight: this.position.add(new Vector(width, 0)),
-			bottomLeft: this.position.add(new Vector(0, height)),
-			bottomRight: this.position.add(new Vector(width, height))
+			topRight: this.position.add(new Vector2D(width, 0)),
+			bottomLeft: this.position.add(new Vector2D(0, height)),
+			bottomRight: this.position.add(new Vector2D(width, height))
 		};
 	}
 
@@ -123,12 +123,12 @@ export class Rectangle implements Shape {
 		return this;
 	}
 
-	public getCenter(): Vector {
-		const offset = new Vector(this.dimension.width / 2, this.dimension.height / 2);
+	public getCenter(): Vector2D {
+		const offset = new Vector2D(this.dimension.width / 2, this.dimension.height / 2);
 		return this.position.add(offset);
 	}
 
-	public getPosition(): Vector {
+	public getPosition(): Vector2D {
 		return this.position;
 	}
 

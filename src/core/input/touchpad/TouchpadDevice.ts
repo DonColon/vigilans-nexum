@@ -1,5 +1,5 @@
-import { Matrix } from "@/core/math/geometry/Matrix";
-import { Vector } from "@/core/math/geometry/Vector";
+import { Matrix } from "@/core/math/geometry/Matrix2D";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { Input, Pointer } from "@/core/input/Input";
 import { SwipeInput, SwipeInputType, ofAngle } from "@/core/input/touchpad/SwipeInput";
 import { TouchInput, TouchInputType } from "@/core/input/touchpad/TouchInput";
@@ -110,8 +110,8 @@ export class TouchpadDevice {
 		return {
 			identifier: -1,
 			position: {
-				current: new Vector(0, 0),
-				previous: new Vector(0, 0)
+				current: new Vector2D(0, 0),
+				previous: new Vector2D(0, 0)
 			},
 			state: {
 				current: false,
@@ -148,7 +148,7 @@ export class TouchpadDevice {
 		const viewportX = x - offset.x;
 		const viewportY = y - offset.y;
 
-		pointer.position.current = new Vector(viewportX, viewportY);
+		pointer.position.current = new Vector2D(viewportX, viewportY);
 	}
 
 	private cancelEvent(event: Event) {

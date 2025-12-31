@@ -1,4 +1,4 @@
-import { Vector } from "@/core/math/geometry/Vector";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { BezierCurve } from "@/core/math/curves/BezierCurve";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { Line } from "@/core/math/geometry/Line";
@@ -19,7 +19,7 @@ export class BezierPath {
     /**
      * Creates a path from a series of points with quadratic curves
      */
-    public static fromPoints(points: Vector[], smooth: boolean = true): BezierPath {
+    public static fromPoints(points: Vector2D[], smooth: boolean = true): BezierPath {
         if (points.length < 2) {
             throw new Error("BezierPath requires at least 2 points");
         }
@@ -45,7 +45,7 @@ export class BezierPath {
                     const prev = points[i - 1];
                     const next = points[i + 2];
                     const direction = next.subtract(prev).normalize();
-                    const perpendicular = new Vector(-direction.y, direction.x);
+                    const perpendicular = new Vector2D(-direction.y, direction.x);
                     const offset = perpendicular.multiply(start.distanceBetween(end) * 0.2);
                     control.x += offset.x;
                     control.y += offset.y;
@@ -61,7 +61,7 @@ export class BezierPath {
     /**
      * Creates a smooth path through all points using cubic curves
      */
-    public static catmullRom(points: Vector[], tension: number = 0.5): BezierPath {
+    public static catmullRom(points: Vector2D[], tension: number = 0.5): BezierPath {
         if (points.length < 2) {
             throw new Error("BezierPath requires at least 2 points");
         }
@@ -104,7 +104,7 @@ export class BezierPath {
     /**
      * Adds a linear segment to the path
      */
-    public lineTo(point: Vector): this {
+    public lineTo(point: Vector2D): this {
         const lastPoint = this.getEnd();
         if (lastPoint) {
             this.addCurve(BezierCurve.linear(lastPoint, point));
@@ -115,7 +115,7 @@ export class BezierPath {
     /**
      * Adds a quadratic curve to the path
      */
-    public quadraticTo(control: Vector, end: Vector): this {
+    public quadraticTo(control: Vector2D, end: Vector2D): this {
         const lastPoint = this.getEnd();
         if (lastPoint) {
             this.addCurve(BezierCurve.quadratic(lastPoint, control, end));
@@ -126,7 +126,7 @@ export class BezierPath {
     /**
      * Adds a cubic curve to the path
      */
-    public cubicTo(control1: Vector, control2: Vector, end: Vector): this {
+    public cubicTo(control1: Vector2D, control2: Vector2D, end: Vector2D): this {
         const lastPoint = this.getEnd();
         if (lastPoint) {
             this.addCurve(BezierCurve.cubic(lastPoint, control1, control2, end));
@@ -151,7 +151,7 @@ export class BezierPath {
     /**
      * Gets a point on the path at global parameter t (0 to 1)
      */
-    public getPoint(t: number): Vector | null {
+    public getPoint(t: number): Vector2D | null {
         if (this.curves.length === 0) return null;
 
         t = Math.max(0, Math.min(1, t));
@@ -163,7 +163,7 @@ export class BezierPath {
     /**
      * Gets a point at a specific distance along the path
      */
-    public getPointAtDistance(distance: number): Vector | null {
+    public getPointAtDistance(distance: number): Vector2D | null {
         if (this.curves.length === 0) return null;
 
         const totalLength = this.getLength();
@@ -189,7 +189,7 @@ export class BezierPath {
     /**
      * Gets the tangent at parameter t
      */
-    public getTangent(t: number): Vector | null {
+    public getTangent(t: number): Vector2D | null {
         if (this.curves.length === 0) return null;
 
         t = Math.max(0, Math.min(1, t));
@@ -200,7 +200,7 @@ export class BezierPath {
     /**
      * Gets the normal at parameter t
      */
-    public getNormal(t: number): Vector | null {
+    public getNormal(t: number): Vector2D | null {
         if (this.curves.length === 0) return null;
 
         t = Math.max(0, Math.min(1, t));
@@ -224,8 +224,8 @@ export class BezierPath {
     /**
      * Gets evenly spaced points along the entire path
      */
-    public getPoints(count: number): Vector[] {
-        const points: Vector[] = [];
+    public getPoints(count: number): Vector2D[] {
+        const points: Vector2D[] = [];
         
         for (let i = 0; i <= count; i++) {
             const t = i / count;
@@ -241,8 +241,8 @@ export class BezierPath {
     /**
      * Gets evenly spaced points by distance (better for animation)
      */
-    public getPointsByDistance(spacing: number): Vector[] {
-        const points: Vector[] = [];
+    public getPointsByDistance(spacing: number): Vector2D[] {
+        const points: Vector2D[] = [];
         const totalLength = this.getLength();
         
         for (let distance = 0; distance <= totalLength; distance += spacing) {
@@ -283,10 +283,10 @@ export class BezierPath {
     /**
      * Finds the closest point on the path to a given point
      */
-    public getClosestPoint(point: Vector): { point: Vector; t: number; distance: number; curveIndex: number } | null {
+    public getClosestPoint(point: Vector2D): { point: Vector2D; t: number; distance: number; curveIndex: number } | null {
         if (this.curves.length === 0) return null;
 
-        let closestPoint: Vector | null = null;
+        let closestPoint: Vector2D | null = null;
         let closestDistance = Infinity;
         let closestT = 0;
         let closestCurveIndex = 0;
@@ -313,7 +313,7 @@ export class BezierPath {
     /**
      * Checks if a point is near the path within tolerance
      */
-    public containsPoint(point: Vector, tolerance: number = 1): boolean {
+    public containsPoint(point: Vector2D, tolerance: number = 1): boolean {
         const closest = this.getClosestPoint(point);
         return closest !== null && closest.distance <= tolerance;
     }
@@ -401,14 +401,14 @@ export class BezierPath {
     /**
      * Gets the start point of the path
      */
-    public getStart(): Vector | null {
+    public getStart(): Vector2D | null {
         return this.curves.length > 0 ? this.curves[0].getStart() : null;
     }
 
     /**
      * Gets the end point of the path
      */
-    public getEnd(): Vector | null {
+    public getEnd(): Vector2D | null {
         return this.curves.length > 0 ? this.curves[this.curves.length - 1].getEnd() : null;
     }
 

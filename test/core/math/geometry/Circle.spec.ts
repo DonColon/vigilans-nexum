@@ -1,14 +1,14 @@
 import { test, expect } from "vitest";
-import { Vector } from "@/core/math/geometry/Vector";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { Circle } from "@/core/math/geometry/Circle";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { Polygon } from "@/core/math/geometry/Polygon";
 import { Ellipse } from "@/core/math/geometry/Ellipse";
 
 test("Create circle from three points", () => {
-	const start = new Vector(0, 6);
-	const center = new Vector(6, 0);
-	const end = new Vector(2, 2);
+	const start = new Vector2D(0, 6);
+	const center = new Vector2D(6, 0);
+	const end = new Vector2D(2, 2);
 
 	const result = Circle.ofPoints(start, center, end);
 	const position = result.getPosition();
@@ -47,9 +47,9 @@ test("Circle intersects with rectangle", () => {
 test("Circle intersects with polygon", () => {
 	const value = new Circle(0, 0, 4);
 
-	const positiveValue = new Polygon([new Vector(1, -2), new Vector(1, 2), new Vector(0, 8)]);
+	const positiveValue = new Polygon([new Vector2D(1, -2), new Vector2D(1, 2), new Vector2D(0, 8)]);
 
-	const negativeValue = new Polygon([new Vector(5, 5), new Vector(10, 10), new Vector(5, 15)]);
+	const negativeValue = new Polygon([new Vector2D(5, 5), new Vector2D(10, 10), new Vector2D(5, 15)]);
 
 	let result = value.intersects(positiveValue);
 	expect(result).toBeTruthy();

@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { Ellipse } from "@/core/math/geometry/Ellipse";
-import { Vector } from "@/core/math/geometry/Vector";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { Line } from "@/core/math/geometry/Line";
 import { Circle } from "@/core/math/geometry/Circle";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
@@ -35,10 +35,10 @@ describe("Ellipse Test Suite", () => {
 	test("Checks if point is inside ellipse", () => {
 		const ellipse = new Ellipse(0, 0, 10, 5);
 		
-		expect(ellipse.contains(new Vector(0, 0))).toBe(true); // Center
-		expect(ellipse.contains(new Vector(5, 0))).toBe(true); // Inside
-		expect(ellipse.contains(new Vector(15, 0))).toBe(false); // Outside
-		expect(ellipse.contains(new Vector(0, 10))).toBe(false); // Outside
+		expect(ellipse.contains(new Vector2D(0, 0))).toBe(true); // Center
+		expect(ellipse.contains(new Vector2D(5, 0))).toBe(true); // Inside
+		expect(ellipse.contains(new Vector2D(15, 0))).toBe(false); // Outside
+		expect(ellipse.contains(new Vector2D(0, 10))).toBe(false); // Outside
 	});
 
 	test("Calculates ellipse area", () => {
@@ -133,7 +133,7 @@ describe("Ellipse Test Suite", () => {
 
 	test("Intersects with line through ellipse", () => {
 		const ellipse = new Ellipse(0, 0, 10, 5);
-		const line = Line.ofPoints(new Vector(-20, 0), new Vector(20, 0));
+		const line = Line.ofPoints(new Vector2D(-20, 0), new Vector2D(20, 0));
 		
 		// Test that intersects method works
 		const result = ellipse.intersects(line);
@@ -142,7 +142,7 @@ describe("Ellipse Test Suite", () => {
 
 	test("Does not intersect with line outside ellipse", () => {
 		const ellipse = new Ellipse(0, 0, 10, 5);
-		const line = Line.ofPoints(new Vector(-20, 20), new Vector(20, 20));
+		const line = Line.ofPoints(new Vector2D(-20, 20), new Vector2D(20, 20));
 		
 		expect(ellipse.intersects(line)).toBe(false);
 	});
@@ -195,7 +195,7 @@ describe("Ellipse Test Suite", () => {
 		const ellipse = new Ellipse(0, 0, 10, 5);
 		
 		// Use existing passing test as reference
-		const lineThrough = Line.ofPoints(new Vector(-20, 0), new Vector(20, 0));
+		const lineThrough = Line.ofPoints(new Vector2D(-20, 0), new Vector2D(20, 0));
 		expect(ellipse.intersects(lineThrough)).toBe(true);
 	});
 
@@ -237,11 +237,11 @@ describe("Ellipse Test Suite", () => {
 
 	test("Intersects with polygon", () => {
 		const ellipse = new Ellipse(0, 0, 10, 5);
-		const polygon = new Polygon([new Vector(0, 0), new Vector(10, 0), new Vector(10, 5)]);
+		const polygon = new Polygon([new Vector2D(0, 0), new Vector2D(10, 0), new Vector2D(10, 5)]);
 		
 		expect(ellipse.intersects(polygon)).toBe(true);
 		
-		const distantPolygon = new Polygon([new Vector(100, 100), new Vector(110, 100), new Vector(110, 105)]);
+		const distantPolygon = new Polygon([new Vector2D(100, 100), new Vector2D(110, 100), new Vector2D(110, 105)]);
 		expect(ellipse.intersects(distantPolygon)).toBe(false);
 	});
 
@@ -249,11 +249,11 @@ describe("Ellipse Test Suite", () => {
 		const ellipse = new Ellipse(0, 0, 10, 5);
 		
 		// Line starts inside ellipse
-		const lineStartInside = Line.ofPoints(new Vector(0, 0), new Vector(50, 50));
+		const lineStartInside = Line.ofPoints(new Vector2D(0, 0), new Vector2D(50, 50));
 		expect(ellipse.intersects(lineStartInside)).toBe(true);
 		
 		// Line ends inside ellipse
-		const lineEndInside = Line.ofPoints(new Vector(50, 50), new Vector(0, 0));
+		const lineEndInside = Line.ofPoints(new Vector2D(50, 50), new Vector2D(0, 0));
 		expect(ellipse.intersects(lineEndInside)).toBe(true);
 	});
 

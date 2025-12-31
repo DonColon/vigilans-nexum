@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { QuadTree } from "@/core/math/spatial/QuadTree";
-import { Vector } from "@/core/math/geometry/Vector";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { Circle } from "@/core/math/geometry/Circle";
 

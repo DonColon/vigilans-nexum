@@ -1,4 +1,4 @@
-import { Vector } from "@/core/math/geometry/Vector";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { Input, Pointer } from "@/core/input/Input";
 import { MouseInput, MouseInputType } from "@/core/input/mouse/MouseInput";
 import { Display } from "@/core/graphics/Display";
@@ -94,8 +94,8 @@ export class MouseDevice {
 		return {
 			identifier: -1,
 			position: {
-				current: new Vector(0, 0),
-				previous: new Vector(0, 0)
+				current: new Vector2D(0, 0),
+				previous: new Vector2D(0, 0)
 			},
 			state: {
 				current: false,
@@ -132,7 +132,7 @@ export class MouseDevice {
 		const viewportX = x - offset.x;
 		const viewportY = y - offset.y;
 
-		pointer.position.current = new Vector(viewportX, viewportY);
+		pointer.position.current = new Vector2D(viewportX, viewportY);
 	}
 
 	private cancelEvent(event: Event) {

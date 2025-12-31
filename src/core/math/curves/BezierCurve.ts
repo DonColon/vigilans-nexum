@@ -1,4 +1,4 @@
-import { Vector } from "@/core/math/geometry/Vector";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { Line } from "@/core/math/geometry/Line";
 
@@ -8,12 +8,12 @@ import { Line } from "@/core/math/geometry/Line";
  * animations, and UI transitions in games.
  */
 export class BezierCurve {
-    private readonly controlPoints: Vector[];
+    private readonly controlPoints: Vector2D[];
     private readonly degree: number;
     private cachedLength?: number;
-    private cachedLookupTable?: Vector[];
+    private cachedLookupTable?: Vector2D[];
 
-    constructor(controlPoints: Vector[]) {
+    constructor(controlPoints: Vector2D[]) {
         if (controlPoints.length < 2) {
             throw new Error("BezierCurve requires at least 2 control points");
         }
@@ -28,21 +28,21 @@ export class BezierCurve {
     /**
      * Creates a quadratic Bezier curve (3 control points)
      */
-    public static quadratic(start: Vector, control: Vector, end: Vector): BezierCurve {
+    public static quadratic(start: Vector2D, control: Vector2D, end: Vector2D): BezierCurve {
         return new BezierCurve([start, control, end]);
     }
 
     /**
      * Creates a cubic Bezier curve (4 control points)
      */
-    public static cubic(start: Vector, control1: Vector, control2: Vector, end: Vector): BezierCurve {
+    public static cubic(start: Vector2D, control1: Vector2D, control2: Vector2D, end: Vector2D): BezierCurve {
         return new BezierCurve([start, control1, control2, end]);
     }
 
     /**
      * Creates a linear Bezier curve (straight line between 2 points)
      */
-    public static linear(start: Vector, end: Vector): BezierCurve {
+    public static linear(start: Vector2D, end: Vector2D): BezierCurve {
         return new BezierCurve([start, end]);
     }
 
@@ -51,7 +51,7 @@ export class BezierCurve {
      * @param t - Parameter value between 0 and 1
      * @returns Point on the curve at t
      */
-    public getPoint(t: number): Vector {
+    public getPoint(t: number): Vector2D {
         t = Math.max(0, Math.min(1, t)); // Clamp to [0, 1]
 
         if (this.degree === 1) {
@@ -69,7 +69,7 @@ export class BezierCurve {
     /**
      * Gets the tangent (direction) vector at parameter t
      */
-    public getTangent(t: number): Vector {
+    public getTangent(t: number): Vector2D {
         t = Math.max(0, Math.min(1, t));
         const epsilon = 0.0001;
 
@@ -82,15 +82,15 @@ export class BezierCurve {
     /**
      * Gets the normal (perpendicular) vector at parameter t
      */
-    public getNormal(t: number): Vector {
+    public getNormal(t: number): Vector2D {
         const tangent = this.getTangent(t);
-        return new Vector(-tangent.y, tangent.x); // 2D perpendicular
+        return new Vector2D(-tangent.y, tangent.x); // 2D perpendicular
     }
 
     /**
      * Gets the derivative (velocity) at parameter t
      */
-    public getDerivative(t: number): Vector {
+    public getDerivative(t: number): Vector2D {
         t = Math.max(0, Math.min(1, t));
 
         if (this.degree === 1) {
@@ -149,7 +149,7 @@ export class BezierCurve {
      * @param distance - Distance from start of curve
      * @returns Point at that distance, or null if distance exceeds curve length
      */
-    public getPointAtDistance(distance: number): Vector | null {
+    public getPointAtDistance(distance: number): Vector2D | null {
         const totalLength = this.getLength();
         if (distance < 0 || distance > totalLength) {
             return null;
@@ -173,14 +173,14 @@ export class BezierCurve {
             };
         }
 
-        const leftPoints: Vector[] = [];
-        const rightPoints: Vector[] = [];
+        const leftPoints: Vector2D[] = [];
+        const rightPoints: Vector2D[] = [];
 
         let points = [...this.controlPoints];
         leftPoints.push(points[0]);
 
         for (let i = 0; i < this.degree; i++) {
-            const newPoints: Vector[] = [];
+            const newPoints: Vector2D[] = [];
             for (let j = 0; j < points.length - 1; j++) {
                 newPoints.push(points[j].interpolate(points[j + 1], t));
             }
@@ -192,7 +192,7 @@ export class BezierCurve {
         rightPoints.unshift(points[points.length - 1]);
 
         for (let i = 0; i < this.degree; i++) {
-            const newPoints: Vector[] = [];
+            const newPoints: Vector2D[] = [];
             for (let j = 0; j < points.length - 1; j++) {
                 newPoints.push(points[j].interpolate(points[j + 1], t));
             }
@@ -209,8 +209,8 @@ export class BezierCurve {
     /**
      * Gets evenly spaced points along the curve
      */
-    public getPoints(count: number): Vector[] {
-        const points: Vector[] = [];
+    public getPoints(count: number): Vector2D[] {
+        const points: Vector2D[] = [];
         for (let i = 0; i <= count; i++) {
             const t = i / count;
             points.push(this.getPoint(t));
@@ -245,7 +245,7 @@ export class BezierCurve {
     /**
      * Finds the closest point on the curve to a given point
      */
-    public getClosestPoint(point: Vector, samples: number = 100): { point: Vector; t: number; distance: number } {
+    public getClosestPoint(point: Vector2D, samples: number = 100): { point: Vector2D; t: number; distance: number } {
         let closestPoint = this.getPoint(0);
         let closestT = 0;
         let closestDistance = point.distanceBetween(closestPoint);
@@ -268,7 +268,7 @@ export class BezierCurve {
     /**
      * Checks if a point is near the curve within a tolerance
      */
-    public containsPoint(point: Vector, tolerance: number = 1): boolean {
+    public containsPoint(point: Vector2D, tolerance: number = 1): boolean {
         const closest = this.getClosestPoint(point);
         return closest.distance <= tolerance;
     }
@@ -276,21 +276,21 @@ export class BezierCurve {
     /**
      * Gets all control points
      */
-    public getControlPoints(): Vector[] {
+    public getControlPoints(): Vector2D[] {
         return [...this.controlPoints];
     }
 
     /**
      * Gets the start point of the curve
      */
-    public getStart(): Vector {
+    public getStart(): Vector2D {
         return this.controlPoints[0];
     }
 
     /**
      * Gets the end point of the curve
      */
-    public getEnd(): Vector {
+    public getEnd(): Vector2D {
         return this.controlPoints[this.controlPoints.length - 1];
     }
 
@@ -320,12 +320,12 @@ export class BezierCurve {
 
     // Private helper methods
 
-    private evaluateLinear(t: number): Vector {
+    private evaluateLinear(t: number): Vector2D {
         const [p0, p1] = this.controlPoints;
         return p0.interpolate(p1, t);
     }
 
-    private evaluateQuadratic(t: number): Vector {
+    private evaluateQuadratic(t: number): Vector2D {
         const [p0, p1, p2] = this.controlPoints;
         const oneMinusT = 1 - t;
         const oneMinusTSquared = oneMinusT * oneMinusT;
@@ -335,10 +335,10 @@ export class BezierCurve {
         const y = oneMinusTSquared * p0.y + 2 * oneMinusT * t * p1.y + tSquared * p2.y;
         const z = oneMinusTSquared * p0.z + 2 * oneMinusT * t * p1.z + tSquared * p2.z;
 
-        return new Vector(x, y, z);
+        return new Vector2D(x, y, z);
     }
 
-    private evaluateCubic(t: number): Vector {
+    private evaluateCubic(t: number): Vector2D {
         const [p0, p1, p2, p3] = this.controlPoints;
         const oneMinusT = 1 - t;
         const oneMinusTCubed = oneMinusT * oneMinusT * oneMinusT;
@@ -350,15 +350,15 @@ export class BezierCurve {
         const y = oneMinusTCubed * p0.y + 3 * oneMinusTSquared * t * p1.y + 3 * oneMinusT * tSquared * p2.y + tCubed * p3.y;
         const z = oneMinusTCubed * p0.z + 3 * oneMinusTSquared * t * p1.z + 3 * oneMinusT * tSquared * p2.z + tCubed * p3.z;
 
-        return new Vector(x, y, z);
+        return new Vector2D(x, y, z);
     }
 
-    private deCasteljau(points: Vector[], t: number): Vector {
+    private deCasteljau(points: Vector2D[], t: number): Vector2D {
         if (points.length === 1) {
             return points[0];
         }
 
-        const newPoints: Vector[] = [];
+        const newPoints: Vector2D[] = [];
         for (let i = 0; i < points.length - 1; i++) {
             newPoints.push(points[i].interpolate(points[i + 1], t));
         }

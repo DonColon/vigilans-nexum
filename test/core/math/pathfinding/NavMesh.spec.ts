@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { NavMesh } from "@/core/math/pathfinding/NavMesh";
-import { Vector } from "@/core/math/geometry/Vector";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { Polygon } from "@/core/math/geometry/Polygon";
 
@@ -32,7 +32,7 @@ describe("NavMesh Test Suite", () => {
 		const rect = new Rectangle(0, 0, 100, 100);
 		const navmesh = NavMesh.fromRectangles([rect]);
 		
-		const path = navmesh.findPath(new Vector(10, 10), new Vector(90, 90));
+		const path = navmesh.findPath(new Vector2D(10, 10), new Vector2D(90, 90));
 		expect(path.length).toBeGreaterThan(0);
 	});
 });

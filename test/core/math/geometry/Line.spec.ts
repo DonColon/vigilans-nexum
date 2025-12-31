@@ -1,14 +1,14 @@
 import { test, expect } from "vitest";
 import { Line } from "@/core/math/geometry/Line";
-import { Vector } from "@/core/math/geometry/Vector";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { Circle } from "@/core/math/geometry/Circle";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { Polygon } from "@/core/math/geometry/Polygon";
 import { Ellipse } from "@/core/math/geometry/Ellipse";
 
 test("Create line from two points", () => {
-	const start = new Vector(0, 0);
-	const end = new Vector(6, 0);
+	const start = new Vector2D(0, 0);
+	const end = new Vector2D(6, 0);
 
 	const result = Line.ofPoints(start, end);
 
@@ -25,8 +25,8 @@ test("Create line from two points", () => {
 
 test("Line contains point", () => {
 	const value = new Line(0, 0, 6, 0);
-	const positiveValue = new Vector(3, 0);
-	const negativeValue = new Vector(9, 0);
+	const positiveValue = new Vector2D(3, 0);
+	const negativeValue = new Vector2D(9, 0);
 
 	let result = value.contains(positiveValue);
 	expect(result).toBeTruthy();
@@ -74,9 +74,9 @@ test("Line intersects with rectangle", () => {
 test("Line intersects with polygon", () => {
 	const value = new Line(0, 0, 6, 0);
 
-	const positiveValue = new Polygon([new Vector(1, -2), new Vector(1, 2), new Vector(0, 8)]);
+	const positiveValue = new Polygon([new Vector2D(1, -2), new Vector2D(1, 2), new Vector2D(0, 8)]);
 
-	const negativeValue = new Polygon([new Vector(5, 5), new Vector(10, 10), new Vector(5, 15)]);
+	const negativeValue = new Polygon([new Vector2D(5, 5), new Vector2D(10, 10), new Vector2D(5, 15)]);
 
 	let result = value.intersects(positiveValue);
 	expect(result).toBeTruthy();
@@ -95,7 +95,7 @@ test("Line intersects with null", () => {
 
 test("Reflect vector with line", () => {
 	const value = new Line(0, 0, 0, 6);
-	const other = new Vector(-6, 3);
+	const other = new Vector2D(-6, 3);
 
 	const result = value.reflect(other);
 	expect(result.x).toBe(6);

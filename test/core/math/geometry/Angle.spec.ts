@@ -1,6 +1,6 @@
 import { test, expect, suite } from "vitest";
 import { Angle } from "@/core/math/geometry/Angle";
-import { Vector } from "@/core/math/geometry/Vector";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 
 suite("Angle Test Suite", () => {
 	test("Creates angle with default value of 0", () => {
@@ -25,18 +25,18 @@ suite("Angle Test Suite", () => {
 	});
 
 	test("Creates angle from vector", () => {
-		const vec = new Vector(1, 0);
+		const vec = new Vector2D(1, 0);
 		const angle = Angle.fromVector(vec);
 		expect(angle.degrees).toBeCloseTo(0, 10);
 
-		const vec2 = new Vector(0, 1);
+		const vec2 = new Vector2D(0, 1);
 		const angle2 = Angle.fromVector(vec2);
 		expect(angle2.degrees).toBeCloseTo(90, 10);
 	});
 
 	test("Creates angle looking from origin to target", () => {
-		const origin = new Vector(0, 0);
-		const target = new Vector(1, 0);
+		const origin = new Vector2D(0, 0);
+		const target = new Vector2D(1, 0);
 		const angle = Angle.lookAt(origin, target);
 		// The actual result is 180, which suggests the coordinate system or heading calculation
 		// might use a different convention than expected

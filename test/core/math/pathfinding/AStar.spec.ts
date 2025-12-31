@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { AStar } from "@/core/math/pathfinding/AStar";
-import { Vector } from "@/core/math/geometry/Vector";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 
 describe("AStar Test Suite", () => {
 	test("Creates A* pathfinder with grid dimensions", () => {
@@ -25,7 +25,7 @@ describe("AStar Test Suite", () => {
 			[true, true, true, true]
 		];
 		const astar = AStar.fromMap(walkableMap);
-		const result = astar.findPath(new Vector(0, 0), new Vector(3, 2));
+		const result = astar.findPath(new Vector2D(0, 0), new Vector2D(3, 2));
 		
 		expect(result.success).toBe(true);
 		expect(result.path.length).toBeGreaterThan(0);
@@ -38,7 +38,7 @@ describe("AStar Test Suite", () => {
 			[true, false, true]
 		];
 		const astar = AStar.fromMap(walkableMap);
-		const result = astar.findPath(new Vector(0, 0), new Vector(2, 2));
+		const result = astar.findPath(new Vector2D(0, 0), new Vector2D(2, 2));
 		
 		expect(result.success).toBe(false);
 		expect(result.path.length).toBe(0);

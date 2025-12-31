@@ -1,11 +1,11 @@
-import { Vector } from "@/core/math/geometry/Vector";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 
 /**
  * Represents a node in the pathfinding grid
  */
 export interface AStarNode {
     /** Position in the grid */
-    position: Vector;
+    position: Vector2D;
     /** Is this node walkable? */
     walkable: boolean;
     /** Cost from start to this node */
@@ -31,7 +31,7 @@ export interface AStarOptions {
     /** Maximum iterations before giving up (prevents infinite loops) */
     maxIterations?: number;
     /** Heuristic function (default: Manhattan distance) */
-    heuristic?: (a: Vector, b: Vector) => number;
+    heuristic?: (a: Vector2D, b: Vector2D) => number;
 }
 
 /**
@@ -39,7 +39,7 @@ export interface AStarOptions {
  */
 export interface PathfindingResult {
     /** The path from start to goal (empty if no path found) */
-    path: Vector[];
+    path: Vector2D[];
     /** Was a path found? */
     success: boolean;
     /** Number of nodes explored */
@@ -115,7 +115,7 @@ export class AStar {
     /**
      * Finds a path from start to goal
      */
-    public findPath(start: Vector, goal: Vector, options?: AStarOptions): PathfindingResult {
+    public findPath(start: Vector2D, goal: Vector2D, options?: AStarOptions): PathfindingResult {
         const opts = { ...this.defaultOptions, ...options };
         
         // Validate positions
@@ -252,28 +252,28 @@ export class AStar {
     /**
      * Manhattan distance (good for grid-based movement, no diagonals)
      */
-    public manhattanDistance(a: Vector, b: Vector): number {
+    public manhattanDistance(a: Vector2D, b: Vector2D): number {
         return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
     }
 
     /**
      * Euclidean distance (straight-line distance, good for diagonal movement)
      */
-    public euclideanDistance(a: Vector, b: Vector): number {
+    public euclideanDistance(a: Vector2D, b: Vector2D): number {
         return a.distanceBetween(b);
     }
 
     /**
      * Chebyshev distance (good for 8-directional movement)
      */
-    public chebyshevDistance(a: Vector, b: Vector): number {
+    public chebyshevDistance(a: Vector2D, b: Vector2D): number {
         return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
     }
 
     /**
      * Diagonal distance (octile distance)
      */
-    public diagonalDistance(a: Vector, b: Vector): number {
+    public diagonalDistance(a: Vector2D, b: Vector2D): number {
         const dx = Math.abs(a.x - b.x);
         const dy = Math.abs(a.y - b.y);
         return Math.max(dx, dy) + (1.414 - 1) * Math.min(dx, dy);
@@ -290,7 +290,7 @@ export class AStar {
             grid[y] = [];
             for (let x = 0; x < this.width; x++) {
                 grid[y][x] = {
-                    position: new Vector(x, y),
+                    position: new Vector2D(x, y),
                     walkable: true,
                     gCost: Infinity,
                     hCost: 0,
@@ -315,11 +315,11 @@ export class AStar {
         }
     }
 
-    private getNode(position: Vector): AStarNode {
+    private getNode(position: Vector2D): AStarNode {
         return this.grid[Math.floor(position.y)][Math.floor(position.x)];
     }
 
-    private isValid(position: Vector): boolean {
+    private isValid(position: Vector2D): boolean {
         return this.isInBounds(Math.floor(position.x), Math.floor(position.y));
     }
 
@@ -361,7 +361,7 @@ export class AStar {
         return neighbors;
     }
 
-    private isDiagonal(a: Vector, b: Vector): boolean {
+    private isDiagonal(a: Vector2D, b: Vector2D): boolean {
         return a.x !== b.x && a.y !== b.y;
     }
 
@@ -379,12 +379,12 @@ export class AStar {
         return lowest;
     }
 
-    private reconstructPath(goalNode: AStarNode): Vector[] {
-        const path: Vector[] = [];
+    private reconstructPath(goalNode: AStarNode): Vector2D[] {
+        const path: Vector2D[] = [];
         let currentNode: AStarNode | null = goalNode;
 
         while (currentNode !== null) {
-            path.unshift(new Vector(currentNode.position.x, currentNode.position.y));
+            path.unshift(new Vector2D(currentNode.position.x, currentNode.position.y));
             currentNode = currentNode.parent;
         }
 

@@ -1,5 +1,5 @@
 import { GameError } from "@/core/GameError";
-import { Vector } from "@/core/math/geometry/Vector";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { Dimension } from "@/core/math/geometry/Dimension";
 import { Graphics } from "@/core/graphics/rendering/Graphics";
 import { DisplayOrientationType } from "@/core/graphics/DisplayOrientation";
@@ -16,13 +16,13 @@ export interface DisplayConfiguration {
 export class Display {
 	private readonly viewport: HTMLElement;
 	private readonly viewportDimension: Dimension;
-	private readonly viewportOffset: Vector;
-	private readonly viewportCenter: Vector;
+	private readonly viewportOffset: Vector2D;
+	private readonly viewportCenter: Vector2D;
 
 	private readonly layers: Map<string, Graphics>;
 
 	private readonly dimension: Dimension;
-	private readonly center: Vector;
+	private readonly center: Vector2D;
 
 	private orientationLocked: boolean;
 
@@ -49,9 +49,9 @@ export class Display {
 			height: parseFloat(this.viewport.style.height) * devicePixelRatio
 		};
 
-		this.viewportOffset = new Vector(this.viewport.offsetLeft * devicePixelRatio, this.viewport.offsetTop * devicePixelRatio);
+		this.viewportOffset = new Vector2D(this.viewport.offsetLeft * devicePixelRatio, this.viewport.offsetTop * devicePixelRatio);
 
-		this.viewportCenter = new Vector(this.viewportOffset.x + this.viewportDimension.width / 2, this.viewportOffset.y + this.viewportDimension.height / 2);
+		this.viewportCenter = new Vector2D(this.viewportOffset.x + this.viewportDimension.width / 2, this.viewportOffset.y + this.viewportDimension.height / 2);
 
 		this.layers = new Map<string, Graphics>();
 
@@ -66,7 +66,7 @@ export class Display {
 			height: screen.height * devicePixelRatio
 		};
 
-		this.center = new Vector(this.dimension.width / 2, this.dimension.height / 2);
+		this.center = new Vector2D(this.dimension.width / 2, this.dimension.height / 2);
 
 		this.orientationLocked = false;
 	}
@@ -315,11 +315,11 @@ export class Display {
 		return this.viewportDimension;
 	}
 
-	public getViewportOffset(): Vector {
+	public getViewportOffset(): Vector2D {
 		return this.viewportOffset;
 	}
 
-	public getViewportCenter(): Vector {
+	public getViewportCenter(): Vector2D {
 		return this.viewportCenter;
 	}
 
@@ -327,7 +327,7 @@ export class Display {
 		return this.dimension;
 	}
 
-	public getCenter(): Vector {
+	public getCenter(): Vector2D {
 		return this.center;
 	}
 

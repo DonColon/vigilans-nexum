@@ -1,6 +1,6 @@
 import { test, expect } from "vitest";
-import { Matrix } from "@/core/math/geometry/Matrix";
-import { Vector } from "@/core/math/geometry/Vector";
+import { Matrix } from "@/core/math/geometry/Matrix2D";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 
 test("Create matrix from array", () => {
 	const array = [
@@ -16,7 +16,7 @@ test("Create matrix from array", () => {
 });
 
 test("Create matrix from row vector", () => {
-	const vector = new Vector(1, 2, 3);
+	const vector = new Vector2D(1, 2, 3);
 	const matrix = Matrix.ofRowVector(vector);
 	const result = matrix.asRowVector();
 
@@ -26,7 +26,7 @@ test("Create matrix from row vector", () => {
 });
 
 test("Create matrix from row vectors", () => {
-	const matrix = Matrix.ofRowVectors(new Vector(1, 2, 3), new Vector(4, 5, 6), new Vector(7, 8, 9));
+	const matrix = Matrix.ofRowVectors(new Vector2D(1, 2, 3), new Vector2D(4, 5, 6), new Vector2D(7, 8, 9));
 
 	let result = matrix.asRowVector(0);
 
@@ -48,7 +48,7 @@ test("Create matrix from row vectors", () => {
 });
 
 test("Create matrix from column vector", () => {
-	const vector = new Vector(1, 2, 3);
+	const vector = new Vector2D(1, 2, 3);
 	const matrix = Matrix.ofColumnVector(vector);
 	const result = matrix.asColumnVector();
 
@@ -58,7 +58,7 @@ test("Create matrix from column vector", () => {
 });
 
 test("Create matrix from column vectors", () => {
-	const matrix = Matrix.ofColumnVectors(new Vector(1, 2, 3), new Vector(4, 5, 6), new Vector(7, 8, 9));
+	const matrix = Matrix.ofColumnVectors(new Vector2D(1, 2, 3), new Vector2D(4, 5, 6), new Vector2D(7, 8, 9));
 
 	let result = matrix.asColumnVector(0);
 
@@ -93,7 +93,7 @@ test("Create identity matrix", () => {
 });
 
 test("Translate vector with matrix", () => {
-	const vector = new Vector(240, 651, 1);
+	const vector = new Vector2D(240, 651, 1);
 	const result = Matrix.translate(vector, -10, 20);
 
 	expect(result.x).toBe(230);
@@ -102,7 +102,7 @@ test("Translate vector with matrix", () => {
 });
 
 test("Scale vector with matrix", () => {
-	const vector = new Vector(100, 100, 1);
+	const vector = new Vector2D(100, 100, 1);
 	const result = Matrix.scale(vector, 1.4, 0.8);
 
 	expect(result.x).toBe(140);
@@ -111,7 +111,7 @@ test("Scale vector with matrix", () => {
 });
 
 test("Rotate vector with matrix", () => {
-	const vector = new Vector(1, -2, 4);
+	const vector = new Vector2D(1, -2, 4);
 	let result = Matrix.rotate(vector, 45);
 
 	expect(result.x).approximately(2.1213, 0.1);
@@ -126,7 +126,7 @@ test("Rotate vector with matrix", () => {
 });
 
 test("Shear vector with matrix on all axises", () => {
-	const vector = new Vector(1, -2, 4);
+	const vector = new Vector2D(1, -2, 4);
 	const result = Matrix.shear(vector, 45);
 
 	// shear matrix: [[1, tan(45°), 0], [tan(45°), 1, 0], [0, 0, 1]]
@@ -139,7 +139,7 @@ test("Shear vector with matrix on all axises", () => {
 });
 
 test("Shear vector with matrix on x-axis", () => {
-	const vector = new Vector(1, -2, 4);
+	const vector = new Vector2D(1, -2, 4);
 	const result = Matrix.shearX(vector, 45);
 
 	// shearX matrix: [[1, tan(45°), 0], [0, 1, 0], [0, 0, 1]]
@@ -150,7 +150,7 @@ test("Shear vector with matrix on x-axis", () => {
 });
 
 test("Shear vector with matrix on y-axis", () => {
-	const vector = new Vector(1, -2, 4);
+	const vector = new Vector2D(1, -2, 4);
 	const result = Matrix.shearY(vector, 45);
 
 	// shearY matrix: [[1, 0, 0], [tan(45°), 1, 0], [0, 0, 1]]
@@ -161,7 +161,7 @@ test("Shear vector with matrix on y-axis", () => {
 });
 
 test("Reflect vector with matrix on all axises", () => {
-	const vector = new Vector(1, -2, 4);
+	const vector = new Vector2D(1, -2, 4);
 	const result = Matrix.reflect(vector);
 
 	expect(result.x).toBe(-1);
@@ -170,7 +170,7 @@ test("Reflect vector with matrix on all axises", () => {
 });
 
 test("Reflect vector with matrix on x-axis", () => {
-	const vector = new Vector(1, -2, 4);
+	const vector = new Vector2D(1, -2, 4);
 	const result = Matrix.reflectX(vector);
 
 	expect(result.x).toBe(-1);
@@ -179,7 +179,7 @@ test("Reflect vector with matrix on x-axis", () => {
 });
 
 test("Reflect vector with matrix on y-axis", () => {
-	const vector = new Vector(1, -2, 4);
+	const vector = new Vector2D(1, -2, 4);
 	const result = Matrix.reflectY(vector);
 
 	expect(result.x).toBe(1);
@@ -188,7 +188,7 @@ test("Reflect vector with matrix on y-axis", () => {
 });
 
 test("Reflect vector with matrix on z-axis", () => {
-	const vector = new Vector(1, -2, 4);
+	const vector = new Vector2D(1, -2, 4);
 	const result = Matrix.reflectZ(vector);
 
 	expect(result.x).toBe(1);

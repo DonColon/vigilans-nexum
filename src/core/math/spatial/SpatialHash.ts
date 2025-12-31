@@ -1,5 +1,5 @@
 import { Rectangle } from "@/core/math/geometry/Rectangle";
-import { Vector } from "@/core/math/geometry/Vector";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { Shape } from "@/core/math/geometry/Shape";
 
 export interface ShapeEntity {
@@ -97,7 +97,7 @@ export class SpatialHash {
         }
     }
 
-    public queryPosition(position: Vector): Set<ShapeEntity> {
+    public queryPosition(position: Vector2D): Set<ShapeEntity> {
         const cell = this.getCellForPosition(position);
         const key = this.getKey(cell);
         const bucket = this.buckets.get(key);
@@ -121,7 +121,7 @@ export class SpatialHash {
         return results;
     }
 
-    public queryRadius(position: Vector, radius: number): Set<ShapeEntity> {
+    public queryRadius(position: Vector2D, radius: number): Set<ShapeEntity> {
         const bounds = new Rectangle(
             position.x - radius,
             position.y - radius,
@@ -161,7 +161,7 @@ export class SpatialHash {
         return count;
     }
 
-    private getCellForPosition(position: Vector): BucketKey {
+    private getCellForPosition(position: Vector2D): BucketKey {
         return {
             x: Math.floor(position.x / this.cellSize),
             y: Math.floor(position.y / this.cellSize)

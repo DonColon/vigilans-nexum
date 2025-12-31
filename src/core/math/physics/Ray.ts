@@ -1,4 +1,4 @@
-import { Vector } from "@/core/math/geometry/Vector";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { Line } from "@/core/math/geometry/Line";
 import { Circle } from "@/core/math/geometry/Circle";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
@@ -11,11 +11,11 @@ import { Shape } from "@/core/math/geometry/Shape";
  */
 export interface RaycastHit {
     /** The point where the ray hit */
-    point: Vector;
+    point: Vector2D;
     /** Distance from ray origin to hit point */
     distance: number;
     /** Normal vector at the hit point (perpendicular to surface) */
-    normal: Vector;
+    normal: Vector2D;
     /** The shape that was hit */
     shape?: Shape;
     /** Parameter t where ray hit (distance along ray direction) */
@@ -27,10 +27,10 @@ export interface RaycastHit {
  * Useful for raycasting, line-of-sight checks, click detection, projectiles, etc.
  */
 export class Ray {
-    private readonly origin: Vector;
-    private readonly direction: Vector;
+    private readonly origin: Vector2D;
+    private readonly direction: Vector2D;
 
-    constructor(origin: Vector, direction: Vector) {
+    constructor(origin: Vector2D, direction: Vector2D) {
         this.origin = origin;
         this.direction = direction.normalize(); // Always normalized
     }
@@ -38,7 +38,7 @@ export class Ray {
     /**
      * Creates a ray from origin pointing towards a target point
      */
-    public static fromPoints(origin: Vector, target: Vector): Ray {
+    public static fromPoints(origin: Vector2D, target: Vector2D): Ray {
         const direction = target.subtract(origin);
         return new Ray(origin, direction);
     }
@@ -46,15 +46,15 @@ export class Ray {
     /**
      * Creates a ray from origin with an angle in degrees
      */
-    public static fromAngle(origin: Vector, angle: number): Ray {
-        const direction = Vector.ofAngle(angle);
+    public static fromAngle(origin: Vector2D, angle: number): Ray {
+        const direction = Vector2D.ofAngle(angle);
         return new Ray(origin, direction);
     }
 
     /**
      * Gets a point along the ray at distance t
      */
-    public getPoint(t: number): Vector {
+    public getPoint(t: number): Vector2D {
         return this.origin.add(this.direction.multiply(t));
     }
 
@@ -67,8 +67,8 @@ export class Ray {
         
         const lineDir = end.subtract(start);
         const v1 = this.origin.subtract(start);
-        const v2 = new Vector(-this.direction.y, this.direction.x);
-        const v3 = new Vector(-lineDir.y, lineDir.x);
+        const v2 = new Vector2D(-this.direction.y, this.direction.x);
+        const v3 = new Vector2D(-lineDir.y, lineDir.x);
 
         const dot = lineDir.dot(v2);
         if (Math.abs(dot) < 0.000001) {
@@ -83,7 +83,7 @@ export class Ray {
             const distance = this.origin.distanceBetween(point);
             
             // Normal is perpendicular to line direction
-            const normal = new Vector(-lineDir.y, lineDir.x).normalize();
+            const normal = new Vector2D(-lineDir.y, lineDir.x).normalize();
             
             return {
                 point,
@@ -298,7 +298,7 @@ export class Ray {
     /**
      * Reflects the ray off a surface normal
      */
-    public reflect(normal: Vector): Ray {
+    public reflect(normal: Vector2D): Ray {
         // R = D - 2(D·N)N
         const dotProduct = this.direction.dot(normal);
         const reflection = this.direction.subtract(normal.multiply(2 * dotProduct));
@@ -317,14 +317,14 @@ export class Ray {
     /**
      * Gets the origin of the ray
      */
-    public getOrigin(): Vector {
+    public getOrigin(): Vector2D {
         return this.origin;
     }
 
     /**
      * Gets the direction of the ray (normalized)
      */
-    public getDirection(): Vector {
+    public getDirection(): Vector2D {
         return this.direction;
     }
 
@@ -346,7 +346,7 @@ export class Ray {
     /**
      * Checks if a point is on the ray (within tolerance)
      */
-    public containsPoint(point: Vector, tolerance: number = 0.001): boolean {
+    public containsPoint(point: Vector2D, tolerance: number = 0.001): boolean {
         const toPoint = point.subtract(this.origin);
         const projection = toPoint.dot(this.direction);
         
@@ -363,7 +363,7 @@ export class Ray {
     /**
      * Gets the distance from a point to the ray
      */
-    public distanceToPoint(point: Vector): number {
+    public distanceToPoint(point: Vector2D): number {
         const toPoint = point.subtract(this.origin);
         const projection = toPoint.dot(this.direction);
         
@@ -378,7 +378,7 @@ export class Ray {
     /**
      * Gets the closest point on the ray to a given point
      */
-    public getClosestPoint(point: Vector): Vector {
+    public getClosestPoint(point: Vector2D): Vector2D {
         const toPoint = point.subtract(this.origin);
         const projection = toPoint.dot(this.direction);
         

@@ -2,7 +2,7 @@ import { describe, test, expect } from "vitest";
 import { Shape } from "@/core/math/geometry/Shape";
 import { Circle } from "@/core/math/geometry/Circle";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
-import { Vector } from "@/core/math/geometry/Vector";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 
 describe("Shape Interface Test Suite", () => {
 	test("Circle implements Shape interface", () => {
@@ -23,9 +23,9 @@ describe("Shape Interface Test Suite", () => {
 		expect(typeof rectangle.getBounds).toBe("function");
 	});
 
-	test("Shape.contains() works with Vector", () => {
+	test("Shape.contains() works with Vector2D", () => {
 		const circle: Shape = new Circle(0, 0, 10);
-		const point = new Vector(5, 5);
+		const point = new Vector2D(5, 5);
 		
 		const result = circle.contains(point);
 		expect(typeof result).toBe("boolean");

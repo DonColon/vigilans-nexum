@@ -1,17 +1,17 @@
 import { fillTuple } from "@/core/utils/Arrays";
 import { Shape } from "@/core/math/geometry/Shape";
-import { Vector } from "@/core/math/geometry/Vector";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { Line } from "@/core/math/geometry/Line";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 
 export class Polygon implements Shape {
-	private readonly vertices: Vector[];
+	private readonly vertices: Vector2D[];
 
-	constructor(vertices: Vector[] = []) {
+	constructor(vertices: Vector2D[] = []) {
 		this.vertices = vertices;
 	}
 
-	public static buildConvexHull(points: Vector[]): Polygon {
+	public static buildConvexHull(points: Vector2D[]): Polygon {
 		const polygon = new Polygon();
 		const start = this.findStartingPoint(points);
 		const used = fillTuple(false, points.length);
@@ -27,7 +27,7 @@ export class Polygon implements Shape {
 		return polygon;
 	}
 
-	private static findStartingPoint(points: Vector[]): number {
+	private static findStartingPoint(points: Vector2D[]): number {
 		let previous = 0;
 		for (let current = 1; current < points.length; current++) {
 			if (points[current].x < points[previous].x) {
@@ -37,7 +37,7 @@ export class Polygon implements Shape {
 		return previous;
 	}
 
-	private static findNextPoint(points: Vector[], previous: number, used: boolean[]): number {
+	private static findNextPoint(points: Vector2D[], previous: number, used: boolean[]): number {
 		let next = -1;
 		let max = 0;
 
@@ -66,7 +66,7 @@ export class Polygon implements Shape {
 		return next;
 	}
 
-	public contains(point: Vector): boolean {
+	public contains(point: Vector2D): boolean {
 		let contains = false;
 
 		for (let current = 1; current < this.vertices.length; current++) {
@@ -165,7 +165,7 @@ export class Polygon implements Shape {
         return new Rectangle(minX, minY, maxX - minX, maxY - minY);
 	}
 
-	public addVertex(vertex: Vector): this {
+	public addVertex(vertex: Vector2D): this {
 		this.vertices.push(vertex);
 		return this;
 	}
@@ -175,11 +175,11 @@ export class Polygon implements Shape {
 		this.vertices.splice(index, 1);
 	}
 
-	public getVertex(index: number): Vector {
-		return index < 0 || index >= this.vertices.length ? new Vector(NaN, NaN) : this.vertices[index];
+	public getVertex(index: number): Vector2D {
+		return index < 0 || index >= this.vertices.length ? new Vector2D(NaN, NaN) : this.vertices[index];
 	}
 
-	public getVertices(): Vector[] {
+	public getVertices(): Vector2D[] {
 		return [...this.vertices];
 	}
 }

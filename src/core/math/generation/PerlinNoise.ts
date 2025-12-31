@@ -1,4 +1,4 @@
-import { Vector } from "@/core/math/geometry/Vector";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 
 /**
  * Perlin Noise implementation for procedural generation.
@@ -132,9 +132,9 @@ export class PerlinNoise {
     }
 
     /**
-     * Generates noise using Vector input (2D or 3D based on z value)
+     * Generates noise using Vector2D input (2D or 3D based on z value)
      */
-    public noiseVector(v: Vector): number {
+    public noiseVector(v: Vector2D): number {
         if (v.z === 0) {
             return this.noise2D(v.x, v.y);
         }

@@ -1,5 +1,5 @@
 import { test, expect } from "vitest";
-import { Vector } from "@/core/math/geometry/Vector";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { Polygon } from "@/core/math/geometry/Polygon";
 import { Circle } from "@/core/math/geometry/Circle";
@@ -7,8 +7,8 @@ import { Ellipse } from "@/core/math/geometry/Ellipse";
 
 test("Rectangle contains point", () => {
 	const value = new Rectangle(0, 0, 10, 5);
-	const positiveValue = new Vector(5, 3);
-	const negativeValue = new Vector(100, 100);
+	const positiveValue = new Vector2D(5, 3);
+	const negativeValue = new Vector2D(100, 100);
 
 	let result = value.contains(positiveValue);
 	expect(result).toBeTruthy();
@@ -44,9 +44,9 @@ test("Rectangle intersects with rectangle", () => {
 test("Rectangle intersects with polygon", () => {
 	const value = new Rectangle(0, 0, 10, 5);
 
-	const positiveValue = new Polygon([new Vector(1, -2), new Vector(1, 2), new Vector(0, 8)]);
+	const positiveValue = new Polygon([new Vector2D(1, -2), new Vector2D(1, 2), new Vector2D(0, 8)]);
 
-	const negativeValue = new Polygon([new Vector(50, 50), new Vector(100, 100), new Vector(50, 150)]);
+	const negativeValue = new Polygon([new Vector2D(50, 50), new Vector2D(100, 100), new Vector2D(50, 150)]);
 
 	let result = value.intersects(positiveValue);
 	expect(result).toBeTruthy();

@@ -1,18 +1,18 @@
 import { Shape } from "@/core/math/geometry/Shape";
-import { Vector } from "@/core/math/geometry/Vector";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { Line } from "@/core/math/geometry/Line";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { Circle } from "@/core/math/geometry/Circle";
 import { Polygon } from "@/core/math/geometry/Polygon";
 
 export class Ellipse implements Shape {
-    private readonly center: Vector;
+    private readonly center: Vector2D;
     private readonly radiusX: number;
     private readonly radiusY: number;
     private readonly rotation: number; // in degrees
 
     constructor(x: number, y: number, radiusX: number, radiusY: number, rotation: number = 0) {
-        this.center = new Vector(x, y);
+        this.center = new Vector2D(x, y);
         this.radiusX = radiusX;
         this.radiusY = radiusY;
         this.rotation = rotation;
@@ -22,7 +22,7 @@ export class Ellipse implements Shape {
         return new Ellipse(x + width / 2, y + height / 2, width / 2, height / 2, rotation);
     }
 
-    public contains(point: Vector): boolean {
+    public contains(point: Vector2D): boolean {
         // Transform point to ellipse's local coordinate system
         const localPoint = this.transformToLocal(point);
         
@@ -175,7 +175,7 @@ export class Ellipse implements Shape {
         return false;
     }
 
-    public getBorderPoint(angle: number): Vector {
+    public getBorderPoint(angle: number): Vector2D {
         // Get point on ellipse boundary at given angle
         const radians = (angle * Math.PI) / 180;
         
@@ -184,7 +184,7 @@ export class Ellipse implements Shape {
         const localY = this.radiusY * Math.sin(radians);
         
         // Transform back to world space
-        return this.transformToWorld(new Vector(localX, localY));
+        return this.transformToWorld(new Vector2D(localX, localY));
     }
 
     public getBounds(): Rectangle {
@@ -231,7 +231,7 @@ export class Ellipse implements Shape {
         return Math.PI * (a + b) * (1 + (3 * h) / (10 + Math.sqrt(4 - 3 * h)));
     }
 
-    public getCenter(): Vector {
+    public getCenter(): Vector2D {
         return this.center;
     }
 
@@ -255,19 +255,19 @@ export class Ellipse implements Shape {
         return this.rotation;
     }
 
-    public getFoci(): { focus1: Vector; focus2: Vector } {
+    public getFoci(): { focus1: Vector2D; focus2: Vector2D } {
         // Calculate foci for the ellipse
         const c = Math.sqrt(Math.abs(this.radiusX * this.radiusX - this.radiusY * this.radiusY));
         
-        let focus1Local: Vector;
-        let focus2Local: Vector;
+        let focus1Local: Vector2D;
+        let focus2Local: Vector2D;
 
         if (this.radiusX > this.radiusY) {
-            focus1Local = new Vector(-c, 0);
-            focus2Local = new Vector(c, 0);
+            focus1Local = new Vector2D(-c, 0);
+            focus2Local = new Vector2D(c, 0);
         } else {
-            focus1Local = new Vector(0, -c);
-            focus2Local = new Vector(0, c);
+            focus1Local = new Vector2D(0, -c);
+            focus2Local = new Vector2D(0, c);
         }
 
         return {
@@ -283,9 +283,9 @@ export class Ellipse implements Shape {
         return Math.sqrt(1 - (b * b) / (a * a));
     }
 
-    private transformToLocal(point: Vector): Vector {
+    private transformToLocal(point: Vector2D): Vector2D {
         // Translate to origin
-        const translated = new Vector(
+        const translated = new Vector2D(
             point.x - this.center.x,
             point.y - this.center.y
         );
@@ -299,15 +299,15 @@ export class Ellipse implements Shape {
         const cos = Math.cos(radians);
         const sin = Math.sin(radians);
 
-        return new Vector(
+        return new Vector2D(
             translated.x * cos - translated.y * sin,
             translated.x * sin + translated.y * cos
         );
     }
 
-    private transformToWorld(localPoint: Vector): Vector {
+    private transformToWorld(localPoint: Vector2D): Vector2D {
         if (this.rotation === 0) {
-            return new Vector(
+            return new Vector2D(
                 localPoint.x + this.center.x,
                 localPoint.y + this.center.y
             );
@@ -318,13 +318,13 @@ export class Ellipse implements Shape {
         const cos = Math.cos(radians);
         const sin = Math.sin(radians);
 
-        const rotated = new Vector(
+        const rotated = new Vector2D(
             localPoint.x * cos - localPoint.y * sin,
             localPoint.x * sin + localPoint.y * cos
         );
 
         // Translate to center
-        return new Vector(
+        return new Vector2D(
             rotated.x + this.center.x,
             rotated.y + this.center.y
         );

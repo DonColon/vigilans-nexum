@@ -1,20 +1,20 @@
 import { Shape } from "@/core/math/geometry/Shape";
-import { Vector } from "@/core/math/geometry/Vector";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { Line } from "@/core/math/geometry/Line";
 import { Ellipse } from "@/core/math/geometry/Ellipse";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { Polygon } from "@/core/math/geometry/Polygon";
 
 export class Circle implements Shape {
-	private readonly position: Vector;
+	private readonly position: Vector2D;
 	private readonly radius: number;
 
 	constructor(x: number, y: number, radius: number) {
-		this.position = new Vector(x, y);
+		this.position = new Vector2D(x, y);
 		this.radius = radius;
 	}
 
-	public static ofPoints(start: Vector, center: Vector, end: Vector): Circle {
+	public static ofPoints(start: Vector2D, center: Vector2D, end: Vector2D): Circle {
 		const startCenter = Line.ofPoints(start, center);
 		const endCenter = Line.ofPoints(center, end);
 
@@ -25,12 +25,12 @@ export class Circle implements Shape {
 
 		const centerX = (endBisector.B * startBisector.C - startBisector.B * endBisector.C) / denominator;
 		const centerY = (startBisector.A * endBisector.C - endBisector.A * startBisector.C) / denominator;
-		const radius = start.distanceBetween(new Vector(centerX, centerY));
+		const radius = start.distanceBetween(new Vector2D(centerX, centerY));
 
 		return new Circle(centerX, centerY, radius);
 	}
 
-	public contains(point: Vector): boolean {
+	public contains(point: Vector2D): boolean {
 		const distance = point.distanceBetween(this.getPosition());
 		return distance <= this.radius;
 	}
@@ -78,8 +78,8 @@ export class Circle implements Shape {
 		return distance <= this.radius + other.radius;
 	}
 
-	public getBorderPoint(angle: number): Vector {
-		const vector = Vector.ofAngle(angle);
+	public getBorderPoint(angle: number): Vector2D {
+		const vector = Vector2D.ofAngle(angle);
 		return vector.multiply(this.radius).subtract(this.position);
 	}
 
@@ -102,7 +102,7 @@ export class Circle implements Shape {
 		return 2 * this.radius * Math.PI;
 	}
 
-	public getPosition(): Vector {
+	public getPosition(): Vector2D {
 		return this.position;
 	}
 

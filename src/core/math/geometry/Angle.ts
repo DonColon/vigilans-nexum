@@ -1,4 +1,4 @@
-import { Vector } from "@/core/math/geometry/Vector";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 
 /**
  * Represents an angle with automatic normalization and useful operations.
@@ -32,14 +32,14 @@ export class Angle {
     /**
      * Creates an angle pointing from one position to another
      */
-    public static fromVector(vector: Vector): Angle {
+    public static fromVector(vector: Vector2D): Angle {
         return new Angle(vector.heading());
     }
 
     /**
      * Creates an angle looking from origin to target
      */
-    public static lookAt(origin: Vector, target: Vector): Angle {
+    public static lookAt(origin: Vector2D, target: Vector2D): Angle {
         const direction = target.subtract(origin);
         return Angle.fromVector(direction);
     }
@@ -190,8 +190,8 @@ export class Angle {
     /**
      * Converts to a unit direction vector
      */
-    public toVector(): Vector {
-        return Vector.ofAngle(this._degrees);
+    public toVector(): Vector2D {
+        return Vector2D.ofAngle(this._degrees);
     }
 
     /**

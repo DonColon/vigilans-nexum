@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { SpatialHash } from "@/core/math/spatial/SpatialHash";
-import { Vector } from "@/core/math/geometry/Vector";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { Circle } from "@/core/math/geometry/Circle";
 
@@ -65,7 +65,7 @@ describe("SpatialHash Advanced Queries Test Suite", () => {
 		const hash = new SpatialHash(10);
 		hash.insert({ id: 1, shape: new Circle(5, 5, 5) });
 		
-		const results = hash.queryPosition(new Vector(5, 5));
+		const results = hash.queryPosition(new Vector2D(5, 5));
 		expect(results.size).toBeGreaterThan(0);
 	});
 
@@ -73,7 +73,7 @@ describe("SpatialHash Advanced Queries Test Suite", () => {
 		const hash = new SpatialHash(10);
 		hash.insert({ id: 1, shape: new Circle(5, 5, 3) });
 		
-		const results = hash.queryRadius(new Vector(5, 5), 10);
+		const results = hash.queryRadius(new Vector2D(5, 5), 10);
 		expect(results.size).toBeGreaterThan(0);
 	});
 
@@ -97,7 +97,7 @@ describe("SpatialHash Advanced Queries Test Suite", () => {
 		entity.shape = new Circle(25, 25, 2);
 		hash.update(entity, oldBounds);
 		
-		const results = hash.queryPosition(new Vector(25, 25));
+		const results = hash.queryPosition(new Vector2D(25, 25));
 		expect(results.size).toBeGreaterThan(0);
 	});
 

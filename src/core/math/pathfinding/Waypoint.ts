@@ -1,11 +1,11 @@
-import { Vector } from "@/core/math/geometry/Vector";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 
 /**
  * Represents a single waypoint in a path
  */
 export class Waypoint {
     /** Position of the waypoint */
-    public readonly position: Vector;
+    public readonly position: Vector2D;
     
     /** Optional wait time at this waypoint (in milliseconds) */
     public readonly waitTime?: number;
@@ -20,7 +20,7 @@ export class Waypoint {
     public readonly metadata?: Record<string, any>;
 
     constructor(
-        position: Vector,
+        position: Vector2D,
         options?: {
             waitTime?: number;
             speed?: number;
@@ -28,7 +28,7 @@ export class Waypoint {
             metadata?: Record<string, any>;
         }
     ) {
-        this.position = new Vector(position.x, position.y);
+        this.position = new Vector2D(position.x, position.y);
         this.waitTime = options?.waitTime;
         this.speed = options?.speed;
         this.action = options?.action;
@@ -44,7 +44,7 @@ export class Waypoint {
         action?: () => void;
         metadata?: Record<string, any>;
     }): Waypoint {
-        return new Waypoint(new Vector(x, y), options);
+        return new Waypoint(new Vector2D(x, y), options);
     }
 
     /**
@@ -59,7 +59,7 @@ export class Waypoint {
      */
     public clone(): Waypoint {
         return new Waypoint(
-            new Vector(this.position.x, this.position.y),
+            new Vector2D(this.position.x, this.position.y),
             {
                 waitTime: this.waitTime,
                 speed: this.speed,
@@ -88,7 +88,7 @@ export class WaypointPath {
     private currentIndex: number = 0;
     private isReversing: boolean = false;
 
-    constructor(waypoints: Waypoint[] | Vector[], loop: boolean = false) {
+    constructor(waypoints: Waypoint[] | Vector2D[], loop: boolean = false) {
         if (waypoints.length === 0) {
             throw new Error("WaypointPath requires at least one waypoint");
         }
@@ -104,7 +104,7 @@ export class WaypointPath {
     /**
      * Creates a path from an array of positions
      */
-    public static fromPositions(positions: Vector[], loop: boolean = false): WaypointPath {
+    public static fromPositions(positions: Vector2D[], loop: boolean = false): WaypointPath {
         return new WaypointPath(positions, loop);
     }
 
@@ -112,7 +112,7 @@ export class WaypointPath {
      * Creates a path from x, y coordinate pairs
      */
     public static fromCoordinates(coords: Array<[number, number]>, loop: boolean = false): WaypointPath {
-        const positions = coords.map(([x, y]) => new Vector(x, y));
+        const positions = coords.map(([x, y]) => new Vector2D(x, y));
         return new WaypointPath(positions, loop);
     }
 
@@ -121,22 +121,22 @@ export class WaypointPath {
      */
     public static rectangle(x: number, y: number, width: number, height: number): WaypointPath {
         return new WaypointPath([
-            new Vector(x, y),
-            new Vector(x + width, y),
-            new Vector(x + width, y + height),
-            new Vector(x, y + height)
+            new Vector2D(x, y),
+            new Vector2D(x + width, y),
+            new Vector2D(x + width, y + height),
+            new Vector2D(x, y + height)
         ], true);
     }
 
     /**
      * Creates a circular patrol path
      */
-    public static circle(center: Vector, radius: number, segments: number = 8): WaypointPath {
-        const waypoints: Vector[] = [];
+    public static circle(center: Vector2D, radius: number, segments: number = 8): WaypointPath {
+        const waypoints: Vector2D[] = [];
         
         for (let i = 0; i < segments; i++) {
             const angle = (360 / segments) * i;
-            const point = Vector.ofAngle(angle).multiply(radius).add(center);
+            const point = Vector2D.ofAngle(angle).multiply(radius).add(center);
             waypoints.push(point);
         }
         
@@ -297,7 +297,7 @@ export class WaypointPath {
     /**
      * Gets the direction vector to the next waypoint
      */
-    public getDirectionToNext(): Vector | null {
+    public getDirectionToNext(): Vector2D | null {
         const next = this.getNext();
         if (!next) return null;
         
@@ -308,7 +308,7 @@ export class WaypointPath {
     /**
      * Gets the closest waypoint to a position
      */
-    public getClosestWaypoint(position: Vector): { waypoint: Waypoint; index: number; distance: number } {
+    public getClosestWaypoint(position: Vector2D): { waypoint: Waypoint; index: number; distance: number } {
         let closestIndex = 0;
         let closestDistance = position.distanceBetween(this.waypoints[0].position);
         
@@ -330,7 +330,7 @@ export class WaypointPath {
     /**
      * Checks if a position is close to the current waypoint
      */
-    public isAtCurrentWaypoint(position: Vector, threshold: number = 5): boolean {
+    public isAtCurrentWaypoint(position: Vector2D, threshold: number = 5): boolean {
         const current = this.getCurrent();
         return position.distanceBetween(current.position) <= threshold;
     }
@@ -363,11 +363,11 @@ export class WaypointPath {
      * Gets a position along the path at parameter t (0 to 1)
      * This uses linear interpolation between waypoints
      */
-    public getPositionAt(t: number): Vector {
+    public getPositionAt(t: number): Vector2D {
         t = Math.max(0, Math.min(1, t));
         
         if (this.waypoints.length === 1) {
-            return new Vector(this.waypoints[0].position.x, this.waypoints[0].position.y);
+            return new Vector2D(this.waypoints[0].position.x, this.waypoints[0].position.y);
         }
         
         const totalLength = this.getTotalLength();
@@ -405,14 +405,14 @@ export class WaypointPath {
         
         // Return last waypoint if we somehow got here
         const last = this.waypoints[this.waypoints.length - 1];
-        return new Vector(last.position.x, last.position.y);
+        return new Vector2D(last.position.x, last.position.y);
     }
 
     /**
      * Gets evenly spaced points along the path
      */
-    public getPoints(count: number): Vector[] {
-        const points: Vector[] = [];
+    public getPoints(count: number): Vector2D[] {
+        const points: Vector2D[] = [];
         
         for (let i = 0; i <= count; i++) {
             const t = i / count;
@@ -460,14 +460,14 @@ export class WaypointPath {
  */
 export class WaypointFollower {
     private path: WaypointPath;
-    private currentPosition: Vector;
+    private currentPosition: Vector2D;
     private speed: number;
     private waitTimer: number = 0;
     private isWaiting: boolean = false;
 
-    constructor(path: WaypointPath, startPosition?: Vector, speed: number = 100) {
+    constructor(path: WaypointPath, startPosition?: Vector2D, speed: number = 100) {
         this.path = path;
-        this.currentPosition = startPosition ?? new Vector(
+        this.currentPosition = startPosition ?? new Vector2D(
             path.getCurrent().position.x,
             path.getCurrent().position.y
         );
@@ -508,7 +508,7 @@ export class WaypointFollower {
         
         if (distance < 1) {
             // Reached waypoint
-            this.currentPosition = new Vector(target.x, target.y);
+            this.currentPosition = new Vector2D(target.x, target.y);
             
             // Start waiting if needed
             if (current.waitTime && current.waitTime > 0) {
@@ -541,7 +541,7 @@ export class WaypointFollower {
     /**
      * Gets the current position
      */
-    public getPosition(): Vector {
+    public getPosition(): Vector2D {
         return this.currentPosition;
     }
 
@@ -555,9 +555,9 @@ export class WaypointFollower {
     /**
      * Resets to the start of the path
      */
-    public reset(position?: Vector): void {
+    public reset(position?: Vector2D): void {
         this.path.reset();
-        this.currentPosition = position ?? new Vector(
+        this.currentPosition = position ?? new Vector2D(
             this.path.getCurrent().position.x,
             this.path.getCurrent().position.y
         );

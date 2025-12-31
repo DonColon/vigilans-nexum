@@ -1,5 +1,5 @@
 import { Dimension } from "@/core/math/geometry/Dimension";
-import { Vector } from "@/core/math/geometry/Vector";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { FontStyle } from "@/core/graphics/styles/text/FontStyle";
 import { TextStyle } from "@/core/graphics/styles/text/TextStyle";
 
@@ -16,7 +16,7 @@ export interface LabelSettings {
 
 export class Label {
 	private readonly text: string;
-	private readonly position: Vector;
+	private readonly position: Vector2D;
 	private readonly dimension: Dimension;
 
 	private readonly fontStyle?: FontStyle;
@@ -24,7 +24,7 @@ export class Label {
 
 	constructor(settings: LabelSettings) {
 		this.text = settings.text;
-		this.position = new Vector(settings.x, settings.y);
+		this.position = new Vector2D(settings.x, settings.y);
 
 		this.dimension = {
 			width: settings.width,
@@ -39,7 +39,7 @@ export class Label {
 		return this.text;
 	}
 
-	public getPosition(): Vector {
+	public getPosition(): Vector2D {
 		return this.position;
 	}
 
