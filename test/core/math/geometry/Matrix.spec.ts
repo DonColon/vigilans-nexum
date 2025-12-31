@@ -1,5 +1,5 @@
 import { test, expect } from "vitest";
-import { Matrix } from "@/core/math/geometry/Matrix2D";
+import { Matrix2D } from "@/core/math/geometry/Matrix2D";
 import { Vector2D } from "@/core/math/geometry/Vector2D";
 
 test("Create matrix from array", () => {
@@ -9,7 +9,7 @@ test("Create matrix from array", () => {
 		[7, 8, 9]
 	];
 
-	const matrix = new Matrix(array);
+	const matrix = new Matrix2D(array);
 	const result = matrix.asArray();
 
 	expect(result).toEqual(array);
@@ -17,7 +17,7 @@ test("Create matrix from array", () => {
 
 test("Create matrix from row vector", () => {
 	const vector = new Vector2D(1, 2, 3);
-	const matrix = Matrix.ofRowVector(vector);
+	const matrix = Matrix2D.ofRowVector(vector);
 	const result = matrix.asRowVector();
 
 	expect(result.x).toBe(1);
@@ -26,7 +26,7 @@ test("Create matrix from row vector", () => {
 });
 
 test("Create matrix from row vectors", () => {
-	const matrix = Matrix.ofRowVectors(new Vector2D(1, 2, 3), new Vector2D(4, 5, 6), new Vector2D(7, 8, 9));
+	const matrix = Matrix2D.ofRowVectors(new Vector2D(1, 2, 3), new Vector2D(4, 5, 6), new Vector2D(7, 8, 9));
 
 	let result = matrix.asRowVector(0);
 
@@ -49,7 +49,7 @@ test("Create matrix from row vectors", () => {
 
 test("Create matrix from column vector", () => {
 	const vector = new Vector2D(1, 2, 3);
-	const matrix = Matrix.ofColumnVector(vector);
+	const matrix = Matrix2D.ofColumnVector(vector);
 	const result = matrix.asColumnVector();
 
 	expect(result.x).toBe(1);
@@ -58,7 +58,7 @@ test("Create matrix from column vector", () => {
 });
 
 test("Create matrix from column vectors", () => {
-	const matrix = Matrix.ofColumnVectors(new Vector2D(1, 2, 3), new Vector2D(4, 5, 6), new Vector2D(7, 8, 9));
+	const matrix = Matrix2D.ofColumnVectors(new Vector2D(1, 2, 3), new Vector2D(4, 5, 6), new Vector2D(7, 8, 9));
 
 	let result = matrix.asColumnVector(0);
 
@@ -86,7 +86,7 @@ test("Create identity matrix", () => {
 		[0, 0, 1]
 	];
 
-	const matrix = Matrix.identity();
+	const matrix = Matrix2D.identity();
 	const result = matrix.asArray();
 
 	expect(result).toEqual(expected);
@@ -94,7 +94,7 @@ test("Create identity matrix", () => {
 
 test("Translate vector with matrix", () => {
 	const vector = new Vector2D(240, 651, 1);
-	const result = Matrix.translate(vector, -10, 20);
+	const result = Matrix2D.translate(vector, -10, 20);
 
 	expect(result.x).toBe(230);
 	expect(result.y).toBe(671);
@@ -103,7 +103,7 @@ test("Translate vector with matrix", () => {
 
 test("Scale vector with matrix", () => {
 	const vector = new Vector2D(100, 100, 1);
-	const result = Matrix.scale(vector, 1.4, 0.8);
+	const result = Matrix2D.scale(vector, 1.4, 0.8);
 
 	expect(result.x).toBe(140);
 	expect(result.y).toBe(80);
@@ -112,13 +112,13 @@ test("Scale vector with matrix", () => {
 
 test("Rotate vector with matrix", () => {
 	const vector = new Vector2D(1, -2, 4);
-	let result = Matrix.rotate(vector, 45);
+	let result = Matrix2D.rotate(vector, 45);
 
 	expect(result.x).approximately(2.1213, 0.1);
 	expect(result.y).approximately(-0.7071, 0.1);
 	expect(result.z).toBe(4);
 
-	result = Matrix.rotate(vector, 45, true);
+	result = Matrix2D.rotate(vector, 45, true);
 
 	expect(result.x).approximately(-0.7071, 0.1);
 	expect(result.y).approximately(-2.1213, 0.1);
@@ -127,7 +127,7 @@ test("Rotate vector with matrix", () => {
 
 test("Shear vector with matrix on all axises", () => {
 	const vector = new Vector2D(1, -2, 4);
-	const result = Matrix.shear(vector, 45);
+	const result = Matrix2D.shear(vector, 45);
 
 	// shear matrix: [[1, tan(45°), 0], [tan(45°), 1, 0], [0, 0, 1]]
 	// tan(45°) = 1
@@ -140,7 +140,7 @@ test("Shear vector with matrix on all axises", () => {
 
 test("Shear vector with matrix on x-axis", () => {
 	const vector = new Vector2D(1, -2, 4);
-	const result = Matrix.shearX(vector, 45);
+	const result = Matrix2D.shearX(vector, 45);
 
 	// shearX matrix: [[1, tan(45°), 0], [0, 1, 0], [0, 0, 1]]
 	// x = 1 * 1 + (-2) * 1 + 0 * 4 = 1 - 2 = -1
@@ -151,7 +151,7 @@ test("Shear vector with matrix on x-axis", () => {
 
 test("Shear vector with matrix on y-axis", () => {
 	const vector = new Vector2D(1, -2, 4);
-	const result = Matrix.shearY(vector, 45);
+	const result = Matrix2D.shearY(vector, 45);
 
 	// shearY matrix: [[1, 0, 0], [tan(45°), 1, 0], [0, 0, 1]]
 	// y = 1 * 1 + (-2) * 1 + 0 * 4 = 1 - 2 = -1
@@ -162,7 +162,7 @@ test("Shear vector with matrix on y-axis", () => {
 
 test("Reflect vector with matrix on all axises", () => {
 	const vector = new Vector2D(1, -2, 4);
-	const result = Matrix.reflect(vector);
+	const result = Matrix2D.reflect(vector);
 
 	expect(result.x).toBe(-1);
 	expect(result.y).toBe(2);
@@ -171,7 +171,7 @@ test("Reflect vector with matrix on all axises", () => {
 
 test("Reflect vector with matrix on x-axis", () => {
 	const vector = new Vector2D(1, -2, 4);
-	const result = Matrix.reflectX(vector);
+	const result = Matrix2D.reflectX(vector);
 
 	expect(result.x).toBe(-1);
 	expect(result.y).toBe(-2);
@@ -180,7 +180,7 @@ test("Reflect vector with matrix on x-axis", () => {
 
 test("Reflect vector with matrix on y-axis", () => {
 	const vector = new Vector2D(1, -2, 4);
-	const result = Matrix.reflectY(vector);
+	const result = Matrix2D.reflectY(vector);
 
 	expect(result.x).toBe(1);
 	expect(result.y).toBe(2);
@@ -189,7 +189,7 @@ test("Reflect vector with matrix on y-axis", () => {
 
 test("Reflect vector with matrix on z-axis", () => {
 	const vector = new Vector2D(1, -2, 4);
-	const result = Matrix.reflectZ(vector);
+	const result = Matrix2D.reflectZ(vector);
 
 	expect(result.x).toBe(1);
 	expect(result.y).toBe(-2);
@@ -197,13 +197,13 @@ test("Reflect vector with matrix on z-axis", () => {
 });
 
 test("Add two matrices", () => {
-	const value = new Matrix([
+	const value = new Matrix2D([
 		[2, 3, 4],
 		[3, 4, 1],
 		[7, 8, 2]
 	]);
 
-	const other = new Matrix([
+	const other = new Matrix2D([
 		[5, 7, 4],
 		[3, 4, 1],
 		[7, 8, 2]
@@ -219,7 +219,7 @@ test("Add two matrices", () => {
 });
 
 test("Add two rows of matrix", () => {
-	const value = new Matrix([
+	const value = new Matrix2D([
 		[2, 3, 4],
 		[3, 4, 1],
 		[7, 8, 2]
@@ -235,7 +235,7 @@ test("Add two rows of matrix", () => {
 });
 
 test("Add two columns of matrix", () => {
-	const value = new Matrix([
+	const value = new Matrix2D([
 		[2, 3, 4],
 		[3, 4, 1],
 		[7, 8, 2]
@@ -251,13 +251,13 @@ test("Add two columns of matrix", () => {
 });
 
 test("Subtract two matrices", () => {
-	const value = new Matrix([
+	const value = new Matrix2D([
 		[2, 3, 4],
 		[3, 4, 1],
 		[7, 8, 2]
 	]);
 
-	const other = new Matrix([
+	const other = new Matrix2D([
 		[5, 7, 4],
 		[3, 4, 1],
 		[7, 8, 2]
@@ -273,7 +273,7 @@ test("Subtract two matrices", () => {
 });
 
 test("Subtract two rows of matrix", () => {
-	const value = new Matrix([
+	const value = new Matrix2D([
 		[2, 3, 4],
 		[3, 4, 1],
 		[7, 8, 2]
@@ -289,7 +289,7 @@ test("Subtract two rows of matrix", () => {
 });
 
 test("Subtract two columns of matrix", () => {
-	const value = new Matrix([
+	const value = new Matrix2D([
 		[2, 3, 4],
 		[3, 4, 1],
 		[7, 8, 2]
@@ -305,7 +305,7 @@ test("Subtract two columns of matrix", () => {
 });
 
 test("Multiply matrix with scalar", () => {
-	const value = new Matrix([
+	const value = new Matrix2D([
 		[2, 3, 4],
 		[3, 4, 1],
 		[7, 8, 2]
@@ -321,7 +321,7 @@ test("Multiply matrix with scalar", () => {
 });
 
 test("Multiply row with scalar", () => {
-	const value = new Matrix([
+	const value = new Matrix2D([
 		[2, 3, 4],
 		[3, 4, 1],
 		[7, 8, 2]
@@ -337,7 +337,7 @@ test("Multiply row with scalar", () => {
 });
 
 test("Multiply column with scalar", () => {
-	const value = new Matrix([
+	const value = new Matrix2D([
 		[2, 3, 4],
 		[3, 4, 1],
 		[7, 8, 2]
@@ -353,7 +353,7 @@ test("Multiply column with scalar", () => {
 });
 
 test("Divide matrix with scalar", () => {
-	const value = new Matrix([
+	const value = new Matrix2D([
 		[20, 30, 40],
 		[30, 40, 10],
 		[70, 80, 20]
@@ -369,7 +369,7 @@ test("Divide matrix with scalar", () => {
 });
 
 test("Divide row with scalar", () => {
-	const value = new Matrix([
+	const value = new Matrix2D([
 		[20, 30, 40],
 		[3, 4, 1],
 		[7, 8, 2]
@@ -385,7 +385,7 @@ test("Divide row with scalar", () => {
 });
 
 test("Divide column with scalar", () => {
-	const value = new Matrix([
+	const value = new Matrix2D([
 		[20, 3, 4],
 		[30, 4, 1],
 		[70, 8, 2]
@@ -401,7 +401,7 @@ test("Divide column with scalar", () => {
 });
 
 test("Switch row with scalar", () => {
-	const value = new Matrix([
+	const value = new Matrix2D([
 		[2, 3, 4],
 		[3, 4, 1],
 		[7, 8, 2]
@@ -417,7 +417,7 @@ test("Switch row with scalar", () => {
 });
 
 test("Switch column with scalar", () => {
-	const value = new Matrix([
+	const value = new Matrix2D([
 		[2, 3, 4],
 		[3, 4, 1],
 		[7, 8, 2]
@@ -433,13 +433,13 @@ test("Switch column with scalar", () => {
 });
 
 test("Product of two matrices", () => {
-	const value = new Matrix([
+	const value = new Matrix2D([
 		[1, 2, -1],
 		[3, 2, 0],
 		[-4, 0, 2]
 	]);
 
-	const other = new Matrix([
+	const other = new Matrix2D([
 		[3, 4, 2],
 		[0, 1, 0],
 		[-2, 0, 1]
@@ -455,7 +455,7 @@ test("Product of two matrices", () => {
 });
 
 test("Transpose matrix", () => {
-	const value = new Matrix([
+	const value = new Matrix2D([
 		[1, 2, -1],
 		[3, 2, 0],
 		[-4, 0, 2]
@@ -471,7 +471,7 @@ test("Transpose matrix", () => {
 });
 
 test("Determinant of matrix", () => {
-	const matrix = new Matrix([
+	const matrix = new Matrix2D([
 		[4, -1, -2],
 		[-3, 3, 2],
 		[-1, -4, 2]
@@ -480,12 +480,12 @@ test("Determinant of matrix", () => {
 	let result = matrix.determinant();
 	expect(result).toBe(22);
 
-	result = Matrix.determinant([[1]]);
+	result = Matrix2D.determinant([[1]]);
 	expect(result).toBe(1);
 });
 
 test("Trace of matrix", () => {
-	const value = new Matrix([
+	const value = new Matrix2D([
 		[1, 2, -1],
 		[3, 2, 0],
 		[-4, 0, 2]
@@ -496,7 +496,7 @@ test("Trace of matrix", () => {
 });
 
 test("Inverse of matrix", () => {
-	const value = new Matrix([
+	const value = new Matrix2D([
 		[1, 2, -1],
 		[2, 1, 2],
 		[-1, 2, 1]
@@ -513,7 +513,7 @@ test("Inverse of matrix", () => {
 });
 
 test("Adjoint of matrix", () => {
-	const value = new Matrix([
+	const value = new Matrix2D([
 		[1, 2, -1],
 		[2, 1, 2],
 		[-1, 2, 1]
@@ -529,7 +529,7 @@ test("Adjoint of matrix", () => {
 });
 
 test("Cofactor of matrix", () => {
-	const value = new Matrix([
+	const value = new Matrix2D([
 		[1, 2, -1],
 		[2, 1, 2],
 		[-1, 2, 1]
@@ -545,19 +545,19 @@ test("Cofactor of matrix", () => {
 });
 
 test("Two matrices are equal", () => {
-	const value = new Matrix([
+	const value = new Matrix2D([
 		[1, 2, -1],
 		[2, 1, 2],
 		[-1, 2, 1]
 	]);
 
-	const equalMatrix = new Matrix([
+	const equalMatrix = new Matrix2D([
 		[1, 2, -1],
 		[2, 1, 2],
 		[-1, 2, 1]
 	]);
 
-	const notEqualMatrix = new Matrix([
+	const notEqualMatrix = new Matrix2D([
 		[1, 2, 0],
 		[2, 1, 2],
 		[0, 2, 1]
