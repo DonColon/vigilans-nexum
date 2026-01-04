@@ -11,6 +11,7 @@ import { GameStateConstructor } from "@/core/GameState";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { EventSystem } from "@/core/events/EventSystem";
 import { binaryInsert } from "@/core/utils/Arrays";
+import { SyncSystem } from "./SyncSystem";
 
 @GameCoreService()
 export class World {
@@ -20,6 +21,7 @@ export class World {
 	private readonly systems: Map<string, System>;
 
 	private updateSchedule: System[];
+	private syncSchedule: System[];
 	private renderSchedule: System[];
 
 	@GameCoreService(EventSystem)
@@ -32,11 +34,18 @@ export class World {
 		this.systems = new Map<string, System>();
 
 		this.updateSchedule = [];
+		this.syncSchedule = [];
 		this.renderSchedule = [];
 	}
 
 	public update(elapsed: number, frame: number) {
 		for (const system of this.updateSchedule) {
+			if (system.isEnabled()) {
+				system.execute(elapsed, frame);
+			}
+		}
+
+		for (const system of this.syncSchedule) {
 			if (system.isEnabled()) {
 				system.execute(elapsed, frame);
 			}
@@ -186,6 +195,8 @@ export class World {
 	private scheduleSystem(system: System) {
 		if (system instanceof UpdateSystem) {
 			binaryInsert(this.updateSchedule, system, System.byPriority);
+		} else if (system instanceof SyncSystem) {
+			binaryInsert(this.syncSchedule, system, System.byPriority);
 		} else if (system instanceof RenderSystem) {
 			binaryInsert(this.renderSchedule, system, System.byPriority);
 		} else {
@@ -205,6 +216,8 @@ export class World {
 	private unscheduleSystem(system: System) {
 		if (system instanceof UpdateSystem) {
 			this.updateSchedule = this.updateSchedule.filter(s => s !== system);
+		} else if (system instanceof SyncSystem) {
+			this.syncSchedule = this.syncSchedule.filter(s => s !== system);
 		} else if (system instanceof RenderSystem) {
 			this.renderSchedule = this.renderSchedule.filter(s => s !== system);
 		} else {
@@ -224,6 +237,10 @@ export class World {
 
 	public getUpdateSchedule(): System[] {
 		return this.updateSchedule;
+	}
+
+	public getSyncSchedule(): System[] {
+		return this.syncSchedule;
 	}
 
 	public getRenderSchedule(): System[] {

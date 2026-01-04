@@ -1,5 +1,5 @@
 import { test, expect, suite, vi } from "vitest";
-import { ReactiveSystem } from "@/core/ecs/ReactiveSystem";
+import { ReactiveUpdateSystem } from "@/core/ecs/ReactiveUpdateSystem";
 import { Query } from "@/core/ecs/Query";
 import { ServiceRegistry } from "@/core/service/ServiceRegistry";
 import { EventSystem } from "@/core/events/EventSystem";
@@ -9,14 +9,14 @@ import { Entity } from "@/core/ecs/Entity";
 suite("ReactiveSystem Test Suite", () => {
 	let entityChanged = false;
 
-	class TestReactiveSystem extends ReactiveSystem {
+	class TestReactiveSystem extends ReactiveUpdateSystem {
 		queries = {
 			query: new Query({
 				allowlist: [],
 				blocklist: []
 			})
 		};
-		
+
 		public initialize(): void {
 			this.eventSystem.subscribeOnce("entityChanged", () => {
 				entityChanged = true;
@@ -43,10 +43,10 @@ suite("ReactiveSystem Test Suite", () => {
 
 	test("ReactiveSystem execute method does nothing by default", () => {
 		const system = new TestReactiveSystem(0);
-		
+
 		// Execute should not throw and does nothing
 		expect(() => system.execute(16, 1)).not.toThrow();
-		
+
 		// Verify it was called (even though it does nothing)
 		const executeSpy = vi.spyOn(system, 'execute');
 		system.execute(16, 1);
@@ -57,17 +57,17 @@ suite("ReactiveSystem Test Suite", () => {
 		const system = new TestReactiveSystem(5);
 
 		expect(system.isEnabled()).toBeTruthy();
-		
+
 		system.disable();
 		expect(system.isEnabled()).toBeFalsy();
-		
+
 		system.enable();
 		expect(system.isEnabled()).toBeTruthy();
 	});
 
 	test("ReactiveSystem can access queries", () => {
 		const system = new TestReactiveSystem(0);
-		
+
 		expect(system.queries).toBeDefined();
 		expect(system.queries.query).toBeInstanceOf(Query);
 	});
