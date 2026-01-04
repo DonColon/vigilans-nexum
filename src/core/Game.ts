@@ -18,6 +18,7 @@ import { GameFeature, GameFeatureConstructor } from "./GameFeature";
 import { TimerManager } from "./timer/TimerManager";
 import { CooldownManager } from "./timer/CooldownManager";
 import { PoolManager } from "./pool/PoolManager";
+import { SceneManager } from "./scenes/SceneManager";
 
 export interface GameConfiguration {
 	id: string;
@@ -57,6 +58,7 @@ export class Game {
 	private audioDevice: AudioDevice;
 	private timerManager: TimerManager;
 	private cooldownManager: CooldownManager;
+	private sceneManager: SceneManager;
 	private world: World;
 
 	constructor(private config: GameConfiguration) {
@@ -81,6 +83,7 @@ export class Game {
 		this.audioDevice = new AudioDevice(config.audioDevice);
 		this.timerManager = new TimerManager();
 		this.cooldownManager = new CooldownManager();
+		this.sceneManager = new SceneManager();
 		this.world = new World();
 	}
 
@@ -249,6 +252,7 @@ export class Game {
 		this.inputDevice.update();
 		this.eventSystem.processQueue();
 		this.world.update(elapsed, frame);
+		this.sceneManager.update();
 	}
 
 	private render(elapsed: number, frame: number) {

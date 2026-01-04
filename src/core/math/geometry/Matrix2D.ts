@@ -15,7 +15,7 @@ export class Matrix2D {
 				if (values[row][column] === undefined) {
 					if (row === column) this.values[row][column] = 1;
 					continue;
-				}	
+				}
 
 				this.values[row][column] = values[row][column];
 			}
@@ -50,7 +50,19 @@ export class Matrix2D {
 		return new Matrix2D(values);
 	}
 
-	public static identity(): Matrix2D {
+	public static ofTransformation(translation: Vector2D, scale: Vector2D, rotation: number): Matrix2D {
+		const radian = Angle.toRadians(rotation);
+		const cos = Math.cos(radian);
+		const sin = Math.sin(radian);
+
+		return new Matrix2D([
+            [cos * scale.x, -sin * scale.y, translation.x],
+            [sin * scale.x,  cos * scale.y, translation.y],
+            [0, 0, 1]
+        ]);
+	}
+
+	public static ofIdentity(): Matrix2D {
 		const values = fillMatrix(0, 3, 3);
 
 		for (let index = 0; index < values.length; index++) {
