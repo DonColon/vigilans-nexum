@@ -206,7 +206,7 @@ export class World {
 		} else if (system instanceof RenderSystem) {
 			binaryInsert(this.renderSchedule, system, System.byPriority);
 		} else {
-			throw new GameError(`System ${system.constructor.name} is neither an UpdateSystem nor a RenderSystem`);
+			throw new GameError(`System ${system.constructor.name} must extend UpdateSystem, SyncSystem or RenderSystem`);
 		}
 	}
 
@@ -227,7 +227,7 @@ export class World {
 		} else if (system instanceof RenderSystem) {
 			this.renderSchedule = this.renderSchedule.filter((s) => s !== system);
 		} else {
-			throw new GameError(`System ${system.constructor.name} is neither an UpdateSystem nor a RenderSystem`);
+			throw new GameError(`System ${system.constructor.name} must extend UpdateSystem, SyncSystem or RenderSystem`);
 		}
 	}
 

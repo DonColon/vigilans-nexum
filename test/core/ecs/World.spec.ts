@@ -285,7 +285,7 @@ suite("World Test Suite", () => {
 		}
 
 		const world = new World();
-		expect(() => world.registerSystem(InvalidSystem, 0)).toThrowError("System InvalidSystem is neither an UpdateSystem nor a RenderSystem");
+		expect(() => world.registerSystem(InvalidSystem, 0)).toThrowError("System InvalidSystem must extend UpdateSystem, SyncSystem or RenderSystem");
 	});
 
 	test("Throw error when unregistering system that is neither UpdateSystem nor RenderSystem", () => {
@@ -301,6 +301,6 @@ suite("World Test Suite", () => {
 		const invalidSystem = new InvalidSystem(0);
 		(world as any).systems.set(InvalidSystem.name, invalidSystem);
 
-		expect(() => world.unregisterSystem(InvalidSystem)).toThrowError("System InvalidSystem is neither an UpdateSystem nor a RenderSystem");
+		expect(() => world.unregisterSystem(InvalidSystem)).toThrowError("System InvalidSystem must extend UpdateSystem, SyncSystem or RenderSystem");
 	});
 });
