@@ -1,7 +1,6 @@
 /// <reference types="vite/client" />
 
 import { defineConfig } from "vite";
-import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
 	root: "src",
@@ -20,5 +19,9 @@ export default defineConfig({
 	esbuild: {
 		keepNames: true
 	},
-	plugins: [tsconfigPaths()]
+	// Vite 8 reads the `@/*` aliases straight from tsconfig.json, which replaces
+	// the vite-tsconfig-paths plugin.
+	resolve: {
+		tsconfigPaths: true
+	}
 });
