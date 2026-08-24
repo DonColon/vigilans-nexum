@@ -67,23 +67,27 @@ export class GameStateManager {
 	}
 
 	public registerState(stateType: GameStateConstructor): this {
-		if (this.states.has(stateType.name)) {
-			throw new GameError(`State ${stateType.name} is already registered`);
+		if (stateType.type === GameState.type) {
+			throw new GameError(`State ${stateType.name} must declare its own static type`);
+		}
+
+		if (this.states.has(stateType.type)) {
+			throw new GameError(`State ${stateType.type} is already registered`);
 		}
 
 		const state = new stateType();
-		this.states.set(stateType.name, state);
+		this.states.set(stateType.type, state);
 
 		return this;
 	}
 
 	public unregisterState(stateType: GameStateConstructor): this {
-		this.states.delete(stateType.name);
+		this.states.delete(stateType.type);
 		return this;
 	}
 
 	public getState(stateType: GameStateConstructor | string): GameState {
-		const name = typeof stateType === "string" ? stateType : stateType.name;
+		const name = typeof stateType === "string" ? stateType : stateType.type;
 		const state = this.states.get(name);
 
 		if (state === undefined) {

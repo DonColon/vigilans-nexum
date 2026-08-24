@@ -14,5 +14,11 @@ export default defineConfig({
 		// outDir lives outside root, so Vite will not clear it unless asked.
 		emptyOutDir: true
 	},
+	// Systems, commands, features and services are looked up by class name at
+	// runtime; minified identifiers would break those lookups. Persisted ids
+	// (components, states) do not rely on this - they declare a static type.
+	esbuild: {
+		keepNames: true
+	},
 	plugins: [tsconfigPaths()]
 });

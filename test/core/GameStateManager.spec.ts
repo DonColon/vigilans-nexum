@@ -4,6 +4,8 @@ import { GameState } from "../../src/core/GameState";
 
 suite("GameStateManager Test Suite", () => {
 	class LevelState extends GameState {
+		public static readonly type = "level";
+
 		onEnter() {}
 		onExit() {}
 		onPause() {}
@@ -11,6 +13,8 @@ suite("GameStateManager Test Suite", () => {
 	}
 
 	class MenuState extends GameState {
+		public static readonly type = "menu";
+
 		onEnter() {}
 		onExit() {}
 		onPause() {}
@@ -18,6 +22,8 @@ suite("GameStateManager Test Suite", () => {
 	}
 
 	class PauseState extends GameState {
+		public static readonly type = "pause";
+
 		onEnter() {}
 		onExit() {}
 		onPause() {}
@@ -128,13 +134,13 @@ suite("GameStateManager Test Suite", () => {
 		manager.registerState(MenuState);
 		manager.registerState(PauseState);
 
-		const levelState = manager.getState("LevelState");
+		const levelState = manager.getState("level");
 		expect(levelState).toBeInstanceOf(LevelState);
 
-		const menuState = manager.getState("MenuState");
+		const menuState = manager.getState("menu");
 		expect(menuState).toBeInstanceOf(MenuState);
 
-		const pauseState = manager.getState("PauseState");
+		const pauseState = manager.getState("pause");
 		expect(pauseState).toBeInstanceOf(PauseState);
 	});
 

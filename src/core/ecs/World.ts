@@ -1,11 +1,11 @@
 import { GameError } from "@/core/GameError";
 import { JsonSchema } from "@/core/ecs/JsonSchema";
-import { ComponentConstructor } from "@/core/ecs/Component";
+import { Component, ComponentConstructor } from "@/core/ecs/Component";
 import { Entity, EntityType } from "@/core/ecs/Entity";
 import { System, SystemConstructor } from "@/core/ecs/System";
 import { UpdateSystem } from "@/core/ecs/UpdateSystem";
 import { RenderSystem } from "@/core/ecs/RenderSystem";
-import { GameStateConstructor } from "@/core/GameState";
+import { GameState, GameStateConstructor } from "@/core/GameState";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { EventSystem } from "@/core/events/EventSystem";
 import { binaryInsert } from "@/core/utils/Arrays";
@@ -59,16 +59,20 @@ export class World {
 	}
 
 	public registerComponent<T extends JsonSchema>(componentType: ComponentConstructor<T>): this {
-		if (this.hasComponent(componentType)) {
-			throw new GameError(`Component ${componentType.name} is already registered`);
+		if (componentType.type === Component.type) {
+			throw new GameError(`Component ${componentType.name} must declare its own static type`);
 		}
 
-		this.components.set(componentType.name, componentType);
+		if (this.hasComponent(componentType)) {
+			throw new GameError(`Component ${componentType.type} is already registered`);
+		}
+
+		this.components.set(componentType.type, componentType);
 		return this;
 	}
 
 	public unregisterComponent<T extends JsonSchema>(componentType: ComponentConstructor<T>): this {
-		this.components.delete(componentType.name);
+		this.components.delete(componentType.type);
 		return this;
 	}
 
@@ -87,21 +91,25 @@ export class World {
 	}
 
 	public hasComponent<T extends JsonSchema>(componentType: ComponentConstructor<T> | string): boolean {
-		const componentName = typeof componentType === "string" ? componentType : componentType.name;
+		const componentName = typeof componentType === "string" ? componentType : componentType.type;
 		return this.components.has(componentName);
 	}
 
 	public registerEntityState(stateType: GameStateConstructor): this {
-		if (this.hasEntityState(stateType)) {
-			throw new GameError(`Entity State ${stateType.name} is already registered`);
+		if (stateType.type === GameState.type) {
+			throw new GameError(`Entity State ${stateType.name} must declare its own static type`);
 		}
 
-		this.states.set(stateType.name, stateType);
+		if (this.hasEntityState(stateType)) {
+			throw new GameError(`Entity State ${stateType.type} is already registered`);
+		}
+
+		this.states.set(stateType.type, stateType);
 		return this;
 	}
 
 	public unregisterEntityState(stateType: GameStateConstructor): this {
-		this.states.delete(stateType.name);
+		this.states.delete(stateType.type);
 		return this;
 	}
 
@@ -120,7 +128,7 @@ export class World {
 	}
 
 	public hasEntityState(stateType: GameStateConstructor | string): boolean {
-		const stateName = typeof stateType === "string" ? stateType : stateType.name;
+		const stateName = typeof stateType === "string" ? stateType : stateType.type;
 		return this.states.has(stateName);
 	}
 

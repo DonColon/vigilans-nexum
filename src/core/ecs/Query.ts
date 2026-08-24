@@ -2,15 +2,22 @@ import { WorldEvent } from "@/core/ecs/WorldEvent";
 import { Entity } from "@/core/ecs/Entity";
 import { EventSystem } from "@/core/events/EventSystem";
 import { GameCoreService } from "@/core/service/GameCoreService";
+import { ComponentConstructor } from "@/core/ecs/Component";
 import { World } from "@/core/ecs/World";
 
 export interface QueryList {
 	[queryName: string]: Query;
 }
 
+type ComponentSelector = ComponentConstructor<any> | string;
+
 interface QuerySettings {
-	allowlist?: string[];
-	blocklist?: string[];
+	allowlist?: ComponentSelector[];
+	blocklist?: ComponentSelector[];
+}
+
+function toComponentTypes(selectors: ComponentSelector[] = []): string[] {
+	return selectors.map((selector) => (typeof selector === "string" ? selector : selector.type));
 }
 
 export class Query {
@@ -28,8 +35,8 @@ export class Query {
 	private world!: World;
 
 	constructor(settings: QuerySettings) {
-		this.allowlist = settings.allowlist || [];
-		this.blocklist = settings.blocklist || [];
+		this.allowlist = toComponentTypes(settings.allowlist);
+		this.blocklist = toComponentTypes(settings.blocklist);
 		this.entities = [];
 
 		this.onEntityChangedHandler = (event: WorldEvent) => this.onEntityChanged(event);

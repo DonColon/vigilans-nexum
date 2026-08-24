@@ -14,9 +14,13 @@ suite("World Test Suite", () => {
 	class PointComponent extends Component<{
 		x: number;
 		y: number;
-	}> {}
+	}> {
+		public static readonly type = "point";
+	}
 
 	class JumpState extends GameState {
+		public static readonly type = "jump";
+
 		onPause(): void {}
 		onResume(): void {}
 		onEnter() {}
@@ -83,13 +87,34 @@ suite("World Test Suite", () => {
 		expect(mapSystemExecute).toHaveBeenCalledTimes(1);
 	});
 
+	test("Component without its own type is rejected", () => {
+		class UntypedComponent extends Component<{ x: number }> {}
+
+		const world = new World();
+
+		expect(() => world.registerComponent(UntypedComponent)).toThrowError(GameError);
+	});
+
+	test("Entity state without its own type is rejected", () => {
+		class UntypedState extends GameState {
+			onEnter() {}
+			onExit() {}
+			onPause() {}
+			onResume() {}
+		}
+
+		const world = new World();
+
+		expect(() => world.registerEntityState(UntypedState)).toThrowError(GameError);
+	});
+
 	test("Register a component to the world", () => {
 		const world = new World();
 		world.registerComponent(PointComponent);
 
 		expect(() => world.registerComponent(PointComponent)).toThrowError(GameError);
-		expect(world.getComponent(PointComponent.name)).toEqual(PointComponent);
-		expect(() => world.getComponent("MoveComponent")).toThrowError(GameError);
+		expect(world.getComponent(PointComponent.type)).toEqual(PointComponent);
+		expect(() => world.getComponent("move")).toThrowError(GameError);
 
 		const components = world.getComponents();
 		expect(components[0]).toEqual(PointComponent);
@@ -100,7 +125,7 @@ suite("World Test Suite", () => {
 		world.registerComponent(PointComponent);
 		world.unregisterComponent(PointComponent);
 
-		expect(() => world.getComponent(PointComponent.name)).toThrowError(GameError);
+		expect(() => world.getComponent(PointComponent.type)).toThrowError(GameError);
 
 		const components = world.getComponents();
 		expect(components).toHaveLength(0);
@@ -111,7 +136,7 @@ suite("World Test Suite", () => {
 		world.registerComponent(PointComponent);
 
 		expect(world.hasComponent(PointComponent)).toBeTruthy();
-		expect(world.hasComponent("PointComponent")).toBeTruthy();
+		expect(world.hasComponent("point")).toBeTruthy();
 	});
 
 	test("Register an entity state to the world", () => {
@@ -119,8 +144,8 @@ suite("World Test Suite", () => {
 		world.registerEntityState(JumpState);
 
 		expect(() => world.registerEntityState(JumpState)).toThrowError(GameError);
-		expect(world.getEntityState(JumpState.name)).toEqual(JumpState);
-		expect(() => world.getEntityState("FallState")).toThrowError(GameError);
+		expect(world.getEntityState(JumpState.type)).toEqual(JumpState);
+		expect(() => world.getEntityState("fall")).toThrowError(GameError);
 
 		const states = world.getEntityStates();
 		expect(states[0]).toEqual(JumpState);
@@ -131,7 +156,7 @@ suite("World Test Suite", () => {
 		world.registerEntityState(JumpState);
 		world.unregisterEntityState(JumpState);
 
-		expect(() => world.getEntityState(JumpState.name)).toThrowError(GameError);
+		expect(() => world.getEntityState(JumpState.type)).toThrowError(GameError);
 
 		const states = world.getEntityStates();
 		expect(states).toHaveLength(0);
@@ -142,7 +167,7 @@ suite("World Test Suite", () => {
 		world.registerEntityState(JumpState);
 
 		expect(world.hasEntityState(JumpState)).toBeTruthy();
-		expect(world.hasEntityState("JumpState")).toBeTruthy();
+		expect(world.hasEntityState("jump")).toBeTruthy();
 	});
 
 	test("Create an entity to the world", () => {

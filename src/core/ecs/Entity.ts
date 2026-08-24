@@ -56,25 +56,25 @@ export class Entity {
 
 	public addComponent<T extends JsonSchema>(componentType: ComponentConstructor<T>, data: T): this {
 		if (!this.world.hasComponent(componentType)) {
-			throw new GameError(`${componentType.name} not defined in world`);
+			throw new GameError(`${componentType.type} not defined in world`);
 		}
 
 		const component = new componentType(data);
-		this.components.set(componentType.name, component);
+		this.components.set(componentType.type, component);
 
 		this.eventSystem.dispatch("entityChanged", { entity: this });
 		return this;
 	}
 
 	public removeComponent<T extends JsonSchema>(componentType: ComponentConstructor<T>): this {
-		this.components.delete(componentType.name);
+		this.components.delete(componentType.type);
 
 		this.eventSystem.dispatch("entityChanged", { entity: this });
 		return this;
 	}
 
 	public getComponent<T extends JsonSchema>(componentType: ComponentConstructor<T>): Component<T> {
-		const component = this.components.get(componentType.name);
+		const component = this.components.get(componentType.type);
 
 		if (component === undefined) {
 			throw new GameError(`Component not defined on entity ${this.id}`);
@@ -89,7 +89,7 @@ export class Entity {
 	}
 
 	public hasComponent<T extends JsonSchema>(componentType: ComponentConstructor<T> | string): boolean {
-		const componentName = typeof componentType === "string" ? componentType : componentType.name;
+		const componentName = typeof componentType === "string" ? componentType : componentType.type;
 		return this.components.has(componentName);
 	}
 
@@ -103,7 +103,7 @@ export class Entity {
 
 	public addState(stateType: GameStateConstructor): this {
 		if (!this.world.hasEntityState(stateType)) {
-			throw new GameError(`${stateType.name} not defined in world`);
+			throw new GameError(`${stateType.type} not defined in world`);
 		}
 
 		this.stateManager.registerState(stateType);
@@ -136,7 +136,7 @@ export class Entity {
 		};
 
 		const states = this.stateManager.getCurrentStates();
-		entity.states = states.map((state) => state.constructor.name);
+		entity.states = states.map((state) => (state.constructor as GameStateConstructor).type);
 
 		for (const [name, component] of this.components.entries()) {
 			entity.components[name] = component.toObject();

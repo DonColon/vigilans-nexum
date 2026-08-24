@@ -9,12 +9,16 @@ suite("Query Test Suite", () => {
 	class PointComponent extends Component<{
 		x: number;
 		y: number;
-	}> {}
+	}> {
+		public static readonly type = "point";
+	}
 
 	class MoveComponent extends Component<{
 		dx: number;
 		dy: number;
-	}> {}
+	}> {
+		public static readonly type = "move";
+	}
 
 	const world = ServiceRegistry.get<World>(World.name);
 	const eventSystem = ServiceRegistry.get<EventSystem>(EventSystem.name);
@@ -23,8 +27,8 @@ suite("Query Test Suite", () => {
 
 	test("Query updates when entity changes", () => {
 		const query = new Query({
-			allowlist: ["PointComponent"],
-			blocklist: ["MoveComponent"]
+			allowlist: [PointComponent],
+			blocklist: [MoveComponent]
 		});
 
 		const entity = world.createEntity("1337");
@@ -49,8 +53,8 @@ suite("Query Test Suite", () => {
 		other.addComponent(MoveComponent, { dx: 1, dy: 2 });
 
 		const otherQuery = new Query({
-			allowlist: ["PointComponent"],
-			blocklist: ["MoveComponent"]
+			allowlist: [PointComponent],
+			blocklist: [MoveComponent]
 		});
 
 		eventSystem.processQueue();
@@ -62,8 +66,8 @@ suite("Query Test Suite", () => {
 
 	test("Query removes entity when component is added that is in blocklist", () => {
 		const query = new Query({
-			allowlist: ["PointComponent"],
-			blocklist: ["MoveComponent"]
+			allowlist: [PointComponent],
+			blocklist: [MoveComponent]
 		});
 
 		const entity = world.createEntity("remove-test-1");
@@ -85,7 +89,7 @@ suite("Query Test Suite", () => {
 
 	test("Query removes entity when entity is removed from world", () => {
 		const query = new Query({
-			allowlist: ["PointComponent"]
+			allowlist: [PointComponent]
 		});
 
 		const entity = world.createEntity("remove-test-2");
@@ -107,8 +111,8 @@ suite("Query Test Suite", () => {
 
 	test("Query getSingleResult returns first entity or null", () => {
 		const query = new Query({
-			allowlist: ["PointComponent"],
-			blocklist: ["MoveComponent"]
+			allowlist: [PointComponent],
+			blocklist: [MoveComponent]
 		});
 
 		eventSystem.processQueue();
@@ -133,7 +137,7 @@ suite("Query Test Suite", () => {
 	test("Query onEntityRemoved when entity is not in query (else branch)", () => {
 		// Create a query that only matches PointComponent
 		const query = new Query({
-			allowlist: ["PointComponent"]
+			allowlist: [PointComponent]
 		});
 
 		// Create an entity that DOESN'T match the query
