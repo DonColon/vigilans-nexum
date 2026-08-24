@@ -1,3 +1,4 @@
+import { Random } from "@/core/math/generation/Random";
 import { Tuple } from "@/core/utils/Arrays";
 
 interface Range {
@@ -5,11 +6,33 @@ interface Range {
 	max?: number;
 }
 
+/**
+ * Generator behind every gameplay draw. Its state is part of the savegame, so
+ * a reloaded game continues the exact same sequence.
+ */
+const generator = new Random();
+
+export function getGenerator(): Random {
+	return generator;
+}
+
+export function seedRandom(seed: number): void {
+	generator.seed(seed);
+}
+
+export function getRandomState(): number {
+	return generator.getState();
+}
+
+export function setRandomState(state: number): void {
+	generator.setState(state);
+}
+
 export function randomInteger(range: Range): number {
 	const min = range.min ?? 0;
 	const max = range.max ?? Number.MAX_SAFE_INTEGER;
 
-	return Math.floor(Math.random() * (max - min + 1)) + min;
+	return Math.floor(generator.next() * (max - min + 1)) + min;
 }
 
 export function randomIntegers<L extends number>(length: L, range: Range): Tuple<number, L> {
@@ -27,7 +50,7 @@ export function randomDecimal(range: Range): number {
 	const min = range.min ?? 0;
 	const max = range.max ?? Number.MAX_VALUE;
 
-	const value = Math.random() * (max - min + 1) + min;
+	const value = generator.next() * (max - min + 1) + min;
 
 	if (value > max) return max;
 
@@ -46,7 +69,7 @@ export function randomDecimals<L extends number>(length: L, range: Range): Tuple
 }
 
 export function randomBoolean(): boolean {
-	return Math.round(Math.random()) === 1;
+	return Math.round(generator.next()) === 1;
 }
 
 export function randomBooleans<L extends number>(length: L): Tuple<boolean, L> {
@@ -60,11 +83,20 @@ export function randomBooleans<L extends number>(length: L): Tuple<boolean, L> {
 	return values as Tuple<boolean, L>;
 }
 
+/**
+ * Identifiers are deliberately kept off the gameplay generator: creating an
+ * entity must not consume draws, otherwise it would shift every later dice roll
+ * and break replay determinism.
+ */
 export function randomUUID(): string {
+	if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+		return crypto.randomUUID();
+	}
+
 	let current = Date.now();
 
-	const uuid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (value) => {
-		const random = randomInteger({ max: 16 });
+	return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (value) => {
+		const random = Math.floor(Math.random() * 17);
 
 		const hexCode = (current + random) % 16;
 		current = Math.floor(current / 16);
@@ -73,8 +105,6 @@ export function randomUUID(): string {
 
 		return (value === "x" ? hexCode : (hexCode % 4) + 8).toString(16);
 	});
-
-	return uuid;
 }
 
 export function anyOf<T>(items: T[]): T | undefined {
