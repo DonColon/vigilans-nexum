@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { GameError } from "@/core/GameError";
 import { JsonSchema } from "@/core/ecs/JsonSchema";
 import { ComponentConstructor } from "@/core/ecs/Component";
@@ -215,11 +213,11 @@ export class World {
 
 	private unscheduleSystem(system: System) {
 		if (system instanceof UpdateSystem) {
-			this.updateSchedule = this.updateSchedule.filter(s => s !== system);
+			this.updateSchedule = this.updateSchedule.filter((s) => s !== system);
 		} else if (system instanceof SyncSystem) {
-			this.syncSchedule = this.syncSchedule.filter(s => s !== system);
+			this.syncSchedule = this.syncSchedule.filter((s) => s !== system);
 		} else if (system instanceof RenderSystem) {
-			this.renderSchedule = this.renderSchedule.filter(s => s !== system);
+			this.renderSchedule = this.renderSchedule.filter((s) => s !== system);
 		} else {
 			throw new GameError(`System ${system.constructor.name} is neither an UpdateSystem nor a RenderSystem`);
 		}

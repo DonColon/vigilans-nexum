@@ -15,7 +15,7 @@ describe("PerlinNoise Test Suite", () => {
 	test("Generates 1D noise value", () => {
 		const noise = new PerlinNoise(42);
 		const value = noise.noise1D(0.5);
-		
+
 		expect(value).toBeGreaterThanOrEqual(-1);
 		expect(value).toBeLessThanOrEqual(1);
 	});
@@ -23,7 +23,7 @@ describe("PerlinNoise Test Suite", () => {
 	test("Generates 2D noise value", () => {
 		const noise = new PerlinNoise(42);
 		const value = noise.noise2D(0.5, 0.5);
-		
+
 		expect(value).toBeGreaterThanOrEqual(-1);
 		expect(value).toBeLessThanOrEqual(1);
 	});
@@ -31,7 +31,7 @@ describe("PerlinNoise Test Suite", () => {
 	test("Generates 3D noise value", () => {
 		const noise = new PerlinNoise(42);
 		const value = noise.noise3D(0.5, 0.5, 0.5);
-		
+
 		expect(value).toBeGreaterThanOrEqual(-1);
 		expect(value).toBeLessThanOrEqual(1);
 	});
@@ -39,14 +39,14 @@ describe("PerlinNoise Test Suite", () => {
 	test("Same inputs produce same outputs with same seed", () => {
 		const noise1 = new PerlinNoise(42);
 		const noise2 = new PerlinNoise(42);
-		
+
 		expect(noise1.noise2D(1.5, 2.5)).toBe(noise2.noise2D(1.5, 2.5));
 	});
 
 	test("Different seeds produce different outputs", () => {
 		const noise1 = new PerlinNoise(42);
 		const noise2 = new PerlinNoise(43);
-		
+
 		expect(noise1.noise2D(1.5, 2.5)).not.toBe(noise2.noise2D(1.5, 2.5));
 	});
 });

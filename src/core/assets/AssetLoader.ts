@@ -6,8 +6,8 @@ import { GameCoreService } from "@/core/service/GameCoreService";
 import { EventSystem } from "@/core/events/EventSystem";
 import { AssetStorage } from "@/core/assets/AssetStorage";
 
-type LoaderMap = Record<AssetType['type'], (asset: any) => Promise<void>>
-type UnloaderMap = Record<AssetType['type'], (id: string) => void>
+type LoaderMap = Record<AssetType["type"], (asset: any) => Promise<void>>;
+type UnloaderMap = Record<AssetType["type"], (id: string) => void>;
 
 export interface LoaderConfiguration {
 	manifest: AssetManifest;
@@ -60,7 +60,7 @@ export class AssetLoader {
 		}
 
 		if (this.useCache && this.cache) {
-			const deletePromises = bundle.map(asset => this.cache.delete(asset.url));
+			const deletePromises = bundle.map((asset) => this.cache.delete(asset.url));
 			await Promise.all(deletePromises);
 		}
 
@@ -84,7 +84,7 @@ export class AssetLoader {
 			}
 		}
 
-		this.eventSystem.dispatch("bundleUnloaded", { 
+		this.eventSystem.dispatch("bundleUnloaded", {
 			bundle: bundleName,
 			removed: bundle.length
 		});
@@ -98,7 +98,7 @@ export class AssetLoader {
 		}
 
 		await this.loadBundle(bundle);
-		
+
 		const assets = this.resolveDependencies(bundle);
 		let loadedCount = 0;
 
@@ -111,13 +111,13 @@ export class AssetLoader {
 			} catch (error) {
 				throw new GameError(`Failed to load asset ${asset.id} of type ${asset.type}: ${error}`);
 			}
-		});	
+		});
 
 		const results = await Promise.allSettled(assetPromises);
-		const loaded = results.filter(result => result.status === "fulfilled");
-		const failed = results.filter(result => result.status === "rejected");
+		const loaded = results.filter((result) => result.status === "fulfilled");
+		const failed = results.filter((result) => result.status === "rejected");
 
-		this.eventSystem.dispatch("bundleLoaded", { 
+		this.eventSystem.dispatch("bundleLoaded", {
 			bundle: bundleName,
 			loaded: loaded.length,
 			failed: failed.length
@@ -147,16 +147,14 @@ export class AssetLoader {
 	private resolveDependencies(bundle: AssetType[]): AssetType[] {
 		// Asset-Map für schnellen Zugriff nach ID erstellen
 		const assetMap = new Map<string, AssetType>();
-		bundle.forEach(asset => assetMap.set(asset.id, asset));
+		bundle.forEach((asset) => assetMap.set(asset.id, asset));
 
 		// Validierung: Alle Dependencies müssen im Bundle existieren
 		for (const asset of bundle) {
 			if (asset.dependencies) {
 				for (const depId of asset.dependencies) {
 					if (!assetMap.has(depId)) {
-						throw new GameError(
-							`Asset ${asset.id} depends on ${depId}, but ${depId} is not in the bundle`
-						);
+						throw new GameError(`Asset ${asset.id} depends on ${depId}, but ${depId} is not in the bundle`);
 					}
 				}
 			}
@@ -210,13 +208,11 @@ export class AssetLoader {
 		// Zirkuläre Dependencies prüfen
 		if (sorted.length !== bundle.length) {
 			const remaining = bundle
-				.filter(asset => !sorted.includes(asset))
-				.map(asset => asset.id)
-				.join(', ');
+				.filter((asset) => !sorted.includes(asset))
+				.map((asset) => asset.id)
+				.join(", ");
 
-			throw new GameError(
-				`Circular dependency detected in bundle. Affected assets: ${remaining}`
-			);
+			throw new GameError(`Circular dependency detected in bundle. Affected assets: ${remaining}`);
 		}
 
 		return sorted;
@@ -268,9 +264,8 @@ export class AssetLoader {
 			const image = await this.createImage(url);
 			const sprite = new Sprite(image);
 			this.assetStorage.setImage(asset.id, sprite);
-
 		} catch (error) {
-			throw new GameError(`Image load failed: ${asset.url}`);
+			throw new GameError(`Image load failed: ${asset.url}: ${error}`);
 		} finally {
 			URL.revokeObjectURL(url);
 		}
@@ -297,7 +292,7 @@ export class AssetLoader {
 				channel: asset.subtype
 			});
 		} catch (error) {
-			throw new GameError(`Audio decode failed: ${asset.url}`);
+			throw new GameError(`Audio decode failed: ${asset.url}: ${error}`);
 		}
 	}
 
@@ -305,13 +300,12 @@ export class AssetLoader {
 		const response = await this.getResponse(asset.url);
 		const blob = await response.blob();
 		const url = URL.createObjectURL(blob);
-		
+
 		try {
 			const video = await this.createVideo(url);
 			this.assetStorage.setVideo(asset.id, video);
-
 		} catch (error) {
-			throw new GameError(`Video load failed: ${asset.url}`);
+			throw new GameError(`Video load failed: ${asset.url}: ${error}`);
 		} finally {
 			URL.revokeObjectURL(url);
 		}
@@ -367,9 +361,8 @@ export class AssetLoader {
 		try {
 			const stylesheet = await this.createStylesheet(url);
 			this.assetStorage.setStylesheet(asset.id, stylesheet);
-
 		} catch (error) {
-			throw new GameError(`Stylesheet load failed: ${asset.url}`);
+			throw new GameError(`Stylesheet load failed: ${asset.url}: ${error}`);
 		} finally {
 			URL.revokeObjectURL(url);
 		}
@@ -393,9 +386,8 @@ export class AssetLoader {
 		try {
 			const script = await this.createScript(url, asset.subtype);
 			this.assetStorage.setScript(asset.id, script);
-
 		} catch (error) {
-			throw new GameError(`JavaScript load failed: ${asset.url}`);
+			throw new GameError(`JavaScript load failed: ${asset.url}: ${error}`);
 		} finally {
 			URL.revokeObjectURL(url);
 		}

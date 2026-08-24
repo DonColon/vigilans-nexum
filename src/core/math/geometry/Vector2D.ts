@@ -40,8 +40,17 @@ export class Vector2D {
 	}
 
 	public cross(other: Vector2D): number {
-        return this.x * other.y - this.y * other.x;
-    }
+		return this.x * other.y - this.y * other.x;
+	}
+
+	/**
+	 * Perpendicular dot product (also known as the 2D wedge or cross product).
+	 * Equals the z-component of the 3D cross product and is positive when
+	 * `other` lies counter-clockwise from this vector.
+	 */
+	public perpDot(other: Vector2D): number {
+		return this.cross(other);
+	}
 
 	public magnitude(): number {
 		return Math.sqrt(this.magnitudeSquared());
@@ -52,13 +61,13 @@ export class Vector2D {
 	}
 
 	public normalize(): Vector2D {
-        const magnitude = this.magnitude();
-        return magnitude === 0 ? new Vector2D(0, 0) : this.divide(magnitude);
+		const magnitude = this.magnitude();
+		return magnitude === 0 ? new Vector2D(0, 0) : this.divide(magnitude);
 	}
 
-    public distanceBetween(other: Vector2D): number {
-        return this.subtract(other).magnitude();
-    }
+	public distanceBetween(other: Vector2D): number {
+		return this.subtract(other).magnitude();
+	}
 
 	public angleBetween(other: Vector2D): number {
 		const numerator = this.dot(other);
@@ -78,13 +87,14 @@ export class Vector2D {
 
 	public interpolate(other: Vector2D, scale: number): Vector2D {
 		if (scale > 1.0) scale = 1.0;
+		if (scale < 0.0) scale = 0.0;
 
-		const direction = this.subtract(other).multiply(scale);
+		const direction = other.subtract(this).multiply(scale);
 		return this.add(direction);
 	}
 
 	public isCollinear(other: Vector2D): boolean {
-        return this.cross(other) === 0;
+		return this.cross(other) === 0;
 	}
 
 	public isOrthogonal(other: Vector2D): boolean {

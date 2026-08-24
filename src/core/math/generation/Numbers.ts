@@ -1,6 +1,6 @@
 /**
  * Numbers module - Famous number sequences and checking utilities.
- * 
+ *
  * Contains:
  * - Famous mathematical constants
  * - Number sequence generators (Fibonacci, Prime, etc.)
@@ -13,7 +13,7 @@
 // ============================================================================
 
 export const GOLDEN_RATIO = 1.618033988749895; // φ (Phi)
-export const EULER = 2.718281828459045;        // e
+export const EULER = 2.718281828459045; // e
 export const SQRT_2 = 1.4142135623730951;
 export const SQRT_3 = 1.7320508075688772;
 export const SQRT_5 = 2.23606797749979;
@@ -31,35 +31,35 @@ export const LOG10_E = 0.4342944819032518;
  * Sequence: 0, 1, 1, 2, 3, 5, 8, 13, 21, 34, ...
  */
 export function fibonacci(n: number): number[] {
-    if (n <= 0) return [];
-    if (n === 1) return [0];
-    
-    const sequence = [0, 1];
-    
-    for (let i = 2; i < n; i++) {
-        sequence.push(sequence[i - 1] + sequence[i - 2]);
-    }
-    
-    return sequence;
+	if (n <= 0) return [];
+	if (n === 1) return [0];
+
+	const sequence = [0, 1];
+
+	for (let i = 2; i < n; i++) {
+		sequence.push(sequence[i - 1] + sequence[i - 2]);
+	}
+
+	return sequence;
 }
 
 /**
  * Gets the nth Fibonacci number (optimized)
  */
 export function fibonacciNth(n: number): number {
-    if (n === 0) return 0;
-    if (n === 1) return 1;
-    
-    let a = 0;
-    let b = 1;
-    
-    for (let i = 2; i <= n; i++) {
-        const temp = a + b;
-        a = b;
-        b = temp;
-    }
-    
-    return b;
+	if (n === 0) return 0;
+	if (n === 1) return 1;
+
+	let a = 0;
+	let b = 1;
+
+	for (let i = 2; i <= n; i++) {
+		const temp = a + b;
+		a = b;
+		b = temp;
+	}
+
+	return b;
 }
 
 /**
@@ -67,39 +67,39 @@ export function fibonacciNth(n: number): number {
  * Uses Sieve of Eratosthenes
  */
 export function primes(n: number): number[] {
-    if (n < 2) return [];
-    
-    const isPrime = new Array(n + 1).fill(true);
-    isPrime[0] = isPrime[1] = false;
-    
-    for (let i = 2; i * i <= n; i++) {
-        if (isPrime[i]) {
-            for (let j = i * i; j <= n; j += i) {
-                isPrime[j] = false;
-            }
-        }
-    }
-    
-    return isPrime.map((prime, index) => prime ? index : -1).filter(x => x !== -1);
+	if (n < 2) return [];
+
+	const isPrime = new Array(n + 1).fill(true);
+	isPrime[0] = isPrime[1] = false;
+
+	for (let i = 2; i * i <= n; i++) {
+		if (isPrime[i]) {
+			for (let j = i * i; j <= n; j += i) {
+				isPrime[j] = false;
+			}
+		}
+	}
+
+	return isPrime.map((prime, index) => (prime ? index : -1)).filter((x) => x !== -1);
 }
 
 /**
  * Generates first n prime numbers
  */
 export function firstNPrimes(n: number): number[] {
-    if (n <= 0) return [];
-    
-    const result: number[] = [];
-    let candidate = 2;
-    
-    while (result.length < n) {
-        if (isPrime(candidate)) {
-            result.push(candidate);
-        }
-        candidate++;
-    }
-    
-    return result;
+	if (n <= 0) return [];
+
+	const result: number[] = [];
+	let candidate = 2;
+
+	while (result.length < n) {
+		if (isPrime(candidate)) {
+			result.push(candidate);
+		}
+		candidate++;
+	}
+
+	return result;
 }
 
 /**
@@ -107,39 +107,39 @@ export function firstNPrimes(n: number): number[] {
  * Formula: n * (n + 1) / 2
  */
 export function triangular(n: number): number[] {
-    const sequence: number[] = [];
-    
-    for (let i = 1; i <= n; i++) {
-        sequence.push((i * (i + 1)) / 2);
-    }
-    
-    return sequence;
+	const sequence: number[] = [];
+
+	for (let i = 1; i <= n; i++) {
+		sequence.push((i * (i + 1)) / 2);
+	}
+
+	return sequence;
 }
 
 /**
  * Generates square numbers (1, 4, 9, 16, 25, ...)
  */
 export function squares(n: number): number[] {
-    const sequence: number[] = [];
-    
-    for (let i = 1; i <= n; i++) {
-        sequence.push(i * i);
-    }
-    
-    return sequence;
+	const sequence: number[] = [];
+
+	for (let i = 1; i <= n; i++) {
+		sequence.push(i * i);
+	}
+
+	return sequence;
 }
 
 /**
  * Generates cubic numbers (1, 8, 27, 64, 125, ...)
  */
 export function cubes(n: number): number[] {
-    const sequence: number[] = [];
-    
-    for (let i = 1; i <= n; i++) {
-        sequence.push(i * i * i);
-    }
-    
-    return sequence;
+	const sequence: number[] = [];
+
+	for (let i = 1; i <= n; i++) {
+		sequence.push(i * i * i);
+	}
+
+	return sequence;
 }
 
 /**
@@ -147,13 +147,13 @@ export function cubes(n: number): number[] {
  * Formula: n * (3n - 1) / 2
  */
 export function pentagonal(n: number): number[] {
-    const sequence: number[] = [];
-    
-    for (let i = 1; i <= n; i++) {
-        sequence.push((i * (3 * i - 1)) / 2);
-    }
-    
-    return sequence;
+	const sequence: number[] = [];
+
+	for (let i = 1; i <= n; i++) {
+		sequence.push((i * (3 * i - 1)) / 2);
+	}
+
+	return sequence;
 }
 
 /**
@@ -161,13 +161,13 @@ export function pentagonal(n: number): number[] {
  * Formula: n * (2n - 1)
  */
 export function hexagonal(n: number): number[] {
-    const sequence: number[] = [];
-    
-    for (let i = 1; i <= n; i++) {
-        sequence.push(i * (2 * i - 1));
-    }
-    
-    return sequence;
+	const sequence: number[] = [];
+
+	for (let i = 1; i <= n; i++) {
+		sequence.push(i * (2 * i - 1));
+	}
+
+	return sequence;
 }
 
 /**
@@ -175,43 +175,43 @@ export function hexagonal(n: number): number[] {
  * Formula: C(n) = (2n)! / ((n+1)! * n!)
  */
 export function catalan(n: number): number[] {
-    const sequence: number[] = [1];
-    
-    for (let i = 1; i < n; i++) {
-        let catalan = 0;
-        for (let j = 0; j < i; j++) {
-            catalan += sequence[j] * sequence[i - 1 - j];
-        }
-        sequence.push(catalan);
-    }
-    
-    return sequence;
+	const sequence: number[] = [1];
+
+	for (let i = 1; i < n; i++) {
+		let catalan = 0;
+		for (let j = 0; j < i; j++) {
+			catalan += sequence[j] * sequence[i - 1 - j];
+		}
+		sequence.push(catalan);
+	}
+
+	return sequence;
 }
 
 /**
  * Generates factorial sequence (1, 2, 6, 24, 120, ...)
  */
 export function factorials(n: number): number[] {
-    const sequence: number[] = [1];
-    
-    for (let i = 1; i < n; i++) {
-        sequence.push(sequence[i - 1] * (i + 1));
-    }
-    
-    return sequence;
+	const sequence: number[] = [1];
+
+	for (let i = 1; i < n; i++) {
+		sequence.push(sequence[i - 1] * (i + 1));
+	}
+
+	return sequence;
 }
 
 /**
  * Generates powers of 2 (1, 2, 4, 8, 16, 32, ...)
  */
 export function powersOfTwo(n: number): number[] {
-    const sequence: number[] = [];
-    
-    for (let i = 0; i < n; i++) {
-        sequence.push(Math.pow(2, i));
-    }
-    
-    return sequence;
+	const sequence: number[] = [];
+
+	for (let i = 0; i < n; i++) {
+		sequence.push(Math.pow(2, i));
+	}
+
+	return sequence;
 }
 
 /**
@@ -219,16 +219,16 @@ export function powersOfTwo(n: number): number[] {
  * Similar to Fibonacci but starts with 2, 1
  */
 export function lucas(n: number): number[] {
-    if (n <= 0) return [];
-    if (n === 1) return [2];
-    
-    const sequence = [2, 1];
-    
-    for (let i = 2; i < n; i++) {
-        sequence.push(sequence[i - 1] + sequence[i - 2]);
-    }
-    
-    return sequence;
+	if (n <= 0) return [];
+	if (n === 1) return [2];
+
+	const sequence = [2, 1];
+
+	for (let i = 2; i < n; i++) {
+		sequence.push(sequence[i - 1] + sequence[i - 2]);
+	}
+
+	return sequence;
 }
 
 /**
@@ -236,16 +236,16 @@ export function lucas(n: number): number[] {
  * Formula: P(n) = 2*P(n-1) + P(n-2)
  */
 export function pell(n: number): number[] {
-    if (n <= 0) return [];
-    if (n === 1) return [0];
-    
-    const sequence = [0, 1];
-    
-    for (let i = 2; i < n; i++) {
-        sequence.push(2 * sequence[i - 1] + sequence[i - 2]);
-    }
-    
-    return sequence;
+	if (n <= 0) return [];
+	if (n === 1) return [0];
+
+	const sequence = [0, 1];
+
+	for (let i = 2; i < n; i++) {
+		sequence.push(2 * sequence[i - 1] + sequence[i - 2]);
+	}
+
+	return sequence;
 }
 
 // ============================================================================
@@ -256,16 +256,16 @@ export function pell(n: number): number[] {
  * Checks if a number is prime
  */
 export function isPrime(n: number): boolean {
-    if (n < 2) return false;
-    if (n === 2) return true;
-    if (n % 2 === 0) return false;
-    
-    const sqrt = Math.sqrt(n);
-    for (let i = 3; i <= sqrt; i += 2) {
-        if (n % i === 0) return false;
-    }
-    
-    return true;
+	if (n < 2) return false;
+	if (n === 2) return true;
+	if (n % 2 === 0) return false;
+
+	const sqrt = Math.sqrt(n);
+	for (let i = 3; i <= sqrt; i += 2) {
+		if (n % i === 0) return false;
+	}
+
+	return true;
 }
 
 /**
@@ -273,29 +273,29 @@ export function isPrime(n: number): boolean {
  * A number is Fibonacci if one of (5*n^2 + 4) or (5*n^2 - 4) is a perfect square
  */
 export function isFibonacci(n: number): boolean {
-    const isPerfectSquare = (x: number) => {
-        const s = Math.sqrt(x);
-        return s === Math.floor(s);
-    };
-    
-    return isPerfectSquare(5 * n * n + 4) || isPerfectSquare(5 * n * n - 4);
+	const isPerfectSquare = (x: number) => {
+		const s = Math.sqrt(x);
+		return s === Math.floor(s);
+	};
+
+	return isPerfectSquare(5 * n * n + 4) || isPerfectSquare(5 * n * n - 4);
 }
 
 /**
  * Checks if a number is a perfect square
  */
 export function isPerfectSquare(n: number): boolean {
-    if (n < 0) return false;
-    const sqrt = Math.sqrt(n);
-    return sqrt === Math.floor(sqrt);
+	if (n < 0) return false;
+	const sqrt = Math.sqrt(n);
+	return sqrt === Math.floor(sqrt);
 }
 
 /**
  * Checks if a number is a perfect cube
  */
 export function isPerfectCube(n: number): boolean {
-    const cbrt = Math.cbrt(n);
-    return Math.abs(cbrt - Math.round(cbrt)) < 1e-10;
+	const cbrt = Math.cbrt(n);
+	return Math.abs(cbrt - Math.round(cbrt)) < 1e-10;
 }
 
 /**
@@ -303,7 +303,7 @@ export function isPerfectCube(n: number): boolean {
  * A number n is triangular if 8n + 1 is a perfect square
  */
 export function isTriangular(n: number): boolean {
-    return isPerfectSquare(8 * n + 1);
+	return isPerfectSquare(8 * n + 1);
 }
 
 /**
@@ -311,8 +311,8 @@ export function isTriangular(n: number): boolean {
  * A number n is pentagonal if (sqrt(24n + 1) + 1) / 6 is an integer
  */
 export function isPentagonal(n: number): boolean {
-    const test = (Math.sqrt(24 * n + 1) + 1) / 6;
-    return test === Math.floor(test);
+	const test = (Math.sqrt(24 * n + 1) + 1) / 6;
+	return test === Math.floor(test);
 }
 
 /**
@@ -320,47 +320,47 @@ export function isPentagonal(n: number): boolean {
  * A number n is hexagonal if (sqrt(8n + 1) + 1) / 4 is an integer
  */
 export function isHexagonal(n: number): boolean {
-    const test = (Math.sqrt(8 * n + 1) + 1) / 4;
-    return test === Math.floor(test);
+	const test = (Math.sqrt(8 * n + 1) + 1) / 4;
+	return test === Math.floor(test);
 }
 
 /**
  * Checks if a number is a power of 2
  */
 export function isPowerOfTwo(n: number): boolean {
-    return n > 0 && (n & (n - 1)) === 0;
+	return n > 0 && (n & (n - 1)) === 0;
 }
 
 /**
  * Checks if a number is a power of a given base
  */
 export function isPowerOf(n: number, base: number): boolean {
-    if (n <= 0 || base <= 1) return false;
-    
-    const logValue = Math.log(n) / Math.log(base);
-    return Math.abs(logValue - Math.round(logValue)) < 1e-10;
+	if (n <= 0 || base <= 1) return false;
+
+	const logValue = Math.log(n) / Math.log(base);
+	return Math.abs(logValue - Math.round(logValue)) < 1e-10;
 }
 
 /**
  * Checks if a number is even
  */
 export function isEven(n: number): boolean {
-    return n % 2 === 0;
+	return n % 2 === 0;
 }
 
 /**
  * Checks if a number is odd
  */
 export function isOdd(n: number): boolean {
-    return n % 2 !== 0;
+	return n % 2 !== 0;
 }
 
 /**
  * Checks if a number is a palindrome
  */
 export function isPalindrome(n: number): boolean {
-    const str = Math.abs(n).toString();
-    return str === str.split('').reverse().join('');
+	const str = Math.abs(n).toString();
+	return str === str.split("").reverse().join("");
 }
 
 /**
@@ -368,21 +368,21 @@ export function isPalindrome(n: number): boolean {
  * A perfect number equals the sum of its proper divisors (e.g., 6 = 1 + 2 + 3)
  */
 export function isPerfectNumber(n: number): boolean {
-    if (n < 2) return false;
-    
-    let sum = 1;
-    const sqrt = Math.sqrt(n);
-    
-    for (let i = 2; i <= sqrt; i++) {
-        if (n % i === 0) {
-            sum += i;
-            if (i !== n / i) {
-                sum += n / i;
-            }
-        }
-    }
-    
-    return sum === n;
+	if (n < 2) return false;
+
+	let sum = 1;
+	const sqrt = Math.sqrt(n);
+
+	for (let i = 2; i <= sqrt; i++) {
+		if (n % i === 0) {
+			sum += i;
+			if (i !== n / i) {
+				sum += n / i;
+			}
+		}
+	}
+
+	return sum === n;
 }
 
 /**
@@ -390,15 +390,15 @@ export function isPerfectNumber(n: number): boolean {
  * E.g., 153 = 1^3 + 5^3 + 3^3
  */
 export function isArmstrong(n: number): boolean {
-    const str = Math.abs(n).toString();
-    const digits = str.length;
-    let sum = 0;
-    
-    for (const char of str) {
-        sum += Math.pow(parseInt(char), digits);
-    }
-    
-    return sum === Math.abs(n);
+	const str = Math.abs(n).toString();
+	const digits = str.length;
+	let sum = 0;
+
+	for (const char of str) {
+		sum += Math.pow(parseInt(char), digits);
+	}
+
+	return sum === Math.abs(n);
 }
 
 /**
@@ -406,22 +406,22 @@ export function isArmstrong(n: number): boolean {
  * Eventually reaches 1 when replaced by sum of squares of digits
  */
 export function isHappy(n: number): boolean {
-    const seen = new Set<number>();
-    
-    while (n !== 1 && !seen.has(n)) {
-        seen.add(n);
-        let sum = 0;
-        
-        while (n > 0) {
-            const digit = n % 10;
-            sum += digit * digit;
-            n = Math.floor(n / 10);
-        }
-        
-        n = sum;
-    }
-    
-    return n === 1;
+	const seen = new Set<number>();
+
+	while (n !== 1 && !seen.has(n)) {
+		seen.add(n);
+		let sum = 0;
+
+		while (n > 0) {
+			const digit = n % 10;
+			sum += digit * digit;
+			n = Math.floor(n / 10);
+		}
+
+		n = sum;
+	}
+
+	return n === 1;
 }
 
 /**
@@ -429,21 +429,21 @@ export function isHappy(n: number): boolean {
  * Sum of proper divisors is greater than the number
  */
 export function isAbundant(n: number): boolean {
-    if (n < 2) return false;
-    
-    let sum = 1;
-    const sqrt = Math.sqrt(n);
-    
-    for (let i = 2; i <= sqrt; i++) {
-        if (n % i === 0) {
-            sum += i;
-            if (i !== n / i) {
-                sum += n / i;
-            }
-        }
-    }
-    
-    return sum > n;
+	if (n < 2) return false;
+
+	let sum = 1;
+	const sqrt = Math.sqrt(n);
+
+	for (let i = 2; i <= sqrt; i++) {
+		if (n % i === 0) {
+			sum += i;
+			if (i !== n / i) {
+				sum += n / i;
+			}
+		}
+	}
+
+	return sum > n;
 }
 
 /**
@@ -451,21 +451,21 @@ export function isAbundant(n: number): boolean {
  * Sum of proper divisors is less than the number
  */
 export function isDeficient(n: number): boolean {
-    if (n < 2) return false;
-    
-    let sum = 1;
-    const sqrt = Math.sqrt(n);
-    
-    for (let i = 2; i <= sqrt; i++) {
-        if (n % i === 0) {
-            sum += i;
-            if (i !== n / i) {
-                sum += n / i;
-            }
-        }
-    }
-    
-    return sum < n;
+	if (n < 2) return false;
+
+	let sum = 1;
+	const sqrt = Math.sqrt(n);
+
+	for (let i = 2; i <= sqrt; i++) {
+		if (n % i === 0) {
+			sum += i;
+			if (i !== n / i) {
+				sum += n / i;
+			}
+		}
+	}
+
+	return sum < n;
 }
 
 // ============================================================================
@@ -476,124 +476,124 @@ export function isDeficient(n: number): boolean {
  * Calculates factorial of n
  */
 export function factorial(n: number): number {
-    if (n < 0) throw new Error("Factorial not defined for negative numbers");
-    if (n === 0 || n === 1) return 1;
-    
-    let result = 1;
-    for (let i = 2; i <= n; i++) {
-        result *= i;
-    }
-    
-    return result;
+	if (n < 0) throw new Error("Factorial not defined for negative numbers");
+	if (n === 0 || n === 1) return 1;
+
+	let result = 1;
+	for (let i = 2; i <= n; i++) {
+		result *= i;
+	}
+
+	return result;
 }
 
 /**
  * Calculates greatest common divisor (GCD)
  */
 export function gcd(a: number, b: number): number {
-    a = Math.abs(a);
-    b = Math.abs(b);
-    
-    while (b !== 0) {
-        const temp = b;
-        b = a % b;
-        a = temp;
-    }
-    
-    return a;
+	a = Math.abs(a);
+	b = Math.abs(b);
+
+	while (b !== 0) {
+		const temp = b;
+		b = a % b;
+		a = temp;
+	}
+
+	return a;
 }
 
 /**
  * Calculates least common multiple (LCM)
  */
 export function lcm(a: number, b: number): number {
-    return Math.abs(a * b) / gcd(a, b);
+	return Math.abs(a * b) / gcd(a, b);
 }
 
 /**
  * Gets all divisors of a number
  */
 export function getDivisors(n: number): number[] {
-    const divisors: number[] = [];
-    const sqrt = Math.sqrt(n);
-    
-    for (let i = 1; i <= sqrt; i++) {
-        if (n % i === 0) {
-            divisors.push(i);
-            if (i !== n / i) {
-                divisors.push(n / i);
-            }
-        }
-    }
-    
-    return divisors.sort((a, b) => a - b);
+	const divisors: number[] = [];
+	const sqrt = Math.sqrt(n);
+
+	for (let i = 1; i <= sqrt; i++) {
+		if (n % i === 0) {
+			divisors.push(i);
+			if (i !== n / i) {
+				divisors.push(n / i);
+			}
+		}
+	}
+
+	return divisors.sort((a, b) => a - b);
 }
 
 /**
  * Gets prime factors of a number
  */
 export function getPrimeFactors(n: number): number[] {
-    const factors: number[] = [];
-    
-    while (n % 2 === 0) {
-        factors.push(2);
-        n /= 2;
-    }
-    
-    for (let i = 3; i <= Math.sqrt(n); i += 2) {
-        while (n % i === 0) {
-            factors.push(i);
-            n /= i;
-        }
-    }
-    
-    if (n > 2) {
-        factors.push(n);
-    }
-    
-    return factors;
+	const factors: number[] = [];
+
+	while (n % 2 === 0) {
+		factors.push(2);
+		n /= 2;
+	}
+
+	for (let i = 3; i <= Math.sqrt(n); i += 2) {
+		while (n % i === 0) {
+			factors.push(i);
+			n /= i;
+		}
+	}
+
+	if (n > 2) {
+		factors.push(n);
+	}
+
+	return factors;
 }
 
 /**
  * Calculates the sum of digits
  */
 export function sumOfDigits(n: number): number {
-    let sum = 0;
-    n = Math.abs(n);
-    
-    while (n > 0) {
-        sum += n % 10;
-        n = Math.floor(n / 10);
-    }
-    
-    return sum;
+	let sum = 0;
+	n = Math.abs(n);
+
+	while (n > 0) {
+		sum += n % 10;
+		n = Math.floor(n / 10);
+	}
+
+	return sum;
 }
 
 /**
  * Calculates the digital root (recursive sum of digits until single digit)
  */
 export function digitalRoot(n: number): number {
-    n = Math.abs(n);
-    
-    while (n >= 10) {
-        n = sumOfDigits(n);
-    }
-    
-    return n;
+	n = Math.abs(n);
+
+	while (n >= 10) {
+		n = sumOfDigits(n);
+	}
+
+	return n;
 }
 
 /**
  * Reverses the digits of a number
  */
 export function reverseDigits(n: number): number {
-    const isNegative = n < 0;
-    const reversed = parseInt(Math.abs(n).toString().split('').reverse().join(''));
-    return isNegative ? -reversed : reversed;
+	const isNegative = n < 0;
+	const reversed = parseInt(Math.abs(n).toString().split("").reverse().join(""));
+	return isNegative ? -reversed : reversed;
 }
 
 /**
  * Checks if two numbers are coprime (GCD = 1)
  */
 export function areCoprime(a: number, b: number): boolean {
-    return gcd(a, b) === 1;
+	return gcd(a, b) === 1;
 }

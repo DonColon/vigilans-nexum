@@ -1,4 +1,5 @@
 import { test, expect } from "vitest";
+import { Shape } from "@/core/math/geometry/Shape";
 import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { Polygon } from "@/core/math/geometry/Polygon";
 
@@ -16,7 +17,7 @@ test("Create convex hull from points", () => {
 
 test("Polygon intersects with null", () => {
 	const value = new Polygon([new Vector2D(5, 0), new Vector2D(10, 5), new Vector2D(0, 5)]);
-	const result = value.intersects(null);
+	const result = value.intersects(null as unknown as Shape);
 	expect(result).toBeFalsy();
 });
 
@@ -53,12 +54,10 @@ test("Get vertex of polygon", () => {
 	let result = value.getVertex(1);
 	expect(result.x).toBe(10);
 	expect(result.y).toBe(5);
-	expect(result.z).toBe(0);
 
 	result = value.getVertex(5);
 	expect(result.x).toBe(NaN);
 	expect(result.y).toBe(NaN);
-	expect(result.z).toBe(0);
 });
 
 test("Get vertices of polygon", () => {
@@ -75,7 +74,6 @@ test("Get vertices of polygon", () => {
 
 		expect(vector.x).toBe(vertex.x);
 		expect(vector.y).toBe(vertex.y);
-		expect(vector.z).toBe(vertex.z);
 	}
 });
 
@@ -87,7 +85,6 @@ test("Add vertex to polygon", () => {
 
 	expect(result.x).toBe(0);
 	expect(result.y).toBe(0);
-	expect(result.z).toBe(0);
 });
 
 test("Remove vertex from polygon", () => {
@@ -98,7 +95,6 @@ test("Remove vertex from polygon", () => {
 	const vertex = value.getVertex(3);
 	expect(vertex.x).toBe(NaN);
 	expect(vertex.y).toBe(NaN);
-	expect(vertex.z).toBe(0);
 
 	value.removeVertex(10);
 

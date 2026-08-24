@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { WorldEvent } from "@/core/ecs/WorldEvent";
 import { Entity } from "@/core/ecs/Entity";
 import { EventSystem } from "@/core/events/EventSystem";
@@ -63,7 +61,7 @@ export class Query {
 	private onEntityRemoved(event: WorldEvent) {
 		const index = this.entities.indexOf(event.entity);
 		const exists = index !== -1;
-		
+
 		if (exists) {
 			this.entities.splice(index, 1);
 		}

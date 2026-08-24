@@ -13,12 +13,14 @@ import { SwipeInputType } from "@/core/input/touchpad/SwipeInput";
 import { TouchInputType } from "@/core/input/touchpad/TouchInput";
 import { GameCommand, GameCommandConstructor } from "@/core/input/commands/GameCommand";
 import { InputBuffer, InputBufferConfig } from "@/core/input/InputBuffer";
+import { GameCoreService } from "@/core/service/GameCoreService";
 
 export interface InputDeviceConfig {
 	gamepad: GamepadConfig;
 	buffer?: InputBufferConfig;
 }
 
+@GameCoreService()
 export class InputDevice {
 	private commands: Map<string, GameCommand>;
 	private channels: Map<InputChannelType, number>;

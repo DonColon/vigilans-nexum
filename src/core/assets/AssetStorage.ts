@@ -177,7 +177,7 @@ export class AssetStorage {
 		return false;
 	}
 
-	public getScript(id: string): HTMLScriptElement { 
+	public getScript(id: string): HTMLScriptElement {
 		const script = this.scripts.get(id);
 
 		if (script === undefined) {

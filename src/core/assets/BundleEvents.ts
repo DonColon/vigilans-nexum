@@ -14,7 +14,7 @@ export interface BundleUnloadedEvent extends BundleEvent {
 }
 
 export interface BundleProgressEvent extends BundleEvent {
-    current: number;
-    total: number;
-    progress: number;
+	current: number;
+	total: number;
+	progress: number;
 }

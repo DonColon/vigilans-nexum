@@ -1,4 +1,5 @@
 import { test, expect } from "vitest";
+import { Shape } from "@/core/math/geometry/Shape";
 import { Line } from "@/core/math/geometry/Line";
 import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { Circle } from "@/core/math/geometry/Circle";
@@ -15,12 +16,10 @@ test("Create line from two points", () => {
 	const lineStart = result.getStart();
 	expect(lineStart.x).toBe(0);
 	expect(lineStart.y).toBe(0);
-	expect(lineStart.z).toBe(0);
 
 	const lineEnd = result.getEnd();
 	expect(lineEnd.x).toBe(6);
 	expect(lineEnd.y).toBe(0);
-	expect(lineEnd.z).toBe(0);
 });
 
 test("Line contains point", () => {
@@ -87,7 +86,7 @@ test("Line intersects with polygon", () => {
 
 test("Line intersects with null", () => {
 	const value = new Line(0, 0, 6, 0);
-	const errorValue = null;
+	const errorValue = null as unknown as Shape;
 
 	const result = value.intersects(errorValue);
 	expect(result).toBeFalsy();
@@ -100,7 +99,6 @@ test("Reflect vector with line", () => {
 	const result = value.reflect(other);
 	expect(result.x).toBe(6);
 	expect(result.y).toBe(3);
-	expect(result.z).toBe(0);
 });
 
 test("Get vertical bisector of line", () => {
@@ -142,7 +140,6 @@ test("Get center of line", () => {
 
 	expect(result.x).toBe(3);
 	expect(result.y).toBe(0);
-	expect(result.z).toBe(0);
 });
 
 test("Get bounds of line", () => {

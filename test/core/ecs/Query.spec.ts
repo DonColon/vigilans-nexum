@@ -71,14 +71,14 @@ suite("Query Test Suite", () => {
 		eventSystem.processQueue();
 
 		let results = query.getResult();
-		expect(results.some(e => e.getID() === "remove-test-1")).toBeTruthy();
+		expect(results.some((e) => e.getID() === "remove-test-1")).toBeTruthy();
 
 		// Add a component from the blocklist - entity should be removed from query
 		entity.addComponent(MoveComponent, { dx: 1, dy: 1 });
 		eventSystem.processQueue();
 
 		results = query.getResult();
-		expect(results.some(e => e.getID() === "remove-test-1")).toBeFalsy();
+		expect(results.some((e) => e.getID() === "remove-test-1")).toBeFalsy();
 
 		query.dispose();
 	});
@@ -93,14 +93,14 @@ suite("Query Test Suite", () => {
 		eventSystem.processQueue();
 
 		let results = query.getResult();
-		expect(results.some(e => e.getID() === "remove-test-2")).toBeTruthy();
+		expect(results.some((e) => e.getID() === "remove-test-2")).toBeTruthy();
 
 		// Remove entity from world - should trigger onEntityRemoved
 		world.unregisterEntity(entity);
 		eventSystem.processQueue();
 
 		results = query.getResult();
-		expect(results.some(e => e.getID() === "remove-test-2")).toBeFalsy();
+		expect(results.some((e) => e.getID() === "remove-test-2")).toBeFalsy();
 
 		query.dispose();
 	});
@@ -143,7 +143,7 @@ suite("Query Test Suite", () => {
 
 		// Verify entity is NOT in the query
 		let results = query.getResult();
-		expect(results.some(e => e.getID() === "non-matching-entity")).toBeFalsy();
+		expect(results.some((e) => e.getID() === "non-matching-entity")).toBeFalsy();
 
 		// Now remove the entity - this triggers onEntityRemoved
 		// Since entity is not in query, exists will be false
@@ -152,7 +152,7 @@ suite("Query Test Suite", () => {
 
 		// Query should still not contain it (nothing should change)
 		results = query.getResult();
-		expect(results.some(e => e.getID() === "non-matching-entity")).toBeFalsy();
+		expect(results.some((e) => e.getID() === "non-matching-entity")).toBeFalsy();
 
 		query.dispose();
 	});

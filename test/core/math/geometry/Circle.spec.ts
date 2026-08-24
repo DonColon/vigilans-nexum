@@ -1,4 +1,5 @@
 import { test, expect } from "vitest";
+import { Shape } from "@/core/math/geometry/Shape";
 import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { Circle } from "@/core/math/geometry/Circle";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
@@ -16,7 +17,6 @@ test("Create circle from three points", () => {
 
 	expect(position.x).toBe(7);
 	expect(position.y).toBe(7);
-	expect(position.z).toBe(0);
 	expect(radius).approximately(7.071, 0.1);
 });
 
@@ -60,7 +60,7 @@ test("Circle intersects with polygon", () => {
 
 test("Circle intersects with null", () => {
 	const value = new Circle(0, 0, 4);
-	const errorValue = null;
+	const errorValue = null as unknown as Shape;
 
 	const result = value.intersects(errorValue);
 	expect(result).toBeFalsy();
@@ -70,9 +70,9 @@ test("Get border point of circle", () => {
 	const value = new Circle(6, 6, 6);
 	const result = value.getBorderPoint(90);
 
+	// centre (6, 6) + radius 6 at 90 degrees => (6, 12)
 	expect(result.x).approximately(6, 0.1);
-	expect(result.y).toBe(0);
-	expect(result.z).toBe(0);
+	expect(result.y).approximately(12, 0.1);
 });
 
 test("Get area of circle", () => {

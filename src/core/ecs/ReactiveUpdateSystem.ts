@@ -3,8 +3,8 @@ import { GameCoreService } from "@/core/service/GameCoreService";
 import { UpdateSystem } from "@/core/ecs/UpdateSystem";
 
 export abstract class ReactiveUpdateSystem extends UpdateSystem {
-    @GameCoreService(EventSystem)
-    protected eventSystem!: EventSystem;
+	@GameCoreService(EventSystem)
+	protected eventSystem!: EventSystem;
 
-    public execute(elapsed: number, frame: number): void {}
+	public execute(_elapsed: number, _frame: number): void {}
 }

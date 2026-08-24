@@ -135,10 +135,7 @@ export class Transform2D {
 	}
 
 	public clone(): Transform2D {
-		return new Transform2D(
-			new Vector2D(this.position.x, this.position.y),
-			new Vector2D(this.scale.x, this.scale.y),
-			this.rotation);
+		return new Transform2D(new Vector2D(this.position.x, this.position.y), new Vector2D(this.scale.x, this.scale.y), this.rotation);
 	}
 
 	public addChangeListener(listener: () => void): void {

@@ -12,7 +12,7 @@ suite("EventSystem Test Suite", () => {
 	});
 
 	test("Subscribe event handler to an event", () => {
-		const handler = () => { };
+		const handler = () => {};
 		eventSystem.subscribe("bundleLoaded", handler);
 
 		const subscribers = eventSystem.getSubscribers("bundleLoaded");
@@ -61,14 +61,14 @@ suite("EventSystem Test Suite", () => {
 		eventSystem.dispatch("bundleLoaded", {
 			bundle: "Test1",
 			failed: 0,
-			loaded: 1,
+			loaded: 1
 		});
 		eventSystem.processQueue();
 
 		eventSystem.dispatch("bundleLoaded", {
 			bundle: "Test2",
 			failed: 0,
-			loaded: 1,
+			loaded: 1
 		});
 		eventSystem.processQueue();
 
@@ -76,7 +76,7 @@ suite("EventSystem Test Suite", () => {
 	});
 
 	test("Unsubscribe event handler from an event", () => {
-		const handler = () => { };
+		const handler = () => {};
 
 		let subscribers = eventSystem.getSubscribers("bundleLoaded");
 		expect(subscribers).toHaveLength(0);
@@ -89,7 +89,7 @@ suite("EventSystem Test Suite", () => {
 	});
 
 	test("Unsubscribe from non-existent event does not throw", () => {
-		const handler = () => { };
+		const handler = () => {};
 
 		expect(() => {
 			eventSystem.unsubscribe("entityChanged", handler);
@@ -109,7 +109,7 @@ suite("EventSystem Test Suite", () => {
 		eventSystem.dispatch("bundleLoaded", {
 			bundle: "StartMenu",
 			failed: 0,
-			loaded: 1,
+			loaded: 1
 		});
 		eventSystem.processQueue();
 
@@ -129,7 +129,7 @@ suite("EventSystem Test Suite", () => {
 		eventSystem.dispatch("bundleLoaded", {
 			bundle: "Test",
 			failed: 0,
-			loaded: 1,
+			loaded: 1
 		});
 		eventSystem.processQueue();
 
@@ -141,7 +141,7 @@ suite("EventSystem Test Suite", () => {
 	});
 
 	test("Error in handler does not break event processing", () => {
-		const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+		const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 		const handler1 = vi.fn(() => {
 			throw new Error("Test error");
 		});
@@ -153,7 +153,7 @@ suite("EventSystem Test Suite", () => {
 		eventSystem.dispatch("bundleLoaded", {
 			bundle: "Test",
 			failed: 0,
-			loaded: 1,
+			loaded: 1
 		});
 		eventSystem.processQueue();
 
@@ -174,12 +174,12 @@ suite("EventSystem Test Suite", () => {
 		eventSystem.dispatch("bundleLoaded", {
 			bundle: "Test1",
 			failed: 0,
-			loaded: 1,
+			loaded: 1
 		});
 		eventSystem.dispatch("bundleLoaded", {
 			bundle: "Test2",
 			failed: 0,
-			loaded: 2,
+			loaded: 2
 		});
 
 		expect(handler).not.toHaveBeenCalled();
@@ -200,7 +200,7 @@ suite("EventSystem Test Suite", () => {
 		eventSystem.dispatch("bundleLoaded", {
 			bundle: "Test",
 			failed: 0,
-			loaded: 1,
+			loaded: 1
 		});
 		eventSystem.processQueue();
 
@@ -210,7 +210,7 @@ suite("EventSystem Test Suite", () => {
 	});
 
 	test("PrintEventStatistics calls history.printStatistics", () => {
-		const consoleTableSpy = vi.spyOn(console, 'table').mockImplementation(() => { });
+		const consoleTableSpy = vi.spyOn(console, "table").mockImplementation(() => {});
 
 		eventSystem.printEventStatistics();
 
@@ -227,7 +227,7 @@ suite("EventSystem Test Suite", () => {
 	test("Dispatch event with no subscribers processes without error", () => {
 		expect(() => {
 			eventSystem.dispatch("entityChanged", {
-				entity: new Entity("42"),
+				entity: new Entity("42")
 			});
 			eventSystem.processQueue();
 		}).not.toThrow();
@@ -239,7 +239,7 @@ suite("EventSystem Test Suite", () => {
 		eventSystem.dispatch("bundleLoaded", {
 			bundle: "Test",
 			failed: 0,
-			loaded: 1,
+			loaded: 1
 		});
 
 		eventSystem.processQueue();

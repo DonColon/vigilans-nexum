@@ -18,8 +18,8 @@ suite("EventQueue Test Suite", () => {
 			bundle: "Test",
 			failed: 0,
 			loaded: 1,
-			stopPropagation: () => { },
-			isPropagationStopped: () => false,
+			stopPropagation: () => {},
+			isPropagationStopped: () => false
 		});
 
 		expect(queue.isEmpty).toBe(false);
@@ -33,8 +33,8 @@ suite("EventQueue Test Suite", () => {
 			bundle: "Test",
 			failed: 0,
 			loaded: 1,
-			stopPropagation: () => { },
-			isPropagationStopped: () => false,
+			stopPropagation: () => {},
+			isPropagationStopped: () => false
 		};
 
 		queue.enqueue(event);
@@ -55,8 +55,8 @@ suite("EventQueue Test Suite", () => {
 			bundle: "Test1",
 			failed: 0,
 			loaded: 1,
-			stopPropagation: () => { },
-			isPropagationStopped: () => false,
+			stopPropagation: () => {},
+			isPropagationStopped: () => false
 		};
 
 		const event2 = {
@@ -65,8 +65,8 @@ suite("EventQueue Test Suite", () => {
 			bundle: "Test2",
 			failed: 0,
 			loaded: 2,
-			stopPropagation: () => { },
-			isPropagationStopped: () => false,
+			stopPropagation: () => {},
+			isPropagationStopped: () => false
 		};
 
 		queue.enqueue(event1);

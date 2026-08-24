@@ -56,10 +56,10 @@ suite("Angle Test Suite", () => {
 	test("Gets and sets degrees", () => {
 		const angle = new Angle(45);
 		expect(angle.degrees).toBe(45);
-		
+
 		angle.degrees = 90;
 		expect(angle.degrees).toBe(90);
-		
+
 		angle.degrees = 400;
 		expect(angle.degrees).toBe(40);
 	});
@@ -68,7 +68,7 @@ suite("Angle Test Suite", () => {
 		const angle = new Angle();
 		angle.radians = Math.PI;
 		expect(angle.degrees).toBeCloseTo(180, 10);
-		
+
 		expect(angle.radians).toBeCloseTo(Math.PI, 10);
 	});
 
@@ -94,7 +94,7 @@ suite("Angle Test Suite", () => {
 	test("Calculates difference to another angle (shortest path)", () => {
 		const angle1 = new Angle(10);
 		const angle2 = new Angle(350);
-		
+
 		const diff = angle1.differenceTo(angle2);
 		expect(Math.abs(diff)).toBe(20); // Shortest path is 20°, not 340°
 	});
@@ -102,7 +102,7 @@ suite("Angle Test Suite", () => {
 	test("Calculates distance between angles", () => {
 		const angle1 = new Angle(10);
 		const angle2 = new Angle(350);
-		
+
 		const dist = angle1.distanceTo(angle2);
 		expect(dist).toBe(20);
 	});
@@ -110,7 +110,7 @@ suite("Angle Test Suite", () => {
 	test("Interpolates between angles", () => {
 		const angle1 = new Angle(0);
 		const angle2 = new Angle(90);
-		
+
 		const mid = angle1.lerp(angle2, 0.5);
 		expect(mid.degrees).toBe(45);
 	});
@@ -118,7 +118,7 @@ suite("Angle Test Suite", () => {
 	test("Lerp takes shortest path", () => {
 		const angle1 = new Angle(350);
 		const angle2 = new Angle(10);
-		
+
 		const mid = angle1.lerp(angle2, 0.5);
 		expect(mid.degrees).toBe(0); // Takes 350->0->10 path
 	});
@@ -150,7 +150,7 @@ suite("Angle Test Suite", () => {
 		const angle1 = new Angle(45);
 		const angle2 = new Angle(45);
 		const angle3 = new Angle(90);
-		
+
 		expect(angle1.equals(angle2)).toBe(true);
 		expect(angle1.equals(angle3)).toBe(false);
 	});
@@ -158,7 +158,7 @@ suite("Angle Test Suite", () => {
 	test("Clones angle", () => {
 		const angle = new Angle(45);
 		const clone = angle.clone();
-		
+
 		expect(clone.degrees).toBe(45);
 		expect(clone).not.toBe(angle);
 	});
@@ -172,7 +172,7 @@ suite("Angle Test Suite", () => {
 		const angle = new Angle(45);
 		const clamped = angle.clamp(new Angle(0), new Angle(90));
 		expect(clamped.degrees).toBe(45);
-		
+
 		// Test clamping when outside range
 		const angle2 = new Angle(120);
 		const clamped2 = angle2.clamp(new Angle(0), new Angle(90));
@@ -183,11 +183,11 @@ suite("Angle Test Suite", () => {
 		const angle = new Angle(5);
 		const clamped = angle.clamp(new Angle(350), new Angle(10));
 		expect(clamped.degrees).toBe(5);
-		
+
 		const angle2 = new Angle(355);
 		const clamped2 = angle2.clamp(new Angle(350), new Angle(10));
 		expect(clamped2.degrees).toBe(355);
-		
+
 		const angle3 = new Angle(180);
 		const clamped3 = angle3.clamp(new Angle(350), new Angle(10));
 		expect([350, 10]).toContain(clamped3.degrees); // Clamped to closest
@@ -197,7 +197,7 @@ suite("Angle Test Suite", () => {
 		const angle = new Angle(0);
 		const opposite = angle.opposite();
 		expect(opposite.degrees).toBe(180);
-		
+
 		const angle2 = new Angle(90);
 		const opposite2 = angle2.opposite();
 		expect(opposite2.degrees).toBe(270);
@@ -207,7 +207,7 @@ suite("Angle Test Suite", () => {
 		const angle = new Angle(0);
 		const perpendicular = angle.perpendicular();
 		expect(perpendicular.degrees).toBe(90);
-		
+
 		const angle2 = new Angle(180);
 		const perpendicular2 = angle2.perpendicular();
 		expect(perpendicular2.degrees).toBe(270);
@@ -217,9 +217,8 @@ suite("Angle Test Suite", () => {
 		const angle1 = new Angle(45);
 		const angle2 = new Angle(46);
 		const angle3 = new Angle(55);
-		
+
 		expect(angle1.isCloseTo(angle2, 2)).toBe(true);
 		expect(angle1.isCloseTo(angle3, 2)).toBe(false);
 	});
 });
-

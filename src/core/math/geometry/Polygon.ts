@@ -146,23 +146,23 @@ export class Polygon implements Shape {
 
 	public getBounds(): Rectangle {
 		if (this.vertices.length === 0) {
-            return new Rectangle(0, 0, 0, 0);
-        }
+			return new Rectangle(0, 0, 0, 0);
+		}
 
-        let minX = this.vertices[0].x;
-        let minY = this.vertices[0].y;
-        let maxX = this.vertices[0].x;
-        let maxY = this.vertices[0].y;
+		let minX = this.vertices[0].x;
+		let minY = this.vertices[0].y;
+		let maxX = this.vertices[0].x;
+		let maxY = this.vertices[0].y;
 
-        for (let i = 1; i < this.vertices.length; i++) {
-            const vertex = this.vertices[i];
-            minX = Math.min(minX, vertex.x);
-            minY = Math.min(minY, vertex.y);
-            maxX = Math.max(maxX, vertex.x);
-            maxY = Math.max(maxY, vertex.y);
-        }
+		for (let i = 1; i < this.vertices.length; i++) {
+			const vertex = this.vertices[i];
+			minX = Math.min(minX, vertex.x);
+			minY = Math.min(minY, vertex.y);
+			maxX = Math.max(maxX, vertex.x);
+			maxY = Math.max(maxY, vertex.y);
+		}
 
-        return new Rectangle(minX, minY, maxX - minX, maxY - minY);
+		return new Rectangle(minX, minY, maxX - minX, maxY - minY);
 	}
 
 	public addVertex(vertex: Vector2D): this {

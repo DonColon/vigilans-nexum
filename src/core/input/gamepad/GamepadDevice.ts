@@ -14,7 +14,7 @@ export class GamepadDevice {
 	private axisThreshold: number = 0.5;
 	private deadZone: number = 0.15;
 	private slot: number;
-    private buffer: InputBuffer;
+	private buffer: InputBuffer;
 
 	constructor(config: GamepadConfig, buffer: InputBuffer) {
 		this.gamepad = new Map<GamepadInputType, Input>();
@@ -50,14 +50,14 @@ export class GamepadDevice {
 		}
 
 		const axisButtons = [
-			this.checkAxis(gamepad.axes[0], 'negative'),
-			this.checkAxis(gamepad.axes[0], 'positive'),
-			this.checkAxis(gamepad.axes[1], 'negative'),
-			this.checkAxis(gamepad.axes[1], 'positive'),
-			this.checkAxis(gamepad.axes[2], 'negative'),
-			this.checkAxis(gamepad.axes[2], 'positive'),
-			this.checkAxis(gamepad.axes[3], 'negative'),
-			this.checkAxis(gamepad.axes[3], 'positive')
+			this.checkAxis(gamepad.axes[0], "negative"),
+			this.checkAxis(gamepad.axes[0], "positive"),
+			this.checkAxis(gamepad.axes[1], "negative"),
+			this.checkAxis(gamepad.axes[1], "positive"),
+			this.checkAxis(gamepad.axes[2], "negative"),
+			this.checkAxis(gamepad.axes[2], "positive"),
+			this.checkAxis(gamepad.axes[3], "negative"),
+			this.checkAxis(gamepad.axes[3], "positive")
 		];
 
 		for (let i = 0; i < axisButtons.length; i++) {
@@ -77,11 +77,9 @@ export class GamepadDevice {
 		return gamepad.timestamp;
 	}
 
-	private checkAxis(value: number, direction: 'positive' | 'negative'): boolean {
+	private checkAxis(value: number, direction: "positive" | "negative"): boolean {
 		if (Math.abs(value) < this.deadZone) return false;
-		return direction === 'positive' 
-			? value >= this.axisThreshold 
-			: value <= -this.axisThreshold;
+		return direction === "positive" ? value >= this.axisThreshold : value <= -this.axisThreshold;
 	}
 
 	public getInput(inputType: GamepadInputType): Input {

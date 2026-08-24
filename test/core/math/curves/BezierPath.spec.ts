@@ -12,7 +12,7 @@ describe("BezierPath Test Suite", () => {
 	test("Creates path with single curve", () => {
 		const curve = BezierCurve.linear(new Vector2D(0, 0), new Vector2D(10, 10));
 		const path = new BezierPath([curve]);
-		
+
 		expect(path.getCurves().length).toBe(1);
 	});
 
@@ -20,14 +20,14 @@ describe("BezierPath Test Suite", () => {
 		const curve1 = BezierCurve.linear(new Vector2D(0, 0), new Vector2D(10, 10));
 		const curve2 = BezierCurve.linear(new Vector2D(10, 10), new Vector2D(20, 0));
 		const path = new BezierPath([curve1, curve2]);
-		
+
 		expect(path.getCurves().length).toBe(2);
 	});
 
 	test("Gets total path length", () => {
 		const curve = BezierCurve.linear(new Vector2D(0, 0), new Vector2D(10, 0));
 		const path = new BezierPath([curve]);
-		
+
 		const length = path.getLength();
 		expect(length).toBeGreaterThan(9);
 	});
@@ -35,7 +35,7 @@ describe("BezierPath Test Suite", () => {
 	test("Gets point at path parameter t", () => {
 		const curve = BezierCurve.linear(new Vector2D(0, 0), new Vector2D(10, 0));
 		const path = new BezierPath([curve]);
-		
+
 		const point = path.getPoint(0.5);
 		expect(point!.x).toBeCloseTo(5, 1);
 	});

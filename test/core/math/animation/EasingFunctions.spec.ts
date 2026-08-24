@@ -187,16 +187,12 @@ suite("EasingFunctions Test Suite", () => {
 
 	// Edge cases
 	test("Easing functions handle edge values correctly", () => {
-		const easingFunctions = [
-			Easing.linear, Easing.easeInQuad, Easing.easeOutQuad,
-			Easing.easeInCubic, Easing.easeOutCubic,
-			Easing.easeInSine, Easing.easeOutSine
-		];
+		const easingFunctions = [Easing.linear, Easing.easeInQuad, Easing.easeOutQuad, Easing.easeInCubic, Easing.easeOutCubic, Easing.easeInSine, Easing.easeOutSine];
 
-		easingFunctions.forEach(fn => {
+		easingFunctions.forEach((fn) => {
 			const start = fn(0);
 			const end = fn(1);
-			
+
 			expect(start).toBeGreaterThanOrEqual(0);
 			expect(start).toBeLessThanOrEqual(1);
 			expect(end).toBeCloseTo(1, 5);

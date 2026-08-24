@@ -29,7 +29,7 @@ export class Line implements Shape {
 		const distanceStart = point.distanceBetween(this.start);
 		const distanceEnd = point.distanceBetween(this.end);
 		const length = this.getLength();
-		
+
 		return distanceStart + distanceEnd >= length - tolerance && distanceStart + distanceEnd <= length + tolerance;
 	}
 
@@ -70,10 +70,11 @@ export class Line implements Shape {
 		const x = (bisector.B * self.C - self.B * bisector.C) / denominator;
 		const y = (self.A * bisector.C - bisector.A * self.C) / denominator;
 
+		// Reflection across the line is the point mirrored through the foot of
+		// the perpendicular: R = 2 * I - P
 		const intersection = new Vector2D(x, y);
-		const reflect = intersection.subtract(point);
 
-		return reflect.subtract(intersection);
+		return intersection.multiply(2).subtract(point);
 	}
 
 	public isParallel(other: Line): boolean {
@@ -118,11 +119,11 @@ export class Line implements Shape {
 
 	public getBounds(): Rectangle {
 		const minX = Math.min(this.start.x, this.end.x);
-        const minY = Math.min(this.start.y, this.end.y);
-        const maxX = Math.max(this.start.x, this.end.x);
-        const maxY = Math.max(this.start.y, this.end.y);
-		
-        return new Rectangle(minX, minY, maxX - minX, maxY - minY);
+		const minY = Math.min(this.start.y, this.end.y);
+		const maxX = Math.max(this.start.x, this.end.x);
+		const maxY = Math.max(this.start.y, this.end.y);
+
+		return new Rectangle(minX, minY, maxX - minX, maxY - minY);
 	}
 
 	public getAngle(): number {

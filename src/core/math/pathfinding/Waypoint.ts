@@ -4,76 +4,77 @@ import { Vector2D } from "@/core/math/geometry/Vector2D";
  * Represents a single waypoint in a path
  */
 export class Waypoint {
-    /** Position of the waypoint */
-    public readonly position: Vector2D;
-    
-    /** Optional wait time at this waypoint (in milliseconds) */
-    public readonly waitTime?: number;
-    
-    /** Optional speed override for moving to this waypoint */
-    public readonly speed?: number;
-    
-    /** Optional action to execute when reaching this waypoint */
-    public readonly action?: () => void;
-    
-    /** Optional metadata for custom game logic */
-    public readonly metadata?: Record<string, any>;
+	/** Position of the waypoint */
+	public readonly position: Vector2D;
 
-    constructor(
-        position: Vector2D,
-        options?: {
-            waitTime?: number;
-            speed?: number;
-            action?: () => void;
-            metadata?: Record<string, any>;
-        }
-    ) {
-        this.position = new Vector2D(position.x, position.y);
-        this.waitTime = options?.waitTime;
-        this.speed = options?.speed;
-        this.action = options?.action;
-        this.metadata = options?.metadata;
-    }
+	/** Optional wait time at this waypoint (in milliseconds) */
+	public readonly waitTime?: number;
 
-    /**
-     * Creates a waypoint from x, y coordinates
-     */
-    public static at(x: number, y: number, options?: {
-        waitTime?: number;
-        speed?: number;
-        action?: () => void;
-        metadata?: Record<string, any>;
-    }): Waypoint {
-        return new Waypoint(new Vector2D(x, y), options);
-    }
+	/** Optional speed override for moving to this waypoint */
+	public readonly speed?: number;
 
-    /**
-     * Calculates distance to another waypoint
-     */
-    public distanceTo(other: Waypoint): number {
-        return this.position.distanceBetween(other.position);
-    }
+	/** Optional action to execute when reaching this waypoint */
+	public readonly action?: () => void;
 
-    /**
-     * Creates a copy of this waypoint
-     */
-    public clone(): Waypoint {
-        return new Waypoint(
-            new Vector2D(this.position.x, this.position.y),
-            {
-                waitTime: this.waitTime,
-                speed: this.speed,
-                action: this.action,
-                metadata: this.metadata ? { ...this.metadata } : undefined
-            }
-        );
-    }
+	/** Optional metadata for custom game logic */
+	public readonly metadata?: Record<string, any>;
+
+	constructor(
+		position: Vector2D,
+		options?: {
+			waitTime?: number;
+			speed?: number;
+			action?: () => void;
+			metadata?: Record<string, any>;
+		}
+	) {
+		this.position = new Vector2D(position.x, position.y);
+		this.waitTime = options?.waitTime;
+		this.speed = options?.speed;
+		this.action = options?.action;
+		this.metadata = options?.metadata;
+	}
+
+	/**
+	 * Creates a waypoint from x, y coordinates
+	 */
+	public static at(
+		x: number,
+		y: number,
+		options?: {
+			waitTime?: number;
+			speed?: number;
+			action?: () => void;
+			metadata?: Record<string, any>;
+		}
+	): Waypoint {
+		return new Waypoint(new Vector2D(x, y), options);
+	}
+
+	/**
+	 * Calculates distance to another waypoint
+	 */
+	public distanceTo(other: Waypoint): number {
+		return this.position.distanceBetween(other.position);
+	}
+
+	/**
+	 * Creates a copy of this waypoint
+	 */
+	public clone(): Waypoint {
+		return new Waypoint(new Vector2D(this.position.x, this.position.y), {
+			waitTime: this.waitTime,
+			speed: this.speed,
+			action: this.action,
+			metadata: this.metadata ? { ...this.metadata } : undefined
+		});
+	}
 }
 
 /**
  * Represents a path composed of waypoints with straight line segments between them.
  * Perfect for enemy patrols, RTS unit movement, platform games, tower defense.
- * 
+ *
  * Common use cases:
  * - Guard patrols (rectangular paths)
  * - Tower defense creep routes
@@ -83,492 +84,477 @@ export class Waypoint {
  * - Racing game checkpoints
  */
 export class WaypointPath {
-    private readonly waypoints: Waypoint[];
-    private readonly isLooping: boolean;
-    private currentIndex: number = 0;
-    private isReversing: boolean = false;
+	private readonly waypoints: Waypoint[];
+	private readonly isLooping: boolean;
+	private currentIndex: number = 0;
+	private isReversing: boolean = false;
 
-    constructor(waypoints: Waypoint[] | Vector2D[], loop: boolean = false) {
-        if (waypoints.length === 0) {
-            throw new Error("WaypointPath requires at least one waypoint");
-        }
+	constructor(waypoints: Waypoint[] | Vector2D[], loop: boolean = false) {
+		if (waypoints.length === 0) {
+			throw new Error("WaypointPath requires at least one waypoint");
+		}
 
-        // Convert Vectors to Waypoints if needed
-        this.waypoints = waypoints.map(wp => 
-            wp instanceof Waypoint ? wp : new Waypoint(wp)
-        );
-        
-        this.isLooping = loop;
-    }
+		// Convert Vectors to Waypoints if needed
+		this.waypoints = waypoints.map((wp) => (wp instanceof Waypoint ? wp : new Waypoint(wp)));
 
-    /**
-     * Creates a path from an array of positions
-     */
-    public static fromPositions(positions: Vector2D[], loop: boolean = false): WaypointPath {
-        return new WaypointPath(positions, loop);
-    }
+		this.isLooping = loop;
+	}
 
-    /**
-     * Creates a path from x, y coordinate pairs
-     */
-    public static fromCoordinates(coords: Array<[number, number]>, loop: boolean = false): WaypointPath {
-        const positions = coords.map(([x, y]) => new Vector2D(x, y));
-        return new WaypointPath(positions, loop);
-    }
+	/**
+	 * Creates a path from an array of positions
+	 */
+	public static fromPositions(positions: Vector2D[], loop: boolean = false): WaypointPath {
+		return new WaypointPath(positions, loop);
+	}
 
-    /**
-     * Creates a rectangular patrol path
-     */
-    public static rectangle(x: number, y: number, width: number, height: number): WaypointPath {
-        return new WaypointPath([
-            new Vector2D(x, y),
-            new Vector2D(x + width, y),
-            new Vector2D(x + width, y + height),
-            new Vector2D(x, y + height)
-        ], true);
-    }
+	/**
+	 * Creates a path from x, y coordinate pairs
+	 */
+	public static fromCoordinates(coords: Array<[number, number]>, loop: boolean = false): WaypointPath {
+		const positions = coords.map(([x, y]) => new Vector2D(x, y));
+		return new WaypointPath(positions, loop);
+	}
 
-    /**
-     * Creates a circular patrol path
-     */
-    public static circle(center: Vector2D, radius: number, segments: number = 8): WaypointPath {
-        const waypoints: Vector2D[] = [];
-        
-        for (let i = 0; i < segments; i++) {
-            const angle = (360 / segments) * i;
-            const point = Vector2D.ofAngle(angle).multiply(radius).add(center);
-            waypoints.push(point);
-        }
-        
-        return new WaypointPath(waypoints, true);
-    }
+	/**
+	 * Creates a rectangular patrol path
+	 */
+	public static rectangle(x: number, y: number, width: number, height: number): WaypointPath {
+		return new WaypointPath([new Vector2D(x, y), new Vector2D(x + width, y), new Vector2D(x + width, y + height), new Vector2D(x, y + height)], true);
+	}
 
-    // ============================================================================
-    // NAVIGATION
-    // ============================================================================
+	/**
+	 * Creates a circular patrol path
+	 */
+	public static circle(center: Vector2D, radius: number, segments: number = 8): WaypointPath {
+		const waypoints: Vector2D[] = [];
 
-    /**
-     * Gets the current waypoint
-     */
-    public getCurrent(): Waypoint {
-        return this.waypoints[this.currentIndex];
-    }
+		for (let i = 0; i < segments; i++) {
+			const angle = (360 / segments) * i;
+			const point = Vector2D.ofAngle(angle).multiply(radius).add(center);
+			waypoints.push(point);
+		}
 
-    /**
-     * Gets the next waypoint
-     */
-    public getNext(): Waypoint | null {
-        const nextIndex = this.getNextIndex();
-        return nextIndex !== null ? this.waypoints[nextIndex] : null;
-    }
+		return new WaypointPath(waypoints, true);
+	}
 
-    /**
-     * Gets the previous waypoint
-     */
-    public getPrevious(): Waypoint | null {
-        const prevIndex = this.getPreviousIndex();
-        return prevIndex !== null ? this.waypoints[prevIndex] : null;
-    }
+	// ============================================================================
+	// NAVIGATION
+	// ============================================================================
 
-    /**
-     * Advances to the next waypoint
-     */
-    public advance(): boolean {
-        const nextIndex = this.getNextIndex();
-        
-        if (nextIndex === null) {
-            return false; // End of path
-        }
-        
-        this.currentIndex = nextIndex;
-        return true;
-    }
+	/**
+	 * Gets the current waypoint
+	 */
+	public getCurrent(): Waypoint {
+		return this.waypoints[this.currentIndex];
+	}
 
-    /**
-     * Moves to the previous waypoint
-     */
-    public goBack(): boolean {
-        const prevIndex = this.getPreviousIndex();
-        
-        if (prevIndex === null) {
-            return false;
-        }
-        
-        this.currentIndex = prevIndex;
-        return true;
-    }
+	/**
+	 * Gets the next waypoint
+	 */
+	public getNext(): Waypoint | null {
+		const nextIndex = this.getNextIndex();
+		return nextIndex !== null ? this.waypoints[nextIndex] : null;
+	}
 
-    /**
-     * Resets to the first waypoint
-     */
-    public reset(): void {
-        this.currentIndex = 0;
-        this.isReversing = false;
-    }
+	/**
+	 * Gets the previous waypoint
+	 */
+	public getPrevious(): Waypoint | null {
+		const prevIndex = this.getPreviousIndex();
+		return prevIndex !== null ? this.waypoints[prevIndex] : null;
+	}
 
-    /**
-     * Sets the current waypoint index
-     */
-    public setCurrentIndex(index: number): void {
-        if (index >= 0 && index < this.waypoints.length) {
-            this.currentIndex = index;
-        }
-    }
+	/**
+	 * Advances to the next waypoint
+	 */
+	public advance(): boolean {
+		const nextIndex = this.getNextIndex();
 
-    /**
-     * Gets the current waypoint index
-     */
-    public getCurrentIndex(): number {
-        return this.currentIndex;
-    }
+		if (nextIndex === null) {
+			return false; // End of path
+		}
 
-    /**
-     * Checks if the path is complete (reached the end)
-     */
-    public isComplete(): boolean {
-        if (this.isLooping) {
-            return false; // Looping paths never complete
-        }
-        return this.currentIndex === this.waypoints.length - 1;
-    }
+		this.currentIndex = nextIndex;
+		return true;
+	}
 
-    // ============================================================================
-    // PATH QUERIES
-    // ============================================================================
+	/**
+	 * Moves to the previous waypoint
+	 */
+	public goBack(): boolean {
+		const prevIndex = this.getPreviousIndex();
 
-    /**
-     * Gets all waypoints
-     */
-    public getWaypoints(): ReadonlyArray<Waypoint> {
-        return this.waypoints;
-    }
+		if (prevIndex === null) {
+			return false;
+		}
 
-    /**
-     * Gets the number of waypoints
-     */
-    public getWaypointCount(): number {
-        return this.waypoints.length;
-    }
+		this.currentIndex = prevIndex;
+		return true;
+	}
 
-    /**
-     * Gets a waypoint at a specific index
-     */
-    public getWaypoint(index: number): Waypoint | null {
-        return this.waypoints[index] ?? null;
-    }
+	/**
+	 * Resets to the first waypoint
+	 */
+	public reset(): void {
+		this.currentIndex = 0;
+		this.isReversing = false;
+	}
 
-    /**
-     * Checks if the path loops
-     */
-    public isLoop(): boolean {
-        return this.isLooping;
-    }
+	/**
+	 * Sets the current waypoint index
+	 */
+	public setCurrentIndex(index: number): void {
+		if (index >= 0 && index < this.waypoints.length) {
+			this.currentIndex = index;
+		}
+	}
 
-    /**
-     * Gets the total path length (sum of all segment distances)
-     */
-    public getTotalLength(): number {
-        let length = 0;
-        
-        for (let i = 0; i < this.waypoints.length - 1; i++) {
-            const current = this.waypoints[i];
-            const next = this.waypoints[i + 1];
-            length += current.position.distanceBetween(next.position);
-        }
-        
-        if (this.isLooping && this.waypoints.length > 1) {
-            const last = this.waypoints[this.waypoints.length - 1];
-            const first = this.waypoints[0];
-            length += last.position.distanceBetween(first.position);
-        }
-        
-        return length;
-    }
+	/**
+	 * Gets the current waypoint index
+	 */
+	public getCurrentIndex(): number {
+		return this.currentIndex;
+	}
 
-    /**
-     * Gets the distance from current waypoint to the next
-     */
-    public getDistanceToNext(): number {
-        const next = this.getNext();
-        if (!next) return 0;
-        return this.getCurrent().position.distanceBetween(next.position);
-    }
+	/**
+	 * Checks if the path is complete (reached the end)
+	 */
+	public isComplete(): boolean {
+		if (this.isLooping) {
+			return false; // Looping paths never complete
+		}
+		return this.currentIndex === this.waypoints.length - 1;
+	}
 
-    /**
-     * Gets the direction vector to the next waypoint
-     */
-    public getDirectionToNext(): Vector2D | null {
-        const next = this.getNext();
-        if (!next) return null;
-        
-        const current = this.getCurrent();
-        return next.position.subtract(current.position).normalize();
-    }
+	// ============================================================================
+	// PATH QUERIES
+	// ============================================================================
 
-    /**
-     * Gets the closest waypoint to a position
-     */
-    public getClosestWaypoint(position: Vector2D): { waypoint: Waypoint; index: number; distance: number } {
-        let closestIndex = 0;
-        let closestDistance = position.distanceBetween(this.waypoints[0].position);
-        
-        for (let i = 1; i < this.waypoints.length; i++) {
-            const distance = position.distanceBetween(this.waypoints[i].position);
-            if (distance < closestDistance) {
-                closestDistance = distance;
-                closestIndex = i;
-            }
-        }
-        
-        return {
-            waypoint: this.waypoints[closestIndex],
-            index: closestIndex,
-            distance: closestDistance
-        };
-    }
+	/**
+	 * Gets all waypoints
+	 */
+	public getWaypoints(): ReadonlyArray<Waypoint> {
+		return this.waypoints;
+	}
 
-    /**
-     * Checks if a position is close to the current waypoint
-     */
-    public isAtCurrentWaypoint(position: Vector2D, threshold: number = 5): boolean {
-        const current = this.getCurrent();
-        return position.distanceBetween(current.position) <= threshold;
-    }
+	/**
+	 * Gets the number of waypoints
+	 */
+	public getWaypointCount(): number {
+		return this.waypoints.length;
+	}
 
-    // ============================================================================
-    // PATH MODIFICATION
-    // ============================================================================
+	/**
+	 * Gets a waypoint at a specific index
+	 */
+	public getWaypoint(index: number): Waypoint | null {
+		return this.waypoints[index] ?? null;
+	}
 
-    /**
-     * Creates a reversed copy of this path
-     */
-    public reverse(): WaypointPath {
-        const reversed = [...this.waypoints].reverse();
-        return new WaypointPath(reversed, this.isLooping);
-    }
+	/**
+	 * Checks if the path loops
+	 */
+	public isLoop(): boolean {
+		return this.isLooping;
+	}
 
-    /**
-     * Creates a sub-path from start to end index
-     */
-    public slice(startIndex: number, endIndex: number): WaypointPath {
-        const sliced = this.waypoints.slice(startIndex, endIndex + 1);
-        return new WaypointPath(sliced, false);
-    }
+	/**
+	 * Gets the total path length (sum of all segment distances)
+	 */
+	public getTotalLength(): number {
+		let length = 0;
 
-    // ============================================================================
-    // INTERPOLATION
-    // ============================================================================
+		for (let i = 0; i < this.waypoints.length - 1; i++) {
+			const current = this.waypoints[i];
+			const next = this.waypoints[i + 1];
+			length += current.position.distanceBetween(next.position);
+		}
 
-    /**
-     * Gets a position along the path at parameter t (0 to 1)
-     * This uses linear interpolation between waypoints
-     */
-    public getPositionAt(t: number): Vector2D {
-        t = Math.max(0, Math.min(1, t));
-        
-        if (this.waypoints.length === 1) {
-            return new Vector2D(this.waypoints[0].position.x, this.waypoints[0].position.y);
-        }
-        
-        const totalLength = this.getTotalLength();
-        const targetDistance = t * totalLength;
-        
-        let accumulatedDistance = 0;
-        
-        for (let i = 0; i < this.waypoints.length - 1; i++) {
-            const current = this.waypoints[i];
-            const next = this.waypoints[i + 1];
-            const segmentLength = current.position.distanceBetween(next.position);
-            
-            if (accumulatedDistance + segmentLength >= targetDistance) {
-                // Position is on this segment
-                const localDistance = targetDistance - accumulatedDistance;
-                const localT = segmentLength > 0 ? localDistance / segmentLength : 0;
-                return current.position.interpolate(next.position, localT);
-            }
-            
-            accumulatedDistance += segmentLength;
-        }
-        
-        // Handle looping case
-        if (this.isLooping) {
-            const last = this.waypoints[this.waypoints.length - 1];
-            const first = this.waypoints[0];
-            const segmentLength = last.position.distanceBetween(first.position);
-            
-            if (accumulatedDistance + segmentLength >= targetDistance) {
-                const localDistance = targetDistance - accumulatedDistance;
-                const localT = segmentLength > 0 ? localDistance / segmentLength : 0;
-                return last.position.interpolate(first.position, localT);
-            }
-        }
-        
-        // Return last waypoint if we somehow got here
-        const last = this.waypoints[this.waypoints.length - 1];
-        return new Vector2D(last.position.x, last.position.y);
-    }
+		if (this.isLooping && this.waypoints.length > 1) {
+			const last = this.waypoints[this.waypoints.length - 1];
+			const first = this.waypoints[0];
+			length += last.position.distanceBetween(first.position);
+		}
 
-    /**
-     * Gets evenly spaced points along the path
-     */
-    public getPoints(count: number): Vector2D[] {
-        const points: Vector2D[] = [];
-        
-        for (let i = 0; i <= count; i++) {
-            const t = i / count;
-            points.push(this.getPositionAt(t));
-        }
-        
-        return points;
-    }
+		return length;
+	}
 
-    // ============================================================================
-    // PRIVATE HELPERS
-    // ============================================================================
+	/**
+	 * Gets the distance from current waypoint to the next
+	 */
+	public getDistanceToNext(): number {
+		const next = this.getNext();
+		if (!next) return 0;
+		return this.getCurrent().position.distanceBetween(next.position);
+	}
 
-    private getNextIndex(): number | null {
-        if (this.waypoints.length === 1) {
-            return null;
-        }
-        
-        if (this.isLooping) {
-            return (this.currentIndex + 1) % this.waypoints.length;
-        } else {
-            const nextIndex = this.currentIndex + 1;
-            return nextIndex < this.waypoints.length ? nextIndex : null;
-        }
-    }
+	/**
+	 * Gets the direction vector to the next waypoint
+	 */
+	public getDirectionToNext(): Vector2D | null {
+		const next = this.getNext();
+		if (!next) return null;
 
-    private getPreviousIndex(): number | null {
-        if (this.waypoints.length === 1) {
-            return null;
-        }
-        
-        if (this.isLooping) {
-            return this.currentIndex === 0 
-                ? this.waypoints.length - 1 
-                : this.currentIndex - 1;
-        } else {
-            const prevIndex = this.currentIndex - 1;
-            return prevIndex >= 0 ? prevIndex : null;
-        }
-    }
+		const current = this.getCurrent();
+		return next.position.subtract(current.position).normalize();
+	}
+
+	/**
+	 * Gets the closest waypoint to a position
+	 */
+	public getClosestWaypoint(position: Vector2D): { waypoint: Waypoint; index: number; distance: number } {
+		let closestIndex = 0;
+		let closestDistance = position.distanceBetween(this.waypoints[0].position);
+
+		for (let i = 1; i < this.waypoints.length; i++) {
+			const distance = position.distanceBetween(this.waypoints[i].position);
+			if (distance < closestDistance) {
+				closestDistance = distance;
+				closestIndex = i;
+			}
+		}
+
+		return {
+			waypoint: this.waypoints[closestIndex],
+			index: closestIndex,
+			distance: closestDistance
+		};
+	}
+
+	/**
+	 * Checks if a position is close to the current waypoint
+	 */
+	public isAtCurrentWaypoint(position: Vector2D, threshold: number = 5): boolean {
+		const current = this.getCurrent();
+		return position.distanceBetween(current.position) <= threshold;
+	}
+
+	// ============================================================================
+	// PATH MODIFICATION
+	// ============================================================================
+
+	/**
+	 * Creates a reversed copy of this path
+	 */
+	public reverse(): WaypointPath {
+		const reversed = [...this.waypoints].reverse();
+		return new WaypointPath(reversed, this.isLooping);
+	}
+
+	/**
+	 * Creates a sub-path from start to end index
+	 */
+	public slice(startIndex: number, endIndex: number): WaypointPath {
+		const sliced = this.waypoints.slice(startIndex, endIndex + 1);
+		return new WaypointPath(sliced, false);
+	}
+
+	// ============================================================================
+	// INTERPOLATION
+	// ============================================================================
+
+	/**
+	 * Gets a position along the path at parameter t (0 to 1)
+	 * This uses linear interpolation between waypoints
+	 */
+	public getPositionAt(t: number): Vector2D {
+		t = Math.max(0, Math.min(1, t));
+
+		if (this.waypoints.length === 1) {
+			return new Vector2D(this.waypoints[0].position.x, this.waypoints[0].position.y);
+		}
+
+		const totalLength = this.getTotalLength();
+		const targetDistance = t * totalLength;
+
+		let accumulatedDistance = 0;
+
+		for (let i = 0; i < this.waypoints.length - 1; i++) {
+			const current = this.waypoints[i];
+			const next = this.waypoints[i + 1];
+			const segmentLength = current.position.distanceBetween(next.position);
+
+			if (accumulatedDistance + segmentLength >= targetDistance) {
+				// Position is on this segment
+				const localDistance = targetDistance - accumulatedDistance;
+				const localT = segmentLength > 0 ? localDistance / segmentLength : 0;
+				return current.position.interpolate(next.position, localT);
+			}
+
+			accumulatedDistance += segmentLength;
+		}
+
+		// Handle looping case
+		if (this.isLooping) {
+			const last = this.waypoints[this.waypoints.length - 1];
+			const first = this.waypoints[0];
+			const segmentLength = last.position.distanceBetween(first.position);
+
+			if (accumulatedDistance + segmentLength >= targetDistance) {
+				const localDistance = targetDistance - accumulatedDistance;
+				const localT = segmentLength > 0 ? localDistance / segmentLength : 0;
+				return last.position.interpolate(first.position, localT);
+			}
+		}
+
+		// Return last waypoint if we somehow got here
+		const last = this.waypoints[this.waypoints.length - 1];
+		return new Vector2D(last.position.x, last.position.y);
+	}
+
+	/**
+	 * Gets evenly spaced points along the path
+	 */
+	public getPoints(count: number): Vector2D[] {
+		const points: Vector2D[] = [];
+
+		for (let i = 0; i <= count; i++) {
+			const t = i / count;
+			points.push(this.getPositionAt(t));
+		}
+
+		return points;
+	}
+
+	// ============================================================================
+	// PRIVATE HELPERS
+	// ============================================================================
+
+	private getNextIndex(): number | null {
+		if (this.waypoints.length === 1) {
+			return null;
+		}
+
+		if (this.isLooping) {
+			return (this.currentIndex + 1) % this.waypoints.length;
+		} else {
+			const nextIndex = this.currentIndex + 1;
+			return nextIndex < this.waypoints.length ? nextIndex : null;
+		}
+	}
+
+	private getPreviousIndex(): number | null {
+		if (this.waypoints.length === 1) {
+			return null;
+		}
+
+		if (this.isLooping) {
+			return this.currentIndex === 0 ? this.waypoints.length - 1 : this.currentIndex - 1;
+		} else {
+			const prevIndex = this.currentIndex - 1;
+			return prevIndex >= 0 ? prevIndex : null;
+		}
+	}
 }
 
 /**
  * Helper class for following a waypoint path over time
  */
 export class WaypointFollower {
-    private path: WaypointPath;
-    private currentPosition: Vector2D;
-    private speed: number;
-    private waitTimer: number = 0;
-    private isWaiting: boolean = false;
+	private path: WaypointPath;
+	private currentPosition: Vector2D;
+	private speed: number;
+	private waitTimer: number = 0;
+	private isWaiting: boolean = false;
 
-    constructor(path: WaypointPath, startPosition?: Vector2D, speed: number = 100) {
-        this.path = path;
-        this.currentPosition = startPosition ?? new Vector2D(
-            path.getCurrent().position.x,
-            path.getCurrent().position.y
-        );
-        this.speed = speed;
-    }
+	constructor(path: WaypointPath, startPosition?: Vector2D, speed: number = 100) {
+		this.path = path;
+		this.currentPosition = startPosition ?? new Vector2D(path.getCurrent().position.x, path.getCurrent().position.y);
+		this.speed = speed;
+	}
 
-    /**
-     * Updates the follower's position
-     * @param deltaTime - Time in seconds since last update
-     * @returns True if still moving, false if path is complete
-     */
-    public update(deltaTime: number): boolean {
-        const current = this.path.getCurrent();
-        
-        // Handle waiting at waypoint
-        if (this.isWaiting) {
-            this.waitTimer -= deltaTime * 1000;
-            if (this.waitTimer <= 0) {
-                this.isWaiting = false;
-                
-                // Execute waypoint action if any
-                if (current.action) {
-                    current.action();
-                }
-                
-                // Move to next waypoint
-                if (!this.path.advance()) {
-                    return false; // Path complete
-                }
-            }
-            return true;
-        }
-        
-        // Move towards current waypoint
-        const target = current.position;
-        const direction = target.subtract(this.currentPosition);
-        const distance = direction.magnitude();
-        
-        if (distance < 1) {
-            // Reached waypoint
-            this.currentPosition = new Vector2D(target.x, target.y);
-            
-            // Start waiting if needed
-            if (current.waitTime && current.waitTime > 0) {
-                this.isWaiting = true;
-                this.waitTimer = current.waitTime;
-            } else {
-                // Execute action immediately
-                if (current.action) {
-                    current.action();
-                }
-                
-                // Move to next waypoint
-                if (!this.path.advance()) {
-                    return false; // Path complete
-                }
-            }
-        } else {
-            // Move towards waypoint
-            const moveSpeed = current.speed ?? this.speed;
-            const moveDistance = moveSpeed * deltaTime;
-            const moveAmount = Math.min(moveDistance, distance);
-            
-            const normalized = direction.normalize();
-            this.currentPosition = this.currentPosition.add(normalized.multiply(moveAmount));
-        }
-        
-        return true;
-    }
+	/**
+	 * Updates the follower's position
+	 * @param deltaTime - Time in seconds since last update
+	 * @returns True if still moving, false if path is complete
+	 */
+	public update(deltaTime: number): boolean {
+		const current = this.path.getCurrent();
 
-    /**
-     * Gets the current position
-     */
-    public getPosition(): Vector2D {
-        return this.currentPosition;
-    }
+		// Handle waiting at waypoint
+		if (this.isWaiting) {
+			this.waitTimer -= deltaTime * 1000;
+			if (this.waitTimer <= 0) {
+				this.isWaiting = false;
 
-    /**
-     * Sets the movement speed
-     */
-    public setSpeed(speed: number): void {
-        this.speed = speed;
-    }
+				// Execute waypoint action if any
+				if (current.action) {
+					current.action();
+				}
 
-    /**
-     * Resets to the start of the path
-     */
-    public reset(position?: Vector2D): void {
-        this.path.reset();
-        this.currentPosition = position ?? new Vector2D(
-            this.path.getCurrent().position.x,
-            this.path.getCurrent().position.y
-        );
-        this.waitTimer = 0;
-        this.isWaiting = false;
-    }
+				// Move to next waypoint
+				if (!this.path.advance()) {
+					return false; // Path complete
+				}
+			}
+			return true;
+		}
 
-    /**
-     * Gets the underlying path
-     */
-    public getPath(): WaypointPath {
-        return this.path;
-    }
+		// Move towards current waypoint
+		const target = current.position;
+		const direction = target.subtract(this.currentPosition);
+		const distance = direction.magnitude();
+
+		if (distance < 1) {
+			// Reached waypoint
+			this.currentPosition = new Vector2D(target.x, target.y);
+
+			// Start waiting if needed
+			if (current.waitTime && current.waitTime > 0) {
+				this.isWaiting = true;
+				this.waitTimer = current.waitTime;
+			} else {
+				// Execute action immediately
+				if (current.action) {
+					current.action();
+				}
+
+				// Move to next waypoint
+				if (!this.path.advance()) {
+					return false; // Path complete
+				}
+			}
+		} else {
+			// Move towards waypoint
+			const moveSpeed = current.speed ?? this.speed;
+			const moveDistance = moveSpeed * deltaTime;
+			const moveAmount = Math.min(moveDistance, distance);
+
+			const normalized = direction.normalize();
+			this.currentPosition = this.currentPosition.add(normalized.multiply(moveAmount));
+		}
+
+		return true;
+	}
+
+	/**
+	 * Gets the current position
+	 */
+	public getPosition(): Vector2D {
+		return this.currentPosition;
+	}
+
+	/**
+	 * Sets the movement speed
+	 */
+	public setSpeed(speed: number): void {
+		this.speed = speed;
+	}
+
+	/**
+	 * Resets to the start of the path
+	 */
+	public reset(position?: Vector2D): void {
+		this.path.reset();
+		this.currentPosition = position ?? new Vector2D(this.path.getCurrent().position.x, this.path.getCurrent().position.y);
+		this.waitTimer = 0;
+		this.isWaiting = false;
+	}
+
+	/**
+	 * Gets the underlying path
+	 */
+	public getPath(): WaypointPath {
+		return this.path;
+	}
 }

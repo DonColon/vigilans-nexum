@@ -30,8 +30,8 @@ export class GameStateManager {
 		if (this.currentStates.length > 0) {
 			const currentState = this.peek();
 
-			if (currentState !== null) { 
-				currentState.onPause(); 
+			if (currentState !== null) {
+				currentState.onPause();
 			}
 		}
 
@@ -42,11 +42,11 @@ export class GameStateManager {
 	public pop(): GameState {
 		const currentState = this.currentStates.pop();
 		const state = this.peek();
-		
+
 		if (currentState === undefined) {
 			throw new GameError("No states defined in stack");
 		}
-		
+
 		currentState.onExit();
 
 		if (state !== null) {

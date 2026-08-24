@@ -7,7 +7,7 @@ import { KeyboardInput, KeyboardInputType } from "@/core/input/keyboard/Keyboard
 export class KeyboardDevice {
 	private keyboard: Map<KeyboardInputType, Input>;
 	private lastUsed: number;
-    private buffer: InputBuffer;
+	private buffer: InputBuffer;
 
 	constructor(buffer: InputBuffer) {
 		this.keyboard = new Map<KeyboardInputType, Input>();

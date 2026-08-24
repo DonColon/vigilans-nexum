@@ -80,18 +80,13 @@ export class Circle implements Shape {
 
 	public getBorderPoint(angle: number): Vector2D {
 		const vector = Vector2D.ofAngle(angle);
-		return vector.multiply(this.radius).subtract(this.position);
+		return this.position.add(vector.multiply(this.radius));
 	}
 
 	public getBounds(): Rectangle {
 		const diameter = this.getDiameter();
 
-        return new Rectangle(
-            this.position.x - this.radius,
-            this.position.y - this.radius,
-            diameter,
-            diameter
-        );
+		return new Rectangle(this.position.x - this.radius, this.position.y - this.radius, diameter, diameter);
 	}
 
 	public getArea(): number {

@@ -2,12 +2,10 @@ import { test, expect } from "vitest";
 import { Vector2D } from "@/core/math/geometry/Vector2D";
 
 test("Create vector from array", () => {
-	const values = [2, 3, 4];
-	const result = Vector2D.ofArray(values);
+	const result = Vector2D.ofArray([2, 3]);
 
 	expect(result.x).toBe(2);
 	expect(result.y).toBe(3);
-	expect(result.z).toBe(4);
 });
 
 test("Create vector from angle", () => {
@@ -15,7 +13,6 @@ test("Create vector from angle", () => {
 
 	expect(result.x).approximately(0.7071067811865476, 0.0000000000000005);
 	expect(result.y).approximately(0.7071067811865475, 0.0000000000000005);
-	expect(result.z).toBe(0);
 });
 
 test("Addition of vectors", () => {
@@ -25,7 +22,6 @@ test("Addition of vectors", () => {
 
 	expect(result.x).toBe(5);
 	expect(result.y).toBe(10);
-	expect(result.z).toBe(0);
 });
 
 test("Subtraction of vectors", () => {
@@ -33,9 +29,8 @@ test("Subtraction of vectors", () => {
 	const other = new Vector2D(10, 5);
 	const result = value.subtract(other);
 
-	expect(result.x).toBe(5);
+	expect(result.x).toBe(-5);
 	expect(result.y).toBe(0);
-	expect(result.z).toBe(0);
 });
 
 test("Multiplication of vector with scalar", () => {
@@ -44,7 +39,6 @@ test("Multiplication of vector with scalar", () => {
 
 	expect(result.x).toBe(25);
 	expect(result.y).toBe(10);
-	expect(result.z).toBe(0);
 });
 
 test("Division of vector with scalar", () => {
@@ -53,7 +47,6 @@ test("Division of vector with scalar", () => {
 
 	expect(result.x).toBe(5);
 	expect(result.y).toBe(2);
-	expect(result.z).toBe(0);
 });
 
 test("Dot product of vectors", () => {
@@ -72,14 +65,13 @@ test("Perp dot product of vectors", () => {
 	expect(result).toBe(-2);
 });
 
-test("Cross product of vectors", () => {
-	const value = new Vector2D(3, -3, 1);
-	const other = new Vector2D(4, 9, 2);
+test("Cross product of vectors is the scalar z component", () => {
+	const value = new Vector2D(3, -3);
+	const other = new Vector2D(4, 9);
 	const result = value.cross(other);
 
-	expect(result.x).toBe(-15);
-	expect(result.y).toBe(-2);
-	expect(result.z).toBe(39);
+	expect(result).toBe(39);
+	expect(result).toBe(value.perpDot(other));
 });
 
 test("Check magnitude of vector", () => {
@@ -98,15 +90,13 @@ test("Normalize vector", () => {
 
 	expect(result.x).toBe(1);
 	expect(result.y).toBe(0);
-	expect(result.z).toBe(0);
 });
 
-test("Distance between vectors", () => {
-	const value = new Vector2D(5, 0);
-	const other = new Vector2D(10, 0);
-	const result = value.distanceBetween(other);
+test("Normalize zero vector stays zero", () => {
+	const result = new Vector2D(0, 0).normalize();
 
-	expect(result).toBe(5);
+	expect(result.x).toBe(0);
+	expect(result.y).toBe(0);
 });
 
 test("Distance between vectors", () => {
@@ -132,19 +122,21 @@ test("Check heading of vector", () => {
 	expect(result).toBe(90);
 });
 
-test("Interpolate betweem two vectors", () => {
+test("Interpolate between two vectors", () => {
 	const value = new Vector2D(0, 0);
 	const other = new Vector2D(4, 0);
 
 	let result = value.interpolate(other, 0.5);
 	expect(result.x).toBe(2);
 	expect(result.y).toBe(0);
-	expect(result.z).toBe(0);
 
 	result = value.interpolate(other, 2);
 	expect(result.x).toBe(4);
 	expect(result.y).toBe(0);
-	expect(result.z).toBe(0);
+
+	result = value.interpolate(other, -1);
+	expect(result.x).toBe(0);
+	expect(result.y).toBe(0);
 });
 
 test("Check parallel vectors", () => {
@@ -159,22 +151,22 @@ test("Check parallel vectors", () => {
 	expect(result).toBeFalsy();
 });
 
-test("Check vertical vectors", () => {
+test("Check orthogonal vectors", () => {
 	const value = new Vector2D(1, 0);
-	const verticalValue = new Vector2D(0, 1);
-	const notVerticalValue = new Vector2D(1, 2);
+	const orthogonalValue = new Vector2D(0, 1);
+	const notOrthogonalValue = new Vector2D(1, 2);
 
-	let result = value.isVertical(verticalValue);
+	let result = value.isOrthogonal(orthogonalValue);
 	expect(result).toBeTruthy();
 
-	result = value.isVertical(notVerticalValue);
+	result = value.isOrthogonal(notOrthogonalValue);
 	expect(result).toBeFalsy();
 });
 
 test("Compare two vectors", () => {
-	const value = new Vector2D(2, 3, 4);
-	const equalValue = new Vector2D(2, 3, 4);
-	const notEqualValue = new Vector2D(5, 3, 10);
+	const value = new Vector2D(2, 3);
+	const equalValue = new Vector2D(2, 3);
+	const notEqualValue = new Vector2D(5, 3);
 
 	let result = value.equals(equalValue);
 	expect(result).toBeTruthy();
@@ -184,8 +176,8 @@ test("Compare two vectors", () => {
 });
 
 test("Return vector as array", () => {
-	const vector = new Vector2D(2, 3, 4);
+	const vector = new Vector2D(2, 3);
 	const values = vector.asArray();
 
-	expect(values).toEqual([2, 3, 4]);
+	expect(values).toEqual([2, 3]);
 });

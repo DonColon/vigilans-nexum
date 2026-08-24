@@ -76,7 +76,7 @@ test.each([
 	{ values: [1, 2, 3, 4, 5], type: "number" as const },
 	{ values: ["a", "b", "c", "d", "e"], type: "string" as const }
 ])("Select any $type of array", ({ values, type }) => {
-	const value = anyOf<typeof values[number]>(values);
+	const value = anyOf<(typeof values)[number]>(values);
 	expect(value).toBeTypeOf(type);
 	expect(values).toContain(value);
 });

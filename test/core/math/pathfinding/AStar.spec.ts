@@ -26,7 +26,7 @@ describe("AStar Test Suite", () => {
 		];
 		const astar = AStar.fromMap(walkableMap);
 		const result = astar.findPath(new Vector2D(0, 0), new Vector2D(3, 2));
-		
+
 		expect(result.success).toBe(true);
 		expect(result.path.length).toBeGreaterThan(0);
 	});
@@ -39,7 +39,7 @@ describe("AStar Test Suite", () => {
 		];
 		const astar = AStar.fromMap(walkableMap);
 		const result = astar.findPath(new Vector2D(0, 0), new Vector2D(2, 2));
-		
+
 		expect(result.success).toBe(false);
 		expect(result.path.length).toBe(0);
 	});

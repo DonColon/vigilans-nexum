@@ -31,7 +31,7 @@ import {
 	gcd,
 	lcm,
 	isPerfectNumber,
-	isAbundant,
+	isAbundant
 } from "@/core/math/generation/Numbers";
 
 describe("Numbers Module Test Suite", () => {

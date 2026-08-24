@@ -15,8 +15,8 @@ suite("EventHistory Test Suite", () => {
 			bundle: "Test",
 			failed: 0,
 			loaded: 1,
-			stopPropagation: () => { },
-			isPropagationStopped: () => false,
+			stopPropagation: () => {},
+			isPropagationStopped: () => false
 		};
 
 		history.record(event, 2, 5.5);
@@ -33,8 +33,8 @@ suite("EventHistory Test Suite", () => {
 			bundle: "Test",
 			failed: 0,
 			loaded: 1,
-			stopPropagation: () => { },
-			isPropagationStopped: () => false,
+			stopPropagation: () => {},
+			isPropagationStopped: () => false
 		};
 
 		history.record(event, 2, 5.5);
@@ -56,12 +56,16 @@ suite("EventHistory Test Suite", () => {
 		const smallHistory = new EventHistory({ maxSize: 3, enabled: true });
 
 		for (let i = 0; i < 5; i++) {
-			smallHistory.record({
-				type: "bundleLoaded",
-				timestamp: Date.now(),
-				stopPropagation: () => { },
-				isPropagationStopped: () => false,
-			}, 1, 1);
+			smallHistory.record(
+				{
+					type: "bundleLoaded",
+					timestamp: Date.now(),
+					stopPropagation: () => {},
+					isPropagationStopped: () => false
+				},
+				1,
+				1
+			);
 		}
 
 		expect(smallHistory.size()).toBe(3);
@@ -74,8 +78,8 @@ suite("EventHistory Test Suite", () => {
 			bundle: "Test1",
 			failed: 0,
 			loaded: 1,
-			stopPropagation: () => { },
-			isPropagationStopped: () => false,
+			stopPropagation: () => {},
+			isPropagationStopped: () => false
 		};
 
 		const event2 = {
@@ -84,8 +88,8 @@ suite("EventHistory Test Suite", () => {
 			bundle: "Test2",
 			failed: 0,
 			loaded: 2,
-			stopPropagation: () => { },
-			isPropagationStopped: () => false,
+			stopPropagation: () => {},
+			isPropagationStopped: () => false
 		};
 
 		history.record(event1, 2, 10);
@@ -111,8 +115,10 @@ suite("EventHistory Test Suite", () => {
 			bundle: "Test",
 			failed: 0,
 			loaded: 1,
-			stopPropagation: () => { stoppedFlag = true; },
-			isPropagationStopped: () => stoppedFlag,
+			stopPropagation: () => {
+				stoppedFlag = true;
+			},
+			isPropagationStopped: () => stoppedFlag
 		};
 
 		event.stopPropagation();
@@ -124,19 +130,27 @@ suite("EventHistory Test Suite", () => {
 	});
 
 	test("GetEvent filters events by name", () => {
-		history.record({
-			type: "bundleLoaded",
-			timestamp: Date.now(),
-			stopPropagation: () => { },
-			isPropagationStopped: () => false,
-		}, 1, 5);
+		history.record(
+			{
+				type: "bundleLoaded",
+				timestamp: Date.now(),
+				stopPropagation: () => {},
+				isPropagationStopped: () => false
+			},
+			1,
+			5
+		);
 
-		history.record({
-			type: "entityChanged",
-			timestamp: Date.now(),
-			stopPropagation: () => { },
-			isPropagationStopped: () => false,
-		}, 1, 5);
+		history.record(
+			{
+				type: "entityChanged",
+				timestamp: Date.now(),
+				stopPropagation: () => {},
+				isPropagationStopped: () => false
+			},
+			1,
+			5
+		);
 
 		const bundleEvents = history.getEvent("bundleLoaded");
 		expect(bundleEvents).toHaveLength(1);
@@ -145,12 +159,16 @@ suite("EventHistory Test Suite", () => {
 
 	test("GetRecent returns last N events", () => {
 		for (let i = 0; i < 5; i++) {
-			history.record({
-				type: "bundleLoaded",
-				timestamp: Date.now(),
-				stopPropagation: () => { },
-				isPropagationStopped: () => false,
-			}, 1, 1);
+			history.record(
+				{
+					type: "bundleLoaded",
+					timestamp: Date.now(),
+					stopPropagation: () => {},
+					isPropagationStopped: () => false
+				},
+				1,
+				1
+			);
 		}
 
 		const recent = history.getRecent(2);
@@ -158,19 +176,27 @@ suite("EventHistory Test Suite", () => {
 	});
 
 	test("GetSlowEvents filters by processing time threshold", () => {
-		history.record({
-			type: "bundleLoaded",
-			timestamp: Date.now(),
-			stopPropagation: () => { },
-			isPropagationStopped: () => false,
-		}, 1, 5);
+		history.record(
+			{
+				type: "bundleLoaded",
+				timestamp: Date.now(),
+				stopPropagation: () => {},
+				isPropagationStopped: () => false
+			},
+			1,
+			5
+		);
 
-		history.record({
-			type: "bundleLoaded",
-			timestamp: Date.now(),
-			stopPropagation: () => { },
-			isPropagationStopped: () => false,
-		}, 1, 50);
+		history.record(
+			{
+				type: "bundleLoaded",
+				timestamp: Date.now(),
+				stopPropagation: () => {},
+				isPropagationStopped: () => false
+			},
+			1,
+			50
+		);
 
 		const slowEvents = history.getSlowEvents(10);
 		expect(slowEvents).toHaveLength(1);
@@ -180,12 +206,16 @@ suite("EventHistory Test Suite", () => {
 	test("GetStoppedEvents filters stopped events", () => {
 		let stopped = false;
 
-		history.record({
-			type: "bundleLoaded",
-			timestamp: Date.now(),
-			stopPropagation: () => { },
-			isPropagationStopped: () => false,
-		}, 1, 5);
+		history.record(
+			{
+				type: "bundleLoaded",
+				timestamp: Date.now(),
+				stopPropagation: () => {},
+				isPropagationStopped: () => false
+			},
+			1,
+			5
+		);
 
 		const stoppedEvent = {
 			type: "bundleLoaded" as const,
@@ -193,8 +223,10 @@ suite("EventHistory Test Suite", () => {
 			bundle: "Stopped",
 			failed: 0,
 			loaded: 1,
-			stopPropagation: () => { stopped = true; },
-			isPropagationStopped: () => stopped,
+			stopPropagation: () => {
+				stopped = true;
+			},
+			isPropagationStopped: () => stopped
 		};
 		stoppedEvent.stopPropagation();
 
@@ -206,12 +238,16 @@ suite("EventHistory Test Suite", () => {
 	});
 
 	test("GetHistory returns copy of all records", () => {
-		history.record({
-			type: "bundleLoaded",
-			timestamp: Date.now(),
-			stopPropagation: () => { },
-			isPropagationStopped: () => false,
-		}, 1, 5);
+		history.record(
+			{
+				type: "bundleLoaded",
+				timestamp: Date.now(),
+				stopPropagation: () => {},
+				isPropagationStopped: () => false
+			},
+			1,
+			5
+		);
 
 		const allRecords = history.getHistory();
 		expect(allRecords).toHaveLength(1);
@@ -220,24 +256,28 @@ suite("EventHistory Test Suite", () => {
 			event: {
 				type: "bundleLoaded",
 				timestamp: Date.now(),
-				stopPropagation: () => { },
-				isPropagationStopped: () => false,
+				stopPropagation: () => {},
+				isPropagationStopped: () => false
 			},
 			subscriberCount: 1,
 			processingTime: 5,
-			wasStopped: false,
+			wasStopped: false
 		});
 
 		expect(history.size()).toBe(1);
 	});
 
 	test("Clear empties the history", () => {
-		history.record({
-			type: "bundleLoaded",
-			timestamp: Date.now(),
-			stopPropagation: () => { },
-			isPropagationStopped: () => false,
-		}, 1, 5);
+		history.record(
+			{
+				type: "bundleLoaded",
+				timestamp: Date.now(),
+				stopPropagation: () => {},
+				isPropagationStopped: () => false
+			},
+			1,
+			5
+		);
 
 		expect(history.size()).toBe(1);
 
@@ -247,14 +287,18 @@ suite("EventHistory Test Suite", () => {
 	});
 
 	test("PrintStatistics calls console.table", () => {
-		const consoleTableSpy = vi.spyOn(console, 'table').mockImplementation(() => { });
+		const consoleTableSpy = vi.spyOn(console, "table").mockImplementation(() => {});
 
-		history.record({
-			type: "bundleLoaded",
-			timestamp: Date.now(),
-			stopPropagation: () => { },
-			isPropagationStopped: () => false,
-		}, 1, 5);
+		history.record(
+			{
+				type: "bundleLoaded",
+				timestamp: Date.now(),
+				stopPropagation: () => {},
+				isPropagationStopped: () => false
+			},
+			1,
+			5
+		);
 
 		history.printStatistics();
 

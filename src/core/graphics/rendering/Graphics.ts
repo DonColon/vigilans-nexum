@@ -26,7 +26,7 @@ export class Graphics extends GraphicsContext {
 	private globalStrokeColor: Color;
 
 	@GameCoreService(AssetStorage)
-	private assetStorage!: AssetStorage
+	private assetStorage!: AssetStorage;
 
 	constructor(context: CanvasRenderingContext2D) {
 		super(context);
@@ -245,7 +245,11 @@ export class Graphics extends GraphicsContext {
 	}
 
 	private applyFilter(filter: string) {
-		this.context.filter === "none" ? (this.context.filter = filter) : this.context.filter.concat(" ", filter);
+		if (this.context.filter === "none") {
+			this.context.filter = filter;
+		} else {
+			this.context.filter = this.context.filter.concat(" ", filter);
+		}
 	}
 
 	private undoFilter(name: string) {

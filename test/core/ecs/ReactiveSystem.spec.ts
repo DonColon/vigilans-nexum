@@ -48,7 +48,7 @@ suite("ReactiveSystem Test Suite", () => {
 		expect(() => system.execute(16, 1)).not.toThrow();
 
 		// Verify it was called (even though it does nothing)
-		const executeSpy = vi.spyOn(system, 'execute');
+		const executeSpy = vi.spyOn(system, "execute");
 		system.execute(16, 1);
 		expect(executeSpy).toHaveBeenCalledWith(16, 1);
 	});

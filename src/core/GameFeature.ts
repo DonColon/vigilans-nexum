@@ -11,281 +11,280 @@ import { InputDevice } from "@/core/input/InputDevice";
 import { GameCoreService } from "@/core/service/GameCoreService";
 
 interface SystemPriorityList {
-    system: SystemConstructor;
-    priority: number;
+	system: SystemConstructor;
+	priority: number;
 }
 
 export type GameFeatureConstructor = new (config: GameFeatureConfig) => GameFeature;
 
 export interface GameFeatureConfig {
-    components?: ComponentConstructor<any>[];
-    systems?: SystemPriorityList[];
-    entities?: EntityType[];
-    entityStates?: GameStateConstructor[];
-    states?: GameStateConstructor[];
-    commands?: GameCommandConstructor[];
-    dependencies?: GameFeature[];
+	components?: ComponentConstructor<any>[];
+	systems?: SystemPriorityList[];
+	entities?: EntityType[];
+	entityStates?: GameStateConstructor[];
+	states?: GameStateConstructor[];
+	commands?: GameCommandConstructor[];
+	dependencies?: GameFeature[];
 }
 
 export abstract class GameFeature {
-    @GameCoreService(World)
-    protected world!: World;
+	@GameCoreService(World)
+	protected world!: World;
 
-    @GameCoreService(GameStateManager)
-    protected stateManager!: GameStateManager;
+	@GameCoreService(GameStateManager)
+	protected stateManager!: GameStateManager;
 
-    @GameCoreService(InputDevice)
-    protected inputDevice!: InputDevice;
+	@GameCoreService(InputDevice)
+	protected inputDevice!: InputDevice;
 
-    protected installed: boolean;
+	protected installed: boolean;
 
-    constructor(protected config: GameFeatureConfig) {
-        this.installed = false;
-    }
+	constructor(protected config: GameFeatureConfig) {
+		this.installed = false;
+	}
 
-    public install() {
-        if (this.installed) {
-            throw new GameError("GameFeature is already installed.");
-        }
+	public install() {
+		if (this.installed) {
+			throw new GameError("GameFeature is already installed.");
+		}
 
-        if (this.config.dependencies) {
-            const dependenciesInstalled = this.config.dependencies.every(dependency => dependency.isInstalled());
+		if (this.config.dependencies) {
+			const dependenciesInstalled = this.config.dependencies.every((dependency) => dependency.isInstalled());
 
-            if (!dependenciesInstalled) {
-                throw new GameError("Cannot install GameFeature: not all dependencies are installed.");
-            }
-        }
+			if (!dependenciesInstalled) {
+				throw new GameError("Cannot install GameFeature: not all dependencies are installed.");
+			}
+		}
 
-        if (this.config.components) {
-            for (const componentType of this.config.components) {
-                this.registerComponent(componentType);
-            }
-        }
+		if (this.config.components) {
+			for (const componentType of this.config.components) {
+				this.registerComponent(componentType);
+			}
+		}
 
-        if (this.config.entityStates) {
-            for (const stateType of this.config.entityStates) {
-                this.registerEntityState(stateType);
-            }
-        }
+		if (this.config.entityStates) {
+			for (const stateType of this.config.entityStates) {
+				this.registerEntityState(stateType);
+			}
+		}
 
-        if (this.config.entities) {
-            for (const entityType of this.config.entities) {
-                this.registerEntity(entityType);
-            }
-        }
+		if (this.config.entities) {
+			for (const entityType of this.config.entities) {
+				this.registerEntity(entityType);
+			}
+		}
 
-        if (this.config.commands) {
-            for (const commandType of this.config.commands) {
-                this.registerCommand(commandType);
-            }
-        }
+		if (this.config.commands) {
+			for (const commandType of this.config.commands) {
+				this.registerCommand(commandType);
+			}
+		}
 
-        if (this.config.states) {
-            for (const stateType of this.config.states) {
-                this.registerState(stateType);
-            }
-        }
+		if (this.config.states) {
+			for (const stateType of this.config.states) {
+				this.registerState(stateType);
+			}
+		}
 
-        if (this.config.systems) {
-            for (const { system, priority } of this.config.systems) {
-                this.registerSystem(system, priority);
-            }
-        }
+		if (this.config.systems) {
+			for (const { system, priority } of this.config.systems) {
+				this.registerSystem(system, priority);
+			}
+		}
 
-        this.onInstall();
-        this.installed = true;
-    }
+		this.onInstall();
+		this.installed = true;
+	}
 
-    public uninstall() {
-        if (!this.installed) {
-            throw new GameError("GameFeature is not installed.");
-        }
+	public uninstall() {
+		if (!this.installed) {
+			throw new GameError("GameFeature is not installed.");
+		}
 
-        if (this.config.systems) {
-            for (const { system } of this.config.systems) {
-                this.unregisterSystem(system);
-            }
-        }
+		if (this.config.systems) {
+			for (const { system } of this.config.systems) {
+				this.unregisterSystem(system);
+			}
+		}
 
-        if (this.config.states) {
-            for (const stateType of this.config.states) {
-                this.unregisterState(stateType);
-            }
-        }
+		if (this.config.states) {
+			for (const stateType of this.config.states) {
+				this.unregisterState(stateType);
+			}
+		}
 
-        if (this.config.commands) {
-            for (const commandType of this.config.commands) {
-                this.unregisterCommand(commandType);
-            }
-        }
+		if (this.config.commands) {
+			for (const commandType of this.config.commands) {
+				this.unregisterCommand(commandType);
+			}
+		}
 
-        if (this.config.entities) {
-            for (const entityType of this.config.entities) {
-                const entity = this.world.getEntity(entityType.id);
+		if (this.config.entities) {
+			for (const entityType of this.config.entities) {
+				const entity = this.world.getEntity(entityType.id);
 
-                if (entity) {
-                    this.unregisterEntity(entity);
-                }
-            }
-        }
+				if (entity) {
+					this.unregisterEntity(entity);
+				}
+			}
+		}
 
-        if (this.config.entityStates) {
-            for (const stateType of this.config.entityStates) {
-                this.unregisterEntityState(stateType);
-            }
-        }
+		if (this.config.entityStates) {
+			for (const stateType of this.config.entityStates) {
+				this.unregisterEntityState(stateType);
+			}
+		}
 
-        if (this.config.components) {
-            for (const componentType of this.config.components) {
-                this.unregisterComponent(componentType);
-            }
-        }
+		if (this.config.components) {
+			for (const componentType of this.config.components) {
+				this.unregisterComponent(componentType);
+			}
+		}
 
-        this.onUninstall();
-        this.installed = false;
-    }
+		this.onUninstall();
+		this.installed = false;
+	}
 
-    protected onInstall() {}
-    protected onUninstall() {}
-    
-    public isInstalled(): boolean {
-        return this.installed;
-    }
+	protected onInstall() {}
+	protected onUninstall() {}
 
-    public registerComponent<T extends JsonSchema>(compenentType: ComponentConstructor<T>): this {
-        this.world.registerComponent(compenentType);
+	public isInstalled(): boolean {
+		return this.installed;
+	}
 
-        if (this.config.components) {
-            this.config.components.push(compenentType);
-        } else {
-            this.config.components = [compenentType];
-        }
+	public registerComponent<T extends JsonSchema>(compenentType: ComponentConstructor<T>): this {
+		this.world.registerComponent(compenentType);
 
-        return this;
-    }
+		if (this.config.components) {
+			this.config.components.push(compenentType);
+		} else {
+			this.config.components = [compenentType];
+		}
 
-    public unregisterComponent<T extends JsonSchema>(compenentType: ComponentConstructor<T>): this {
-        this.world.unregisterComponent(compenentType);
+		return this;
+	}
 
-        if (this.config.components) {
-            this.config.components = this.config.components.filter(c => c !== compenentType);
-        }
+	public unregisterComponent<T extends JsonSchema>(compenentType: ComponentConstructor<T>): this {
+		this.world.unregisterComponent(compenentType);
 
-        return this;
-    }
+		if (this.config.components) {
+			this.config.components = this.config.components.filter((c) => c !== compenentType);
+		}
 
-    public registerEntityState(stateType: GameStateConstructor): this {
-        this.world.registerEntityState(stateType);
+		return this;
+	}
 
-        if (this.config.entityStates) {
-            this.config.entityStates.push(stateType);
-        } else {
-            this.config.entityStates = [stateType];
-        }
+	public registerEntityState(stateType: GameStateConstructor): this {
+		this.world.registerEntityState(stateType);
 
-        return this;
-    }
+		if (this.config.entityStates) {
+			this.config.entityStates.push(stateType);
+		} else {
+			this.config.entityStates = [stateType];
+		}
 
-    public unregisterEntityState(stateType: GameStateConstructor): this {
-        this.world.unregisterEntityState(stateType);
+		return this;
+	}
 
-        if (this.config.entityStates) {
-            this.config.entityStates = this.config.entityStates.filter(s => s !== stateType);
-        }
+	public unregisterEntityState(stateType: GameStateConstructor): this {
+		this.world.unregisterEntityState(stateType);
 
-        return this;
-    }
+		if (this.config.entityStates) {
+			this.config.entityStates = this.config.entityStates.filter((s) => s !== stateType);
+		}
 
-    public registerEntity(entityType: EntityType): this {
-        this.world.registerEntity(entityType);
+		return this;
+	}
 
-        if (this.config.entities) {
-            this.config.entities.push(entityType);
-        } else {
-            this.config.entities = [entityType];
-        }
+	public registerEntity(entityType: EntityType): this {
+		this.world.registerEntity(entityType);
 
-        return this;
-    }
+		if (this.config.entities) {
+			this.config.entities.push(entityType);
+		} else {
+			this.config.entities = [entityType];
+		}
 
-    public createEntity(id?: string): Entity {
-        return this.world.createEntity(id);
-    }
+		return this;
+	}
 
-    public unregisterEntity(entity: Entity): this {
-        this.world.unregisterEntity(entity);
+	public createEntity(id?: string): Entity {
+		return this.world.createEntity(id);
+	}
 
-        if (this.config.entities) {
-            this.config.entities = this.config.entities.filter(e => e.id !== entity.getID());
-        }
+	public unregisterEntity(entity: Entity): this {
+		this.world.unregisterEntity(entity);
 
-        return this;
-    }
+		if (this.config.entities) {
+			this.config.entities = this.config.entities.filter((e) => e.id !== entity.getID());
+		}
 
-    public registerSystem(systemType: SystemConstructor, priority: number): this {
-        this.world.registerSystem(systemType, priority);
+		return this;
+	}
 
-        if (this.config.systems) {
-            this.config.systems.push({ system: systemType, priority });
-        } else {
-            this.config.systems = [{ system: systemType, priority }];
-        }
+	public registerSystem(systemType: SystemConstructor, priority: number): this {
+		this.world.registerSystem(systemType, priority);
 
-        return this;
-    }
+		if (this.config.systems) {
+			this.config.systems.push({ system: systemType, priority });
+		} else {
+			this.config.systems = [{ system: systemType, priority }];
+		}
 
-    public unregisterSystem(systemType: SystemConstructor): this {
-        this.world.unregisterSystem(systemType);
+		return this;
+	}
 
-        if (this.config.systems) {
-            this.config.systems = this.config.systems.filter(s => s.system !== systemType);
-        }
+	public unregisterSystem(systemType: SystemConstructor): this {
+		this.world.unregisterSystem(systemType);
 
-        return this;
-    }
+		if (this.config.systems) {
+			this.config.systems = this.config.systems.filter((s) => s.system !== systemType);
+		}
 
-    public registerState(stateType: GameStateConstructor): this {
-        this.stateManager.registerState(stateType);
+		return this;
+	}
 
-        if (this.config.states) {
-            this.config.states.push(stateType);
-        } else {
-            this.config.states = [stateType];
-        }
+	public registerState(stateType: GameStateConstructor): this {
+		this.stateManager.registerState(stateType);
 
-        return this;
-    }
+		if (this.config.states) {
+			this.config.states.push(stateType);
+		} else {
+			this.config.states = [stateType];
+		}
 
-    public unregisterState(stateType: GameStateConstructor): this {
-        this.stateManager.unregisterState(stateType);
+		return this;
+	}
 
-        if (this.config.states) {
-            this.config.states = this.config.states.filter(s => s !== stateType);
-        }
+	public unregisterState(stateType: GameStateConstructor): this {
+		this.stateManager.unregisterState(stateType);
 
-        return this;
-    }
+		if (this.config.states) {
+			this.config.states = this.config.states.filter((s) => s !== stateType);
+		}
 
-    public registerCommand(commandType: GameCommandConstructor): this {
-        this.inputDevice.registerCommand(commandType);
+		return this;
+	}
 
-        if (this.config.commands) {
-            this.config.commands.push(commandType);
-        } else {
-            this.config.commands = [commandType];
-        }
+	public registerCommand(commandType: GameCommandConstructor): this {
+		this.inputDevice.registerCommand(commandType);
 
-        return this;
-    }
+		if (this.config.commands) {
+			this.config.commands.push(commandType);
+		} else {
+			this.config.commands = [commandType];
+		}
 
-    public unregisterCommand(commandType: GameCommandConstructor): this {
-        this.inputDevice.unregisterCommand(commandType);
+		return this;
+	}
 
-        if (this.config.commands) {
-            this.config.commands = this.config.commands.filter(c => c !== commandType);
-        }
+	public unregisterCommand(commandType: GameCommandConstructor): this {
+		this.inputDevice.unregisterCommand(commandType);
 
-        return this;
-    }
+		if (this.config.commands) {
+			this.config.commands = this.config.commands.filter((c) => c !== commandType);
+		}
 
+		return this;
+	}
 }

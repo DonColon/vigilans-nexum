@@ -13,7 +13,7 @@ const gameConfiguration: GameConfiguration = {
 		history: {
 			enabled: true,
 			maxSize: 100
-		}	
+		}
 	},
 	inputDevice: {
 		gamepad: {

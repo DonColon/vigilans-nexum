@@ -10,7 +10,7 @@ suite("LineStyle Class Unit Tests", () => {
 		expect(lineStyle).toBeDefined();
 
 		expect(lineStyle.getWidth()).toBe(1);
-		expect(lineStyle.getDashPattern()).toHaveLength(0)
+		expect(lineStyle.getDashPattern()).toHaveLength(0);
 		expect(lineStyle.getDashOffset()).toBe(0);
 		expect(lineStyle.getCap()).toBe(LineCap.BUTT);
 		expect(lineStyle.getJoin()).toBe(LineJoin.MITER);

@@ -72,7 +72,7 @@ suite("Range Test Suite", () => {
 	test("Maps value from one range to another", () => {
 		const range1 = new Range(0, 100);
 		const range2 = new Range(0, 1000);
-		
+
 		expect(range1.map(50, range2)).toBe(500);
 		expect(range1.map(0, range2)).toBe(0);
 		expect(range1.map(100, range2)).toBe(1000);
@@ -90,7 +90,7 @@ suite("Range Test Suite", () => {
 
 	test("Gets random value within range", () => {
 		const range = new Range(0, 100);
-		
+
 		for (let i = 0; i < 10; i++) {
 			const random = range.random();
 			expect(random).toBeGreaterThanOrEqual(0);
@@ -100,7 +100,7 @@ suite("Range Test Suite", () => {
 
 	test("Gets random integer within range", () => {
 		const range = new Range(0, 10);
-		
+
 		for (let i = 0; i < 10; i++) {
 			const random = range.randomInt();
 			expect(Number.isInteger(random)).toBe(true);
@@ -112,7 +112,7 @@ suite("Range Test Suite", () => {
 	test("Expands range by amount", () => {
 		const range = new Range(10, 20);
 		const expanded = range.expand(5);
-		
+
 		expect(expanded.min).toBe(5);
 		expect(expanded.max).toBe(25);
 	});
@@ -120,7 +120,7 @@ suite("Range Test Suite", () => {
 	test("Contracts range by amount", () => {
 		const range = new Range(0, 100);
 		const contracted = range.shrink(10);
-		
+
 		expect(contracted.min).toBe(10);
 		expect(contracted.max).toBe(90);
 	});
@@ -129,7 +129,7 @@ suite("Range Test Suite", () => {
 		const range1 = new Range(0, 100);
 		const range2 = new Range(0, 100);
 		const range3 = new Range(0, 50);
-		
+
 		expect(range1.equals(range2)).toBe(true);
 		expect(range1.equals(range3)).toBe(false);
 	});
@@ -137,7 +137,7 @@ suite("Range Test Suite", () => {
 	test("Clones range", () => {
 		const range = new Range(0, 100);
 		const clone = range.clone();
-		
+
 		expect(clone.min).toBe(range.min);
 		expect(clone.max).toBe(range.max);
 		expect(clone).not.toBe(range);

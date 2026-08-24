@@ -10,16 +10,16 @@ import { Shape } from "@/core/math/geometry/Shape";
  * Represents the result of a ray intersection test
  */
 export interface RaycastHit {
-    /** The point where the ray hit */
-    point: Vector2D;
-    /** Distance from ray origin to hit point */
-    distance: number;
-    /** Normal vector at the hit point (perpendicular to surface) */
-    normal: Vector2D;
-    /** The shape that was hit */
-    shape?: Shape;
-    /** Parameter t where ray hit (distance along ray direction) */
-    t: number;
+	/** The point where the ray hit */
+	point: Vector2D;
+	/** Distance from ray origin to hit point */
+	distance: number;
+	/** Normal vector at the hit point (perpendicular to surface) */
+	normal: Vector2D;
+	/** The shape that was hit */
+	shape?: Shape;
+	/** Parameter t where ray hit (distance along ray direction) */
+	t: number;
 }
 
 /**
@@ -27,365 +27,358 @@ export interface RaycastHit {
  * Useful for raycasting, line-of-sight checks, click detection, projectiles, etc.
  */
 export class Ray {
-    private readonly origin: Vector2D;
-    private readonly direction: Vector2D;
+	private readonly origin: Vector2D;
+	private readonly direction: Vector2D;
 
-    constructor(origin: Vector2D, direction: Vector2D) {
-        this.origin = origin;
-        this.direction = direction.normalize(); // Always normalized
-    }
+	constructor(origin: Vector2D, direction: Vector2D) {
+		this.origin = origin;
+		this.direction = direction.normalize(); // Always normalized
+	}
 
-    /**
-     * Creates a ray from origin pointing towards a target point
-     */
-    public static fromPoints(origin: Vector2D, target: Vector2D): Ray {
-        const direction = target.subtract(origin);
-        return new Ray(origin, direction);
-    }
+	/**
+	 * Creates a ray from origin pointing towards a target point
+	 */
+	public static fromPoints(origin: Vector2D, target: Vector2D): Ray {
+		const direction = target.subtract(origin);
+		return new Ray(origin, direction);
+	}
 
-    /**
-     * Creates a ray from origin with an angle in degrees
-     */
-    public static fromAngle(origin: Vector2D, angle: number): Ray {
-        const direction = Vector2D.ofAngle(angle);
-        return new Ray(origin, direction);
-    }
+	/**
+	 * Creates a ray from origin with an angle in degrees
+	 */
+	public static fromAngle(origin: Vector2D, angle: number): Ray {
+		const direction = Vector2D.ofAngle(angle);
+		return new Ray(origin, direction);
+	}
 
-    /**
-     * Gets a point along the ray at distance t
-     */
-    public getPoint(t: number): Vector2D {
-        return this.origin.add(this.direction.multiply(t));
-    }
+	/**
+	 * Gets a point along the ray at distance t
+	 */
+	public getPoint(t: number): Vector2D {
+		return this.origin.add(this.direction.multiply(t));
+	}
 
-    /**
-     * Casts the ray against a line segment
-     */
-    public castLine(line: Line): RaycastHit | null {
-        const start = line.getStart();
-        const end = line.getEnd();
-        
-        const lineDir = end.subtract(start);
-        const v1 = this.origin.subtract(start);
-        const v2 = new Vector2D(-this.direction.y, this.direction.x);
-        const v3 = new Vector2D(-lineDir.y, lineDir.x);
+	/**
+	 * Casts the ray against a line segment
+	 */
+	public castLine(line: Line): RaycastHit | null {
+		const start = line.getStart();
+		const end = line.getEnd();
 
-        const dot = lineDir.dot(v2);
-        if (Math.abs(dot) < 0.000001) {
-            return null; // Parallel
-        }
+		const lineDir = end.subtract(start);
+		const v1 = this.origin.subtract(start);
+		const v2 = new Vector2D(-this.direction.y, this.direction.x);
 
-        const t1 = lineDir.perpDot(v1) / dot;
-        const t2 = v1.dot(v2) / dot;
+		const dot = lineDir.dot(v2);
+		if (Math.abs(dot) < 0.000001) {
+			return null; // Parallel
+		}
 
-        if (t1 >= 0 && t2 >= 0 && t2 <= 1) {
-            const point = this.getPoint(t1);
-            const distance = this.origin.distanceBetween(point);
-            
-            // Normal is perpendicular to line direction
-            const normal = new Vector2D(-lineDir.y, lineDir.x).normalize();
-            
-            return {
-                point,
-                distance,
-                normal,
-                t: t1
-            };
-        }
+		const t1 = lineDir.perpDot(v1) / dot;
+		const t2 = v1.dot(v2) / dot;
 
-        return null;
-    }
+		if (t1 >= 0 && t2 >= 0 && t2 <= 1) {
+			const point = this.getPoint(t1);
+			const distance = this.origin.distanceBetween(point);
 
-    /**
-     * Casts the ray against a circle
-     */
-    public castCircle(circle: Circle): RaycastHit | null {
-        const center = circle.getPosition();
-        const radius = circle.getRadius();
-        
-        const oc = this.origin.subtract(center);
-        const a = this.direction.dot(this.direction);
-        const b = 2 * oc.dot(this.direction);
-        const c = oc.dot(oc) - radius * radius;
-        
-        const discriminant = b * b - 4 * a * c;
-        
-        if (discriminant < 0) {
-            return null; // No intersection
-        }
-        
-        const sqrt = Math.sqrt(discriminant);
-        let t = (-b - sqrt) / (2 * a);
-        
-        // Use the closer intersection point
-        if (t < 0) {
-            t = (-b + sqrt) / (2 * a);
-        }
-        
-        if (t < 0) {
-            return null; // Circle is behind ray
-        }
-        
-        const point = this.getPoint(t);
-        const distance = this.origin.distanceBetween(point);
-        const normal = point.subtract(center).normalize();
-        
-        return {
-            point,
-            distance,
-            normal,
-            shape: circle,
-            t
-        };
-    }
+			// Normal is perpendicular to line direction
+			const normal = new Vector2D(-lineDir.y, lineDir.x).normalize();
 
-    /**
-     * Casts the ray against a rectangle
-     */
-    public castRectangle(rectangle: Rectangle): RaycastHit | null {
-        const sides = rectangle.getSides();
-        const hits: RaycastHit[] = [];
+			return {
+				point,
+				distance,
+				normal,
+				t: t1
+			};
+		}
 
-        // Check all four sides
-        for (const side of [sides.top, sides.right, sides.bottom, sides.left]) {
-            const hit = this.castLine(side);
-            if (hit) {
-                hits.push(hit);
-            }
-        }
+		return null;
+	}
 
-        if (hits.length === 0) {
-            return null;
-        }
+	/**
+	 * Casts the ray against a circle
+	 */
+	public castCircle(circle: Circle): RaycastHit | null {
+		const center = circle.getPosition();
+		const radius = circle.getRadius();
 
-        // Return the closest hit
-        hits.sort((a, b) => a.distance - b.distance);
-        return { ...hits[0], shape: rectangle };
-    }
+		const oc = this.origin.subtract(center);
+		const a = this.direction.dot(this.direction);
+		const b = 2 * oc.dot(this.direction);
+		const c = oc.dot(oc) - radius * radius;
 
-    /**
-     * Casts the ray against an ellipse
-     */
-    public castEllipse(ellipse: Ellipse): RaycastHit | null {
-        // Transform ray to ellipse's local coordinate system
-        const center = ellipse.getCenter();
-        const radiusX = ellipse.getRadiusX();
-        const radiusY = ellipse.getRadiusY();
-        const rotation = ellipse.getRotation();
+		const discriminant = b * b - 4 * a * c;
 
-        // Simplified approach: sample the ellipse border
-        const samples = 64;
-        let closestHit: RaycastHit | null = null;
-        let closestDistance = Infinity;
+		if (discriminant < 0) {
+			return null; // No intersection
+		}
 
-        for (let i = 0; i < samples; i++) {
-            const angle1 = (360 / samples) * i;
-            const angle2 = (360 / samples) * ((i + 1) % samples);
-            
-            const p1 = ellipse.getBorderPoint(angle1);
-            const p2 = ellipse.getBorderPoint(angle2);
-            
-            const segment = Line.ofPoints(p1, p2);
-            const hit = this.castLine(segment);
-            
-            if (hit && hit.distance < closestDistance) {
-                closestDistance = hit.distance;
-                closestHit = hit;
-            }
-        }
+		const sqrt = Math.sqrt(discriminant);
+		let t = (-b - sqrt) / (2 * a);
 
-        return closestHit ? { ...closestHit, shape: ellipse } : null;
-    }
+		// Use the closer intersection point
+		if (t < 0) {
+			t = (-b + sqrt) / (2 * a);
+		}
 
-    /**
-     * Casts the ray against a polygon
-     */
-    public castPolygon(polygon: Polygon): RaycastHit | null {
-        const sides = polygon.getSides();
-        const hits: RaycastHit[] = [];
+		if (t < 0) {
+			return null; // Circle is behind ray
+		}
 
-        for (const side of sides) {
-            const hit = this.castLine(side);
-            if (hit) {
-                hits.push(hit);
-            }
-        }
+		const point = this.getPoint(t);
+		const distance = this.origin.distanceBetween(point);
+		const normal = point.subtract(center).normalize();
 
-        if (hits.length === 0) {
-            return null;
-        }
+		return {
+			point,
+			distance,
+			normal,
+			shape: circle,
+			t
+		};
+	}
 
-        // Return the closest hit
-        hits.sort((a, b) => a.distance - b.distance);
-        return { ...hits[0], shape: polygon };
-    }
+	/**
+	 * Casts the ray against a rectangle
+	 */
+	public castRectangle(rectangle: Rectangle): RaycastHit | null {
+		const sides = rectangle.getSides();
+		const hits: RaycastHit[] = [];
 
-    /**
-     * Casts the ray against any shape
-     */
-    public cast(shape: Shape): RaycastHit | null {
-        if (shape instanceof Line) {
-            return this.castLine(shape);
-        } else if (shape instanceof Circle) {
-            return this.castCircle(shape);
-        } else if (shape instanceof Rectangle) {
-            return this.castRectangle(shape);
-        } else if (shape instanceof Ellipse) {
-            return this.castEllipse(shape);
-        } else if (shape instanceof Polygon) {
-            return this.castPolygon(shape);
-        }
+		// Check all four sides
+		for (const side of [sides.top, sides.right, sides.bottom, sides.left]) {
+			const hit = this.castLine(side);
+			if (hit) {
+				hits.push(hit);
+			}
+		}
 
-        return null;
-    }
+		if (hits.length === 0) {
+			return null;
+		}
 
-    /**
-     * Casts the ray against multiple shapes and returns the closest hit
-     */
-    public castMultiple(shapes: Shape[]): RaycastHit | null {
-        const hits: RaycastHit[] = [];
+		// Return the closest hit
+		hits.sort((a, b) => a.distance - b.distance);
+		return { ...hits[0], shape: rectangle };
+	}
 
-        for (const shape of shapes) {
-            const hit = this.cast(shape);
-            if (hit) {
-                hits.push(hit);
-            }
-        }
+	/**
+	 * Casts the ray against an ellipse
+	 */
+	public castEllipse(ellipse: Ellipse): RaycastHit | null {
+		// Simplified approach: sample the ellipse border
+		const samples = 64;
+		let closestHit: RaycastHit | null = null;
+		let closestDistance = Infinity;
 
-        if (hits.length === 0) {
-            return null;
-        }
+		for (let i = 0; i < samples; i++) {
+			const angle1 = (360 / samples) * i;
+			const angle2 = (360 / samples) * ((i + 1) % samples);
 
-        // Return the closest hit
-        hits.sort((a, b) => a.distance - b.distance);
-        return hits[0];
-    }
+			const p1 = ellipse.getBorderPoint(angle1);
+			const p2 = ellipse.getBorderPoint(angle2);
 
-    /**
-     * Casts the ray against multiple shapes and returns all hits sorted by distance
-     */
-    public castAll(shapes: Shape[]): RaycastHit[] {
-        const hits: RaycastHit[] = [];
+			const segment = Line.ofPoints(p1, p2);
+			const hit = this.castLine(segment);
 
-        for (const shape of shapes) {
-            const hit = this.cast(shape);
-            if (hit) {
-                hits.push(hit);
-            }
-        }
+			if (hit && hit.distance < closestDistance) {
+				closestDistance = hit.distance;
+				closestHit = hit;
+			}
+		}
 
-        hits.sort((a, b) => a.distance - b.distance);
-        return hits;
-    }
+		return closestHit ? { ...closestHit, shape: ellipse } : null;
+	}
 
-    /**
-     * Checks if the ray intersects any shape within maxDistance
-     */
-    public intersects(shape: Shape, maxDistance?: number): boolean {
-        const hit = this.cast(shape);
-        
-        if (!hit) {
-            return false;
-        }
+	/**
+	 * Casts the ray against a polygon
+	 */
+	public castPolygon(polygon: Polygon): RaycastHit | null {
+		const sides = polygon.getSides();
+		const hits: RaycastHit[] = [];
 
-        if (maxDistance !== undefined) {
-            return hit.distance <= maxDistance;
-        }
+		for (const side of sides) {
+			const hit = this.castLine(side);
+			if (hit) {
+				hits.push(hit);
+			}
+		}
 
-        return true;
-    }
+		if (hits.length === 0) {
+			return null;
+		}
 
-    /**
-     * Reflects the ray off a surface normal
-     */
-    public reflect(normal: Vector2D): Ray {
-        // R = D - 2(D·N)N
-        const dotProduct = this.direction.dot(normal);
-        const reflection = this.direction.subtract(normal.multiply(2 * dotProduct));
-        
-        return new Ray(this.origin, reflection);
-    }
+		// Return the closest hit
+		hits.sort((a, b) => a.distance - b.distance);
+		return { ...hits[0], shape: polygon };
+	}
 
-    /**
-     * Creates a ray reflected off a hit point
-     */
-    public reflectFromHit(hit: RaycastHit): Ray {
-        const reflection = this.direction.subtract(hit.normal.multiply(2 * this.direction.dot(hit.normal)));
-        return new Ray(hit.point, reflection);
-    }
+	/**
+	 * Casts the ray against any shape
+	 */
+	public cast(shape: Shape): RaycastHit | null {
+		if (shape instanceof Line) {
+			return this.castLine(shape);
+		} else if (shape instanceof Circle) {
+			return this.castCircle(shape);
+		} else if (shape instanceof Rectangle) {
+			return this.castRectangle(shape);
+		} else if (shape instanceof Ellipse) {
+			return this.castEllipse(shape);
+		} else if (shape instanceof Polygon) {
+			return this.castPolygon(shape);
+		}
 
-    /**
-     * Gets the origin of the ray
-     */
-    public getOrigin(): Vector2D {
-        return this.origin;
-    }
+		return null;
+	}
 
-    /**
-     * Gets the direction of the ray (normalized)
-     */
-    public getDirection(): Vector2D {
-        return this.direction;
-    }
+	/**
+	 * Casts the ray against multiple shapes and returns the closest hit
+	 */
+	public castMultiple(shapes: Shape[]): RaycastHit | null {
+		const hits: RaycastHit[] = [];
 
-    /**
-     * Gets the angle of the ray in degrees
-     */
-    public getAngle(): number {
-        return this.direction.heading();
-    }
+		for (const shape of shapes) {
+			const hit = this.cast(shape);
+			if (hit) {
+				hits.push(hit);
+			}
+		}
 
-    /**
-     * Creates a line segment from the ray with a maximum length
-     */
-    public toLine(maxLength: number = 1000): Line {
-        const end = this.getPoint(maxLength);
-        return Line.ofPoints(this.origin, end);
-    }
+		if (hits.length === 0) {
+			return null;
+		}
 
-    /**
-     * Checks if a point is on the ray (within tolerance)
-     */
-    public containsPoint(point: Vector2D, tolerance: number = 0.001): boolean {
-        const toPoint = point.subtract(this.origin);
-        const projection = toPoint.dot(this.direction);
-        
-        if (projection < 0) {
-            return false; // Point is behind the ray
-        }
-        
-        const closestPoint = this.getPoint(projection);
-        const distance = point.distanceBetween(closestPoint);
-        
-        return distance <= tolerance;
-    }
+		// Return the closest hit
+		hits.sort((a, b) => a.distance - b.distance);
+		return hits[0];
+	}
 
-    /**
-     * Gets the distance from a point to the ray
-     */
-    public distanceToPoint(point: Vector2D): number {
-        const toPoint = point.subtract(this.origin);
-        const projection = toPoint.dot(this.direction);
-        
-        if (projection < 0) {
-            return this.origin.distanceBetween(point);
-        }
-        
-        const closestPoint = this.getPoint(projection);
-        return point.distanceBetween(closestPoint);
-    }
+	/**
+	 * Casts the ray against multiple shapes and returns all hits sorted by distance
+	 */
+	public castAll(shapes: Shape[]): RaycastHit[] {
+		const hits: RaycastHit[] = [];
 
-    /**
-     * Gets the closest point on the ray to a given point
-     */
-    public getClosestPoint(point: Vector2D): Vector2D {
-        const toPoint = point.subtract(this.origin);
-        const projection = toPoint.dot(this.direction);
-        
-        if (projection < 0) {
-            return this.origin;
-        }
-        
-        return this.getPoint(projection);
-    }
+		for (const shape of shapes) {
+			const hit = this.cast(shape);
+			if (hit) {
+				hits.push(hit);
+			}
+		}
+
+		hits.sort((a, b) => a.distance - b.distance);
+		return hits;
+	}
+
+	/**
+	 * Checks if the ray intersects any shape within maxDistance
+	 */
+	public intersects(shape: Shape, maxDistance?: number): boolean {
+		const hit = this.cast(shape);
+
+		if (!hit) {
+			return false;
+		}
+
+		if (maxDistance !== undefined) {
+			return hit.distance <= maxDistance;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Reflects the ray off a surface normal
+	 */
+	public reflect(normal: Vector2D): Ray {
+		// R = D - 2(D·N)N
+		const dotProduct = this.direction.dot(normal);
+		const reflection = this.direction.subtract(normal.multiply(2 * dotProduct));
+
+		return new Ray(this.origin, reflection);
+	}
+
+	/**
+	 * Creates a ray reflected off a hit point
+	 */
+	public reflectFromHit(hit: RaycastHit): Ray {
+		const reflection = this.direction.subtract(hit.normal.multiply(2 * this.direction.dot(hit.normal)));
+		return new Ray(hit.point, reflection);
+	}
+
+	/**
+	 * Gets the origin of the ray
+	 */
+	public getOrigin(): Vector2D {
+		return this.origin;
+	}
+
+	/**
+	 * Gets the direction of the ray (normalized)
+	 */
+	public getDirection(): Vector2D {
+		return this.direction;
+	}
+
+	/**
+	 * Gets the angle of the ray in degrees
+	 */
+	public getAngle(): number {
+		return this.direction.heading();
+	}
+
+	/**
+	 * Creates a line segment from the ray with a maximum length
+	 */
+	public toLine(maxLength: number = 1000): Line {
+		const end = this.getPoint(maxLength);
+		return Line.ofPoints(this.origin, end);
+	}
+
+	/**
+	 * Checks if a point is on the ray (within tolerance)
+	 */
+	public containsPoint(point: Vector2D, tolerance: number = 0.001): boolean {
+		const toPoint = point.subtract(this.origin);
+		const projection = toPoint.dot(this.direction);
+
+		if (projection < 0) {
+			return false; // Point is behind the ray
+		}
+
+		const closestPoint = this.getPoint(projection);
+		const distance = point.distanceBetween(closestPoint);
+
+		return distance <= tolerance;
+	}
+
+	/**
+	 * Gets the distance from a point to the ray
+	 */
+	public distanceToPoint(point: Vector2D): number {
+		const toPoint = point.subtract(this.origin);
+		const projection = toPoint.dot(this.direction);
+
+		if (projection < 0) {
+			return this.origin.distanceBetween(point);
+		}
+
+		const closestPoint = this.getPoint(projection);
+		return point.distanceBetween(closestPoint);
+	}
+
+	/**
+	 * Gets the closest point on the ray to a given point
+	 */
+	public getClosestPoint(point: Vector2D): Vector2D {
+		const toPoint = point.subtract(this.origin);
+		const projection = toPoint.dot(this.direction);
+
+		if (projection < 0) {
+			return this.origin;
+		}
+
+		return this.getPoint(projection);
+	}
 }

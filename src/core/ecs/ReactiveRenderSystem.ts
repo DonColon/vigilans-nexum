@@ -6,5 +6,5 @@ export abstract class ReactiveRenderSystem extends RenderSystem {
 	@GameCoreService(EventSystem)
 	protected eventSystem!: EventSystem;
 
-	public execute(elapsed: number, frame: number): void {}
+	public execute(_elapsed: number, _frame: number): void {}
 }

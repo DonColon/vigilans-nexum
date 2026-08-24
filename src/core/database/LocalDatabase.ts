@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { GameError } from "@/core/GameError";
 import { Repository, RepositorySettings } from "@/core/database/Repository";
 import { StoreNames } from "@/core/database/DatabaseSchema";
@@ -62,11 +60,7 @@ export class LocalDatabase {
 		return repository;
 	}
 
-	public async transaction<T>(
-		stores: StoreNames[],
-		mode: TransactionMode,
-		callback: (repos: RepositoryAccessor) => Promise<T>
-	): Promise<T> {
+	public async transaction<T>(stores: StoreNames[], mode: TransactionMode, callback: (repos: RepositoryAccessor) => Promise<T>): Promise<T> {
 		const tx = this.database.transaction(stores, mode);
 		const accessor = this.createRepositoryAccessor(stores, tx);
 
@@ -76,11 +70,9 @@ export class LocalDatabase {
 			await promisifyTransaction(tx);
 
 			return result;
-
 		} catch (error) {
 			tx.abort();
 			throw new GameError(`Transaction failed: ${error}`);
-
 		} finally {
 			this.clearTransactions(stores);
 		}

@@ -22,12 +22,20 @@ export class Matrix2D {
 		}
 	}
 
+	/**
+	 * Wraps the vector as a homogeneous row vector. The third component is the
+	 * homogeneous coordinate w = 1, which is what makes affine translation work.
+	 */
 	public static ofRowVector(vector: Vector2D): Matrix2D {
-		return new Matrix2D([[vector.x, vector.y, 0]]);
+		return new Matrix2D([[vector.x, vector.y, 1]]);
 	}
 
+	/**
+	 * Wraps the vector as a homogeneous column vector. The third component is the
+	 * homogeneous coordinate w = 1, which is what makes affine translation work.
+	 */
 	public static ofColumnVector(vector: Vector2D): Matrix2D {
-		return new Matrix2D([[vector.x], [vector.y], [0]]);
+		return new Matrix2D([[vector.x], [vector.y], [1]]);
 	}
 
 	public static ofRowVectors(start: Vector2D, center: Vector2D, end: Vector2D): Matrix2D {
@@ -56,10 +64,10 @@ export class Matrix2D {
 		const sin = Math.sin(radian);
 
 		return new Matrix2D([
-            [cos * scale.x, -sin * scale.y, translation.x],
-            [sin * scale.x,  cos * scale.y, translation.y],
-            [0, 0, 1]
-        ]);
+			[cos * scale.x, -sin * scale.y, translation.x],
+			[sin * scale.x, cos * scale.y, translation.y],
+			[0, 0, 1]
+		]);
 	}
 
 	public static ofIdentity(): Matrix2D {

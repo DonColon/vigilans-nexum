@@ -7,7 +7,7 @@ import { Vector2D } from "@/core/math/geometry/Vector2D";
 describe("Shape Interface Test Suite", () => {
 	test("Circle implements Shape interface", () => {
 		const circle = new Circle(0, 0, 10);
-		
+
 		// Test that Shape interface methods exist
 		expect(typeof circle.contains).toBe("function");
 		expect(typeof circle.intersects).toBe("function");
@@ -16,7 +16,7 @@ describe("Shape Interface Test Suite", () => {
 
 	test("Rectangle implements Shape interface", () => {
 		const rectangle = new Rectangle(0, 0, 10, 10);
-		
+
 		// Test that Shape interface methods exist
 		expect(typeof rectangle.contains).toBe("function");
 		expect(typeof rectangle.intersects).toBe("function");
@@ -26,7 +26,7 @@ describe("Shape Interface Test Suite", () => {
 	test("Shape.contains() works with Vector2D", () => {
 		const circle: Shape = new Circle(0, 0, 10);
 		const point = new Vector2D(5, 5);
-		
+
 		const result = circle.contains(point);
 		expect(typeof result).toBe("boolean");
 	});
@@ -34,14 +34,14 @@ describe("Shape Interface Test Suite", () => {
 	test("Shape.intersects() works with other shapes", () => {
 		const circle: Shape = new Circle(0, 0, 10);
 		const rectangle: Shape = new Rectangle(0, 0, 10, 10);
-		
+
 		const result = circle.intersects(rectangle);
 		expect(typeof result).toBe("boolean");
 	});
 
 	test("Shape.getBounds() returns Rectangle", () => {
 		const circle: Shape = new Circle(0, 0, 10);
-		
+
 		const bounds = circle.getBounds();
 		expect(bounds).toBeInstanceOf(Rectangle);
 	});

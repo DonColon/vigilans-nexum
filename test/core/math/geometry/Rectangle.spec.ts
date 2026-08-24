@@ -1,4 +1,5 @@
 import { test, expect } from "vitest";
+import { Shape } from "@/core/math/geometry/Shape";
 import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { Polygon } from "@/core/math/geometry/Polygon";
@@ -57,7 +58,7 @@ test("Rectangle intersects with polygon", () => {
 
 test("Rectangle intersects with null", () => {
 	const value = new Rectangle(0, 0, 10, 5);
-	const errorValue = null;
+	const errorValue = null as unknown as Shape;
 
 	const result = value.intersects(errorValue);
 	expect(result).toBeFalsy();
@@ -83,7 +84,6 @@ test("Get center of rectangle", () => {
 
 	expect(result.x).toBe(5);
 	expect(result.y).toBe(2.5);
-	expect(result.z).toBe(0);
 });
 
 test("Get position of rectangle", () => {
@@ -92,7 +92,6 @@ test("Get position of rectangle", () => {
 
 	expect(result.x).toBe(0);
 	expect(result.y).toBe(0);
-	expect(result.z).toBe(0);
 });
 
 test("Get dimension of rectangle", () => {
