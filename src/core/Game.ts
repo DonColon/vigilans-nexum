@@ -14,16 +14,23 @@ import { SystemConstructor } from "@/core/ecs/System";
 import { GameStateConstructor } from "@/core/GameState";
 import { GameCommandConstructor } from "@/core/input/commands/GameCommand";
 import { Savegame } from "@/core/model/Savegame";
+import { getRandomState, setRandomState, seedRandom } from "@/core/math/generation/Randomizer";
 import { GameFeature, GameFeatureConstructor } from "./GameFeature";
 import { TimerManager } from "./timer/TimerManager";
 import { CooldownManager } from "./timer/CooldownManager";
 import { PoolManager } from "./pool/PoolManager";
-import { SceneManager } from "./scenes/SceneManager";
+import { TransformComponent } from "./ecs/components/TransformComponent";
+import { TransformSystem } from "./ecs/systems/TransformSystem";
 
 export interface GameConfiguration {
 	id: string;
 	maxFPS: number;
 	savegameSlots?: number;
+	/**
+	 * Fixed seed for the gameplay random number generator. Leave it out for a
+	 * time-based seed; set it to make a run reproducible, e.g. while debugging.
+	 */
+	seed?: number;
 	initial: {
 		state: GameStateConstructor | string;
 		bundle: string;
@@ -58,7 +65,6 @@ export class Game {
 	private audioDevice: AudioDevice;
 	private timerManager: TimerManager;
 	private cooldownManager: CooldownManager;
-	private sceneManager: SceneManager;
 	private world: World;
 
 	constructor(private config: GameConfiguration) {
@@ -72,6 +78,10 @@ export class Game {
 
 		this.features = new Map<string, GameFeature>();
 
+		if (config.seed !== undefined) {
+			seedRandom(config.seed);
+		}
+
 		this.eventSystem = new EventSystem(config.eventSystem);
 		this.poolManager = new PoolManager();
 		this.localDatabase = new LocalDatabase(config.id, config.localDatabase);
@@ -83,8 +93,14 @@ export class Game {
 		this.audioDevice = new AudioDevice(config.audioDevice);
 		this.timerManager = new TimerManager();
 		this.cooldownManager = new CooldownManager();
-		this.sceneManager = new SceneManager();
 		this.world = new World();
+
+		// Transforms are core infrastructure rather than a game feature: every
+		// renderable entity needs one, so the engine owns the registration.
+		// Priority 0 makes it the first system of the sync phase, which runs
+		// after all updates and before rendering.
+		this.world.registerComponent(TransformComponent);
+		this.world.registerSystem(TransformSystem, 0);
 	}
 
 	public start() {
@@ -113,6 +129,7 @@ export class Game {
 		const savegame = await repository.read(slot);
 
 		this.timer = savegame.playtime;
+		setRandomState(savegame.randomState);
 
 		for (const entity of savegame.entities) {
 			this.registerEntity(entity);
@@ -132,8 +149,9 @@ export class Game {
 			playtime: this.timer,
 			modifiedOn: new Date().toISOString(),
 			screenshot: await this.display.screenshot(),
-			currentState: states.map((state) => state.constructor.name),
-			entities: entities.map((entity) => entity.toObject())
+			currentState: states.map((state) => (state.constructor as GameStateConstructor).type),
+			entities: entities.map((entity) => entity.toObject()),
+			randomState: getRandomState()
 		};
 
 		const repository = this.localDatabase.getRepository("savegames");
@@ -252,7 +270,6 @@ export class Game {
 		this.inputDevice.update();
 		this.eventSystem.processQueue();
 		this.world.update(elapsed, frame);
-		this.sceneManager.update();
 	}
 
 	private render(elapsed: number, frame: number) {
