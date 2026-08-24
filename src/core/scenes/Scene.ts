@@ -10,7 +10,7 @@ export class Scene {
 		this.name = name;
 		this.root = new SceneNode();
 		this.nodes = new Map<string, SceneNode>();
-		this.nodes.set(this.root.name, this.root);
+		this.nodes.set(this.root.getName(), this.root);
 	}
 
 	public createNode(name: string, parent?: SceneNode): SceneNode {
@@ -28,12 +28,13 @@ export class Scene {
 	}
 
 	public addNode(node: SceneNode, parent?: SceneNode): void {
-		if (this.nodes.has(node.name)) {
-			throw new GameError(`Scene node with name "${node.name}" already exists.`);
+		const nodeName = node.getName();
+
+		if (this.nodes.has(nodeName)) {
+			throw new GameError(`Scene node with name "${nodeName}" already exists.`);
 		}
 
-		this.nodes.set(node.name, node);
-
+		this.nodes.set(nodeName, node);
 		const parentNode = parent ?? this.root;
 		node.setParent(parentNode);
 	}
@@ -73,7 +74,7 @@ export class Scene {
 				removeRecursive(child);
 			}
 
-			this.nodes.delete(n.name);
+			this.nodes.delete(n.getName());
 		};
 
 		removeRecursive(node);
@@ -105,7 +106,7 @@ export class Scene {
 		}
 
 		this.nodes.clear();
-		this.nodes.set(this.root.name, this.root);
+		this.nodes.set(this.root.getName(), this.root);
 	}
 
 	public getNode(name: string): SceneNode | undefined {

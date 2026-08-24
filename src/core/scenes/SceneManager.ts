@@ -23,11 +23,13 @@ export class SceneManager {
 	}
 
 	public addScene(scene: Scene): void {
-		if (this.scenes.has(scene.getName())) {
-			throw new GameError(`Scene with name "${scene.getName()}" already exists.`);
+		const sceneName = scene.getName();
+
+		if (this.scenes.has(sceneName)) {
+			throw new GameError(`Scene with name "${sceneName}" already exists.`);
 		}
 
-		this.scenes.set(scene.getName(), scene);
+		this.scenes.set(sceneName, scene);
 	}
 
 	public removeScene(name: string): void {

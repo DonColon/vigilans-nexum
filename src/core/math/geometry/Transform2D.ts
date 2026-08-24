@@ -16,6 +16,8 @@ export class Transform2D {
 	private worldMatrix: Matrix2D | null = null;
 	private isWorldMatrixDirty: boolean = true;
 
+	private onChange: (() => void) | null = null;
+
 	constructor(position?: Vector2D, scale?: Vector2D, rotation?: number) {
 		this.position = position ?? new Vector2D(0, 0);
 		this.scale = scale ?? new Vector2D(1, 1);
@@ -139,6 +141,10 @@ export class Transform2D {
 			this.rotation);
 	}
 
+	public addChangeListener(listener: () => void): void {
+		this.onChange = listener;
+	}
+
 	public markWorldDirty(): void {
 		this.isWorldMatrixDirty = true;
 	}
@@ -150,5 +156,9 @@ export class Transform2D {
 	private markLocalDirty(): void {
 		this.isLocalMatrixDirty = true;
 		this.isWorldMatrixDirty = true;
+
+		if (this.onChange) {
+			this.onChange();
+		}
 	}
 }
