@@ -1,1 +1,43 @@
-import { QueryList } from "./Query";export interface SystemConstructor {	new (priority: number): System;}export abstract class System {	protected abstract queries: QueryList;	protected enabled: boolean;	constructor(protected priority: number) {		this.enabled = true;		this.initialize();	}	public static byPriority(value: System, other: System): number {		return value.priority - other.priority;	}	public abstract initialize(): void;	public abstract execute(elapsed: number, frame: number): void;	public getPriority(): number {		return this.priority;	}	public isEnabled(): boolean {		return this.enabled;	}	public enable() {		this.enabled = true;	}	public disable() {		this.enabled = false;	}}
+import { QueryList } from "@/core/ecs/Query";
+
+export type SystemConstructor = new (priority: number) => System;
+
+export abstract class System {
+	protected queries: QueryList;
+	protected enabled: boolean;
+
+	constructor(protected priority: number) {
+		this.enabled = true;
+		this.queries = {};
+		this.initialize();
+	}
+
+	public static byPriority(value: System, other: System): number {
+		return value.priority - other.priority;
+	}
+
+	public abstract initialize(): void;
+	public abstract execute(elapsed: number, frame: number): void;
+
+	public getPriority(): number {
+		return this.priority;
+	}
+
+	public isEnabled(): boolean {
+		return this.enabled;
+	}
+
+	public enable() {
+		this.enabled = true;
+	}
+
+	public disable() {
+		this.enabled = false;
+	}
+
+	public dispose(): void {
+		for (const query of Object.values(this.queries)) {
+			query.dispose();
+		}
+	}
+}

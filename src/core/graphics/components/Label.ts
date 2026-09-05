@@ -1,0 +1,57 @@
+import { Dimension } from "@/core/math/geometry/Dimension";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
+import { FontStyle } from "@/core/graphics/styles/text/FontStyle";
+import { TextStyle } from "@/core/graphics/styles/text/TextStyle";
+
+export interface LabelSettings {
+	text: string;
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+
+	fontStyle?: FontStyle;
+	textStyle?: TextStyle;
+}
+
+export class Label {
+	private readonly text: string;
+	private readonly position: Vector2D;
+	private readonly dimension: Dimension;
+
+	private readonly fontStyle?: FontStyle;
+	private readonly textStyle?: TextStyle;
+
+	constructor(settings: LabelSettings) {
+		this.text = settings.text;
+		this.position = new Vector2D(settings.x, settings.y);
+
+		this.dimension = {
+			width: settings.width,
+			height: settings.height
+		};
+
+		this.fontStyle = settings.fontStyle;
+		this.textStyle = settings.textStyle;
+	}
+
+	public getText(): string {
+		return this.text;
+	}
+
+	public getPosition(): Vector2D {
+		return this.position;
+	}
+
+	public getDimension(): Dimension {
+		return this.dimension;
+	}
+
+	public getFontStyle(): FontStyle | undefined {
+		return this.fontStyle;
+	}
+
+	public getTextStyle(): TextStyle | undefined {
+		return this.textStyle;
+	}
+}

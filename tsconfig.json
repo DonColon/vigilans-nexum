@@ -1,11 +1,16 @@
 {
 	"compilerOptions": {
-		"baseUrl": "./src",
-		"target": "ES2020",
-		"useDefineForClassFields": true,
+		"target": "esnext",
+		"useDefineForClassFields": false,
+		"experimentalDecorators": true,
+		/* Off on purpose: nothing reads design:type metadata, and emitting it makes
+		   a decorated property reference its own type eagerly. Entity and World
+		   import each other, so that reference runs while World is still
+		   initialising and the module graph fails to evaluate. */
+		"emitDecoratorMetadata": false,
 		"module": "ESNext",
 		"lib": [
-			"ES2020",
+			"ESNext",
 			"DOM",
 			"DOM.Iterable"
 		],
@@ -23,12 +28,12 @@
 		"noFallthroughCasesInSwitch": true,
 		"paths": {
 			"@/*": [
-				"./*",
 				"./src/*"
 			]
 		}
 	},
 	"include": [
-		"src/**/*"
+		"src/**/*",
+		"test/**/*"
 	]
 }

@@ -7,31 +7,90 @@ Vigilans Nexum is a tactical, turn- and tile-based RPG with a deep story about t
 ```
 vigilans-nexum
 ├── src
-│   ├── assets
+│   ├── assets               # Asset Bundles
+│   │   ├── startmenu
+│   │   │   ├── audio
+│   │   │   ├── video
+│   │   │   ├── fonts
+│   │   │   ├── icons
+│   │   │   ├── images
+│   │   │   ├── scripts
+│   │   │   └── data
+│   │   ├── ...
+│   │   └── common
+│   │       ├── audio
+│   │       ├── video
+│   │       ├── fonts
+│   │       ├── icons
+│   │       ├── images
+│   │       ├── scripts
+│   │       └── data
+│   ├── core                 # Game Framework
+│   │   ├── assets
 │   │   ├── audio
-│   │   ├── fonts
-│   │   ├── icons
-│   │   ├── images
-│   │   ├── javascript
-│   │   └── video
-│   ├── commands
-│   ├── components
-│   ├── core
-│   ├── states
-│   ├── systems
-│   ├── utils
-│   ├── asset.manifest.ts
-│   ├── database.schema.ts
-│   ├── game.config.ts
-│   ├── game.events.ts
+│   │   ├── database
+│   │   ├── ecs
+│   │   ├── events
+│   │   ├── graphics
+│   │   ├── input
+│   │   ├── math
+│   │   ├── model
+│   │   ├── service
+│   │   ├── timer
+│   │   ├── utils
+│   │   ├── Game.ts
+│   │   ├── GameError.ts
+│   │   └── ...
+│   ├── game                 # Game Features and Systems
+│   │   ├── battle
+│   │   │   ├── systems
+│   │   │   ├── components
+│   │   │   ├── commands
+│   │   │   ├── states
+│   │   │   ├── model
+│   │   │   └── index.ts
+│   │   ├── map
+│   │   │   ├── systems
+│   │   │   ├── components
+│   │   │   ├── commands
+│   │   │   ├── states
+│   │   │   ├── model
+│   │   │   └── index.ts
+│   │   ├── units
+│   │   ├── bonding
+│   │   ├── story
+│   │   ├── ui
+│   │   ├── progression
+│   │   ├── ...
+│   │   └── common
+│   │       ├── systems
+│   │       ├── components
+│   │       ├── commands
+│   │       ├── states
+│   │       ├── model
+│   │       └── index.ts
+│   ├── asset.manifest.ts    # Asset Manifest for Loading
+│   ├── database.schema.ts   # Custom Schemas for IndexDB
+│   ├── game.config.ts       # Game Configuration
+│   ├── game.events.ts       # Custom Events for Event System
 │   ├── index.css
 │   ├── index.html
-│   ├── index.ts
+│   ├── index.ts             # Game Initialization and Feature Registration
 │   └── manifest.json
+├── test
+│   ├── core
+│   └── ...
 ├── .gitignore
+├── .editorconfig
+├── .eslintrc
+├── .prettierrc
 ├── LICENSE
+├── package-lock.json
 ├── package.json
 ├── README.md
-├── rollup.config.js
-└── tsconfig.json
+├── sonar-project.properties
+├── tsconfig.json
+├── vite.config.ts
+├── vitest.config.ts
+└── vitest.setup.ts
 ```

@@ -1,0 +1,158 @@
+import { Matrix2D } from "@/core/math/geometry/Matrix2D";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
+import { Input, Pointer } from "@/core/input/Input";
+import { SwipeInput, SwipeInputType, ofAngle } from "@/core/input/touchpad/SwipeInput";
+import { TouchInput, TouchInputType } from "@/core/input/touchpad/TouchInput";
+import { GameCoreService } from "@/core/service/GameCoreService";
+import { Display } from "@/core/graphics/Display";
+import { InputBuffer } from "@/core/input/InputBuffer";
+import { InputChannel } from "@/core/input/InputChannel";
+import { InputState } from "@/core/input/InputState";
+
+export class TouchpadDevice {
+	private touchpad: Map<SwipeInputType, Input>;
+	private touch: Pointer;
+	private lastUsed: number;
+
+	private buffer: InputBuffer;
+
+	@GameCoreService(Display)
+	private display!: Display;
+
+	constructor(buffer: InputBuffer) {
+		this.touchpad = new Map<SwipeInputType, Input>();
+		this.touch = this.initPointer();
+		this.lastUsed = 0;
+
+		this.buffer = buffer;
+
+		for (const value of Object.values(SwipeInput)) {
+			this.touchpad.set(value, { current: false, previous: false });
+		}
+
+		this.display.addTouchStartListener((event) => this.onTouchStart(event));
+		this.display.addTouchEndListener((event) => this.onTouchEnd(event));
+		this.display.addTouchMoveListener((event) => this.onTouchMove(event));
+	}
+
+	public update(): number {
+		const { position, state } = this.touch;
+		state.previous = state.current;
+
+		if (state.current) {
+			const swipe = Matrix2D.reflectY(position.current.subtract(position.previous));
+			const angle = swipe.heading();
+
+			const input = this.touchpad.get(ofAngle(angle)) as Input;
+			input.previous = input.current;
+			input.current = true;
+
+			return this.lastUsed;
+		}
+
+		for (const input of this.touchpad.values()) {
+			input.previous = input.current;
+		}
+
+		return this.lastUsed;
+	}
+
+	public getInput(inputType: TouchInputType | SwipeInputType): Input {
+		if (inputType === TouchInput.TOUCH) {
+			return this.touch.state;
+		}
+
+		const input = this.touchpad.get(inputType);
+
+		if (!input) return { current: false, previous: false };
+
+		return input;
+	}
+
+	private onTouchStart(event: TouchEvent) {
+		this.lastUsed = event.timeStamp;
+
+		const touch = event.touches[0];
+		this.pointerPressed(this.touch, touch.clientX, touch.clientY, touch.identifier);
+
+		this.cancelEvent(event);
+	}
+
+	private onTouchEnd(event: TouchEvent) {
+		for (const touch of event.changedTouches) {
+			if (this.touch.identifier === touch.identifier) {
+				this.pointerReleased(this.touch);
+				break;
+			}
+		}
+
+		for (const value of Object.values(SwipeInput)) {
+			const input = this.getInput(value);
+			input.previous = input.current;
+			input.current = false;
+		}
+
+		this.cancelEvent(event);
+	}
+
+	private onTouchMove(event: TouchEvent) {
+		for (const touch of event.changedTouches) {
+			if (this.touch.identifier === touch.identifier) {
+				this.pointerMoved(this.touch, touch.clientX, touch.clientY);
+				break;
+			}
+		}
+
+		this.cancelEvent(event);
+	}
+
+	private initPointer(): Pointer {
+		return {
+			identifier: -1,
+			position: {
+				current: new Vector2D(0, 0),
+				previous: new Vector2D(0, 0)
+			},
+			state: {
+				current: false,
+				previous: false
+			}
+		};
+	}
+
+	private pointerPressed(pointer: Pointer, x: number, y: number, identifier: number) {
+		pointer.identifier = identifier;
+		pointer.state.previous = pointer.state.current;
+		pointer.state.current = true;
+
+		if (pointer.state.previous === false && pointer.state.current === true) {
+			this.buffer.add(InputChannel.TOUCHPAD, TouchInput.TOUCH, InputState.JUST_PRESSED);
+		}
+
+		pointer.position.previous = pointer.position.current;
+		this.pointerMoved(pointer, x, y);
+	}
+
+	private pointerReleased(pointer: Pointer) {
+		pointer.identifier = -1;
+		pointer.state.previous = pointer.state.current;
+		pointer.state.current = false;
+
+		if (pointer.state.previous === true && pointer.state.current === false) {
+			this.buffer.add(InputChannel.TOUCHPAD, TouchInput.TOUCH, InputState.JUST_RELEASED);
+		}
+	}
+
+	private pointerMoved(pointer: Pointer, x: number, y: number) {
+		const offset = this.display.getViewportOffset();
+		const viewportX = x - offset.x;
+		const viewportY = y - offset.y;
+
+		pointer.position.current = new Vector2D(viewportX, viewportY);
+	}
+
+	private cancelEvent(event: Event) {
+		event.preventDefault();
+		event.stopImmediatePropagation();
+	}
+}
