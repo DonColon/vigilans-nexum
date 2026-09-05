@@ -56,39 +56,43 @@ export abstract class GameFeature {
 			}
 		}
 
+		// Registered straight through the world and the managers. The register
+		// helpers below are meant for what a feature adds while it is running:
+		// they also track it in the config, which here would append to the very
+		// lists being walked.
 		if (this.config.components) {
 			for (const componentType of this.config.components) {
-				this.registerComponent(componentType);
+				this.world.registerComponent(componentType);
 			}
 		}
 
 		if (this.config.entityStates) {
 			for (const stateType of this.config.entityStates) {
-				this.registerEntityState(stateType);
+				this.world.registerEntityState(stateType);
 			}
 		}
 
 		if (this.config.entities) {
 			for (const entityType of this.config.entities) {
-				this.registerEntity(entityType);
+				this.world.registerEntity(entityType);
 			}
 		}
 
 		if (this.config.commands) {
 			for (const commandType of this.config.commands) {
-				this.registerCommand(commandType);
+				this.inputDevice.registerCommand(commandType);
 			}
 		}
 
 		if (this.config.states) {
 			for (const stateType of this.config.states) {
-				this.registerState(stateType);
+				this.stateManager.registerState(stateType);
 			}
 		}
 
 		if (this.config.systems) {
 			for (const { system, priority } of this.config.systems) {
-				this.registerSystem(system, priority);
+				this.world.registerSystem(system, priority);
 			}
 		}
 
@@ -101,43 +105,43 @@ export abstract class GameFeature {
 			throw new GameError("GameFeature is not installed.");
 		}
 
+		// Unregistered straight through the world and the managers as well, so
+		// the config keeps describing the feature and installing it again works.
 		if (this.config.systems) {
 			for (const { system } of this.config.systems) {
-				this.unregisterSystem(system);
+				this.world.unregisterSystem(system);
 			}
 		}
 
 		if (this.config.states) {
 			for (const stateType of this.config.states) {
-				this.unregisterState(stateType);
+				this.stateManager.unregisterState(stateType);
 			}
 		}
 
 		if (this.config.commands) {
 			for (const commandType of this.config.commands) {
-				this.unregisterCommand(commandType);
+				this.inputDevice.unregisterCommand(commandType);
 			}
 		}
 
 		if (this.config.entities) {
 			for (const entityType of this.config.entities) {
-				const entity = this.world.getEntity(entityType.id);
-
-				if (entity) {
-					this.unregisterEntity(entity);
+				if (this.world.hasEntity(entityType.id)) {
+					this.world.unregisterEntity(this.world.getEntity(entityType.id));
 				}
 			}
 		}
 
 		if (this.config.entityStates) {
 			for (const stateType of this.config.entityStates) {
-				this.unregisterEntityState(stateType);
+				this.world.unregisterEntityState(stateType);
 			}
 		}
 
 		if (this.config.components) {
 			for (const componentType of this.config.components) {
-				this.unregisterComponent(componentType);
+				this.world.unregisterComponent(componentType);
 			}
 		}
 

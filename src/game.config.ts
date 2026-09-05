@@ -1,12 +1,13 @@
 import { GameConfiguration } from "@/core/Game";
 import { assetManifest } from "@/asset.manifest";
+import { MapState } from "@/game/map";
 
 const gameConfiguration: GameConfiguration = {
 	id: "vigilans-nexum",
 	maxFPS: 60,
 	savegameSlots: 8,
 	initial: {
-		state: "StartScreen",
+		state: MapState,
 		bundle: "StartScreen"
 	},
 	eventSystem: {

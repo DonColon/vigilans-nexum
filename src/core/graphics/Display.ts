@@ -156,6 +156,13 @@ export class Display {
 
 		canvas.width = this.viewportDimension.width;
 		canvas.height = this.viewportDimension.height;
+
+		// The backing store is sized in device pixels to keep rendering crisp on
+		// high density displays. The element itself has to stay at the css size of
+		// the viewport, otherwise the canvas overflows it by devicePixelRatio.
+		canvas.style.width = `${this.viewportDimension.width / devicePixelRatio}px`;
+		canvas.style.height = `${this.viewportDimension.height / devicePixelRatio}px`;
+
 		return canvas;
 	}
 

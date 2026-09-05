@@ -44,6 +44,9 @@ export interface GameConfiguration {
 }
 
 export class Game {
+	/** Updates a single frame may catch up on before the backlog is dropped. */
+	private static readonly maxCatchUpSteps = 5;
+
 	private timePerUpdate: number;
 	private animationFrame: number;
 	private previous: number;
@@ -103,17 +106,14 @@ export class Game {
 		this.world.registerSystem(TransformSystem, 0);
 	}
 
-	public start() {
+	public async start() {
 		this.stateManager.switch(this.config.initial.state);
 
-		const initialBundle = this.config.initial.bundle;
-		this.assetLoader.load(initialBundle);
-
-		this.eventSystem.subscribe("bundleLoaded", (event) => {
-			if (event.bundle === initialBundle) {
-				this.resume();
-			}
-		});
+		// Awaited rather than waited for through bundleLoaded: dispatched events
+		// are queued and only delivered by the loop, which is what start is about
+		// to set off - subscribing here would wait for an event that never lands.
+		await this.assetLoader.load(this.config.initial.bundle);
+		await this.resume();
 	}
 
 	public async resume() {
@@ -251,9 +251,17 @@ export class Game {
 		this.previous = current;
 		this.timer += elapsed;
 
-		this.lag += elapsed;
+		// A stalled or backgrounded tab hands the loop seconds worth of time at
+		// once. Catching all of it up would run hundreds of updates in a single
+		// frame, which only makes the following frame later still, so the backlog
+		// is capped and everything beyond it is dropped.
+		this.lag = Math.min(this.lag + elapsed, this.timePerUpdate * Game.maxCatchUpSteps);
+
 		while (this.lag >= this.timePerUpdate) {
-			this.update(elapsed, current);
+			// The fixed step rather than the frame delta: an update advances the
+			// game by exactly the slice of time it is handed, however many of them
+			// a frame ends up running.
+			this.update(this.timePerUpdate, current);
 			this.lag -= this.timePerUpdate;
 		}
 

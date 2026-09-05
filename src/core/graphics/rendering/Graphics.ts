@@ -350,6 +350,8 @@ export class Graphics extends GraphicsContext {
 	}
 
 	private drawCircle(circle: Circle) {
+		this.beginPath();
+
 		const center = circle.getPosition();
 		const radius = circle.getRadius();
 
@@ -369,6 +371,8 @@ export class Graphics extends GraphicsContext {
 	}
 
 	private drawRectangle(rectangle: Rectangle) {
+		this.beginPath();
+
 		const { width, height } = rectangle.getDimension();
 		const position = rectangle.getPosition();
 
@@ -388,6 +392,8 @@ export class Graphics extends GraphicsContext {
 	}
 
 	private drawRoundRectangle(rectangle: Rectangle, radius: number) {
+		this.beginPath();
+
 		const { width, height } = rectangle.getDimension();
 		const position = rectangle.getPosition();
 

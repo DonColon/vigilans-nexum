@@ -3,7 +3,11 @@
 		"target": "esnext",
 		"useDefineForClassFields": false,
 		"experimentalDecorators": true,
-		"emitDecoratorMetadata": true,
+		/* Off on purpose: nothing reads design:type metadata, and emitting it makes
+		   a decorated property reference its own type eagerly. Entity and World
+		   import each other, so that reference runs while World is still
+		   initialising and the module graph fails to evaluate. */
+		"emitDecoratorMetadata": false,
 		"module": "ESNext",
 		"lib": [
 			"ESNext",

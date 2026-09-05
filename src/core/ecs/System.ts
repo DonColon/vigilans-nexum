@@ -3,11 +3,12 @@ import { QueryList } from "@/core/ecs/Query";
 export type SystemConstructor = new (priority: number) => System;
 
 export abstract class System {
-	protected abstract queries: QueryList;
+	protected queries: QueryList;
 	protected enabled: boolean;
 
 	constructor(protected priority: number) {
 		this.enabled = true;
+		this.queries = {};
 		this.initialize();
 	}
 
