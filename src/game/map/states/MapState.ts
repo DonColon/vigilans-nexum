@@ -8,14 +8,16 @@ import { moveCursorCommands } from "@/game/map/commands/MoveCursorCommand";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
-import { skirmishMap } from "@/game/map/model/TileMaps";
+import { TileMapComponent } from "@/game/map/components/TileMapComponent";
+import { TileMapDocument, parseTileMapDocument } from "@/game/map/model/TileMapFormat";
 import { GridSystem } from "@/game/map/systems/GridSystem";
+import fantasyDocument from "@/game/map/data/fantasy.tilemap.json";
 
-/** Edge length of a tile in pixels. */
-const CELL_SIZE = 32;
+/** Edge length of a tile in pixels. Keeps the 48x24 map inside the viewport. */
+const CELL_SIZE = 24;
 
-/** Tile the cursor starts on, the fort on the western half of the map. */
-const CURSOR_START = { column: 2, row: 7 };
+/** Tile the cursor starts on, the road junction south of the castle. */
+const CURSOR_START = { column: 6, row: 12 };
 
 /**
  * Player looking at a battle map: the map is on screen, the cursor is theirs
@@ -42,12 +44,23 @@ export class MapState extends GameState {
 	private cursor: Entity | null = null;
 
 	public onEnter(): void {
-		const grid = GridSystem.of(skirmishMap, CELL_SIZE);
+		const tilemap = parseTileMapDocument(fantasyDocument as TileMapDocument);
+
+		const grid = GridSystem.fromTileMap(tilemap, CELL_SIZE);
 		const dimension = GridSystem.getGridDimension(grid);
 		const viewport = this.display.getViewportDimension();
 
 		this.map = this.world.createEntity();
 		this.map.addComponent(GridComponent, grid);
+		this.map.addComponent(TileMapComponent, {
+			tileset: tilemap.tileset,
+			tileWidth: tilemap.tileWidth,
+			tileHeight: tilemap.tileHeight,
+			columns: tilemap.columns,
+			rows: tilemap.rows,
+			background: tilemap.background ?? "",
+			layers: tilemap.layers.map((layer) => ({ name: layer.name, tiles: [...layer.tiles], flips: [...layer.flips] }))
+		});
 		this.map.addComponent(TransformComponent, {
 			...identityTransform,
 			x: Math.round((viewport.width - dimension.width) / 2),

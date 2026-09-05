@@ -1,6 +1,7 @@
 import { Dimension } from "@/core/math/geometry/Dimension";
 import { GridData } from "@/game/map/components/GridComponent";
 import { TerrainType } from "@/game/map/model/Terrain";
+import { ParsedTileMap } from "@/game/map/model/TileMapFormat";
 import { TileMapDefinition } from "@/game/map/model/TileMaps";
 
 /**
@@ -16,6 +17,20 @@ export class GridSystem {
 			rows: definition.rows,
 			cellSize,
 			tiles: [...definition.tiles]
+		};
+	}
+
+	/**
+	 * Builds the movement grid from a parsed tile map, using the terrain derived
+	 * from its `tileTerrain` mapping. `cellSize` is the on-screen tile size and
+	 * is independent of the tileset's source `tileWidth`.
+	 */
+	public static fromTileMap(map: ParsedTileMap, cellSize: number): GridData {
+		return {
+			columns: map.columns,
+			rows: map.rows,
+			cellSize,
+			tiles: [...map.terrain]
 		};
 	}
 

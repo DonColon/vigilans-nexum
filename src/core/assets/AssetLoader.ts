@@ -1,7 +1,8 @@
 import { GameError } from "@/core/GameError";
 import { AssetManifest } from "@/core/assets/AssetManifest";
-import { AssetType, AudioAsset, StylesheetAsset, FontAsset, HtmlAsset, ImageAsset, JavaScriptAsset, JsonAsset, VideoAsset, XmlAsset } from "@/core/assets/Asset";
+import { AssetType, AudioAsset, StylesheetAsset, FontAsset, HtmlAsset, ImageAsset, JavaScriptAsset, JsonAsset, SpriteAsset, SpriteSheetAsset, VideoAsset, XmlAsset } from "@/core/assets/Asset";
 import { Sprite } from "@/core/graphics/components/Sprite";
+import { Spritesheet, TexturePackerHash } from "@/core/graphics/components/Spritesheet";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { EventSystem } from "@/core/events/EventSystem";
 import { AssetStorage } from "@/core/assets/AssetStorage";
@@ -65,7 +66,10 @@ export class AssetLoader {
 		}
 
 		const unloaders: UnloaderMap = {
-			image: (id) => this.assetStorage.deleteImage(id),
+			image: (id) => {
+				this.assetStorage.deleteImage(id);
+				this.assetStorage.deleteSpritesheet(id);
+			},
 			audio: (id) => this.assetStorage.deleteAudio(id),
 			video: (id) => this.assetStorage.deleteVideo(id),
 			font: (id) => this.assetStorage.deleteFont(id),
@@ -252,10 +256,12 @@ export class AssetLoader {
 	private async loadImage(asset: ImageAsset) {
 		if (asset.subtype === "sprite") {
 			await this.loadSprite(asset);
+		} else if (asset.subtype === "spritesheet") {
+			await this.loadSpritesheet(asset);
 		}
 	}
 
-	private async loadSprite(asset: ImageAsset) {
+	private async loadSprite(asset: SpriteAsset) {
 		const response = await this.getResponse(asset.url);
 		const blob = await response.blob();
 		const url = URL.createObjectURL(blob);
@@ -266,6 +272,25 @@ export class AssetLoader {
 			this.assetStorage.setImage(asset.id, sprite);
 		} catch (error) {
 			throw new GameError(`Image load failed: ${asset.url}: ${error}`);
+		} finally {
+			URL.revokeObjectURL(url);
+		}
+	}
+
+	private async loadSpritesheet(asset: SpriteSheetAsset) {
+		const response = await this.getResponse(asset.url);
+		const blob = await response.blob();
+		const url = URL.createObjectURL(blob);
+
+		try {
+			const image = await this.createImage(url);
+			const layout = asset.layout;
+
+			const spritesheet = layout.type === "grid" ? Spritesheet.fromGrid(image, layout) : Spritesheet.fromAtlas(image, this.assetStorage.getJson<TexturePackerHash>(layout.atlas));
+
+			this.assetStorage.setSpritesheet(asset.id, spritesheet);
+		} catch (error) {
+			throw new GameError(`Spritesheet load failed: ${asset.url}: ${error}`);
 		} finally {
 			URL.revokeObjectURL(url);
 		}

@@ -16,6 +16,7 @@ import { MoveCursorDownCommand, MoveCursorLeftCommand, MoveCursorRightCommand, M
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
+import { TileMapComponent } from "@/game/map/components/TileMapComponent";
 import { MapState } from "@/game/map/states/MapState";
 import { CursorSystem } from "@/game/map/systems/CursorSystem";
 
@@ -52,6 +53,7 @@ suite("Map Cursor Test Suite", () => {
 
 	world.registerComponent(TransformComponent);
 	world.registerComponent(GridComponent);
+	world.registerComponent(TileMapComponent);
 	world.registerComponent(CursorComponent);
 	world.registerComponent(GridPositionComponent);
 

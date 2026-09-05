@@ -322,6 +322,54 @@ export class Graphics extends GraphicsContext {
 		return this;
 	}
 
+	/**
+	 * Blits a single frame of a loaded spritesheet. `scale` multiplies the
+	 * frame's source size, e.g. a 16px tile drawn at scale 2 covers 32px.
+	 * `flip` is a bit mask - 1 mirrors horizontally, 2 vertically, 4 along the
+	 * main diagonal - matching the flip flags a tile editor writes; the three
+	 * together cover every 90 degree rotation.
+	 */
+	public drawTile(sheetId: string, frame: number | string, x: number, y: number, scale: number = 1, flip: number = 0): this {
+		const sheet = this.assetStorage.getSpritesheet(sheetId);
+		const region = sheet.getRegion(frame);
+
+		const width = region.width * scale;
+		const height = region.height * scale;
+
+		if (flip === 0) {
+			this.drawImage(sheet.getImage(), region.x, region.y, region.width, region.height, x, y, width, height);
+			return this;
+		}
+
+		// Canvas transform(a, b, c, d, ...): output x = a*sx + c*sy, output y =
+		// b*sx + d*sy. Diagonal swaps the axes, then horizontal negates whatever
+		// feeds the output x and vertical whatever feeds the output y - the same
+		// order and sense Tiled applies the flags in (maprenderer.cpp).
+		let a = 1;
+		let b = 0;
+		let c = 0;
+		let d = 1;
+
+		if (flip & 4) {
+			[a, b, c, d] = [c, d, a, b];
+		}
+		if (flip & 1) {
+			a = -a;
+			c = -c;
+		}
+		if (flip & 2) {
+			b = -b;
+			d = -d;
+		}
+
+		this.context.save();
+		this.context.translate(x + width / 2, y + height / 2);
+		this.context.transform(a, b, c, d, 0, 0);
+		this.drawImage(sheet.getImage(), region.x, region.y, region.width, region.height, -width / 2, -height / 2, width, height);
+		this.context.restore();
+		return this;
+	}
+
 	public drawLine(line: Line): this {
 		const start = line.getStart();
 		const end = line.getEnd();

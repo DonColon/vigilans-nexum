@@ -1,0 +1,3 @@
+# Tile map data is authored as compact JSON (one row of frame indices per line).
+# Letting Prettier reflow it to one number per line makes the diffs unreadable.
+src/game/map/data/

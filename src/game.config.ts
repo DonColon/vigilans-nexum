@@ -8,7 +8,7 @@ const gameConfiguration: GameConfiguration = {
 	savegameSlots: 8,
 	initial: {
 		state: MapState,
-		bundle: "StartScreen"
+		bundle: "BattleMap"
 	},
 	eventSystem: {
 		history: {

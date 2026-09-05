@@ -1,5 +1,6 @@
 import { AudioTrack } from "@/core/audio/AudioTrack";
 import { Sprite } from "@/core/graphics/components/Sprite";
+import { Spritesheet } from "@/core/graphics/components/Spritesheet";
 import { GameError } from "@/core/GameError";
 import { GameCoreService } from "@/core/service/GameCoreService";
 
@@ -7,6 +8,7 @@ import { GameCoreService } from "@/core/service/GameCoreService";
 export class AssetStorage {
 	private audio: Map<string, AudioTrack>;
 	private images: Map<string, Sprite>;
+	private spritesheets: Map<string, Spritesheet>;
 	private videos: Map<string, HTMLVideoElement>;
 	private fonts: Map<string, FontFace>;
 	private jsons: Map<string, object>;
@@ -18,6 +20,7 @@ export class AssetStorage {
 	constructor() {
 		this.audio = new Map<string, AudioTrack>();
 		this.images = new Map<string, Sprite>();
+		this.spritesheets = new Map<string, Spritesheet>();
 		this.videos = new Map<string, HTMLVideoElement>();
 		this.fonts = new Map<string, FontFace>();
 		this.jsons = new Map<string, object>();
@@ -61,6 +64,28 @@ export class AssetStorage {
 
 	public deleteImage(id: string): boolean {
 		return this.images.delete(id);
+	}
+
+	public getSpritesheet(id: string): Spritesheet {
+		const spritesheet = this.spritesheets.get(id);
+
+		if (spritesheet === undefined) {
+			throw new GameError(`Spritesheet ${id} does not exist`);
+		}
+
+		return spritesheet;
+	}
+
+	public hasSpritesheet(id: string): boolean {
+		return this.spritesheets.has(id);
+	}
+
+	public setSpritesheet(id: string, spritesheet: Spritesheet) {
+		this.spritesheets.set(id, spritesheet);
+	}
+
+	public deleteSpritesheet(id: string): boolean {
+		return this.spritesheets.delete(id);
 	}
 
 	public getVideo(id: string): HTMLVideoElement {
