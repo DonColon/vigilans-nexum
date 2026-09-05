@@ -1,14 +1,17 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import { GameError } from "@/core/GameError";
+import { JsonSchema } from "@/core/ecs/JsonSchema";
+import { Component, ComponentConstructor } from "@/core/ecs/Component";
+import { Entity, EntityType } from "@/core/ecs/Entity";
+import { System, SystemConstructor } from "@/core/ecs/System";
+import { UpdateSystem } from "@/core/ecs/UpdateSystem";
+import { RenderSystem } from "@/core/ecs/RenderSystem";
+import { GameState, GameStateConstructor } from "@/core/GameState";
+import { GameCoreService } from "@/core/service/GameCoreService";
+import { EventSystem } from "@/core/events/EventSystem";
+import { binaryInsert } from "@/core/utils/Arrays";
+import { SyncSystem } from "./SyncSystem";
 
-import { GameError } from "core/GameError";
-import { JsonSchema } from "./JsonSchema";
-import { ComponentConstructor } from "./Component";
-import { Entity, EntityType } from "./Entity";
-import { System, SystemConstructor } from "./System";
-import { UpdateSystem } from "./UpdateSystem";
-import { RenderSystem } from "./RenderSystem";
-import { GameStateConstructor } from "core/GameState";
-
+@GameCoreService()
 export class World {
 	private readonly components: Map<string, ComponentConstructor<any>>;
 	private readonly states: Map<string, GameStateConstructor>;
@@ -16,7 +19,11 @@ export class World {
 	private readonly systems: Map<string, System>;
 
 	private updateSchedule: System[];
+	private syncSchedule: System[];
 	private renderSchedule: System[];
+
+	@GameCoreService(EventSystem)
+	private eventSystem!: EventSystem;
 
 	constructor() {
 		this.components = new Map<string, ComponentConstructor<any>>();
@@ -25,11 +32,18 @@ export class World {
 		this.systems = new Map<string, System>();
 
 		this.updateSchedule = [];
+		this.syncSchedule = [];
 		this.renderSchedule = [];
 	}
 
 	public update(elapsed: number, frame: number) {
 		for (const system of this.updateSchedule) {
+			if (system.isEnabled()) {
+				system.execute(elapsed, frame);
+			}
+		}
+
+		for (const system of this.syncSchedule) {
 			if (system.isEnabled()) {
 				system.execute(elapsed, frame);
 			}
@@ -45,16 +59,20 @@ export class World {
 	}
 
 	public registerComponent<T extends JsonSchema>(componentType: ComponentConstructor<T>): this {
-		if (this.hasComponent(componentType)) {
-			throw new GameError(`Component ${componentType.name} is already registered`);
+		if (componentType.type === Component.type) {
+			throw new GameError(`Component ${componentType.name} must declare its own static type`);
 		}
 
-		this.components.set(componentType.name, componentType);
+		if (this.hasComponent(componentType)) {
+			throw new GameError(`Component ${componentType.type} is already registered`);
+		}
+
+		this.components.set(componentType.type, componentType);
 		return this;
 	}
 
 	public unregisterComponent<T extends JsonSchema>(componentType: ComponentConstructor<T>): this {
-		this.components.delete(componentType.name);
+		this.components.delete(componentType.type);
 		return this;
 	}
 
@@ -73,21 +91,25 @@ export class World {
 	}
 
 	public hasComponent<T extends JsonSchema>(componentType: ComponentConstructor<T> | string): boolean {
-		const componentName = typeof componentType === "string" ? componentType : componentType.name;
+		const componentName = typeof componentType === "string" ? componentType : componentType.type;
 		return this.components.has(componentName);
 	}
 
 	public registerEntityState(stateType: GameStateConstructor): this {
-		if (this.hasEntityState(stateType)) {
-			throw new GameError(`Entity State ${stateType.name} is already registered`);
+		if (stateType.type === GameState.type) {
+			throw new GameError(`Entity State ${stateType.name} must declare its own static type`);
 		}
 
-		this.states.set(stateType.name, stateType);
+		if (this.hasEntityState(stateType)) {
+			throw new GameError(`Entity State ${stateType.type} is already registered`);
+		}
+
+		this.states.set(stateType.type, stateType);
 		return this;
 	}
 
 	public unregisterEntityState(stateType: GameStateConstructor): this {
-		this.states.delete(stateType.name);
+		this.states.delete(stateType.type);
 		return this;
 	}
 
@@ -106,7 +128,7 @@ export class World {
 	}
 
 	public hasEntityState(stateType: GameStateConstructor | string): boolean {
-		const stateName = typeof stateType === "string" ? stateType : stateType.name;
+		const stateName = typeof stateType === "string" ? stateType : stateType.type;
 		return this.states.has(stateName);
 	}
 
@@ -132,6 +154,7 @@ export class World {
 
 	public unregisterEntity(entity: Entity): this {
 		this.entities.delete(entity.getID());
+		this.eventSystem.dispatch("entityRemoved", { entity: entity });
 		return this;
 	}
 
@@ -171,28 +194,41 @@ export class World {
 		const system = new systemType(priority);
 		this.systems.set(systemType.name, system);
 
-		this.scheduleUpdateSystems();
-		this.scheduleRenderSystems();
+		this.scheduleSystem(system);
 		return this;
+	}
+
+	private scheduleSystem(system: System) {
+		if (system instanceof UpdateSystem) {
+			binaryInsert(this.updateSchedule, system, System.byPriority);
+		} else if (system instanceof SyncSystem) {
+			binaryInsert(this.syncSchedule, system, System.byPriority);
+		} else if (system instanceof RenderSystem) {
+			binaryInsert(this.renderSchedule, system, System.byPriority);
+		} else {
+			throw new GameError(`System ${system.constructor.name} must extend UpdateSystem, SyncSystem or RenderSystem`);
+		}
 	}
 
 	public unregisterSystem(systemType: SystemConstructor): this {
+		const system = this.getSystem(systemType);
+		system.dispose();
+
 		this.systems.delete(systemType.name);
-		this.scheduleUpdateSystems();
-		this.scheduleRenderSystems();
+		this.unscheduleSystem(system);
 		return this;
 	}
 
-	private scheduleUpdateSystems() {
-		const systems = Array.from(this.systems.values());
-		this.updateSchedule = systems.filter((system) => system instanceof UpdateSystem);
-		this.updateSchedule.sort(System.byPriority);
-	}
-
-	private scheduleRenderSystems() {
-		const systems = Array.from(this.systems.values());
-		this.renderSchedule = systems.filter((system) => system instanceof RenderSystem);
-		this.renderSchedule.sort(System.byPriority);
+	private unscheduleSystem(system: System) {
+		if (system instanceof UpdateSystem) {
+			this.updateSchedule = this.updateSchedule.filter((s) => s !== system);
+		} else if (system instanceof SyncSystem) {
+			this.syncSchedule = this.syncSchedule.filter((s) => s !== system);
+		} else if (system instanceof RenderSystem) {
+			this.renderSchedule = this.renderSchedule.filter((s) => s !== system);
+		} else {
+			throw new GameError(`System ${system.constructor.name} must extend UpdateSystem, SyncSystem or RenderSystem`);
+		}
 	}
 
 	public getSystem(systemType: SystemConstructor): System {
@@ -207,6 +243,10 @@ export class World {
 
 	public getUpdateSchedule(): System[] {
 		return this.updateSchedule;
+	}
+
+	public getSyncSchedule(): System[] {
+		return this.syncSchedule;
 	}
 
 	public getRenderSchedule(): System[] {

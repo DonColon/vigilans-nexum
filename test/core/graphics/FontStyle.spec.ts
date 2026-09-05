@@ -1,5 +1,5 @@
 import { test, expect, suite } from "vitest";
-import { FontStyle } from "../../../src/core/graphics/FontStyle";
+import { FontStyle } from "../../../src/core/graphics/styles/text/FontStyle";
 
 suite("FontStyle Class Unit Tests", () => {
 	test("should create a font style object", () => {

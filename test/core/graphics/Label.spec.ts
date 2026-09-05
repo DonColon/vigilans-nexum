@@ -1,8 +1,8 @@
 import { test, expect, suite } from "vitest";
 
-import { Label } from "../../../src/core/graphics/Label";
-import { FontStyle } from "../../../src/core/graphics/FontStyle";
-import { TextStyle } from "../../../src/core/graphics/TextStyle";
+import { Label } from "../../../src/core/graphics/components/Label";
+import { FontStyle } from "../../../src/core/graphics/styles/text/FontStyle";
+import { TextStyle } from "../../../src/core/graphics/styles/text/TextStyle";
 
 suite("Label Class Unit Tests", () => {
 	test("should create a label object", () => {

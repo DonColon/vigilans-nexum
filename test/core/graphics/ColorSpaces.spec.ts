@@ -1,6 +1,6 @@
 import { test, expect, suite } from "vitest";
 
-import { hex2hsl, hex2hwb, hex2rgb, hsl2hex, hsl2rgb, hwb2hex, hwb2hsl, hwb2rgb, rgb2hsl, rgb2hwb } from "../../../src/core/graphics/ColorSpaces";
+import { hex2hsl, hex2hwb, hex2rgb, hsl2hex, hsl2rgb, hwb2hex, hwb2hsl, hwb2rgb, rgb2hsl, rgb2hwb } from "../../../src/core/graphics/color/ColorSpaces";
 
 suite("Color Test Suite", () => {
 	test("HEX to RGB", () => {

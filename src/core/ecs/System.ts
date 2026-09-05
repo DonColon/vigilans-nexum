@@ -1,13 +1,14 @@
-import { QueryList } from "./Query";
+import { QueryList } from "@/core/ecs/Query";
 
 export type SystemConstructor = new (priority: number) => System;
 
 export abstract class System {
-	protected abstract queries: QueryList;
+	protected queries: QueryList;
 	protected enabled: boolean;
 
 	constructor(protected priority: number) {
 		this.enabled = true;
+		this.queries = {};
 		this.initialize();
 	}
 
@@ -32,5 +33,11 @@ export abstract class System {
 
 	public disable() {
 		this.enabled = false;
+	}
+
+	public dispose(): void {
+		for (const query of Object.values(this.queries)) {
+			query.dispose();
+		}
 	}
 }

@@ -1,5 +1,4 @@
 import { defineConfig } from "vitest/config";
-import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
 	test: {
@@ -17,14 +16,17 @@ export default defineConfig({
 				}
 			}
 		},
-		poolOptions: {
-			threads: {
-				singleThread: true
-			}
-		},
+		// Vitest 4 removed poolOptions in favour of top-level settings. Kept to one
+		// file at a time as before, since vitest.setup.ts seeds process-wide
+		// singletons into the ServiceRegistry.
+		pool: "threads",
+		fileParallelism: false,
 		coverage: {
 			provider: "istanbul"
 		}
 	},
-	plugins: [tsconfigPaths()]
+	// Replaces the vite-tsconfig-paths plugin, see vite.config.ts.
+	resolve: {
+		tsconfigPaths: true
+	}
 });

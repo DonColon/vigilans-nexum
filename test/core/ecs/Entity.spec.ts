@@ -1,44 +1,46 @@
 import { test, expect, suite } from "vitest";
-import { Entity } from "../../../src/core/ecs/Entity";
-import { Component } from "../../../src/core/ecs/Component";
-import { World } from "../../../src/core/ecs/World";
-import { EventSystem } from "../../../src/core/events/EventSystem";
-import { GameState } from "../../../src/core/GameState";
-import { GameStateManager } from "../../../src/core/GameStateManager";
-import { GameError } from "../../../src/core/GameError";
-
-declare global {
-	var world: World;
-	var eventSystem: EventSystem;
-}
+import { Entity } from "@/core/ecs/Entity";
+import { Component } from "@/core/ecs/Component";
+import { World } from "@/core/ecs/World";
+import { GameState } from "@/core/GameState";
+import { GameStateManager } from "@/core/GameStateManager";
+import { GameError } from "@/core/GameError";
+import { ServiceRegistry } from "@/core/service/ServiceRegistry";
 
 suite("Entity Test Suite", () => {
-	const world = new World();
-	globalThis.world = world;
-
-	const eventSystem = new EventSystem();
-	globalThis.eventSystem = eventSystem;
-
 	class PointComponent extends Component<{
 		x: number;
 		y: number;
-	}> {}
+	}> {
+		public static readonly type = "point";
+	}
 
 	class MoveComponent extends Component<{
 		dx: number;
 		dy: number;
-	}> {}
+	}> {
+		public static readonly type = "move";
+	}
 
 	class JumpState extends GameState {
+		public static readonly type = "jump";
+
 		onEnter() {}
 		onExit() {}
+		onPause() {}
+		onResume() {}
 	}
 
 	class FallState extends GameState {
+		public static readonly type = "fall";
+
 		onEnter() {}
 		onExit() {}
+		onPause() {}
+		onResume() {}
 	}
 
+	const world = ServiceRegistry.get<World>(World.name);
 	world.registerComponent(PointComponent);
 	world.registerEntityState(JumpState);
 
@@ -82,25 +84,25 @@ suite("Entity Test Suite", () => {
 		entity.addComponent(PointComponent, { x: 10, y: 20 });
 
 		expect(entity.hasComponent(PointComponent)).toBeTruthy();
-		expect(entity.hasComponent("PointComponent")).toBeTruthy();
+		expect(entity.hasComponent("point")).toBeTruthy();
 		expect(entity.hasComponent(MoveComponent)).toBeFalsy();
-		expect(entity.hasComponent("MoveComponent")).toBeFalsy();
+		expect(entity.hasComponent("move")).toBeFalsy();
 	});
 
 	test("Check if an entity has all components", () => {
 		const entity = new Entity();
 		entity.addComponent(PointComponent, { x: 10, y: 20 });
 
-		expect(entity.hasAllComponents(["PointComponent"])).toBeTruthy();
-		expect(entity.hasAllComponents(["PointComponent", "MoveComponent", "ImageComponent"])).toBeFalsy();
+		expect(entity.hasAllComponents(["point"])).toBeTruthy();
+		expect(entity.hasAllComponents(["point", "move", "ImageComponent"])).toBeFalsy();
 	});
 
 	test("Check if an entity has any components", () => {
 		const entity = new Entity();
 		entity.addComponent(PointComponent, { x: 10, y: 20 });
 
-		expect(entity.hasAnyComponents(["PointComponent"])).toBeTruthy();
-		expect(entity.hasAnyComponents(["MoveComponent", "ImageComponent"])).toBeFalsy();
+		expect(entity.hasAnyComponents(["point"])).toBeTruthy();
+		expect(entity.hasAnyComponents(["move", "ImageComponent"])).toBeFalsy();
 	});
 
 	test("Manage state of an entity", () => {
@@ -141,9 +143,9 @@ suite("Entity Test Suite", () => {
 		expect(object).toEqual({
 			id: "1337",
 			components: {
-				PointComponent: { x: 10, y: 20 }
+				point: { x: 10, y: 20 }
 			},
-			states: ["JumpState"],
+			states: ["jump"],
 			enabled: true
 		});
 	});
@@ -157,23 +159,23 @@ suite("Entity Test Suite", () => {
 		stateManager.push(JumpState);
 
 		const json = entity.toString();
-		expect(json).toEqual('{\n\t"id": "1337",\n\t"enabled": true,\n\t"states": [\n\t\t"JumpState"\n\t],\n\t"components": {\n\t\t"PointComponent": {\n\t\t\t"x": 10,\n\t\t\t"y": 20\n\t\t}\n\t}\n}');
+		expect(json).toEqual('{\n\t"id": "1337",\n\t"enabled": true,\n\t"states": [\n\t\t"jump"\n\t],\n\t"components": {\n\t\t"point": {\n\t\t\t"x": 10,\n\t\t\t"y": 20\n\t\t}\n\t}\n}');
 	});
 
 	test("Parse an entity from an object", () => {
 		let entity = Entity.parse({
 			id: "1337",
 			components: {
-				PointComponent: { x: 10, y: 20 }
+				point: { x: 10, y: 20 }
 			},
-			states: ["JumpState"],
+			states: ["jump"],
 			enabled: true
 		});
 
 		expect(entity.getID()).toEqual("1337");
 		expect(entity.getComponentData(PointComponent)).toEqual({ x: 10, y: 20 });
 
-		entity = Entity.parse('{"id":"1337","enabled":true,"states":["JumpState"],"components":{"PointComponent":{"x":10,"y":20}}}');
+		entity = Entity.parse('{"id":"1337","enabled":true,"states":["jump"],"components":{"point":{"x":10,"y":20}}}');
 		expect(entity.getID()).toEqual("1337");
 		expect(entity.getComponentData(PointComponent)).toEqual({ x: 10, y: 20 });
 	});
@@ -185,5 +187,17 @@ suite("Entity Test Suite", () => {
 
 		entity.enable();
 		expect(entity.isEnabled()).toBeTruthy();
+	});
+
+	test("Add component and state without world service", () => {
+		// Test that accessing world property directly works when injected
+		const entity = new Entity();
+		entity.addComponent(PointComponent, { x: 100, y: 200 });
+		expect(entity.getComponentData(PointComponent)).toEqual({ x: 100, y: 200 });
+
+		entity.addState(JumpState);
+		const stateManager = entity.getStateManager();
+		const registeredStates = stateManager.getRegisteredStates();
+		expect(registeredStates[0]).toBeInstanceOf(JumpState);
 	});
 });

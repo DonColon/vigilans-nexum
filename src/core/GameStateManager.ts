@@ -1,15 +1,23 @@
-import { GameError } from "./GameError";
-import { GameState, GameStateConstructor } from "./GameState";
+import { GameError } from "@/core/GameError";
+import { GameState, GameStateConstructor } from "@/core/GameState";
+import { GameCoreService } from "@/core/service/GameCoreService";
 
+@GameCoreService()
 export class GameStateManager {
 	private readonly states: Map<string, GameState> = new Map<string, GameState>();
 	private readonly currentStates: GameState[] = [];
 
 	public switch(stateType: GameStateConstructor | string) {
-		const currentState = this.peek();
 		const state = this.getState(stateType);
 
-		if (currentState !== null) currentState.onExit();
+		if (this.currentStates.length > 0) {
+			const currentState = this.peek();
+
+			if (currentState !== null) {
+				currentState.onExit();
+			}
+		}
+
 		state.onEnter();
 
 		this.currentStates.length = 0;
@@ -17,12 +25,17 @@ export class GameStateManager {
 	}
 
 	public push(stateType: GameStateConstructor | string) {
-		const currentState = this.peek();
 		const state = this.getState(stateType);
 
-		if (currentState !== null) currentState.onExit();
-		state.onEnter();
+		if (this.currentStates.length > 0) {
+			const currentState = this.peek();
 
+			if (currentState !== null) {
+				currentState.onPause();
+			}
+		}
+
+		state.onEnter();
 		this.currentStates.push(state);
 	}
 
@@ -35,7 +48,10 @@ export class GameStateManager {
 		}
 
 		currentState.onExit();
-		state?.onEnter();
+
+		if (state !== null) {
+			state.onResume();
+		}
 
 		return currentState;
 	}
@@ -51,23 +67,27 @@ export class GameStateManager {
 	}
 
 	public registerState(stateType: GameStateConstructor): this {
-		if (this.states.has(stateType.name)) {
-			throw new GameError(`State ${stateType.name} is already registered`);
+		if (stateType.type === GameState.type) {
+			throw new GameError(`State ${stateType.name} must declare its own static type`);
+		}
+
+		if (this.states.has(stateType.type)) {
+			throw new GameError(`State ${stateType.type} is already registered`);
 		}
 
 		const state = new stateType();
-		this.states.set(stateType.name, state);
+		this.states.set(stateType.type, state);
 
 		return this;
 	}
 
 	public unregisterState(stateType: GameStateConstructor): this {
-		this.states.delete(stateType.name);
+		this.states.delete(stateType.type);
 		return this;
 	}
 
 	public getState(stateType: GameStateConstructor | string): GameState {
-		const name = typeof stateType === "string" ? stateType : stateType.name;
+		const name = typeof stateType === "string" ? stateType : stateType.type;
 		const state = this.states.get(name);
 
 		if (state === undefined) {

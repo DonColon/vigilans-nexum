@@ -1,6 +1,6 @@
 import { test, expect, suite } from "vitest";
-import { Shadow } from "../../../src/core/graphics/Shadow";
-import { Color } from "../../../src/core/graphics/Color";
+import { Shadow } from "../../../src/core/graphics/effects/Shadow";
+import { Color } from "../../../src/core/graphics/color/Color";
 
 suite("Shadow Class Unit Tests", () => {
 	test("should create a shadow object", () => {
