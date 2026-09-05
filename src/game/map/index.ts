@@ -3,6 +3,7 @@ import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
 import { TileMapComponent } from "@/game/map/components/TileMapComponent";
+import { confirmCommands } from "@/game/map/commands/ConfirmCommand";
 import { moveCursorCommands } from "@/game/map/commands/MoveCursorCommand";
 import { MapState } from "@/game/map/states/MapState";
 import { CursorRenderSystem } from "@/game/map/systems/CursorRenderSystem";
@@ -21,7 +22,7 @@ export class MapFeature extends GameFeature {
 			states: [MapState],
 			// Registered here, allowed by the MapState: the feature owns the
 			// instances, the state decides when the player may trigger them.
-			commands: [...moveCursorCommands],
+			commands: [...moveCursorCommands, ...confirmCommands],
 			systems: [
 				// The cursor transform has to be up to date before the sync phase
 				// resolves the transform hierarchy for this frame.

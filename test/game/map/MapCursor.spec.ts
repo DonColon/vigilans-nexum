@@ -12,6 +12,7 @@ import { InputDevice } from "@/core/input/InputDevice";
 import { InputState } from "@/core/input/InputState";
 import { KeyboardInput } from "@/core/input/keyboard/KeyboardInput";
 import { ServiceRegistry } from "@/core/service/ServiceRegistry";
+import { confirmCommands } from "@/game/map/commands/ConfirmCommand";
 import { MoveCursorDownCommand, MoveCursorLeftCommand, MoveCursorRightCommand, MoveCursorUpCommand, moveCursorCommands } from "@/game/map/commands/MoveCursorCommand";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
@@ -74,6 +75,12 @@ suite("Map Cursor Test Suite", () => {
 		bindings.set(commandType, binding);
 	}
 
+	// Allowed by MapState alongside the cursor commands; registered here so
+	// resetCommands() can resolve every command the state lists.
+	for (const commandType of confirmCommands) {
+		inputDevice.registerCommand(commandType);
+	}
+
 	const press = (commandType: GameCommandConstructor) => {
 		bindings.get(commandType)!.pressed = true;
 	};
@@ -108,7 +115,7 @@ suite("Map Cursor Test Suite", () => {
 	});
 
 	test("State lists the cursor commands the map system runs", () => {
-		expect(state.getCommands()).toHaveLength(moveCursorCommands.length);
+		expect(state.getCommands()).toHaveLength(moveCursorCommands.length + confirmCommands.length);
 		expect(state.getCommands(MoveCursorRightCommand)).toStrictEqual([inputDevice.getCommand(MoveCursorRightCommand)]);
 	});
 

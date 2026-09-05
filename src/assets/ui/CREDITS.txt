@@ -1,0 +1,35 @@
+Fantasy UI Borders (1.0) by Kenney - https://kenney.nl/assets/fantasy-ui-borders
+License: Creative Commons Zero (CC0) - http://creativecommons.org/publicdomain/zero/1.0/
+
+Files in this folder, taken from "PNG/Default":
+  panel.png   <- Panel/panel-000.png          (filled ornate panel, 48x48, 1-bit mask)
+  frame.png   <- Border/panel-border-000.png   (ornate border ring, 48x48, 1-bit mask)
+  divider.png <- Divider/divider-000.png       (horizontal flourish, 96x22, 1-bit mask)
+
+The art is a 1-bit alpha mask (white on transparency). The UI feature tints it at
+runtime (see src/game/ui/model/NineSlice.ts) and nine-slices panel.png / frame.png
+around arbitrary rectangles, so a single 48x48 source scales to any box size.
+
+------------------------------------------------------------------------------
+
+	Fantasy UI Borders (1.0)
+
+	Created/distributed by Kenney (www.kenney.nl)
+	Creation date: 03-12-2023
+
+	For the sample image the font 'Aoboshi One' was used, OPL (Open Font License)
+
+			------------------------------
+
+	License: (Creative Commons Zero, CC0)
+	http://creativecommons.org/publicdomain/zero/1.0/
+
+	You can use this content for personal, educational, and commercial purposes.
+
+	Support by crediting 'Kenney' or 'www.kenney.nl' (this is not a requirement)
+
+			------------------------------
+
+	• Website : www.kenney.nl
+	• Donate  : www.kenney.nl/donate
+	• Patreon : patreon.com/kenney

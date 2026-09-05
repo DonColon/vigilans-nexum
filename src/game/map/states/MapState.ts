@@ -4,6 +4,7 @@ import { identityTransform, TransformComponent } from "@/core/ecs/components/Tra
 import { GameState } from "@/core/GameState";
 import { Display } from "@/core/graphics/Display";
 import { GameCoreService } from "@/core/service/GameCoreService";
+import { confirmCommands } from "@/game/map/commands/ConfirmCommand";
 import { moveCursorCommands } from "@/game/map/commands/MoveCursorCommand";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
@@ -32,7 +33,7 @@ const CURSOR_START = { column: 6, row: 12 };
 export class MapState extends GameState {
 	public static readonly type = "map";
 
-	protected commands = [...moveCursorCommands];
+	protected commands = [...moveCursorCommands, ...confirmCommands];
 
 	@GameCoreService(World)
 	private world!: World;

@@ -165,6 +165,18 @@ export class Game {
 		window.cancelAnimationFrame(this.animationFrame);
 	}
 
+	/**
+	 * Runs a single fixed update step and a render, without the requestAnimationFrame
+	 * loop. Browser automation and a backgrounded tab both throttle rAF to a stop,
+	 * so this is the way to drive the game by hand from a test or the console.
+	 */
+	public step(elapsed: number = this.timePerUpdate) {
+		const now = performance.now();
+
+		this.update(elapsed, now);
+		this.render(elapsed, now);
+	}
+
 	public install(feature: GameFeature): this {
 		feature.install();
 		this.features.set(feature.constructor.name, feature);

@@ -96,6 +96,15 @@ export class InputDevice {
 		return this;
 	}
 
+	/**
+	 * Drops every buffered press. Called when a state becomes active so an input
+	 * aimed at the previous state - most visibly the confirm press that opened a
+	 * menu - is not replayed into the new one.
+	 */
+	public clearInputBuffer(): void {
+		this.buffer.clear();
+	}
+
 	public getCommand(commandType: GameCommandConstructor | string): GameCommand {
 		const name = typeof commandType === "string" ? commandType : commandType.name;
 		const command = this.commands.get(name);
