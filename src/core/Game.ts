@@ -6,6 +6,7 @@ import { GameStateManager } from "@/core/GameStateManager";
 import { Display, DisplayConfiguration } from "@/core/graphics/Display";
 import { InputDevice, InputDeviceConfig } from "@/core/input/InputDevice";
 import { AudioDevice, AudioConfiguration } from "@/core/audio/AudioDevice";
+import { I18nService, I18nOptions } from "@/core/i18n";
 import { World } from "@/core/ecs/World";
 import { ComponentConstructor } from "@/core/ecs/Component";
 import { JsonSchema } from "@/core/ecs/JsonSchema";
@@ -41,6 +42,11 @@ export interface GameConfiguration {
 	localDatabase: DatabaseConfiguration;
 	display?: DisplayConfiguration;
 	audioDevice?: AudioConfiguration;
+	/**
+	 * Localisation. Left out, the browser language picks the locale and the
+	 * shipped `src/game/i18n/*.json` files are loaded with `en` as the fallback.
+	 */
+	i18n?: I18nOptions;
 }
 
 export class Game {
@@ -57,6 +63,7 @@ export class Game {
 
 	private features: Map<string, GameFeature>;
 
+	private i18n: I18nService;
 	private eventSystem: EventSystem;
 	private poolManager: PoolManager;
 	private localDatabase: LocalDatabase;
@@ -84,6 +91,10 @@ export class Game {
 		if (config.seed !== undefined) {
 			seedRandom(config.seed);
 		}
+
+		// Reads the browser language and loads the matching src/game/i18n/[locale].json
+		// so i18n() works from the first frame - before any feature is installed.
+		this.i18n = new I18nService(config.i18n);
 
 		this.eventSystem = new EventSystem(config.eventSystem);
 		this.poolManager = new PoolManager();

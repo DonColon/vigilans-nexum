@@ -1,0 +1,13 @@
+{
+	"menu.examine": "Untersuchen",
+	"menu.lore": "Überlieferung",
+	"menu.wait": "Warten",
+	"menu.back": "Zurück",
+	"menu.confirm": "Bestätigen",
+	"menu.cancel": "Abbrechen",
+	"turn.banner": "Zug {turn} - {faction}",
+	"turn.playerPhase": "Spielerphase",
+	"turn.enemyPhase": "Gegnerphase",
+	"terrain.inspect": "Feld {column}, {row} - {terrain}. Bewegungskosten: {cost}.",
+	"unit.hp": "{name}: {current}/{max} TP"
+}

@@ -1,0 +1,13 @@
+{
+	"menu.examine": "Examine",
+	"menu.lore": "Lore",
+	"menu.wait": "Wait",
+	"menu.back": "Back",
+	"menu.confirm": "Confirm",
+	"menu.cancel": "Cancel",
+	"turn.banner": "Turn {turn} - {faction}",
+	"turn.playerPhase": "Player Phase",
+	"turn.enemyPhase": "Enemy Phase",
+	"terrain.inspect": "Tile {column}, {row} - {terrain}. Movement cost: {cost}.",
+	"unit.hp": "{name}: {current}/{max} HP"
+}

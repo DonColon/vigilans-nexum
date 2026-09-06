@@ -51,6 +51,11 @@ const gameConfiguration: GameConfiguration = {
 	},
 	audioDevice: {
 		channels: ["sound", "music", "voice"]
+	},
+	// The browser language picks the locale; German is the fallback for any key a
+	// less complete translation is missing, and for a language we do not ship.
+	i18n: {
+		fallbackLocale: "de"
 	}
 };
 
