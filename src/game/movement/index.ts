@@ -4,6 +4,8 @@ export { MovementComponent, idleMovement } from "@/game/movement/components/Move
 export type { MovementData } from "@/game/movement/components/MovementComponent";
 export { WalkComponent } from "@/game/movement/components/WalkComponent";
 export type { WalkData } from "@/game/movement/components/WalkComponent";
+export { PendingMoveComponent } from "@/game/movement/components/PendingMoveComponent";
+export type { PendingMoveData } from "@/game/movement/components/PendingMoveComponent";
 
 export { MovementSystem } from "@/game/movement/systems/MovementSystem";
 export type { ReachableTile } from "@/game/movement/systems/MovementSystem";

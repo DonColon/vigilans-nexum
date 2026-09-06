@@ -5,6 +5,9 @@ import { UITheme } from "@/game/ui/model/UITheme";
 /** Gap between a UI panel and the edge of the screen. */
 const SCREEN_MARGIN = 36;
 
+/** Width a menu panel gets when the caller does not ask for one. */
+export const DEFAULT_MENU_WIDTH = 320;
+
 /** Widest a dialog box is allowed to get, however wide the screen is. */
 const DIALOG_MAX_WIDTH = 920;
 
@@ -39,11 +42,32 @@ export function menuHeight(itemCount: number, hasTitle: boolean): number {
  * right-hand side of the screen and vertically centred - clear of the map
  * cursor, roughly where a unit command menu lands.
  */
-export function menuBox(viewport: Dimension, itemCount: number, hasTitle: boolean, width = 320): Rectangle {
+export function menuBox(viewport: Dimension, itemCount: number, hasTitle: boolean, width = DEFAULT_MENU_WIDTH): Rectangle {
 	const height = menuHeight(itemCount, hasTitle);
 
 	const x = Math.round(viewport.width - width - SCREEN_MARGIN);
 	const y = Math.round((viewport.height - height) / 2);
 
 	return new Rectangle(x, y, width, height);
+}
+
+/**
+ * A menu tucked against a point on the map - a selected unit's tile. It sits to
+ * the right of the anchor, flips to the left when that would run off the edge,
+ * and is nudged so the whole panel stays on screen. `cell` is the map tile size,
+ * so the panel clears the token rather than covering it.
+ */
+export function menuBeside(viewport: Dimension, anchor: { x: number; y: number }, width: number, height: number, cell = 24): Rectangle {
+	const gap = 10;
+
+	let x = anchor.x + cell + gap;
+
+	if (x + width + SCREEN_MARGIN > viewport.width) {
+		x = anchor.x - gap - width;
+	}
+
+	x = Math.max(SCREEN_MARGIN, Math.min(x, viewport.width - width - SCREEN_MARGIN));
+	const y = Math.max(SCREEN_MARGIN, Math.min(anchor.y, viewport.height - height - SCREEN_MARGIN));
+
+	return new Rectangle(Math.round(x), Math.round(y), width, height);
 }

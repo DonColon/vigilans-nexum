@@ -6,7 +6,7 @@ import { Display } from "@/core/graphics/Display";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { MenuComponent } from "@/game/ui/components/MenuComponent";
 import { menuCommands } from "@/game/ui/commands/MenuCommands";
-import { menuBox } from "@/game/ui/model/UILayout";
+import { DEFAULT_MENU_WIDTH, menuBeside, menuBox, menuHeight } from "@/game/ui/model/UILayout";
 
 export interface MenuRequest {
 	id?: string;
@@ -14,12 +14,19 @@ export interface MenuRequest {
 	items: string[];
 	/** Row the highlight starts on. Defaults to the first row. */
 	selectedIndex?: number;
+	/** Panel width in pixels. Defaults to the wide right-hand slot. */
+	width?: number;
+	/**
+	 * Screen point to tuck the menu next to - a selected unit's tile. Left out,
+	 * the menu sits in the fixed right-hand slot.
+	 */
+	anchor?: { x: number; y: number };
 }
 
-const FALLBACK: Required<MenuRequest> = {
+const FALLBACK = {
 	id: "menu",
 	title: "",
-	items: ["OK"],
+	items: ["OK"] as string[],
 	selectedIndex: 0
 };
 
@@ -49,19 +56,22 @@ export class MenuState extends GameState {
 	}
 
 	public onEnter(): void {
-		const request = this.pending ?? FALLBACK;
+		const request: MenuRequest = this.pending ?? { items: [...FALLBACK.items] };
 		this.pending = null;
 
 		const items = request.items.length > 0 ? [...request.items] : [...FALLBACK.items];
 		const title = request.title ?? FALLBACK.title;
+		const width = request.width ?? DEFAULT_MENU_WIDTH;
 
 		const viewport = this.display.getViewportDimension();
-		const box = menuBox(viewport, items.length, title.length > 0);
+		const height = menuHeight(items.length, title.length > 0);
+		const box = request.anchor ? menuBeside(viewport, request.anchor, width, height) : menuBox(viewport, items.length, title.length > 0, width);
 
 		this.menu = this.world.createEntity();
 		this.menu.addComponent(MenuComponent, {
 			id: request.id ?? FALLBACK.id,
 			title,
+			width,
 			items,
 			selectedIndex: clampIndex(request.selectedIndex ?? 0, items.length),
 			confirmedIndex: -1,

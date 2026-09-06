@@ -65,6 +65,10 @@ Both shipped maps use the packed sheet. Its art sits on transparency, so a map
 that leans on it declares a `background` colour (see the format below) painted
 under the layers where a cell is empty or only see-through.
 
+`docs/kenney-1bit-index.png` is a scaled-up copy of the packed sheet with every
+cell's frame index printed on it - handy for picking a tile by number. Regenerate
+it by rendering `/tilesets/kenney-1bit-packed.png` at `row * 49 + column` per cell.
+
 ### Atlas layout
 
 For a sheet whose frames are irregular and named - a TexturePacker

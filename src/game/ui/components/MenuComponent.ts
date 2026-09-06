@@ -6,6 +6,8 @@ export interface MenuData extends JsonSchema {
 	id: string;
 	/** Heading shown above the rows, or "" for none. */
 	title: string;
+	/** Panel width in pixels - the state and the renderer read it from here so they agree. */
+	width: number;
 	/** The rows, top to bottom. */
 	items: string[];
 	/** Row the highlight is on. */

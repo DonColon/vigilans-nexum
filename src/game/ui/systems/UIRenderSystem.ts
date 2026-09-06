@@ -14,7 +14,7 @@ import { DialogComponent, DialogData } from "@/game/ui/components/DialogComponen
 import { MenuComponent, MenuData } from "@/game/ui/components/MenuComponent";
 import { drawDivider, drawMenuHighlight, drawPanel, uiAssetsReady } from "@/game/ui/model/UIPanel";
 import { countWords, revealedWordCount, splitWords, wrapText } from "@/game/ui/model/TextReveal";
-import { dialogBox, menuBox } from "@/game/ui/model/UILayout";
+import { dialogBox, menuHeight } from "@/game/ui/model/UILayout";
 import { UITheme } from "@/game/ui/model/UITheme";
 
 /**
@@ -124,10 +124,8 @@ export class UIRenderSystem extends RenderSystem {
 	}
 
 	private renderMenu(graphics: Graphics, data: MenuData, x: number, y: number): void {
-		const viewport = this.display.getViewportDimension();
 		const hasTitle = data.title.length > 0;
-		const size = menuBox(viewport, data.items.length, hasTitle);
-		const box = new Rectangle(x, y, size.getWidth(), size.getHeight());
+		const box = new Rectangle(x, y, data.width, menuHeight(data.items.length, hasTitle));
 
 		drawPanel(graphics, this.assetStorage, box);
 

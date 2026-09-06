@@ -7,14 +7,15 @@ import { UnitsFeature } from "@/game/units";
 
 const game = new Game(gameConfiguration);
 
+const ui = new UIFeature();
 const units = new UnitsFeature();
 
 game.install(new MapFeature());
-game.install(new UIFeature());
+game.install(ui);
 game.install(units);
-// Moving a unit needs units on the map to move - install order and the
-// dependency both say so.
-game.install(new MovementFeature({ dependencies: [units] }));
+// Moving a unit needs the units on the map and the UI feature for its command
+// menu - the install order and the dependencies both say so.
+game.install(new MovementFeature({ dependencies: [units, ui] }));
 game.start();
 
 // Dev-only handle so the loop can be driven by hand when rAF is throttled
