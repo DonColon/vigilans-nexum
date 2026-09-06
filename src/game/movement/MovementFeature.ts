@@ -7,9 +7,12 @@ import { TileConfirmedEvent } from "@/game.events";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
 import { idleMovement, MovementComponent } from "@/game/movement/components/MovementComponent";
+import { WalkComponent } from "@/game/movement/components/WalkComponent";
+import { WALK_STEP_MS } from "@/game/movement/model/PathWalk";
 import { MovementRenderSystem } from "@/game/movement/systems/MovementRenderSystem";
 import { MovementSystem } from "@/game/movement/systems/MovementSystem";
 import { PathPreviewSystem } from "@/game/movement/systems/PathPreviewSystem";
+import { UnitWalkSystem } from "@/game/movement/systems/UnitWalkSystem";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
 import { UnitFaction } from "@/game/units/model/UnitData";
 import { UnitSystem } from "@/game/units/systems/UnitSystem";
@@ -19,10 +22,12 @@ import { UnitSystem } from "@/game/units/systems/UnitSystem";
  * units the [[UnitsFeature]] deploys:
  *
  *  - Confirm on one of your units picks it up and lights the movement (blue) and
- *    attack (red) tiles; `PathPreviewSystem` then traces the shortest route to
- *    the cursor with the tilesheet's arrow sprites.
- *  - Confirm again on a blue tile walks it there; confirm off the range or
- *    `map:cancelled` sets it back down on its origin tile.
+ *    attack (red) tiles; `PathPreviewSystem` traces the shortest route to the
+ *    cursor.
+ *  - Confirm again on a blue tile commits the move: the unit's tile jumps to the
+ *    target and it walks the path there (`WalkComponent` / `UnitWalkSystem`),
+ *    which is when `unit:moved` fires. Confirm off the range or `map:cancelled`
+ *    sets it back down.
  *
  * It handles `map:tileConfirmed` above the demo (priority 10) and stops the
  * event once it has consumed a press, so picking a unit up never also opens the
@@ -38,13 +43,15 @@ export class MovementFeature extends GameFeature {
 
 	constructor(config: GameFeatureConfig = {}) {
 		super({
-			components: [MovementComponent],
+			components: [MovementComponent, WalkComponent],
 			systems: [
 				// Below UnitRenderSystem (17) on the background layer: overlay first,
 				// units on top.
 				{ system: MovementRenderSystem, priority: 16 },
 				// After CursorSystem (10) so the path tracks this frame's cursor tile.
-				{ system: PathPreviewSystem, priority: 12 }
+				{ system: PathPreviewSystem, priority: 12 },
+				// Runs the walk clock; order among the update systems does not matter.
+				{ system: UnitWalkSystem, priority: 8 }
 			],
 			...config
 		});
@@ -88,6 +95,13 @@ export class MovementFeature extends GameFeature {
 
 	private onConfirm(event: TileConfirmedEvent): void {
 		if (this.movement === null) {
+			return;
+		}
+
+		// Input is locked while a unit walks - swallow the press so nothing else
+		// (the demo tile menu) reacts to it either.
+		if (this.isWalking()) {
+			event.stopPropagation();
 			return;
 		}
 
@@ -147,18 +161,21 @@ export class MovementFeature extends GameFeature {
 		const canMove = MovementSystem.contains(state.movement, event.column, event.row) && (occupant === null || occupant === mover);
 
 		if (canMove) {
-			mover.getComponent(GridPositionComponent).update({ column: event.column, row: event.row });
+			const origin = { column: state.originColumn, row: state.originRow };
+			const target = { column: event.column, row: event.row };
+			const blocked = MovementSystem.blockedTiles(UnitSystem.locations(units), state.unitId);
+			const route = MovementSystem.path(grid, origin, target, mover.getComponent(UnitComponent).read().movement, blocked);
+
+			// The logical tile jumps to the target now - occupancy and blocking stay
+			// correct - and the token walks the route to catch up. UnitWalkSystem
+			// fires unit:moved when it lands.
+			mover.getComponent(GridPositionComponent).update(target);
 
 			const unitComponent = mover.getComponent(UnitComponent);
 			unitComponent.update({ ...unitComponent.read(), hasMoved: true });
 
-			this.events.dispatch("unit:moved", {
-				unitId: state.unitId,
-				fromColumn: state.originColumn,
-				fromRow: state.originRow,
-				toColumn: event.column,
-				toRow: event.row
-			});
+			const walk = route.length >= 2 ? route : [origin, target];
+			mover.addComponent(WalkComponent, { path: walk, elapsed: 0, duration: (walk.length - 1) * WALK_STEP_MS });
 		} else {
 			this.events.dispatch("unit:deselected", { unitId: state.unitId });
 		}
@@ -167,7 +184,7 @@ export class MovementFeature extends GameFeature {
 	}
 
 	private onCancel(): void {
-		if (this.movement === null) {
+		if (this.movement === null || this.isWalking()) {
 			return;
 		}
 
@@ -184,6 +201,11 @@ export class MovementFeature extends GameFeature {
 
 	private units(): Entity[] {
 		return this.world.getEntities().filter((entity) => entity.hasComponent(UnitComponent));
+	}
+
+	/** A unit is mid-walk - every confirm and cancel is ignored until it lands. */
+	private isWalking(): boolean {
+		return this.world.getEntities().some((entity) => entity.hasComponent(WalkComponent));
 	}
 
 	private grid() {

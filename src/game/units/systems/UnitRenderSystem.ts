@@ -1,3 +1,4 @@
+import { Entity } from "@/core/ecs/Entity";
 import { Query } from "@/core/ecs/Query";
 import { RenderSystem } from "@/core/ecs/RenderSystem";
 import { TransformComponent } from "@/core/ecs/components/TransformComponent";
@@ -10,6 +11,8 @@ import { Circle } from "@/core/math/geometry/Circle";
 import { Line } from "@/core/math/geometry/Line";
 import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { GameCoreService } from "@/core/service/GameCoreService";
+import { WalkComponent } from "@/game/movement/components/WalkComponent";
+import { walkPoint } from "@/game/movement/model/PathWalk";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
@@ -55,10 +58,23 @@ export class UnitRenderSystem extends RenderSystem {
 
 		for (const entity of this.queries.units.getResult()) {
 			const unit = entity.getComponent(UnitComponent).read();
-			const position = entity.getComponent(GridPositionComponent).read();
+			const tile = this.tileOf(entity);
 
-			this.renderUnit(graphics, unit, origin.x + position.column * cellSize, origin.y + position.row * cellSize, cellSize);
+			this.renderUnit(graphics, unit, origin.x + tile.column * cellSize, origin.y + tile.row * cellSize, cellSize);
 		}
+	}
+
+	/**
+	 * Where to draw the token: its tile, or - while it is walking a move - the
+	 * point it has reached along the path.
+	 */
+	private tileOf(entity: Entity): { column: number; row: number } {
+		if (entity.hasComponent(WalkComponent)) {
+			const walk = entity.getComponent(WalkComponent).read();
+			return walkPoint(walk.path, walk.duration > 0 ? walk.elapsed / walk.duration : 1);
+		}
+
+		return entity.getComponent(GridPositionComponent).read();
 	}
 
 	private renderUnit(graphics: Graphics, unit: UnitData, x: number, y: number, cellSize: number): void {
