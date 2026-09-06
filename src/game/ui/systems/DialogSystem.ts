@@ -1,5 +1,5 @@
 import { Entity } from "@/core/ecs/Entity";
-import { Query, QueryList } from "@/core/ecs/Query";
+import { Query } from "@/core/ecs/Query";
 import { UpdateSystem } from "@/core/ecs/UpdateSystem";
 import { TransformComponent } from "@/core/ecs/components/TransformComponent";
 import { EventSystem } from "@/core/events/EventSystem";
@@ -21,8 +21,6 @@ import { DialogState } from "@/game/ui/states/DialogState";
  * One dialog at a time - the box the player is reading is the only one there is.
  */
 export class DialogSystem extends UpdateSystem {
-	protected queries!: QueryList;
-
 	@GameCoreService(GameStateManager)
 	private stateManager!: GameStateManager;
 

@@ -1,9 +1,11 @@
 import { Entity } from "@/core/ecs/Entity";
 import { World } from "@/core/ecs/World";
 import { identityTransform, TransformComponent } from "@/core/ecs/components/TransformComponent";
+import { EventSystem } from "@/core/events/EventSystem";
 import { GameState } from "@/core/GameState";
 import { Display } from "@/core/graphics/Display";
 import { GameCoreService } from "@/core/service/GameCoreService";
+import { cancelCommands } from "@/game/map/commands/CancelCommand";
 import { confirmCommands } from "@/game/map/commands/ConfirmCommand";
 import { moveCursorCommands } from "@/game/map/commands/MoveCursorCommand";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
@@ -33,13 +35,16 @@ const CURSOR_START = { column: 6, row: 12 };
 export class MapState extends GameState {
 	public static readonly type = "map";
 
-	protected commands = [...moveCursorCommands, ...confirmCommands];
+	protected commands = [...moveCursorCommands, ...confirmCommands, ...cancelCommands];
 
 	@GameCoreService(World)
 	private world!: World;
 
 	@GameCoreService(Display)
 	private display!: Display;
+
+	@GameCoreService(EventSystem)
+	private eventSystem!: EventSystem;
 
 	private map: Entity | null = null;
 	private cursor: Entity | null = null;
@@ -81,9 +86,16 @@ export class MapState extends GameState {
 		});
 
 		this.resetCommands();
+
+		// Announced rather than acted on: a feature that puts things on the map -
+		// units today - listens for this and spawns them parented to `this.map`.
+		// With no such feature installed the event simply has no subscribers.
+		this.eventSystem.dispatch("map:ready", { mapId: this.map.getID(), columns: grid.columns, rows: grid.rows });
 	}
 
 	public onExit(): void {
+		this.eventSystem.dispatch("map:closed", {});
+
 		if (this.cursor) {
 			this.world.unregisterEntity(this.cursor);
 			this.cursor = null;

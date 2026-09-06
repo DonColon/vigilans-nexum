@@ -1,0 +1,30 @@
+{
+	"format": "vigilans-weapons",
+	"version": 1,
+	"weapons": {
+		"bronze-sword": {
+			"name": "Bronze Sword",
+			"type": "sword",
+			"rank": "E",
+			"might": 3,
+			"hit": 100,
+			"critical": 0,
+			"weight": 4,
+			"minRange": 1,
+			"maxRange": 1,
+			"uses": 45
+		},
+		"bronze-axe": {
+			"name": "Bronze Axe",
+			"type": "axe",
+			"rank": "E",
+			"might": 5,
+			"hit": 80,
+			"critical": 0,
+			"weight": 7,
+			"minRange": 1,
+			"maxRange": 1,
+			"uses": 45
+		}
+	}
+}

@@ -26,11 +26,51 @@ export interface DialogClosedEvent extends GameEvent {
 	dialog: string;
 }
 
+/** The player pressed the cancel button on a battle map (Fire Emblem's B). */
+export type TileCancelledEvent = GameEvent;
+
+/** A battle map finished setting up. Carries the id its entity was created with. */
+export interface MapReadyEvent extends GameEvent {
+	mapId: string;
+	columns: number;
+	rows: number;
+}
+
+/** A battle map tore down - the cursor and grid entities are gone. */
+export type MapClosedEvent = GameEvent;
+
+/** The player picked a unit up off the map; the movement overlay is now showing. */
+export interface UnitSelectedEvent extends GameEvent {
+	unitId: string;
+	column: number;
+	row: number;
+}
+
+/** The player set a unit down on a new tile. */
+export interface UnitMovedEvent extends GameEvent {
+	unitId: string;
+	fromColumn: number;
+	fromRow: number;
+	toColumn: number;
+	toRow: number;
+}
+
+/** The player put the selected unit back without moving it. */
+export interface UnitDeselectedEvent extends GameEvent {
+	unitId: string;
+}
+
 declare module "@/core/events/GameEvents" {
 	interface GameEvents {
 		"map:tileConfirmed": TileConfirmedEvent;
+		"map:cancelled": TileCancelledEvent;
+		"map:ready": MapReadyEvent;
+		"map:closed": MapClosedEvent;
 		"ui:menuConfirmed": MenuConfirmedEvent;
 		"ui:menuCancelled": MenuCancelledEvent;
 		"ui:dialogClosed": DialogClosedEvent;
+		"unit:selected": UnitSelectedEvent;
+		"unit:moved": UnitMovedEvent;
+		"unit:deselected": UnitDeselectedEvent;
 	}
 }

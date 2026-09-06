@@ -1,0 +1,9 @@
+{
+	"format": "vigilans-deployment",
+	"version": 1,
+	"map": "fantasy",
+	"units": [
+		{ "unit": "dardan", "column": 4, "row": 10 },
+		{ "unit": "hasan", "column": 4, "row": 14 }
+	]
+}

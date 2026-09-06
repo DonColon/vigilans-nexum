@@ -1,0 +1,22 @@
+{
+	"format": "vigilans-classes",
+	"version": 1,
+	"classes": {
+		"swordsman": {
+			"name": "Swordsman",
+			"tier": "base",
+			"weaponTypes": ["sword"],
+			"movement": 5,
+			"ability": "Speed +2",
+			"promotesTo": ["myrmidon", "sword-cavalier"]
+		},
+		"axe-fighter": {
+			"name": "Axe Fighter",
+			"tier": "base",
+			"weaponTypes": ["axe"],
+			"movement": 5,
+			"ability": "Strength +2",
+			"promotesTo": ["warrior", "axe-cavalier"]
+		}
+	}
+}

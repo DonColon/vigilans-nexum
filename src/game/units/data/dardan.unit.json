@@ -1,0 +1,43 @@
+{
+	"format": "vigilans-unit",
+	"version": 1,
+	"id": "dardan",
+	"name": "Dardan Niveli",
+	"faction": "player",
+	"class": "swordsman",
+	"level": 1,
+	"weapon": "bronze-sword",
+	"stats": {
+		"hp": 20,
+		"mp": 0,
+		"strength": 6,
+		"magic": 2,
+		"dexterity": 8,
+		"speed": 9,
+		"luck": 7,
+		"defense": 6,
+		"resistance": 2
+	},
+	"growths": {
+		"hp": 80,
+		"mp": 10,
+		"strength": 55,
+		"magic": 15,
+		"dexterity": 60,
+		"speed": 60,
+		"luck": 55,
+		"defense": 40,
+		"resistance": 25
+	},
+	"maxStats": {
+		"hp": 60,
+		"mp": 30,
+		"strength": 25,
+		"magic": 18,
+		"dexterity": 28,
+		"speed": 29,
+		"luck": 30,
+		"defense": 24,
+		"resistance": 22
+	}
+}
