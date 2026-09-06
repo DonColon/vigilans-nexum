@@ -21,10 +21,13 @@ import { UnitFaction } from "@/game/units/model/UnitData";
 import { UnitSystem } from "@/game/units/systems/UnitSystem";
 import { MenuState } from "@/game/ui/states/MenuState";
 
-/** Id of the command menu, echoed by the `ui:menu*` events. */
+/** Menu ids, echoed by the `ui:menu*` events. */
 const COMMAND_MENU = "unit-command";
+const GLOBAL_MENU = "global-command";
 const COMMAND_MENU_WIDTH = 150;
+const GLOBAL_MENU_WIDTH = 190;
 const WAIT = "Warten";
+const END_TURN = "Zug beenden";
 
 /**
  * The Fire Emblem move flow, wired to the map's `map:*` events on top of the
@@ -34,13 +37,14 @@ const WAIT = "Warten";
  *    attack (red) tiles; `PathPreviewSystem` traces the shortest route to the
  *    cursor.
  *  - Confirm again on a blue tile walks it there and opens the command menu
- *    beside it. "Warten" spends the unit (it greys out); backing out reverts the
- *    move and re-opens the range.
+ *    beside it. "Warten" spends the unit (it greys out, `unit:acted`); backing
+ *    out reverts the move and re-opens the range.
  *  - Confirm off the range or `map:cancelled` sets it back down without moving.
+ *  - Confirm on a tile with nothing to pick up opens the global command menu
+ *    ("Zug beenden" -> `turn:end`) next to the cursor.
  *
- * It handles `map:tileConfirmed` above the demo (priority 10) and stops the
- * event once it has consumed a press, so picking a unit up never also opens the
- * tile menu.
+ * It handles `map:tileConfirmed` at priority 10 and stops the event once it has
+ * consumed a press.
  */
 export class MovementFeature extends GameFeature {
 	@GameCoreService(EventSystem)
@@ -129,15 +133,13 @@ export class MovementFeature extends GameFeature {
 
 		if (state.unitId.length === 0) {
 			const unit = UnitSystem.unitAt(units, event.column, event.row);
+			const data = unit?.getComponent(UnitComponent).read();
 
-			if (unit === null) {
-				return;
-			}
-
-			const data = unit.getComponent(UnitComponent).read();
-
-			// Enemies, spent units and one mid-move all stay put.
-			if (data.faction !== UnitFaction.PLAYER || data.hasMoved || unit.hasComponent(PendingMoveComponent)) {
+			// Confirm on nothing to pick up (empty tile, an enemy, a spent or
+			// mid-move unit) opens the global command menu instead.
+			if (unit === null || data === undefined || data.faction !== UnitFaction.PLAYER || data.hasMoved || unit.hasComponent(PendingMoveComponent)) {
+				this.openMenu(GLOBAL_MENU, [END_TURN], GLOBAL_MENU_WIDTH, event.column, event.row);
+				event.stopPropagation();
 				return;
 			}
 
@@ -205,17 +207,29 @@ export class MovementFeature extends GameFeature {
 			return;
 		}
 
-		const anchor = this.tileToScreen(event.toColumn, event.toRow);
+		this.openMenu(COMMAND_MENU, [WAIT], COMMAND_MENU_WIDTH, event.toColumn, event.toRow);
+	}
+
+	/** Pushes a menu tucked against a map tile. */
+	private openMenu(id: string, items: string[], width: number, column: number, row: number): void {
+		const anchor = this.tileToScreen(column, row);
 
 		if (anchor === null) {
 			return;
 		}
 
-		(this.stateManager.getState(MenuState) as MenuState).request({ id: COMMAND_MENU, items: [WAIT], width: COMMAND_MENU_WIDTH, anchor });
+		(this.stateManager.getState(MenuState) as MenuState).request({ id, items, width, anchor });
 		this.stateManager.push(MenuState);
 	}
 
 	private onCommand(event: MenuConfirmedEvent): void {
+		if (event.menu === GLOBAL_MENU) {
+			if (event.item === END_TURN) {
+				this.events.dispatch("turn:end", {});
+			}
+			return;
+		}
+
 		if (event.menu !== COMMAND_MENU) {
 			return;
 		}
@@ -229,6 +243,7 @@ export class MovementFeature extends GameFeature {
 		if (event.item === WAIT) {
 			const unit = mover.getComponent(UnitComponent);
 			unit.update({ ...unit.read(), hasMoved: true });
+			this.events.dispatch("unit:acted", { unitId: unit.read().id });
 		}
 
 		mover.removeComponent(PendingMoveComponent);

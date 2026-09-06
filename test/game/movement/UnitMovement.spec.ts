@@ -184,7 +184,10 @@ suite("Unit Movement Test Suite", () => {
 		expect(stateManager.peek()).toBeInstanceOf(MenuState);
 	});
 
-	test("Warten spends the unit", () => {
+	test("Warten spends the unit and reports unit:acted", () => {
+		let acted: string | null = null;
+		eventSystem.subscribe("unit:acted", (event) => (acted = event.unitId));
+
 		eventSystem.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
 		eventSystem.processQueue();
 		walkTo(4, 13);
@@ -195,15 +198,34 @@ suite("Unit Movement Test Suite", () => {
 
 		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", index: 0, item: "Warten" });
 		eventSystem.processQueue();
+		eventSystem.processQueue(); // deliver unit:acted
 
 		expect(dardan.getComponent(UnitComponent).read().hasMoved).toBe(true);
 		expect(dardan.hasComponent(PendingMoveComponent)).toBe(false);
 		expect(tileOf("dardan")).toStrictEqual({ column: 4, row: 13 });
+		expect(acted).toBe("dardan");
 
 		// A spent unit cannot be picked up again.
 		eventSystem.dispatch("map:tileConfirmed", { column: 4, row: 13, terrain: "plain" });
 		eventSystem.processQueue();
 		expect(state().unitId).toBe("");
+	});
+
+	test("Confirm on an empty tile opens the global command menu; Zug beenden ends the turn", () => {
+		let ended = false;
+		eventSystem.subscribe("turn:end", () => (ended = true));
+
+		eventSystem.dispatch("map:tileConfirmed", { column: 1, row: 1, terrain: "plain" });
+		eventSystem.processQueue();
+
+		expect(state().unitId).toBe("");
+		expect(stateManager.peek()).toBeInstanceOf(MenuState);
+
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "global-command", index: 0, item: "Zug beenden" });
+		eventSystem.processQueue();
+		eventSystem.processQueue(); // deliver turn:end
+
+		expect(ended).toBe(true);
 	});
 
 	test("Backing out of the command menu reverts the move and re-opens the range", () => {

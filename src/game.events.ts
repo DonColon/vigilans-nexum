@@ -60,6 +60,19 @@ export interface UnitDeselectedEvent extends GameEvent {
 	unitId: string;
 }
 
+/** A unit finished its action for the turn - it is now spent. */
+export interface UnitActedEvent extends GameEvent {
+	unitId: string;
+}
+
+/** A request to end the current player turn (from the global command menu). */
+export type TurnEndEvent = GameEvent;
+
+/** The turn advanced - `number` is the new count. */
+export interface TurnChangedEvent extends GameEvent {
+	number: number;
+}
+
 declare module "@/core/events/GameEvents" {
 	interface GameEvents {
 		"map:tileConfirmed": TileConfirmedEvent;
@@ -72,5 +85,8 @@ declare module "@/core/events/GameEvents" {
 		"unit:selected": UnitSelectedEvent;
 		"unit:moved": UnitMovedEvent;
 		"unit:deselected": UnitDeselectedEvent;
+		"unit:acted": UnitActedEvent;
+		"turn:end": TurnEndEvent;
+		"turn:changed": TurnChangedEvent;
 	}
 }
