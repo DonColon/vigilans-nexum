@@ -9,6 +9,7 @@ import { Display } from "@/core/graphics/Display";
 import { Graphics } from "@/core/graphics/rendering/Graphics";
 import { Circle } from "@/core/math/geometry/Circle";
 import { Line } from "@/core/math/geometry/Line";
+import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { WalkComponent } from "@/game/movement/components/WalkComponent";
@@ -21,9 +22,10 @@ import { UnitTheme } from "@/game/units/model/UnitTheme";
 
 /**
  * Draws the unit tokens - one disc per unit, faction-coloured, with a schematic
- * sword or axe on it. On the "background" layer above the tileset art and the
- * move overlay, so it never clears anything (GridRenderSystem wipes the layer
- * every frame). The cursor is drawn over the top from its own layer.
+ * sword or axe on it and a faction-coloured HP bar across the foot of its tile.
+ * On the "background" layer above the tileset art and the move overlay, so it
+ * never clears anything (GridRenderSystem wipes the layer every frame). The
+ * cursor is drawn over the top from its own layer.
  */
 export class UnitRenderSystem extends RenderSystem {
 	@GameCoreService(World)
@@ -102,6 +104,38 @@ export class UnitRenderSystem extends RenderSystem {
 		this.renderGlyph(graphics, unit.weapon.type, centre, radius, colors.glyph);
 
 		graphics.alpha(1);
+
+		this.renderHealthBar(graphics, unit, x, y, cellSize, colors.body);
+	}
+
+	/**
+	 * The HP bar under the token: a dark border, the empty track, then a fill in
+	 * the unit's faction colour as wide as its remaining HP fraction. Runs the
+	 * full width of the tile, pinned just inside the bottom edge. Full opacity
+	 * regardless of `hasMoved` - a hurt unit needs to read as hurt even once it
+	 * has acted.
+	 */
+	private renderHealthBar(graphics: Graphics, unit: UnitData, x: number, y: number, cellSize: number, fillColor: Color): void {
+		const maxHP = unit.stats.hp;
+
+		if (maxHP <= 0) {
+			return;
+		}
+
+		const ratio = Math.max(0, Math.min(1, unit.currentHP / maxHP));
+		const height = UnitTheme.healthBarHeight;
+		const width = cellSize - UnitTheme.healthBarPadding * 2;
+		const left = x + UnitTheme.healthBarPadding;
+		const top = y + cellSize - height - UnitTheme.healthBarInset;
+
+		graphics.fillColor(UnitTheme.tokenOutline).fillRectangle(new Rectangle(left, top - 1, width, height + 2));
+		graphics.fillColor(UnitTheme.health.track).fillRectangle(new Rectangle(left, top, width, height));
+
+		const fill = Math.round(width * ratio);
+
+		if (fill > 0) {
+			graphics.fillColor(fillColor).fillRectangle(new Rectangle(left, top, fill, height));
+		}
 	}
 
 	/** A schematic sword or axe, drawn from a couple of strokes so no font is needed. */

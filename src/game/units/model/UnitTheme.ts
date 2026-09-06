@@ -36,5 +36,21 @@ export const UnitTheme = {
 	shadow: Color.hex("#0d121b55"),
 
 	/** A unit that has already acted this turn is drawn washed out. */
-	movedAlpha: 0.55
+	movedAlpha: 0.55,
+
+	/**
+	 * The HP bar slung under each token: it runs the full width of the tile,
+	 * pinned to the bottom edge. `track` is the empty channel; the fill is the
+	 * unit's own faction colour, drawn at full opacity even for a spent unit so
+	 * wounds stay legible.
+	 */
+	health: {
+		track: Color.hex("#2b3345")
+	},
+	/** Bar thickness in pixels, before the dark border pass. */
+	healthBarHeight: 4,
+	/** Gap between the bar and the bottom edge of the tile. */
+	healthBarInset: 1,
+	/** Empty margin left and right of the bar, inside the tile. */
+	healthBarPadding: 2
 } as const;
