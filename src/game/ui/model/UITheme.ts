@@ -75,7 +75,7 @@ export const UITheme = {
 	menuCursorOutline: Color.hex("#3a2a06"),
 	menuCursorWidth: 3,
 	/** Bracket arm length as a fraction of the row's short side. */
-	menuCursorBracket: 0.4,
+	menuCursorBracket: 0.2,
 	/** Menu row that is not highlighted. */
 	menuItem: Color.hex("#d8ceb6"),
 	menuItemSelected: Color.hex("#fff6dd"),
