@@ -87,6 +87,8 @@ export interface UnitDocument {
 	class: string;
 	level: number;
 	weapon: string;
+	/** Marks the army's leader - the cursor starts on this unit at the top of a battle. */
+	commander?: boolean;
 	stats: UnitStats;
 	growths: UnitStats;
 	maxStats: UnitStats;
@@ -107,6 +109,8 @@ export interface UnitData extends JsonSchema {
 	level: number;
 	/** Base movement from the class, before per-tile terrain cost. */
 	movement: number;
+	/** The army's leader - see `CommanderComponent`. */
+	commander: boolean;
 	weaponTypes: WeaponType[];
 	stats: UnitStats;
 	growths: UnitStats;
@@ -213,6 +217,7 @@ export function buildUnit(document: UnitDocument): UnitData {
 		classLabel: unitClass.name,
 		level: document.level,
 		movement: unitClass.movement,
+		commander: document.commander ?? false,
 		weaponTypes: [...unitClass.weaponTypes],
 		stats,
 		growths: assertStats(document.growths, `Unit "${document.id}"`),

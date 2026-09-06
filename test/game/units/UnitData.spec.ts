@@ -18,6 +18,7 @@ suite("Unit Data Test Suite", () => {
 		expect(dardan.weapon.maxRange).toBe(1);
 		expect(dardan.currentHP).toBe(dardan.stats.hp);
 		expect(dardan.hasMoved).toBe(false);
+		expect(dardan.commander).toBe(true);
 	});
 
 	test("Hasan resolves to an enemy axe fighter with a bronze axe", () => {
@@ -27,6 +28,7 @@ suite("Unit Data Test Suite", () => {
 		expect(hasan.classLabel).toBe("Axe Fighter");
 		expect(hasan.weapon.type).toBe(WeaponType.AXE);
 		expect(hasan.stats.strength).toBeGreaterThan(buildUnit(dardanDocument as UnitDocument).stats.strength);
+		expect(hasan.commander).toBe(false);
 	});
 
 	test("Catalogs are looked up by id", () => {

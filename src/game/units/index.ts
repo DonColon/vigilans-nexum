@@ -1,6 +1,7 @@
 export { UnitsFeature } from "@/game/units/UnitsFeature";
 
 export { UnitComponent } from "@/game/units/components/UnitComponent";
+export { CommanderComponent } from "@/game/units/components/CommanderComponent";
 
 export { UnitSystem } from "@/game/units/systems/UnitSystem";
 export type { UnitLocation } from "@/game/units/systems/UnitSystem";

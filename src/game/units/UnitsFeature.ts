@@ -4,7 +4,9 @@ import { UnsubscribeFunction } from "@/core/events/GameEvents";
 import { GameFeature, GameFeatureConfig } from "@/core/GameFeature";
 import { identityTransform, TransformComponent } from "@/core/ecs/components/TransformComponent";
 import { GameCoreService } from "@/core/service/GameCoreService";
+import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
+import { CommanderComponent } from "@/game/units/components/CommanderComponent";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
 import { buildUnit, UnitDocument } from "@/game/units/model/UnitData";
 import { UnitRenderSystem } from "@/game/units/systems/UnitRenderSystem";
@@ -23,8 +25,9 @@ const UNIT_DOCUMENTS: Record<string, UnitDocument> = {
  * [[MovementFeature]]'s job, wired to the same `map:*` events.
  *
  * On `map:ready` it deploys the units from `data/*.deployment.json`, parented to
- * the map so their tile coordinates travel with it; on `map:closed` it clears
- * them. With no map on screen the events have no effect.
+ * the map so their tile coordinates travel with it, tags the army's commander
+ * and drops the cursor onto that unit; on `map:closed` it clears them. With no
+ * map on screen the events have no effect.
  */
 export class UnitsFeature extends GameFeature {
 	@GameCoreService(EventSystem)
@@ -35,7 +38,7 @@ export class UnitsFeature extends GameFeature {
 
 	constructor(config: GameFeatureConfig = {}) {
 		super({
-			components: [UnitComponent],
+			components: [UnitComponent, CommanderComponent],
 			// On the "background" layer above the tileset art and the move overlay,
 			// below the cursor's own layer - see UnitRenderSystem.
 			systems: [{ system: UnitRenderSystem, priority: 17 }],
@@ -70,13 +73,34 @@ export class UnitsFeature extends GameFeature {
 				continue;
 			}
 
+			const data = buildUnit(document);
+
 			const entity = this.world.createEntity();
-			entity.addComponent(UnitComponent, buildUnit(document));
+			entity.addComponent(UnitComponent, data);
 			entity.addComponent(GridPositionComponent, { column: placement.column, row: placement.row });
 			entity.addComponent(TransformComponent, { ...identityTransform, parent: mapId });
 
+			if (data.commander) {
+				entity.addComponent(CommanderComponent, {});
+			}
+
 			this.units.push(entity);
 		}
+
+		this.centreCursorOnCommander();
+	}
+
+	/** Drops the map cursor onto the commander so a battle opens focused on Dardan. */
+	private centreCursorOnCommander(): void {
+		const commander = this.units.find((unit) => unit.hasComponent(CommanderComponent));
+		const cursor = this.world.getEntities().find((entity) => entity.hasComponent(CursorComponent));
+
+		if (commander === undefined || cursor === undefined) {
+			return;
+		}
+
+		const position = commander.getComponent(GridPositionComponent).read();
+		cursor.getComponent(GridPositionComponent).update({ column: position.column, row: position.row });
 	}
 
 	private withdraw(): void {
