@@ -9,10 +9,10 @@ import { UnitComponent } from "@/game/units/components/UnitComponent";
 import { UnitFaction } from "@/game/units/model/UnitData";
 
 /**
- * The battle turn counter. It owns the `TurnComponent`, shows it top-left
- * (`TurnRenderSystem`) and advances it - on `turn:end` from the global command
- * menu, or on its own once every player unit has acted (`unit:acted`). Ending a
- * turn wakes every player unit back up.
+ * The battle turn counter. It owns the `TurnComponent`, shows it in the map's
+ * top-left corner (`TurnRenderSystem`) and advances it - on `turn:end` from the
+ * global command menu, or on its own once every player unit has acted
+ * (`unit:acted`). Ending a turn wakes every player unit back up.
  */
 export class TurnFeature extends GameFeature {
 	@GameCoreService(EventSystem)

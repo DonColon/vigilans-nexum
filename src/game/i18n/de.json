@@ -5,6 +5,7 @@
 	"menu.back": "Zurück",
 	"menu.confirm": "Bestätigen",
 	"menu.cancel": "Abbrechen",
+	"turn.label": "Zug",
 	"turn.banner": "Zug {turn} - {faction}",
 	"turn.playerPhase": "Spielerphase",
 	"turn.enemyPhase": "Gegnerphase",
