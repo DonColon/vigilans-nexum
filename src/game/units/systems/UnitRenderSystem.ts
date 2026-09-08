@@ -19,10 +19,12 @@ import { drawText } from "@/game/ui/model/UIPanel";
 import { UITheme } from "@/game/ui/model/UITheme";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
 import { UnitData, WeaponType } from "@/game/units/model/UnitData";
+import { PopKind } from "@/game/units/model/UnitPop";
+import { UnitPopComponent } from "@/game/units/components/UnitPopComponent";
 import { UnitTheme } from "@/game/units/model/UnitTheme";
 
 /** No fight animation running on this token - the neutral values. */
-const RESTING: CombatAnimationData = { offsetColumn: 0, offsetRow: 0, flash: 0, critFlash: 0, hp: 0, alpha: 1, popText: "", popAge: 0 };
+const RESTING: CombatAnimationData = { offsetColumn: 0, offsetRow: 0, flash: 0, critFlash: 0, hp: 0, alpha: 1, popText: "", popKind: PopKind.DAMAGE, popAge: 0 };
 
 /** Dark-outline offsets for the floating combat text, so it reads on any terrain. */
 const POP_OUTLINE: readonly [number, number][] = [
@@ -31,6 +33,17 @@ const POP_OUTLINE: readonly [number, number][] = [
 	[0, -1],
 	[0, 1]
 ];
+
+/** A label to draw over a token this frame, wherever it came from. */
+interface FloatingPop {
+	text: string;
+	kind: PopKind;
+	/** 0-1 through its lifetime - the renderer rises and fades it by this. */
+	age: number;
+	/** Top-left screen pixel of the tile it belongs to. */
+	x: number;
+	y: number;
+}
 
 /**
  * Draws the unit tokens - one disc per unit, faction-coloured, with a schematic
@@ -57,8 +70,8 @@ export class UnitRenderSystem extends MapRenderSystem {
 		const graphics = this.display.getLayer("background");
 		const { origin, cellSize } = view;
 
-		// Floating "Miss" / damage labels are drawn in a second pass so no token can overdraw them.
-		const pops: { text: string; age: number; x: number; y: number }[] = [];
+		// Floating labels are drawn in a second pass so no token can overdraw them.
+		const pops: FloatingPop[] = [];
 
 		for (const entity of this.queries.units.getResult()) {
 			const unit = entity.getComponent(UnitComponent).read();
@@ -71,36 +84,43 @@ export class UnitRenderSystem extends MapRenderSystem {
 			this.renderUnit(graphics, unit, anim, x, y, cellSize);
 
 			if (anim.popText !== "") {
-				pops.push({ text: anim.popText, age: anim.popAge, x, y });
+				pops.push({ text: anim.popText, kind: anim.popKind, age: anim.popAge, x, y });
+			}
+
+			// The standalone label a heal (or anything outside a fight) leaves.
+			if (entity.hasComponent(UnitPopComponent)) {
+				const pop = entity.getComponent(UnitPopComponent).read();
+				pops.push({ text: pop.text, kind: pop.kind, age: pop.duration > 0 ? pop.elapsed / pop.duration : 1, x, y });
 			}
 		}
 
 		for (const pop of pops) {
-			this.renderPop(graphics, pop.text, pop.age, pop.x, pop.y, cellSize);
+			this.renderPop(graphics, pop, cellSize);
 		}
 	}
 
 	/**
-	 * The floating combat label over a struck token: it drifts up and fades over
-	 * its life. Drawn with a dark outline pass first so a "Miss" or a damage
-	 * number stays legible over bright terrain.
+	 * A floating label over a token: it drifts up and fades over its life, in the
+	 * colour its kind calls for - damage, a "Miss", or the green of restored HP.
+	 * Drawn with a dark outline pass first so it stays legible over bright
+	 * terrain.
 	 */
-	private renderPop(graphics: Graphics, text: string, age: number, x: number, y: number, cellSize: number): void {
-		const t = clamp01(age);
+	private renderPop(graphics: Graphics, pop: FloatingPop, cellSize: number): void {
+		const t = clamp01(pop.age);
 		const rise = UnitTheme.combatPop.rise * (1 - Math.pow(1 - t, 3));
 		const fade = t < 0.6 ? 1 : Math.max(0, 1 - (t - 0.6) / 0.4);
 
-		const centreX = x + cellSize / 2;
-		const centreY = y + cellSize * 0.14 - rise;
-		const color = text === "Miss" ? UnitTheme.combatPop.miss : UnitTheme.combatPop.damage;
+		const centreX = pop.x + cellSize / 2;
+		const centreY = pop.y + cellSize * 0.14 - rise;
+		const color = UnitTheme.combatPop[pop.kind];
 
 		graphics.alpha(fade);
 
 		for (const [ox, oy] of POP_OUTLINE) {
-			drawText(graphics, text, centreX + ox, centreY + oy, { font: UITheme.badge, color: UnitTheme.combatPop.outline, align: TextAlign.CENTER });
+			drawText(graphics, pop.text, centreX + ox, centreY + oy, { font: UITheme.badge, color: UnitTheme.combatPop.outline, align: TextAlign.CENTER });
 		}
 
-		drawText(graphics, text, centreX, centreY, { font: UITheme.badge, color, align: TextAlign.CENTER });
+		drawText(graphics, pop.text, centreX, centreY, { font: UITheme.badge, color, align: TextAlign.CENTER });
 
 		graphics.alpha(1);
 	}

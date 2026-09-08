@@ -3,10 +3,15 @@ import { GameFeatureConfig } from "@/core/GameFeature";
 import { identityTransform, TransformComponent } from "@/core/ecs/components/TransformComponent";
 import { BattleMapFeature } from "@/game/map/BattleMapFeature";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
+import { UnitUsedItemEvent } from "@/game.events";
 import { CommanderComponent } from "@/game/units/components/CommanderComponent";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
+import { UnitPopComponent } from "@/game/units/components/UnitPopComponent";
 import { buildUnit, UnitDocument } from "@/game/units/model/UnitData";
+import { healPopText, PopKind, POP_LIFETIME_MS } from "@/game/units/model/UnitPop";
+import { UnitPopSystem } from "@/game/units/systems/UnitPopSystem";
 import { UnitRenderSystem } from "@/game/units/systems/UnitRenderSystem";
+import { UnitSystem } from "@/game/units/systems/UnitSystem";
 import besnikDocument from "@/game/units/data/besnik.unit.json";
 import dardanDocument from "@/game/units/data/dardan.unit.json";
 import hasanDocument from "@/game/units/data/hasan.unit.json";
@@ -33,10 +38,14 @@ export class UnitsFeature extends BattleMapFeature {
 
 	constructor(config: GameFeatureConfig = {}) {
 		super({
-			components: [UnitComponent, CommanderComponent],
-			// On the "background" layer above the tileset art and the move overlay,
-			// below the cursor's own layer - see UnitRenderSystem.
-			systems: [{ system: UnitRenderSystem, priority: 17 }],
+			components: [UnitComponent, CommanderComponent, UnitPopComponent],
+			systems: [
+				// On the "background" layer above the tileset art and the move overlay,
+				// below the cursor's own layer - see UnitRenderSystem.
+				{ system: UnitRenderSystem, priority: 17 },
+				// Runs the floating-label clock; order among the update systems does not matter.
+				{ system: UnitPopSystem, priority: 8 }
+			],
 			...config
 		});
 	}
@@ -46,6 +55,7 @@ export class UnitsFeature extends BattleMapFeature {
 
 		this.subscribe("map:ready", (event) => this.deploy(event.mapId));
 		this.subscribe("map:closed", () => this.withdraw());
+		this.subscribe("unit:usedItem", (event) => this.showHealed(event));
 	}
 
 	protected onUninstall(): void {
@@ -79,6 +89,31 @@ export class UnitsFeature extends BattleMapFeature {
 		}
 
 		this.centreCursorOnCommander();
+	}
+
+	/**
+	 * A vulnerary went down - float the HP it put back over the unit in green,
+	 * the same way a fight floats the damage it took. `UnitPopSystem` ages the
+	 * label and takes it off again.
+	 */
+	private showHealed(event: UnitUsedItemEvent): void {
+		if (event.healed <= 0) {
+			return;
+		}
+
+		const unit = UnitSystem.byId(UnitSystem.inWorld(this.world), event.unitId);
+
+		if (unit === null) {
+			return;
+		}
+
+		const pop = { text: healPopText(event.healed), kind: PopKind.HEAL, elapsed: 0, duration: POP_LIFETIME_MS };
+
+		if (unit.hasComponent(UnitPopComponent)) {
+			unit.getComponent(UnitPopComponent).update(pop);
+		} else {
+			unit.addComponent(UnitPopComponent, pop);
+		}
 	}
 
 	/** Drops the map cursor onto the commander so a battle opens focused on Dardan. */

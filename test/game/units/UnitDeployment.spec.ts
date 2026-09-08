@@ -15,6 +15,10 @@ import { GridSystem } from "@/game/map/systems/GridSystem";
 import { CommanderComponent } from "@/game/units/components/CommanderComponent";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
 import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { UnitPopComponent } from "@/game/units/components/UnitPopComponent";
+import { POP_LIFETIME_MS, PopKind } from "@/game/units/model/UnitPop";
+import { UnitTheme } from "@/game/units/model/UnitTheme";
+import { UnitPopSystem } from "@/game/units/systems/UnitPopSystem";
 import { UnitsFeature } from "@/game/units/UnitsFeature";
 
 /** The units feature just puts the deployment sheet on the map and takes it off again. */
@@ -103,5 +107,56 @@ suite("Unit Deployment Test Suite", () => {
 		eventSystem.processQueue();
 
 		expect(units()).toHaveLength(3);
+	});
+
+	test("Using a healing item floats the restored HP over the unit in green", () => {
+		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
+		eventSystem.processQueue();
+
+		const dardan = UnitSystem.byId(units(), "dardan") as Entity;
+		expect(dardan.hasComponent(UnitPopComponent)).toBe(false);
+
+		eventSystem.dispatch("unit:usedItem", { unitId: "dardan", itemId: "vulnerary", healed: 10 });
+		eventSystem.processQueue();
+
+		expect(dardan.getComponent(UnitPopComponent).read()).toStrictEqual({ text: "+10", kind: PopKind.HEAL, elapsed: 0, duration: POP_LIFETIME_MS });
+
+		// Green - and its own colour, not the one damage numbers are drawn in.
+		const heal = UnitTheme.combatPop[PopKind.HEAL].asRGB();
+		expect(heal.green).toBeGreaterThan(heal.red);
+		expect(heal.green).toBeGreaterThan(heal.blue);
+		expect(UnitTheme.combatPop[PopKind.HEAL].asHEX()).not.toBe(UnitTheme.combatPop[PopKind.DAMAGE].asHEX());
+	});
+
+	test("An item that healed nothing floats nothing", () => {
+		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
+		eventSystem.processQueue();
+
+		eventSystem.dispatch("unit:usedItem", { unitId: "dardan", itemId: "vulnerary", healed: 0 });
+		eventSystem.processQueue();
+
+		expect((UnitSystem.byId(units(), "dardan") as Entity).hasComponent(UnitPopComponent)).toBe(false);
+	});
+
+	test("The label ages away and is taken off the unit again", () => {
+		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
+		eventSystem.processQueue();
+
+		eventSystem.dispatch("unit:usedItem", { unitId: "dardan", itemId: "vulnerary", healed: 4 });
+		eventSystem.processQueue();
+
+		const dardan = UnitSystem.byId(units(), "dardan") as Entity;
+
+		// Built once the pop exists, so the query snapshots it - the game loop is
+		// what would otherwise deliver the entityChanged event.
+		const system = new UnitPopSystem(8);
+
+		system.execute(POP_LIFETIME_MS / 2);
+		expect(dardan.getComponent(UnitPopComponent).read().elapsed).toBe(POP_LIFETIME_MS / 2);
+
+		system.execute(POP_LIFETIME_MS / 2);
+		expect(dardan.hasComponent(UnitPopComponent)).toBe(false);
+
+		system.dispose();
 	});
 });

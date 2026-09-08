@@ -44,12 +44,15 @@ export const UnitTheme = {
 	critRing: Color.hex("#ffe27a"),
 
 	/**
-	 * The floating "Miss" / damage number that pops over a struck token during a
-	 * battle animation - drawn with a dark outline pass so it reads on any terrain.
+	 * The floating numbers that pop over a token - a damage number or "Miss"
+	 * during a fight, restored HP after a vulnerary - drawn with a dark outline
+	 * pass so they read on any terrain. Keyed by [[PopKind]].
 	 */
 	combatPop: {
 		damage: Color.hex("#fff4d6"),
 		miss: Color.hex("#d4dae4"),
+		/** HP a healing item put back, in the green every game reads as "you gained this". */
+		heal: Color.hex("#7fe3a0"),
 		outline: Color.hex("#141a26"),
 		/** Pixels the label drifts upward across its lifetime. */
 		rise: 15

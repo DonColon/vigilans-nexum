@@ -1,5 +1,6 @@
 import { Component } from "@/core/ecs/Component";
 import { JsonSchema } from "@/core/ecs/JsonSchema";
+import { PopKind } from "@/game/units/model/UnitPop";
 
 export interface CombatAnimationData extends JsonSchema {
 	/** Fractional tile offset added to the token position while it swings / recoils. */
@@ -15,6 +16,8 @@ export interface CombatAnimationData extends JsonSchema {
 	alpha: number;
 	/** Floating combat text over the token - "" when none, else "Miss" or the damage number. */
 	popText: string;
+	/** What that text means, which is what it is coloured by. Meaningless while `popText` is empty. */
+	popKind: PopKind;
 	/** 0-1 through the floating text's lifetime; the renderer rises and fades it by this. */
 	popAge: number;
 }
