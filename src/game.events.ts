@@ -12,6 +12,12 @@ export interface TileConfirmedEvent extends GameEvent {
 export interface MenuConfirmedEvent extends GameEvent {
 	/** `id` of the menu, as passed to `MenuState.request`. */
 	menu: string;
+	/**
+	 * Stable id of the chosen row, as passed in `MenuRequest.ids` - what a
+	 * listener should branch on. Empty for a menu that did not name its rows,
+	 * which then only has `index` and the (translated) `item` to go on.
+	 */
+	row: string;
 	index: number;
 	item: string;
 }

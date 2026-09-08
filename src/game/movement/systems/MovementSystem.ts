@@ -1,8 +1,9 @@
-import { GridUtils } from "@/core/math/utils/GridUtils";
+import { AStar, ReachableArea } from "@/core/math/pathfinding/AStar";
+import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { GridData } from "@/game/map/components/GridComponent";
 import { GridPositionData } from "@/game/map/components/GridPositionComponent";
 import { GridSystem } from "@/game/map/systems/GridSystem";
-import { getTerrainProperties, isPassable } from "@/game/map/model/Terrain";
+import { getTerrainProperties, IMPASSABLE, isPassable } from "@/game/map/model/Terrain";
 import { UnitLocation } from "@/game/units/systems/UnitSystem";
 
 /** A tile a unit can stand on, with the movement it costs to get there. */
@@ -13,11 +14,26 @@ export interface ReachableTile {
 	cost: number;
 }
 
-interface FloodResult {
-	/** Tile key to the cheapest cost of reaching it. */
-	cost: Map<string, number>;
-	/** Tile key to the key of the tile it was reached from, `null` for the start. */
-	cameFrom: Map<string, string | null>;
+/**
+ * One pathfinder per map size, reused across queries. The grid itself carries
+ * nothing query-specific - which tiles are passable and what they cost is
+ * answered by the callback handed to every call - so a battle only ever builds
+ * one of these however often the cursor moves.
+ */
+const pathfinders = new Map<string, AStar>();
+
+function pathfinderFor(grid: GridData): AStar {
+	const key = `${grid.columns}x${grid.rows}`;
+	const known = pathfinders.get(key);
+
+	if (known !== undefined) {
+		return known;
+	}
+
+	const pathfinder = new AStar(grid.columns, grid.rows, { allowDiagonal: false, preferStraight: true });
+	pathfinders.set(key, pathfinder);
+
+	return pathfinder;
 }
 
 /**
@@ -28,8 +44,11 @@ interface FloodResult {
  * Movement works the Fire Emblem way - a flood fill outward from the unit that
  * spends the class's movement points on the cost of *entering* each tile, stops
  * at impassable terrain and cannot pass through a tile another unit occupies.
- * `path` walks the same fill back to a target for the shortest route; the attack
- * range is every tile within weapon reach of somewhere the unit could move to.
+ * The fill itself is `AStar.findReachable`; everything here is the rules it is
+ * given - what a tile costs, who blocks it - and the tile shapes the game reads
+ * back. `path` walks the same fill back to a target for the shortest route; the
+ * attack range is every tile within weapon reach of somewhere the unit could
+ * move to.
  */
 export class MovementSystem {
 	/** Stable string key for a tile, for the sets the callers pass around. */
@@ -58,12 +77,9 @@ export class MovementSystem {
 	 * walked through.
 	 */
 	public static reachable(grid: GridData, start: GridPositionData, movement: number, blocked: ReadonlySet<string> = new Set()): ReachableTile[] {
-		const { cost } = MovementSystem.floodFill(grid, start, movement, blocked);
-
-		return [...cost].map(([key, spent]) => {
-			const [column, row] = key.split(",").map(Number);
-			return { column, row, cost: spent };
-		});
+		return MovementSystem.flood(grid, start, movement, blocked)
+			.getNodes()
+			.map((node) => ({ column: node.position.x, row: node.position.y, cost: node.cost }));
 	}
 
 	/**
@@ -72,21 +88,9 @@ export class MovementSystem {
 	 * the current heading, so the route runs straight where it can.
 	 */
 	public static path(grid: GridData, start: GridPositionData, target: GridPositionData, movement: number, blocked: ReadonlySet<string> = new Set()): GridPositionData[] {
-		const { cost, cameFrom } = MovementSystem.floodFill(grid, start, movement, blocked);
-		const targetKey = MovementSystem.tileKey(target.column, target.row);
-
-		if (!cost.has(targetKey)) {
-			return [];
-		}
-
-		const route: GridPositionData[] = [];
-
-		for (let key: string | null = targetKey; key !== null; key = cameFrom.get(key) ?? null) {
-			const [column, row] = key.split(",").map(Number);
-			route.push({ column, row });
-		}
-
-		return route.reverse();
+		return MovementSystem.flood(grid, start, movement, blocked)
+			.pathTo(new Vector2D(target.column, target.row))
+			.map((position) => ({ column: position.x, row: position.y }));
 	}
 
 	/**
@@ -133,74 +137,24 @@ export class MovementSystem {
 	}
 
 	/**
-	 * Dijkstra outward from `start`, spending `movement` on the cost of entering
-	 * each tile. Records the cheapest cost and the predecessor of every tile it
-	 * settles, with equal-cost ties going to whichever approach keeps the path
-	 * heading in a straight line.
+	 * What it costs this unit to step on to a tile: the terrain's movement cost,
+	 * or `IMPASSABLE` for terrain no one can enter and for a tile somebody else
+	 * is standing on - which is what stops the fill walking through either.
 	 */
-	private static floodFill(grid: GridData, start: GridPositionData, movement: number, blocked: ReadonlySet<string>): FloodResult {
-		const startKey = MovementSystem.tileKey(start.column, start.row);
+	public static entryCost(grid: GridData, blocked: ReadonlySet<string>, column: number, row: number): number {
+		const terrain = GridSystem.getTerrain(grid, column, row);
 
-		const cost = new Map<string, number>([[startKey, 0]]);
-		const cameFrom = new Map<string, string | null>([[startKey, null]]);
-		const heading = new Map<string, string>();
-
-		// A plain array frontier: grids are small and movement budgets tiny, so
-		// scanning for the cheapest node every step costs nothing.
-		const frontier: ReachableTile[] = [{ column: start.column, row: start.row, cost: 0 }];
-
-		while (frontier.length > 0) {
-			let cheapest = 0;
-			for (let index = 1; index < frontier.length; index++) {
-				if (frontier[index].cost < frontier[cheapest].cost) {
-					cheapest = index;
-				}
-			}
-
-			const current = frontier.splice(cheapest, 1)[0];
-			const currentKey = MovementSystem.tileKey(current.column, current.row);
-
-			if (current.cost > (cost.get(currentKey) ?? Infinity)) {
-				continue;
-			}
-
-			for (const neighbor of GridUtils.getNeighbors(current.column, current.row)) {
-				const terrain = GridSystem.getTerrain(grid, neighbor.x, neighbor.y);
-
-				if (terrain === null || !isPassable(terrain)) {
-					continue;
-				}
-
-				const key = MovementSystem.tileKey(neighbor.x, neighbor.y);
-
-				if (blocked.has(key)) {
-					continue;
-				}
-
-				const stepCost = current.cost + getTerrainProperties(terrain).movementCost;
-
-				if (stepCost > movement) {
-					continue;
-				}
-
-				const known = cost.get(key) ?? Infinity;
-				const direction = MovementSystem.tileKey(neighbor.x - current.column, neighbor.y - current.row);
-				const straighter = stepCost === known && heading.get(currentKey) === direction;
-
-				if (stepCost >= known && !straighter) {
-					continue;
-				}
-
-				cost.set(key, stepCost);
-				cameFrom.set(key, currentKey);
-				heading.set(key, direction);
-
-				if (stepCost < known) {
-					frontier.push({ column: neighbor.x, row: neighbor.y, cost: stepCost });
-				}
-			}
+		if (terrain === null || !isPassable(terrain) || blocked.has(MovementSystem.tileKey(column, row))) {
+			return IMPASSABLE;
 		}
 
-		return { cost, cameFrom };
+		return getTerrainProperties(terrain).movementCost;
+	}
+
+	/** The flood fill both `reachable` and `path` read, run against this grid's terrain and blockers. */
+	private static flood(grid: GridData, start: GridPositionData, movement: number, blocked: ReadonlySet<string>): ReachableArea {
+		return pathfinderFor(grid).findReachable(new Vector2D(start.column, start.row), movement, {
+			cost: (position) => MovementSystem.entryCost(grid, blocked, position.x, position.y)
+		});
 	}
 }

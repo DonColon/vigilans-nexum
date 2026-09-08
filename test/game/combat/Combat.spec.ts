@@ -16,6 +16,7 @@ import { parseTileMap } from "@/game/map/model/TileMaps";
 import { GridSystem } from "@/game/map/systems/GridSystem";
 import { UnitWalkSystem } from "@/game/movement/systems/UnitWalkSystem";
 import { MovementFeature } from "@/game/movement/MovementFeature";
+import { UnitMenuRow } from "@/game/movement/model/UnitMenus";
 import { MenuComponent } from "@/game/ui/components/MenuComponent";
 import { MenuState } from "@/game/ui/states/MenuState";
 import { UIFeature } from "@/game/ui/UIFeature";
@@ -70,7 +71,7 @@ suite("Combat Flow Test Suite", () => {
 
 	/** "Attack" from the command menu - opens the target-picking phase (cursor on the nearest enemy, no panel yet). */
 	const beginAttack = () => {
-		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", index: 0, item: i18n("menu.attack") });
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", row: UnitMenuRow.ATTACK, index: 0, item: i18n("menu.attack") });
 		eventSystem.processQueue();
 		eventSystem.processQueue(); // deliver combat:requested
 	};

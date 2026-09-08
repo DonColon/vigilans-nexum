@@ -18,6 +18,7 @@ import { MovementComponent } from "@/game/movement/components/MovementComponent"
 import { PendingMoveComponent } from "@/game/movement/components/PendingMoveComponent";
 import { WalkComponent } from "@/game/movement/components/WalkComponent";
 import { MovementFeature } from "@/game/movement/MovementFeature";
+import { UnitMenuRow } from "@/game/movement/model/UnitMenus";
 import { MovementSystem } from "@/game/movement/systems/MovementSystem";
 import { PathPreviewSystem } from "@/game/movement/systems/PathPreviewSystem";
 import { UnitWalkSystem } from "@/game/movement/systems/UnitWalkSystem";
@@ -198,7 +199,7 @@ suite("Unit Movement Test Suite", () => {
 		expect(dardan.hasComponent(PendingMoveComponent)).toBe(true);
 		expect(dardan.getComponent(UnitComponent).read().hasMoved).toBe(false);
 
-		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", index: 1, item: i18n("menu.wait") });
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", row: UnitMenuRow.WAIT, index: 1, item: i18n("menu.wait") });
 		eventSystem.processQueue();
 		eventSystem.processQueue(); // deliver unit:acted
 
@@ -218,12 +219,27 @@ suite("Unit Movement Test Suite", () => {
 	const submenu = () => menuState().getSubmenu()?.getComponent(MenuComponent).read();
 	const sheet = (id: string) => unit(id).getComponent(UnitComponent).read();
 
+	test("A row is acted on by its id, whatever the label says", () => {
+		eventSystem.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
+		eventSystem.processQueue();
+		walkTo(4, 13);
+
+		// The menu was built in one locale and confirmed in another - the label no
+		// longer matches anything, the row id still does.
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", row: UnitMenuRow.WAIT, index: 1, item: "Attendre" });
+		eventSystem.processQueue();
+		eventSystem.processQueue();
+
+		expect(sheet("dardan").hasMoved).toBe(true);
+		expect(unit("dardan").hasComponent(PendingMoveComponent)).toBe(false);
+	});
+
 	/** Move Dardan in place and open his items menu. */
 	const openItems = () => {
 		eventSystem.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
 		eventSystem.processQueue();
 		walkTo(4, 13);
-		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", index: 0, item: i18n("menu.items") });
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", row: UnitMenuRow.ITEMS, index: 0, item: i18n("menu.items") });
 		eventSystem.processQueue();
 	};
 
@@ -243,14 +259,14 @@ suite("Unit Movement Test Suite", () => {
 		openItems();
 
 		// A weapon that is not readied offers Equip then Drop, in a submenu.
-		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-items", index: 2, item: "Iron Blade" });
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-items", row: "iron-blade", index: 2, item: "Iron Blade" });
 		eventSystem.processQueue();
 		expect(menu()?.id).toBe("unit-items"); // the pack list is still there
 		expect(submenu()?.id).toBe("unit-item-action");
 		expect(submenu()?.title).toBe("Iron Blade");
 		expect(submenu()?.items).toStrictEqual([i18n("menu.equip"), i18n("menu.drop")]);
 
-		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-item-action", index: 0, item: i18n("menu.equip") });
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-item-action", row: UnitMenuRow.EQUIP, index: 0, item: i18n("menu.equip") });
 		eventSystem.processQueue();
 		eventSystem.processQueue(); // deliver unit:equipped
 
@@ -273,11 +289,11 @@ suite("Unit Movement Test Suite", () => {
 
 		openItems();
 
-		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-items", index: 0, item: "Bronze Sword" });
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-items", row: "bronze-sword", index: 0, item: "Bronze Sword" });
 		eventSystem.processQueue();
 		expect(submenu()?.items).toStrictEqual([i18n("menu.unequip"), i18n("menu.drop")]);
 
-		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-item-action", index: 0, item: i18n("menu.unequip") });
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-item-action", row: UnitMenuRow.UNEQUIP, index: 0, item: i18n("menu.unequip") });
 		eventSystem.processQueue();
 		eventSystem.processQueue();
 
@@ -293,11 +309,11 @@ suite("Unit Movement Test Suite", () => {
 
 		openItems();
 
-		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-items", index: 3, item: "Vulnerary" });
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-items", row: "vulnerary", index: 3, item: "Vulnerary" });
 		eventSystem.processQueue();
 		expect(submenu()?.items).toStrictEqual([i18n("menu.drop")]); // a consumable is drop-only
 
-		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-item-action", index: 0, item: i18n("menu.drop") });
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-item-action", row: UnitMenuRow.DROP, index: 0, item: i18n("menu.drop") });
 		eventSystem.processQueue();
 		eventSystem.processQueue();
 
@@ -320,11 +336,11 @@ suite("Unit Movement Test Suite", () => {
 		openItems();
 
 		// A wounded unit's vulnerary offers Use then Drop.
-		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-items", index: 3, item: "Vulnerary" });
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-items", row: "vulnerary", index: 3, item: "Vulnerary" });
 		eventSystem.processQueue();
 		expect(submenu()?.items).toStrictEqual([i18n("menu.use"), i18n("menu.drop")]);
 
-		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-item-action", index: 0, item: i18n("menu.use") });
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-item-action", row: UnitMenuRow.USE, index: 0, item: i18n("menu.use") });
 		eventSystem.processQueue();
 		eventSystem.processQueue(); // deliver unit:usedItem / unit:acted
 
@@ -343,7 +359,7 @@ suite("Unit Movement Test Suite", () => {
 		openItems();
 
 		// items -> submenu
-		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-items", index: 1, item: "Iron Sword" });
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-items", row: "iron-sword", index: 1, item: "Iron Sword" });
 		eventSystem.processQueue();
 		expect(submenu()?.id).toBe("unit-item-action");
 
@@ -374,7 +390,7 @@ suite("Unit Movement Test Suite", () => {
 		expect(state().unitId).toBe("");
 		expect(stateManager.peek()).toBeInstanceOf(MenuState);
 
-		eventSystem.dispatch("ui:menuConfirmed", { menu: "global-command", index: 0, item: i18n("menu.endTurn") });
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "global-command", row: UnitMenuRow.END_TURN, index: 0, item: i18n("menu.endTurn") });
 		eventSystem.processQueue();
 		eventSystem.processQueue(); // deliver turn:end
 
@@ -412,7 +428,7 @@ suite("Unit Movement Test Suite", () => {
 		eventSystem.processQueue();
 		walkTo(4, 13); // adjacent to Hasan at 4,14
 
-		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", index: 0, item: i18n("menu.attack") });
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", row: UnitMenuRow.ATTACK, index: 0, item: i18n("menu.attack") });
 		eventSystem.processQueue();
 		eventSystem.processQueue(); // deliver combat:requested
 
@@ -429,7 +445,7 @@ suite("Unit Movement Test Suite", () => {
 		eventSystem.processQueue();
 		walkTo(3, 14); // one tile from both Hasan (4,14) and Besnik (2,14)
 
-		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", index: 0, item: i18n("menu.attack") });
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", row: UnitMenuRow.ATTACK, index: 0, item: i18n("menu.attack") });
 		eventSystem.processQueue();
 		eventSystem.processQueue();
 

@@ -11,6 +11,12 @@ export interface MenuData extends JsonSchema {
 	/** The rows, top to bottom. */
 	items: string[];
 	/**
+	 * Stable id per row, parallel to `items` - what `ui:menuConfirmed` reports
+	 * so a listener never has to match on the translated label. `""` for a row
+	 * (or a menu) that does not name itself.
+	 */
+	ids: string[];
+	/**
 	 * Optional per-row badge letter, parallel to `items` - a non-empty entry is
 	 * drawn as a small lettered disc in a gutter to the left of every row (the
 	 * "equipped" mark on a weapon, Fire Emblem style). `[]` for a plain menu.

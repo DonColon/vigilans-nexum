@@ -3,7 +3,7 @@ import { dialogCommands } from "@/game/ui/commands/DialogCommands";
 import { menuCommands } from "@/game/ui/commands/MenuCommands";
 import { DialogComponent } from "@/game/ui/components/DialogComponent";
 import { MenuComponent } from "@/game/ui/components/MenuComponent";
-import { DEMO_MENU_ID, LORE_DIALOG, terrainDialog, tileActionsMenu } from "@/game/ui/model/DemoContent";
+import { DEMO_MENU_ID, DemoMenuRow, LORE_DIALOG, terrainDialog, tileActionsMenu } from "@/game/ui/model/DemoContent";
 import { DialogState } from "@/game/ui/states/DialogState";
 import { MenuState } from "@/game/ui/states/MenuState";
 import { DialogSystem } from "@/game/ui/systems/DialogSystem";
@@ -71,10 +71,10 @@ export class UIFeature extends GameFeature {
 
 			const dialog = this.stateManager.getState(DialogState);
 
-			if (event.item === "Untersuchen" && this.lastTile) {
+			if (event.row === DemoMenuRow.INSPECT && this.lastTile) {
 				dialog.request(terrainDialog(this.lastTile.terrain, this.lastTile.column, this.lastTile.row));
 				this.stateManager.push(DialogState);
-			} else if (event.item === "Überlieferung") {
+			} else if (event.row === DemoMenuRow.LORE) {
 				dialog.request(LORE_DIALOG);
 				this.stateManager.push(DialogState);
 			}

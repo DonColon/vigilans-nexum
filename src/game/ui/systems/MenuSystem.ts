@@ -58,6 +58,7 @@ export class MenuSystem extends UpdateSystem {
 		if (data.confirmedIndex >= 0) {
 			this.eventSystem.dispatch("ui:menuConfirmed", {
 				menu: data.id,
+				row: data.ids[data.confirmedIndex] ?? "",
 				index: data.confirmedIndex,
 				item: data.items[data.confirmedIndex] ?? ""
 			});

@@ -19,7 +19,8 @@ export { walkPoint, WALK_STEP_MS } from "@/game/movement/model/PathWalk";
 export { MovementTheme } from "@/game/movement/model/MovementTheme";
 
 export {
-	MenuLabel,
+	UnitMenuRow,
+	rowLabel,
 	unitCommandRows,
 	itemActionRows,
 	globalCommandRequest,

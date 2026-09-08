@@ -16,7 +16,7 @@ import {
 	ITEM_ACTION_MENU,
 	ITEMS_MENU_WIDTH,
 	ITEM_ACTION_MENU_GAP,
-	MenuLabel,
+	UnitMenuRow,
 	globalCommandRequest,
 	itemActionRequest,
 	itemsRequest,
@@ -319,7 +319,7 @@ export class MovementFeature extends BattleMapFeature {
 
 	private onCommand(event: MenuConfirmedEvent): void {
 		if (event.menu === GLOBAL_MENU) {
-			if (event.item === MenuLabel.endTurn()) {
+			if (event.row === UnitMenuRow.END_TURN) {
 				this.events.dispatch("turn:end", {});
 			}
 
@@ -338,7 +338,7 @@ export class MovementFeature extends BattleMapFeature {
 		}
 
 		if (event.menu === ITEM_ACTION_MENU) {
-			this.onItemAction(mover, event.item);
+			this.onItemAction(mover, event.row);
 			return;
 		}
 
@@ -346,7 +346,7 @@ export class MovementFeature extends BattleMapFeature {
 			return;
 		}
 
-		if (event.item === MenuLabel.attack()) {
+		if (event.row === UnitMenuRow.ATTACK) {
 			const [nearest] = this.attackTargets(mover);
 
 			if (nearest !== undefined) {
@@ -358,12 +358,12 @@ export class MovementFeature extends BattleMapFeature {
 			return;
 		}
 
-		if (event.item === MenuLabel.items()) {
+		if (event.row === UnitMenuRow.ITEMS) {
 			this.openItemsMenu(mover);
 			return;
 		}
 
-		if (event.item === MenuLabel.wait()) {
+		if (event.row === UnitMenuRow.WAIT) {
 			this.spendMover(mover);
 			return;
 		}
@@ -403,7 +403,7 @@ export class MovementFeature extends BattleMapFeature {
 	}
 
 	/** A row of the item-action menu - use / equip / unequip / drop the entry in `actionSlot`, then refresh the pack list. */
-	private onItemAction(mover: Entity, choice: string): void {
+	private onItemAction(mover: Entity, action: string): void {
 		// MenuSystem drops the submenu once it reports the row; close it here too so
 		// the flow is the same when a test drives the events directly.
 		this.menuState().closeSubmenu();
@@ -418,7 +418,7 @@ export class MovementFeature extends BattleMapFeature {
 			return;
 		}
 
-		if (choice === MenuLabel.use()) {
+		if (action === UnitMenuRow.USE) {
 			const after = useHealingItem(before, slot);
 
 			if (after === before) {
@@ -436,7 +436,7 @@ export class MovementFeature extends BattleMapFeature {
 			return;
 		}
 
-		if (choice === MenuLabel.equip()) {
+		if (action === UnitMenuRow.EQUIP) {
 			const after = equipInventoryItem(before, slot);
 
 			if (after !== before) {
@@ -449,7 +449,7 @@ export class MovementFeature extends BattleMapFeature {
 			return;
 		}
 
-		if (choice === MenuLabel.unequip()) {
+		if (action === UnitMenuRow.UNEQUIP) {
 			const after = unequipInventoryItem(before);
 
 			if (after !== before) {
@@ -461,7 +461,7 @@ export class MovementFeature extends BattleMapFeature {
 			return;
 		}
 
-		if (choice === MenuLabel.drop()) {
+		if (action === UnitMenuRow.DROP) {
 			const after = dropInventoryItem(before, slot);
 
 			if (after !== before) {

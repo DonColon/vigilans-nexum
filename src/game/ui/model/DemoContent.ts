@@ -13,11 +13,20 @@ const TITLE_CASE = (value: string) => value.charAt(0).toUpperCase() + value.slic
 
 export const DEMO_MENU_ID = "tile-actions";
 
+/** The rows of the demo tile menu, by the id `ui:menuConfirmed` reports. */
+export const DemoMenuRow = {
+	INSPECT: "inspect",
+	LORE: "lore",
+	WAIT: "wait",
+	BACK: "back"
+} as const;
+
 export function tileActionsMenu(terrain: string): MenuRequest {
 	return {
 		id: DEMO_MENU_ID,
 		title: TITLE_CASE(terrain),
-		items: ["Untersuchen", "Überlieferung", "Warten", "Zurück"]
+		items: ["Untersuchen", "Überlieferung", "Warten", "Zurück"],
+		ids: [DemoMenuRow.INSPECT, DemoMenuRow.LORE, DemoMenuRow.WAIT, DemoMenuRow.BACK]
 	};
 }
 

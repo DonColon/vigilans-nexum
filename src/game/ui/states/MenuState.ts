@@ -14,6 +14,13 @@ export interface MenuRequest {
 	title?: string;
 	items: string[];
 	/**
+	 * Stable id per row, parallel to `items`. `ui:menuConfirmed` echoes the one
+	 * that was chosen, so the code that opened the menu branches on an id of its
+	 * own rather than on a label that changes with the locale. Rows left unnamed
+	 * report `""`.
+	 */
+	ids?: string[];
+	/**
 	 * Per-row badge letters, parallel to `items`. A non-empty entry shows as a
 	 * small lettered disc left of that row. Shorter than `items` (or omitted) is
 	 * fine - missing entries are treated as no badge.
@@ -156,6 +163,7 @@ export class MenuState extends GameState {
 		const items = request.items.length > 0 ? [...request.items] : [...FALLBACK.items];
 		const title = request.title ?? FALLBACK.title;
 		const width = request.width ?? DEFAULT_MENU_WIDTH;
+		const ids = items.map((_, index) => request.ids?.[index] ?? "");
 		const badges = items.map((_, index) => request.badges?.[index] ?? "");
 		const values = items.map((_, index) => request.values?.[index] ?? "");
 
@@ -173,6 +181,7 @@ export class MenuState extends GameState {
 			title,
 			width,
 			items,
+			ids,
 			badges,
 			values,
 			keepOpen: request.keepOpen ?? false,

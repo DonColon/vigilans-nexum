@@ -87,6 +87,31 @@ suite("Movement System Test Suite", () => {
 		expect(MovementSystem.path(field, { column: 0, row: 0 }, { column: 0, row: 2 }, 8, blocked)).toStrictEqual([]);
 	});
 
+	test("An L-shaped route turns once instead of stair-stepping", () => {
+		const field = grid([".....", ".....", "....."]);
+		const route = MovementSystem.path(field, { column: 0, row: 0 }, { column: 2, row: 2 }, 6);
+
+		expect(route).toHaveLength(5);
+
+		const turns = route.slice(2).filter((tile, index) => {
+			const previous = route[index];
+			const between = route[index + 1];
+
+			return between.column - previous.column !== tile.column - between.column || between.row - previous.row !== tile.row - between.row;
+		});
+
+		expect(turns).toHaveLength(1);
+	});
+
+	test("A tile nobody can enter is never stepped on, however much budget is left", () => {
+		const field = grid([".....", "..#..", "....."]);
+
+		expect(MovementSystem.entryCost(field, new Set(), 2, 1)).toBe(Number.POSITIVE_INFINITY);
+		expect(MovementSystem.entryCost(field, new Set(["0,0"]), 0, 0)).toBe(Number.POSITIVE_INFINITY);
+		expect(MovementSystem.entryCost(field, new Set(), 0, 0)).toBe(1);
+		expect(MovementSystem.contains(MovementSystem.reachable(field, { column: 2, row: 0 }, 4), 2, 1)).toBe(false);
+	});
+
 	test("Path is empty when the target is out of budget", () => {
 		const field = grid([".....", ".....", "....."]);
 		expect(MovementSystem.path(field, { column: 0, row: 0 }, { column: 4, row: 2 }, 3)).toStrictEqual([]);

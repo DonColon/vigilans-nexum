@@ -149,6 +149,42 @@ suite("UI Menu Test Suite", () => {
 		expect(stateManager.peek()).toBeInstanceOf(MapStub);
 	});
 
+	test("Confirm reports the row id the menu was built with", () => {
+		let received: MenuConfirmedEvent | null = null;
+		eventSystem.subscribe("ui:menuConfirmed", (event) => (received = event));
+
+		// A named menu: the ids travel with the rows and come back on the event, so
+		// the opener never has to match on the label it happens to be showing.
+		state.updateMenu({ id: "actions", items: ["Angriff", "Warten"], ids: ["attack", "wait"] });
+		menu = state.getMenu() as Entity;
+
+		release();
+		press(MenuDownCommand);
+		system.execute(16, 0);
+
+		release();
+		press(MenuConfirmCommand);
+		system.execute(16, 1);
+
+		system.execute(16, 2);
+		eventSystem.processQueue();
+
+		expect(received).toMatchObject({ menu: "actions", row: "wait", index: 1, item: "Warten" });
+	});
+
+	test("A menu that does not name its rows reports an empty id", () => {
+		let received: MenuConfirmedEvent | null = null;
+		eventSystem.subscribe("ui:menuConfirmed", (event) => (received = event));
+
+		press(MenuConfirmCommand);
+		system.execute(16, 0);
+
+		system.execute(16, 1);
+		eventSystem.processQueue();
+
+		expect(received).toMatchObject({ menu: "actions", row: "", index: 0, item: "Angriff" });
+	});
+
 	test("Cancel closes the menu with a cancelled event", () => {
 		let received: MenuCancelledEvent | null = null;
 		eventSystem.subscribe("ui:menuCancelled", (event) => (received = event));

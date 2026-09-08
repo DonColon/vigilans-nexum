@@ -18,55 +18,92 @@ export const ITEM_ACTION_MENU_WIDTH = 190;
 export const ITEM_ACTION_MENU_GAP = 4;
 
 /**
- * Menu row labels, resolved fresh on every call so a locale switch is picked
- * up. The rows are matched back by label when the menu reports a choice, so
- * building a menu and reading its outcome have to go through the same helpers.
+ * The rows these menus can offer, by the id `ui:menuConfirmed` reports. The
+ * labels beside them are translated and change with the locale; these do not,
+ * which is what the move flow branches on.
  */
-export const MenuLabel = {
-	attack: () => i18n("menu.attack"),
-	wait: () => i18n("menu.wait"),
-	endTurn: () => i18n("menu.endTurn"),
-	items: () => i18n("menu.items"),
-	equip: () => i18n("menu.equip"),
-	unequip: () => i18n("menu.unequip"),
-	use: () => i18n("menu.use"),
-	drop: () => i18n("menu.drop")
+export const UnitMenuRow = {
+	ATTACK: "attack",
+	ITEMS: "items",
+	WAIT: "wait",
+	END_TURN: "end-turn",
+	USE: "use",
+	EQUIP: "equip",
+	UNEQUIP: "unequip",
+	DROP: "drop"
 } as const;
+
+export type UnitMenuRow = (typeof UnitMenuRow)[keyof typeof UnitMenuRow];
+
+/** One row of a menu: the id it reports and the label the player reads. */
+interface Row {
+	id: string;
+	label: string;
+}
+
+/** The label of every row, resolved fresh so a locale switch is picked up. */
+const LABELS: Record<UnitMenuRow, () => string> = {
+	[UnitMenuRow.ATTACK]: () => i18n("menu.attack"),
+	[UnitMenuRow.ITEMS]: () => i18n("menu.items"),
+	[UnitMenuRow.WAIT]: () => i18n("menu.wait"),
+	[UnitMenuRow.END_TURN]: () => i18n("menu.endTurn"),
+	[UnitMenuRow.USE]: () => i18n("menu.use"),
+	[UnitMenuRow.EQUIP]: () => i18n("menu.equip"),
+	[UnitMenuRow.UNEQUIP]: () => i18n("menu.unequip"),
+	[UnitMenuRow.DROP]: () => i18n("menu.drop")
+} as const;
+
+/** The label shown for a row - for a caller that needs the text rather than the id. */
+export function rowLabel(row: UnitMenuRow): string {
+	return LABELS[row]();
+}
+
+function row(id: UnitMenuRow): Row {
+	return { id, label: rowLabel(id) };
+}
+
+/** Splits the rows into the parallel `items` / `ids` arrays a [[MenuRequest]] carries. */
+function toRequestRows(rows: readonly Row[]): { items: string[]; ids: string[] } {
+	return { items: rows.map((entry) => entry.label), ids: rows.map((entry) => entry.id) };
+}
 
 /**
  * The rows of the unit command menu: "Attack" when something is in reach,
  * "Items" when the unit carries anything, then always "Wait".
  */
-export function unitCommandRows(unit: UnitData, canAttack: boolean): string[] {
-	const rows: string[] = [];
+export function unitCommandRows(unit: UnitData, canAttack: boolean): UnitMenuRow[] {
+	const rows: UnitMenuRow[] = [];
 
 	if (canAttack) {
-		rows.push(MenuLabel.attack());
+		rows.push(UnitMenuRow.ATTACK);
 	}
 
 	if (unit.inventory.length > 0) {
-		rows.push(MenuLabel.items());
+		rows.push(UnitMenuRow.ITEMS);
 	}
 
-	rows.push(MenuLabel.wait());
+	rows.push(UnitMenuRow.WAIT);
 
 	return rows;
 }
 
 /** The menu opened on a tile with nothing to pick up: the army-wide commands. */
 export function globalCommandRequest(): Omit<MenuRequest, "anchor"> {
-	return { id: GLOBAL_MENU, items: [MenuLabel.endTurn()], width: GLOBAL_MENU_WIDTH };
+	return { id: GLOBAL_MENU, ...toRequestRows([row(UnitMenuRow.END_TURN)]), width: GLOBAL_MENU_WIDTH };
 }
 
 /** The unit command menu, tucked against the tile the unit stands on. */
 export function unitCommandRequest(unit: UnitData, canAttack: boolean): Omit<MenuRequest, "anchor"> {
-	return { id: COMMAND_MENU, items: unitCommandRows(unit, canAttack), width: COMMAND_MENU_WIDTH };
+	return { id: COMMAND_MENU, ...toRequestRows(unitCommandRows(unit, canAttack).map(row)), width: COMMAND_MENU_WIDTH };
 }
 
 /**
  * The unit's pack: every carried weapon and item, the readied one badged and
  * durability right-aligned. It stays open after a row is confirmed so the
  * per-item action menu can be layered on top of it.
+ *
+ * The rows report the catalog id of the entry they show. Which pack *slot* that
+ * is stays with the reported index - a unit can carry the same item twice.
  */
 export function itemsRequest(unit: UnitData, anchor: { x: number; y: number }, selectedIndex?: number): MenuRequest {
 	const cursor =
@@ -78,8 +115,9 @@ export function itemsRequest(unit: UnitData, anchor: { x: number; y: number }, s
 
 	return {
 		id: ITEMS_MENU,
-		title: MenuLabel.items(),
+		title: rowLabel(UnitMenuRow.ITEMS),
 		items: unit.inventory.map((entry) => entry.name),
+		ids: unit.inventory.map((entry) => entry.id),
 		badges: unit.inventory.map((entry) => (entry.equipped ? i18n("menu.equipped") : "")),
 		values: unit.inventory.map((entry) => `${entry.uses}/${entry.maxUses}`),
 		width: ITEMS_MENU_WIDTH,
@@ -94,23 +132,29 @@ export function itemsRequest(unit: UnitData, anchor: { x: number; y: number }, s
  * restore HP, "Equip" / "Unequip" for a weapon the class can wield, "Drop" for
  * anything.
  */
-export function itemActionRows(unit: UnitData, entry: InventoryEntry): string[] {
-	const rows: string[] = [];
+export function itemActionRows(unit: UnitData, entry: InventoryEntry): UnitMenuRow[] {
+	const rows: UnitMenuRow[] = [];
 
 	if (entry.item !== null && isHealingItem(entry) && healingAmount(unit, entry.item) > 0) {
-		rows.push(MenuLabel.use());
+		rows.push(UnitMenuRow.USE);
 	}
 
 	if (entry.kind === InventoryKind.WEAPON && entry.equippable) {
-		rows.push(entry.equipped ? MenuLabel.unequip() : MenuLabel.equip());
+		rows.push(entry.equipped ? UnitMenuRow.UNEQUIP : UnitMenuRow.EQUIP);
 	}
 
-	rows.push(MenuLabel.drop());
+	rows.push(UnitMenuRow.DROP);
 
 	return rows;
 }
 
 /** The action menu for one pack entry, positioned against the items panel. */
 export function itemActionRequest(unit: UnitData, entry: InventoryEntry, position: { x: number; y: number }): MenuRequest {
-	return { id: ITEM_ACTION_MENU, title: entry.name, items: itemActionRows(unit, entry), width: ITEM_ACTION_MENU_WIDTH, position };
+	return {
+		id: ITEM_ACTION_MENU,
+		title: entry.name,
+		...toRequestRows(itemActionRows(unit, entry).map(row)),
+		width: ITEM_ACTION_MENU_WIDTH,
+		position
+	};
 }
