@@ -10,6 +10,23 @@ export interface MenuData extends JsonSchema {
 	width: number;
 	/** The rows, top to bottom. */
 	items: string[];
+	/**
+	 * Optional per-row badge letter, parallel to `items` - a non-empty entry is
+	 * drawn as a small lettered disc in a gutter to the left of every row (the
+	 * "equipped" mark on a weapon, Fire Emblem style). `[]` for a plain menu.
+	 */
+	badges: string[];
+	/**
+	 * Optional per-row trailing text, parallel to `items`, drawn flush against the
+	 * right edge of the panel (a weapon's `uses/maxUses`, say). `[]` for none.
+	 */
+	values: string[];
+	/**
+	 * When set, confirming a row reports it through `ui:menuConfirmed` but leaves
+	 * the menu open (so a submenu can be layered on top). It still closes on
+	 * cancel. Plain menus leave this false and close on confirm.
+	 */
+	keepOpen: boolean;
 	/** Row the highlight is on. */
 	selectedIndex: number;
 	/** Row the player confirmed, or -1 while the menu is still open. */

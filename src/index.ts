@@ -1,5 +1,6 @@
 import { Game } from "@/core/Game";
 import { gameConfiguration } from "@/game.config";
+import { CombatFeature } from "@/game/combat";
 import { MapFeature } from "@/game/map";
 import { MovementFeature } from "@/game/movement";
 import { TurnFeature } from "@/game/turn";
@@ -15,6 +16,8 @@ game.install(new MapFeature());
 game.install(ui);
 game.install(units);
 game.install(new TurnFeature({ dependencies: [units] }));
+// The battle forecast the "Attack" command opens; needs the units on the map.
+game.install(new CombatFeature({ dependencies: [units] }));
 // Moving a unit needs the units on the map and the UI feature for its command
 // menus - the install order and the dependencies both say so.
 game.install(new MovementFeature({ dependencies: [units, ui] }));

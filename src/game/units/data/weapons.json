@@ -25,6 +25,78 @@
 			"minRange": 1,
 			"maxRange": 1,
 			"uses": 45
+		},
+		"iron-sword": {
+			"name": "Iron Sword",
+			"type": "sword",
+			"rank": "D",
+			"might": 5,
+			"hit": 85,
+			"critical": 0,
+			"weight": 5,
+			"minRange": 1,
+			"maxRange": 1,
+			"uses": 45
+		},
+		"iron-blade": {
+			"name": "Iron Blade",
+			"type": "sword",
+			"rank": "C",
+			"might": 9,
+			"hit": 70,
+			"critical": 0,
+			"weight": 13,
+			"minRange": 1,
+			"maxRange": 1,
+			"uses": 30
+		},
+		"iron-lance": {
+			"name": "Iron Lance",
+			"type": "lance",
+			"rank": "D",
+			"might": 7,
+			"hit": 80,
+			"critical": 0,
+			"weight": 9,
+			"minRange": 1,
+			"maxRange": 1,
+			"uses": 45
+		},
+		"iron-axe": {
+			"name": "Iron Axe",
+			"type": "axe",
+			"rank": "D",
+			"might": 8,
+			"hit": 75,
+			"critical": 0,
+			"weight": 11,
+			"minRange": 1,
+			"maxRange": 1,
+			"uses": 45
+		},
+		"iron-bow": {
+			"name": "Iron Bow",
+			"type": "bow",
+			"rank": "D",
+			"might": 6,
+			"hit": 80,
+			"critical": 0,
+			"weight": 7,
+			"minRange": 2,
+			"maxRange": 2,
+			"uses": 45
+		},
+		"iron-knife": {
+			"name": "Iron Knife",
+			"type": "knife",
+			"rank": "D",
+			"might": 4,
+			"hit": 75,
+			"critical": 0,
+			"weight": 4,
+			"minRange": 1,
+			"maxRange": 1,
+			"uses": 45
 		}
 	}
 }

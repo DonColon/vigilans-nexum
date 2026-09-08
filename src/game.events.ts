@@ -65,6 +65,61 @@ export interface UnitActedEvent extends GameEvent {
 	unitId: string;
 }
 
+/** The player readied a different weapon from a unit's items menu. */
+export interface UnitEquippedEvent extends GameEvent {
+	unitId: string;
+	weaponId: string;
+}
+
+/** The player put a unit's readied weapon away - it now has nothing equipped. */
+export interface UnitUnequippedEvent extends GameEvent {
+	unitId: string;
+}
+
+/** The player dropped an item or weapon from a unit's pack for good. */
+export interface UnitDroppedItemEvent extends GameEvent {
+	unitId: string;
+	itemId: string;
+}
+
+/** The player used a consumable from a unit's pack. `healed` is the HP it restored (0 for a non-healing item). */
+export interface UnitUsedItemEvent extends GameEvent {
+	unitId: string;
+	itemId: string;
+	healed: number;
+}
+
+/** The player chose "Attack" and a target - the battle forecast should open. */
+export interface CombatRequestedEvent extends GameEvent {
+	attackerId: string;
+	defenderId: string;
+}
+
+/** The player confirmed the forecast - fight with `weaponId`. */
+export interface CombatConfirmedEvent extends GameEvent {
+	attackerId: string;
+	defenderId: string;
+	weaponId: string;
+}
+
+/** The player backed out of the forecast without fighting. */
+export interface CombatCancelledEvent extends GameEvent {
+	attackerId: string;
+}
+
+/** A fight finished. The HP changes and any deaths have already been applied. */
+export interface CombatResolvedEvent extends GameEvent {
+	attackerId: string;
+	defenderId: string;
+	attackerDefeated: boolean;
+	defenderDefeated: boolean;
+}
+
+/** A unit was reduced to 0 HP and taken off the map. */
+export interface UnitDiedEvent extends GameEvent {
+	unitId: string;
+}
+
 /** A request to end the current player turn (from the global command menu). */
 export type TurnEndEvent = GameEvent;
 
@@ -86,6 +141,15 @@ declare module "@/core/events/GameEvents" {
 		"unit:moved": UnitMovedEvent;
 		"unit:deselected": UnitDeselectedEvent;
 		"unit:acted": UnitActedEvent;
+		"unit:equipped": UnitEquippedEvent;
+		"unit:unequipped": UnitUnequippedEvent;
+		"unit:droppedItem": UnitDroppedItemEvent;
+		"unit:usedItem": UnitUsedItemEvent;
+		"unit:died": UnitDiedEvent;
+		"combat:requested": CombatRequestedEvent;
+		"combat:confirmed": CombatConfirmedEvent;
+		"combat:cancelled": CombatCancelledEvent;
+		"combat:resolved": CombatResolvedEvent;
 		"turn:end": TurnEndEvent;
 		"turn:changed": TurnChangedEvent;
 	}

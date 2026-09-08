@@ -38,6 +38,11 @@ export const UnitTheme = {
 	/** A unit that has already acted this turn is drawn washed out. */
 	movedAlpha: 0.55,
 
+	/** White wash over a token the instant a hit lands, during a battle animation. */
+	hitFlash: Color.hex("#ffffff"),
+	/** Expanding ring on a critical hit. */
+	critRing: Color.hex("#ffe27a"),
+
 	/**
 	 * The HP bar slung under each token: it runs the full width of the tile,
 	 * pinned to the bottom edge. `track` is the empty channel; the fill is the

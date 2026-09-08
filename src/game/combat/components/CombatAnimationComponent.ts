@@ -1,0 +1,27 @@
+import { Component } from "@/core/ecs/Component";
+import { JsonSchema } from "@/core/ecs/JsonSchema";
+
+export interface CombatAnimationData extends JsonSchema {
+	/** Fractional tile offset added to the token position while it swings / recoils. */
+	offsetColumn: number;
+	offsetRow: number;
+	/** 0-1 white flash over the token on a hit. */
+	flash: number;
+	/** 0-1 expanding ring on a critical. */
+	critFlash: number;
+	/** HP the bar should show (drains during the animation). */
+	hp: number;
+	/** 0-1 token opacity, for a death fade. */
+	alpha: number;
+}
+
+/**
+ * Transient token overrides while a fight animates - a lunge offset, a hit
+ * flash, a draining HP value, a fade-out. `BattleAnimationSystem` adds it to the
+ * two combatants for the length of the animation; `UnitRenderSystem` layers it
+ * over the normal token draw. Absent = the token renders straight from its
+ * sheet.
+ */
+export class CombatAnimationComponent extends Component<CombatAnimationData> {
+	public static readonly type = "combatAnimation";
+}

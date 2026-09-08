@@ -14,11 +14,15 @@ import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { WalkComponent } from "@/game/movement/components/WalkComponent";
 import { walkPoint } from "@/game/movement/model/PathWalk";
+import { CombatAnimationComponent, CombatAnimationData } from "@/game/combat/components/CombatAnimationComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
 import { UnitData, WeaponType } from "@/game/units/model/UnitData";
 import { UnitTheme } from "@/game/units/model/UnitTheme";
+
+/** No fight animation running on this token - the neutral values. */
+const RESTING: CombatAnimationData = { offsetColumn: 0, offsetRow: 0, flash: 0, critFlash: 0, hp: 0, alpha: 1 };
 
 /**
  * Draws the unit tokens - one disc per unit, faction-coloured, with a schematic
@@ -60,9 +64,13 @@ export class UnitRenderSystem extends RenderSystem {
 
 		for (const entity of this.queries.units.getResult()) {
 			const unit = entity.getComponent(UnitComponent).read();
+			const anim = entity.hasComponent(CombatAnimationComponent) ? entity.getComponent(CombatAnimationComponent).read() : RESTING;
 			const tile = this.tileOf(entity);
 
-			this.renderUnit(graphics, unit, origin.x + tile.column * cellSize, origin.y + tile.row * cellSize, cellSize);
+			const x = origin.x + (tile.column + anim.offsetColumn) * cellSize;
+			const y = origin.y + (tile.row + anim.offsetRow) * cellSize;
+
+			this.renderUnit(graphics, unit, anim, x, y, cellSize);
 		}
 	}
 
@@ -79,17 +87,17 @@ export class UnitRenderSystem extends RenderSystem {
 		return entity.getComponent(GridPositionComponent).read();
 	}
 
-	private renderUnit(graphics: Graphics, unit: UnitData, x: number, y: number, cellSize: number): void {
+	private renderUnit(graphics: Graphics, unit: UnitData, anim: CombatAnimationData, x: number, y: number, cellSize: number): void {
 		const colors = UnitTheme.faction[unit.faction];
 		const centre = new Vector2D(x + cellSize / 2, y + cellSize / 2);
 		const radius = (cellSize * UnitTheme.tokenSize) / 2;
 
-		if (unit.hasMoved) {
-			graphics.alpha(UnitTheme.movedAlpha);
-		}
+		const tokenAlpha = anim.alpha * (unit.hasMoved ? UnitTheme.movedAlpha : 1);
 
+		graphics.alpha(anim.alpha);
 		graphics.fillColor(UnitTheme.shadow).fillCircle(new Circle(centre.x, centre.y + radius * 0.28, radius));
 
+		graphics.alpha(tokenAlpha);
 		graphics.fillColor(colors.body).fillCircle(new Circle(centre.x, centre.y, radius));
 
 		graphics
@@ -101,11 +109,28 @@ export class UnitRenderSystem extends RenderSystem {
 			.lineStyle({ width: UnitTheme.ringWidth })
 			.strokeCircle(new Circle(centre.x, centre.y, radius));
 
-		this.renderGlyph(graphics, unit.weapon.type, centre, radius, colors.glyph);
+		if (unit.weapon !== null) {
+			this.renderGlyph(graphics, unit.weapon.type, centre, radius, colors.glyph);
+		}
+
+		if (anim.flash > 0) {
+			graphics.alpha(anim.alpha * anim.flash * 0.8);
+			graphics.fillColor(UnitTheme.hitFlash).fillCircle(new Circle(centre.x, centre.y, radius));
+		}
+
+		if (anim.critFlash > 0) {
+			graphics.alpha(anim.alpha * anim.critFlash);
+			graphics
+				.strokeColor(UnitTheme.critRing)
+				.lineStyle({ width: 2 })
+				.strokeCircle(new Circle(centre.x, centre.y, radius * (1 + (1 - anim.critFlash) * 1.4)));
+		}
 
 		graphics.alpha(1);
 
-		this.renderHealthBar(graphics, unit, x, y, cellSize, colors.body);
+		if (anim.alpha > 0) {
+			this.renderHealthBar(graphics, unit, anim === RESTING ? unit.currentHP : anim.hp, x, y, cellSize, colors.body);
+		}
 	}
 
 	/**
@@ -115,14 +140,14 @@ export class UnitRenderSystem extends RenderSystem {
 	 * regardless of `hasMoved` - a hurt unit needs to read as hurt even once it
 	 * has acted.
 	 */
-	private renderHealthBar(graphics: Graphics, unit: UnitData, x: number, y: number, cellSize: number, fillColor: Color): void {
+	private renderHealthBar(graphics: Graphics, unit: UnitData, currentHP: number, x: number, y: number, cellSize: number, fillColor: Color): void {
 		const maxHP = unit.stats.hp;
 
 		if (maxHP <= 0) {
 			return;
 		}
 
-		const ratio = Math.max(0, Math.min(1, unit.currentHP / maxHP));
+		const ratio = Math.max(0, Math.min(1, currentHP / maxHP));
 		const height = UnitTheme.healthBarHeight;
 		const width = cellSize - UnitTheme.healthBarPadding * 2;
 		const left = x + UnitTheme.healthBarPadding;

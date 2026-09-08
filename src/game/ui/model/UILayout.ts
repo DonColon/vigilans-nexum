@@ -54,8 +54,9 @@ export function menuBox(viewport: Dimension, itemCount: number, hasTitle: boolea
 /**
  * A menu tucked against a point on the map - a selected unit's tile. It sits to
  * the right of the anchor, flips to the left when that would run off the edge,
- * and is nudged so the whole panel stays on screen. `cell` is the map tile size,
- * so the panel clears the token rather than covering it.
+ * and is vertically centred on the tile's middle. The whole panel is then nudged
+ * to stay on screen. `cell` is the map tile size, so the panel clears the token
+ * rather than covering it.
  */
 export function menuBeside(viewport: Dimension, anchor: { x: number; y: number }, width: number, height: number, cell = 24): Rectangle {
 	const gap = 10;
@@ -67,7 +68,21 @@ export function menuBeside(viewport: Dimension, anchor: { x: number; y: number }
 	}
 
 	x = Math.max(SCREEN_MARGIN, Math.min(x, viewport.width - width - SCREEN_MARGIN));
-	const y = Math.max(SCREEN_MARGIN, Math.min(anchor.y, viewport.height - height - SCREEN_MARGIN));
+
+	// Line the middle of the panel up with the middle of the tile.
+	const centredY = anchor.y + cell / 2 - height / 2;
+	const y = Math.max(SCREEN_MARGIN, Math.min(centredY, viewport.height - height - SCREEN_MARGIN));
+
+	return new Rectangle(Math.round(x), Math.round(y), width, height);
+}
+
+/**
+ * A menu placed at an exact top-left point - for a panel positioned relative to
+ * another panel rather than to the map. Only nudged to stay on screen.
+ */
+export function menuAt(viewport: Dimension, position: { x: number; y: number }, width: number, height: number): Rectangle {
+	const x = Math.max(SCREEN_MARGIN, Math.min(position.x, viewport.width - width - SCREEN_MARGIN));
+	const y = Math.max(SCREEN_MARGIN, Math.min(position.y, viewport.height - height - SCREEN_MARGIN));
 
 	return new Rectangle(Math.round(x), Math.round(y), width, height);
 }

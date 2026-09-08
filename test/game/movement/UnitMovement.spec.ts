@@ -1,4 +1,5 @@
 import { test, expect, suite, beforeEach, afterEach } from "vitest";
+import { i18n } from "@/core/i18n/I18n";
 import { Entity } from "@/core/ecs/Entity";
 import { World } from "@/core/ecs/World";
 import { identityTransform, TransformComponent } from "@/core/ecs/components/TransformComponent";
@@ -7,7 +8,7 @@ import { Display } from "@/core/graphics/Display";
 import { GameStateManager } from "@/core/GameStateManager";
 import { InputDevice } from "@/core/input/InputDevice";
 import { ServiceRegistry } from "@/core/service/ServiceRegistry";
-import { UnitMovedEvent } from "@/game.events";
+import { UnitMovedEvent, UnitUsedItemEvent } from "@/game.events";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
@@ -20,6 +21,7 @@ import { MovementFeature } from "@/game/movement/MovementFeature";
 import { MovementSystem } from "@/game/movement/systems/MovementSystem";
 import { PathPreviewSystem } from "@/game/movement/systems/PathPreviewSystem";
 import { UnitWalkSystem } from "@/game/movement/systems/UnitWalkSystem";
+import { MenuComponent } from "@/game/ui/components/MenuComponent";
 import { MenuState } from "@/game/ui/states/MenuState";
 import { UIFeature } from "@/game/ui/UIFeature";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
@@ -196,7 +198,7 @@ suite("Unit Movement Test Suite", () => {
 		expect(dardan.hasComponent(PendingMoveComponent)).toBe(true);
 		expect(dardan.getComponent(UnitComponent).read().hasMoved).toBe(false);
 
-		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", index: 0, item: "Warten" });
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", index: 1, item: i18n("menu.wait") });
 		eventSystem.processQueue();
 		eventSystem.processQueue(); // deliver unit:acted
 
@@ -211,6 +213,157 @@ suite("Unit Movement Test Suite", () => {
 		expect(state().unitId).toBe("");
 	});
 
+	const menuState = () => stateManager.peek() as MenuState;
+	const menu = () => menuState().getMenu()?.getComponent(MenuComponent).read();
+	const submenu = () => menuState().getSubmenu()?.getComponent(MenuComponent).read();
+	const sheet = (id: string) => unit(id).getComponent(UnitComponent).read();
+
+	/** Move Dardan in place and open his items menu. */
+	const openItems = () => {
+		eventSystem.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
+		eventSystem.processQueue();
+		walkTo(4, 13);
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", index: 0, item: i18n("menu.items") });
+		eventSystem.processQueue();
+	};
+
+	test("Items lists the pack with names, badges and uses/maxUses", () => {
+		openItems();
+
+		expect(menu()?.id).toBe("unit-items");
+		expect(menu()?.items).toStrictEqual(["Bronze Sword", "Iron Sword", "Iron Blade", "Vulnerary"]);
+		expect(menu()?.badges).toStrictEqual([i18n("menu.equipped"), "", "", ""]);
+		expect(menu()?.values).toStrictEqual(["45/45", "45/45", "30/30", "3/3"]);
+	});
+
+	test("Selecting a row layers the action submenu while the items menu stays open", () => {
+		const equipped: string[] = [];
+		eventSystem.subscribe("unit:equipped", (event) => equipped.push(event.weaponId));
+
+		openItems();
+
+		// A weapon that is not readied offers Equip then Drop, in a submenu.
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-items", index: 2, item: "Iron Blade" });
+		eventSystem.processQueue();
+		expect(menu()?.id).toBe("unit-items"); // the pack list is still there
+		expect(submenu()?.id).toBe("unit-item-action");
+		expect(submenu()?.title).toBe("Iron Blade");
+		expect(submenu()?.items).toStrictEqual([i18n("menu.equip"), i18n("menu.drop")]);
+
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-item-action", index: 0, item: i18n("menu.equip") });
+		eventSystem.processQueue();
+		eventSystem.processQueue(); // deliver unit:equipped
+
+		expect(sheet("dardan").weapon?.id).toBe("iron-blade");
+		expect(sheet("dardan").inventory[0].id).toBe("iron-blade");
+		expect(sheet("dardan").hasMoved).toBe(false);
+		expect(unit("dardan").hasComponent(PendingMoveComponent)).toBe(true);
+		expect(equipped).toStrictEqual(["iron-blade"]);
+
+		// The submenu closed; the items menu refreshed with the new weapon leading.
+		expect(submenu()).toBeUndefined();
+		expect(menu()?.id).toBe("unit-items");
+		expect(menu()?.items[0]).toBe("Iron Blade");
+		expect(menu()?.badges).toStrictEqual([i18n("menu.equipped"), "", "", ""]);
+	});
+
+	test("The readied weapon offers Unequip, leaving the unit unarmed", () => {
+		let unequipped: string | null = null;
+		eventSystem.subscribe("unit:unequipped", (event) => (unequipped = event.unitId));
+
+		openItems();
+
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-items", index: 0, item: "Bronze Sword" });
+		eventSystem.processQueue();
+		expect(submenu()?.items).toStrictEqual([i18n("menu.unequip"), i18n("menu.drop")]);
+
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-item-action", index: 0, item: i18n("menu.unequip") });
+		eventSystem.processQueue();
+		eventSystem.processQueue();
+
+		expect(sheet("dardan").weapon).toBeNull();
+		expect(sheet("dardan").inventory.some((entry) => entry.equipped)).toBe(false);
+		expect(unequipped).toBe("dardan");
+		expect(menu()?.badges.every((badge) => badge === "")).toBe(true); // no badge any more
+	});
+
+	test("Drop removes an item from the pack", () => {
+		const dropped: string[] = [];
+		eventSystem.subscribe("unit:droppedItem", (event) => dropped.push(event.itemId));
+
+		openItems();
+
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-items", index: 3, item: "Vulnerary" });
+		eventSystem.processQueue();
+		expect(submenu()?.items).toStrictEqual([i18n("menu.drop")]); // a consumable is drop-only
+
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-item-action", index: 0, item: i18n("menu.drop") });
+		eventSystem.processQueue();
+		eventSystem.processQueue();
+
+		expect(sheet("dardan").inventory.map((entry) => entry.id)).toStrictEqual(["bronze-sword", "iron-sword", "iron-blade"]);
+		expect(dropped).toStrictEqual(["vulnerary"]);
+		expect(submenu()).toBeUndefined();
+		expect(menu()?.id).toBe("unit-items");
+		expect(menu()?.items).toStrictEqual(["Bronze Sword", "Iron Sword", "Iron Blade"]);
+	});
+
+	test("Use heals the unit off a vulnerary and spends its turn", () => {
+		const used: UnitUsedItemEvent[] = [];
+		eventSystem.subscribe("unit:usedItem", (event) => used.push(event));
+		let acted: string | null = null;
+		eventSystem.subscribe("unit:acted", (event) => (acted = event.unitId));
+
+		const component = unit("dardan").getComponent(UnitComponent);
+		component.update({ ...component.read(), currentHP: 6 });
+
+		openItems();
+
+		// A wounded unit's vulnerary offers Use then Drop.
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-items", index: 3, item: "Vulnerary" });
+		eventSystem.processQueue();
+		expect(submenu()?.items).toStrictEqual([i18n("menu.use"), i18n("menu.drop")]);
+
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-item-action", index: 0, item: i18n("menu.use") });
+		eventSystem.processQueue();
+		eventSystem.processQueue(); // deliver unit:usedItem / unit:acted
+
+		expect(sheet("dardan").currentHP).toBe(16); // 6 + 10, under the 20 cap
+		expect(sheet("dardan").inventory[3].uses).toBe(2);
+		expect(sheet("dardan").hasMoved).toBe(true);
+		expect(unit("dardan").hasComponent(PendingMoveComponent)).toBe(false);
+		expect(used).toMatchObject([{ unitId: "dardan", itemId: "vulnerary", healed: 10 }]);
+		expect(acted).toBe("dardan");
+
+		// Every menu closed - the unit is done for the turn.
+		expect(stateManager.peek()).not.toBeInstanceOf(MenuState);
+	});
+
+	test("Backing out of the submenu keeps the items menu; then items -> command -> reverts", () => {
+		openItems();
+
+		// items -> submenu
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-items", index: 1, item: "Iron Sword" });
+		eventSystem.processQueue();
+		expect(submenu()?.id).toBe("unit-item-action");
+
+		// submenu closes, items menu still shown
+		eventSystem.dispatch("ui:menuCancelled", { menu: "unit-item-action" });
+		eventSystem.processQueue();
+		expect(submenu()).toBeUndefined();
+		expect(menu()?.id).toBe("unit-items");
+
+		// items -> command
+		eventSystem.dispatch("ui:menuCancelled", { menu: "unit-items" });
+		eventSystem.processQueue();
+		expect(menu()?.id).toBe("unit-command");
+
+		// command -> move reverted
+		eventSystem.dispatch("ui:menuCancelled", { menu: "unit-command" });
+		eventSystem.processQueue();
+		expect(tileOf("dardan")).toStrictEqual({ column: 4, row: 10 });
+	});
+
 	test("Confirm on an empty tile opens the global command menu; Zug beenden ends the turn", () => {
 		let ended = false;
 		eventSystem.subscribe("turn:end", () => (ended = true));
@@ -221,7 +374,7 @@ suite("Unit Movement Test Suite", () => {
 		expect(state().unitId).toBe("");
 		expect(stateManager.peek()).toBeInstanceOf(MenuState);
 
-		eventSystem.dispatch("ui:menuConfirmed", { menu: "global-command", index: 0, item: "Zug beenden" });
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "global-command", index: 0, item: i18n("menu.endTurn") });
 		eventSystem.processQueue();
 		eventSystem.processQueue(); // deliver turn:end
 

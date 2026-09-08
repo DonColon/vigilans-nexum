@@ -1,6 +1,7 @@
 import { GameError } from "@/core/GameError";
 import { JsonSchema } from "@/core/ecs/JsonSchema";
 import classesDocument from "@/game/units/data/classes.json";
+import itemsDocument from "@/game/units/data/items.json";
 import weaponsDocument from "@/game/units/data/weapons.json";
 
 /**
@@ -61,6 +62,53 @@ export interface WeaponData extends JsonSchema {
 	uses: number;
 }
 
+/** How much HP a consumable restores: a flat amount, or `"full"` for a complete heal. */
+export type HealAmount = number | "full";
+
+/** A consumable as authored in `data/items.json` - anything a unit carries that is not a weapon. */
+export interface ItemData extends JsonSchema {
+	id: string;
+	name: string;
+	/** Charges left before the item is spent. */
+	uses: number;
+	/** HP restored when a unit uses this - a flat number, `"full"`, or 0 for an item that does not heal. */
+	heal: HealAmount;
+	description: string;
+}
+
+/** What an [[InventoryEntry]] holds - a weapon that can be readied, or a plain consumable. */
+export type InventoryKind = (typeof InventoryKind)[keyof typeof InventoryKind];
+
+export const InventoryKind = {
+	WEAPON: "weapon",
+	ITEM: "item"
+} as const;
+
+/**
+ * One line of a unit's pack, resolved from the catalogs. Weapons carry a
+ * `weapon` payload and may be `equippable` (the holder's class trains in that
+ * weapon type); consumables carry an `item` payload and never are. At most one
+ * weapon in a pack is `equipped` - the one mirrored onto `UnitData.weapon`;
+ * none is once the unit has unequipped.
+ */
+export interface InventoryEntry extends JsonSchema {
+	id: string;
+	name: string;
+	kind: InventoryKind;
+	/** The holder's class can wield this. Always false for consumables. */
+	equippable: boolean;
+	/** This is the weapon the unit currently has readied. */
+	equipped: boolean;
+	/** Charges left before the weapon breaks / the item is spent. Starts at `maxUses`. */
+	uses: number;
+	/** Total charges when new - the catalog value. */
+	maxUses: number;
+	/** Resolved weapon when `kind` is `weapon`, else null. */
+	weapon: WeaponData | null;
+	/** Resolved consumable when `kind` is `item`, else null. */
+	item: ItemData | null;
+}
+
 /** A class as authored in `data/classes.json`. */
 export interface UnitClassData {
 	id: string;
@@ -87,6 +135,12 @@ export interface UnitDocument {
 	class: string;
 	level: number;
 	weapon: string;
+	/**
+	 * Weapon and item ids the unit carries, in pack order. The equipped `weapon`
+	 * is added to the front when it is not already listed. Omitted, the pack is
+	 * just the equipped weapon.
+	 */
+	inventory?: string[];
 	/** Marks the army's leader - the cursor starts on this unit at the top of a battle. */
 	commander?: boolean;
 	stats: UnitStats;
@@ -116,15 +170,20 @@ export interface UnitData extends JsonSchema {
 	growths: UnitStats;
 	maxStats: UnitStats;
 	currentHP: number;
-	weapon: WeaponData;
+	/** The readied weapon - the same object as the `equipped` entry in `inventory` - or null when the unit has unequipped. */
+	weapon: WeaponData | null;
+	/** Everything the unit carries: weapons (at most one readied) and consumables. */
+	inventory: InventoryEntry[];
 	hasMoved: boolean;
 }
 
 type RawClass = { name: string; tier: string; weaponTypes: string[]; movement: number; ability: string; promotesTo: string[] };
 type RawWeapon = { name: string; type: string; rank: string; might: number; hit: number; critical: number; weight: number; minRange: number; maxRange: number; uses: number };
+type RawItem = { name: string; uses: number; heal?: HealAmount; description: string };
 
 const classCatalog = classesDocument.classes as Record<string, RawClass>;
 const weaponCatalog = weaponsDocument.weapons as Record<string, RawWeapon>;
+const itemCatalog = itemsDocument.items as Record<string, RawItem>;
 
 function assertStats(value: unknown, where: string): UnitStats {
 	if (typeof value !== "object" || value === null) {
@@ -159,6 +218,48 @@ export function getWeapon(id: string): WeaponData {
 	}
 
 	return { id, ...weapon, type: assertWeaponType(weapon.type, `Weapon "${id}"`) };
+}
+
+/** Resolves a consumable id against `data/items.json`. */
+export function getItem(id: string): ItemData {
+	const item = itemCatalog[id];
+
+	if (item === undefined) {
+		throw new GameError(`Item "${id}" is not in the catalog`);
+	}
+
+	return { id, heal: 0, ...item };
+}
+
+/**
+ * Resolves one pack id to an [[InventoryEntry]]: a weapon (flagged `equippable`
+ * when `classWeaponTypes` covers it, `equipped` when it matches `equippedId`) or
+ * a consumable. Throws when the id is in neither catalog.
+ */
+export function resolveInventoryEntry(id: string, classWeaponTypes: readonly WeaponType[], equippedId: string): InventoryEntry {
+	if (weaponCatalog[id] !== undefined) {
+		const weapon = getWeapon(id);
+
+		return {
+			id,
+			name: weapon.name,
+			kind: InventoryKind.WEAPON,
+			equippable: classWeaponTypes.includes(weapon.type),
+			equipped: id === equippedId,
+			uses: weapon.uses,
+			maxUses: weapon.uses,
+			weapon,
+			item: null
+		};
+	}
+
+	if (itemCatalog[id] !== undefined) {
+		const item = getItem(id);
+
+		return { id, name: item.name, kind: InventoryKind.ITEM, equippable: false, equipped: false, uses: item.uses, maxUses: item.uses, weapon: null, item };
+	}
+
+	throw new GameError(`Inventory entry "${id}" is not a known weapon or item`);
 }
 
 /** Resolves a class id against `data/classes.json`. */
@@ -209,6 +310,15 @@ export function buildUnit(document: UnitDocument): UnitData {
 
 	const stats = assertStats(document.stats, `Unit "${document.id}"`);
 
+	const packIds = [...(document.inventory ?? [document.weapon])];
+
+	if (!packIds.includes(document.weapon)) {
+		packIds.unshift(document.weapon);
+	}
+
+	const inventory = packIds.map((id) => resolveInventoryEntry(id, unitClass.weaponTypes, document.weapon));
+	const equippedEntry = inventory.find((entry) => entry.equipped);
+
 	return {
 		id: document.id,
 		name: document.name,
@@ -223,7 +333,8 @@ export function buildUnit(document: UnitDocument): UnitData {
 		growths: assertStats(document.growths, `Unit "${document.id}"`),
 		maxStats: assertStats(document.maxStats, `Unit "${document.id}"`),
 		currentHP: stats.hp,
-		weapon,
+		weapon: equippedEntry?.weapon ?? weapon,
+		inventory,
 		hasMoved: false
 	};
 }

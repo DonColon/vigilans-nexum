@@ -7,12 +7,12 @@ import { Display } from "@/core/graphics/Display";
 import { Graphics } from "@/core/graphics/rendering/Graphics";
 import { FontStyleSettings } from "@/core/graphics/styles/text/FontStyle";
 import { TextAlign, TextAlignType } from "@/core/graphics/styles/text/TextAlign";
-import { TextBaseline } from "@/core/graphics/styles/text/TextBaseline";
+import { Circle } from "@/core/math/geometry/Circle";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { DialogComponent, DialogData } from "@/game/ui/components/DialogComponent";
 import { MenuComponent, MenuData } from "@/game/ui/components/MenuComponent";
-import { drawDivider, drawMenuHighlight, drawPanel, uiAssetsReady } from "@/game/ui/model/UIPanel";
+import { drawDivider, drawMenuHighlight, drawPanel, drawText, uiAssetsReady } from "@/game/ui/model/UIPanel";
 import { countWords, revealedWordCount, splitWords, wrapText } from "@/game/ui/model/TextReveal";
 import { dialogBox, menuHeight } from "@/game/ui/model/UILayout";
 import { UITheme } from "@/game/ui/model/UITheme";
@@ -51,16 +51,17 @@ export class UIRenderSystem extends RenderSystem {
 		const graphics = this.display.getLayer("ui");
 		graphics.clearCanvas();
 
-		const menu = this.queries.menus.getSingleResult();
+		const menus = this.queries.menus.getResult();
 		const dialog = this.queries.dialogs.getSingleResult();
 
-		if ((menu === null && dialog === null) || !uiAssetsReady(this.assetStorage)) {
+		if ((menus.length === 0 && dialog === null) || !uiAssetsReady(this.assetStorage)) {
 			return;
 		}
 
 		this.blink += elapsed;
 
-		if (menu !== null) {
+		// Oldest first, so a submenu (created later) lands on top of its base menu.
+		for (const menu of menus) {
 			const position = menu.getComponent(TransformComponent).read();
 			this.renderMenu(graphics, menu.getComponent(MenuComponent).read(), position.x, position.y);
 		}
@@ -142,30 +143,58 @@ export class UIRenderSystem extends RenderSystem {
 		// its arms never touch the frame.
 		const inset = UITheme.nineSlice.corner / 2 + 2;
 
+		// A left gutter for the badge discs, reserved for every row only when some
+		// row actually carries one, so a plain menu is unchanged.
+		const badged = data.badges.some((badge) => badge.length > 0);
+		const badgeDiameter = Math.round(UITheme.lineHeight * 0.56);
+		const textX = x + UITheme.padding + (badged ? badgeDiameter + 8 : 0);
+
 		for (const [index, item] of data.items.entries()) {
 			const rowTop = slotTop + index * UITheme.lineHeight;
+			const centreY = rowTop + UITheme.lineHeight / 2;
 
 			if (index === data.selectedIndex) {
 				const row = new Rectangle(x + inset, rowTop + 1, box.getWidth() - 2 * inset, UITheme.lineHeight - 2);
 				drawMenuHighlight(graphics, row);
 			}
 
+			const badge = data.badges[index] ?? "";
+
+			if (badge.length > 0) {
+				this.drawBadge(graphics, badge, x + UITheme.padding + badgeDiameter / 2, centreY, badgeDiameter);
+			}
+
 			const color = index === data.selectedIndex ? UITheme.menuItemSelected : UITheme.menuItem;
-			this.label(graphics, item, x + UITheme.padding, rowTop + UITheme.lineHeight / 2, UITheme.menu, color, TextAlign.LEFT);
+			this.label(graphics, item, textX, centreY, UITheme.menu, color, TextAlign.LEFT);
+
+			const value = data.values[index] ?? "";
+
+			if (value.length > 0) {
+				this.label(graphics, value, x + box.getWidth() - UITheme.padding, centreY, UITheme.menu, color, TextAlign.RIGHT);
+			}
 		}
 	}
 
 	/**
-	 * Draws one line of text with its optical centre (the middle of the cap
-	 * height, not the em box) on `centreY`. Pixel fonts sit oddly in the em box,
-	 * so `textBaseline: "middle"` leaves them looking high or low; this places the
-	 * baseline by hand from the font's cap ratio instead.
+	 * The Fire Emblem "equipped" mark: a small gold coin with a dark letter,
+	 * sitting in the menu's left gutter. Drawn at integer coordinates so the pixel
+	 * font stays crisp.
 	 */
-	private label(graphics: Graphics, value: string, x: number, centreY: number, font: FontStyleSettings, color: Color, align: TextAlignType): void {
-		const size = parseInt(font.size ?? "16", 10);
-		const baseline = Math.round(centreY + (size * UITheme.capRatio) / 2);
+	private drawBadge(graphics: Graphics, letter: string, centreX: number, centreY: number, diameter: number): void {
+		const cx = Math.round(centreX);
+		const cy = Math.round(centreY);
+		const radius = diameter / 2;
 
-		graphics.fontStyle(font).textStyle({ align, baseline: TextBaseline.ALPHABETIC }).fillColor(color);
-		graphics.fillText(value, x, baseline);
+		graphics.fillColor(UITheme.menuBadgeFill).fillCircle(new Circle(cx, cy, radius));
+		graphics
+			.strokeColor(UITheme.menuBadgeRim)
+			.lineStyle({ width: 2 })
+			.strokeCircle(new Circle(cx, cy, radius - 1));
+		this.label(graphics, letter, cx, cy, UITheme.badge, UITheme.menuBadgeText, TextAlign.CENTER);
+	}
+
+	/** A line of text on its optical centre - see `drawText` in UIPanel. */
+	private label(graphics: Graphics, value: string, x: number, centreY: number, font: FontStyleSettings, color: Color, align: TextAlignType): void {
+		drawText(graphics, value, x, centreY, { font, color, align });
 	}
 }

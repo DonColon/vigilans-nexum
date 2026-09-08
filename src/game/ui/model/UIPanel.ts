@@ -1,9 +1,37 @@
 import { AssetStorage } from "@/core/assets/AssetStorage";
+import { Color } from "@/core/graphics/color/Color";
 import { Graphics } from "@/core/graphics/rendering/Graphics";
+import { FontStyleSettings } from "@/core/graphics/styles/text/FontStyle";
+import { TextAlign, TextAlignType } from "@/core/graphics/styles/text/TextAlign";
+import { TextBaseline } from "@/core/graphics/styles/text/TextBaseline";
 import { Line } from "@/core/math/geometry/Line";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { drawNineSlice, NineSlice } from "@/game/ui/model/NineSlice";
 import { UITheme } from "@/game/ui/model/UITheme";
+
+export interface PanelTextStyle {
+	font: FontStyleSettings;
+	color: Color;
+	/** Defaults to left-aligned. */
+	align?: TextAlignType;
+}
+
+/**
+ * Draws one line of text with its optical centre - the middle of the cap
+ * height, not the em box - on `centreY`. Pixel fonts sit oddly in the em box,
+ * so `textBaseline: "middle"` leaves them looking high or low; this places the
+ * baseline by hand from the font's cap ratio instead.
+ */
+export function drawText(graphics: Graphics, value: string, x: number, centreY: number, style: PanelTextStyle): void {
+	const size = parseInt(style.font.size ?? "16", 10);
+	const baseline = Math.round(centreY + (size * UITheme.capRatio) / 2);
+
+	graphics
+		.fontStyle(style.font)
+		.textStyle({ align: style.align ?? TextAlign.LEFT, baseline: TextBaseline.ALPHABETIC })
+		.fillColor(style.color);
+	graphics.fillText(value, x, baseline);
+}
 
 /**
  * Whether the UI sprites have finished loading. The panels cannot be drawn

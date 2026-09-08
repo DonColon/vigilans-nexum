@@ -1,7 +1,15 @@
 {
 	"menu.examine": "Untersuchen",
 	"menu.lore": "Überlieferung",
+	"menu.attack": "Angriff",
+	"menu.items": "Gegenstände",
 	"menu.wait": "Warten",
+	"menu.endTurn": "Zug beenden",
+	"menu.equip": "Ausrüsten",
+	"menu.unequip": "Ablegen",
+	"menu.use": "Benutzen",
+	"menu.drop": "Wegwerfen",
+	"menu.equipped": "E",
 	"menu.back": "Zurück",
 	"menu.confirm": "Bestätigen",
 	"menu.cancel": "Abbrechen",
@@ -10,5 +18,9 @@
 	"turn.playerPhase": "Spielerphase",
 	"turn.enemyPhase": "Gegnerphase",
 	"terrain.inspect": "Feld {column}, {row} - {terrain}. Bewegungskosten: {cost}.",
-	"unit.hp": "{name}: {current}/{max} HP"
+	"unit.hp": "{name}: {current}/{max} HP",
+	"forecast.hp": "HP",
+	"forecast.damage": "Schaden",
+	"forecast.hit": "Treffer",
+	"forecast.crit": "Krit."
 }

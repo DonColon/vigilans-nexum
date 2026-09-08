@@ -1,0 +1,24 @@
+{
+	"format": "vigilans-items",
+	"version": 1,
+	"items": {
+		"vulnerary": {
+			"name": "Vulnerary",
+			"uses": 3,
+			"heal": 10,
+			"description": "A medicinal salve. Restores a small amount of HP."
+		},
+		"concoction": {
+			"name": "Concoction",
+			"uses": 3,
+			"heal": 20,
+			"description": "A refined draught. Restores a fair amount of HP."
+		},
+		"elixir": {
+			"name": "Elixir",
+			"uses": 3,
+			"heal": "full",
+			"description": "A potent tonic. Fully restores HP."
+		}
+	}
+}

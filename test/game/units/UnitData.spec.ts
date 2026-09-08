@@ -1,6 +1,6 @@
 import { test, expect, suite } from "vitest";
 import { GameError } from "@/core/GameError";
-import { buildUnit, getUnitClass, getWeapon, UnitDocument, UnitFaction, WeaponType } from "@/game/units/model/UnitData";
+import { buildUnit, getItem, getUnitClass, getWeapon, InventoryKind, UnitDocument, UnitFaction, WeaponType } from "@/game/units/model/UnitData";
 import dardanDocument from "@/game/units/data/dardan.unit.json";
 import hasanDocument from "@/game/units/data/hasan.unit.json";
 
@@ -13,9 +13,9 @@ suite("Unit Data Test Suite", () => {
 		expect(dardan.classLabel).toBe("Swordsman");
 		expect(dardan.movement).toBe(5);
 		expect(dardan.weaponTypes).toContain(WeaponType.SWORD);
-		expect(dardan.weapon.name).toBe("Bronze Sword");
-		expect(dardan.weapon.minRange).toBe(1);
-		expect(dardan.weapon.maxRange).toBe(1);
+		expect(dardan.weapon?.name).toBe("Bronze Sword");
+		expect(dardan.weapon?.minRange).toBe(1);
+		expect(dardan.weapon?.maxRange).toBe(1);
 		expect(dardan.currentHP).toBe(dardan.stats.hp);
 		expect(dardan.hasMoved).toBe(false);
 		expect(dardan.commander).toBe(true);
@@ -26,17 +26,54 @@ suite("Unit Data Test Suite", () => {
 
 		expect(hasan.faction).toBe(UnitFaction.ENEMY);
 		expect(hasan.classLabel).toBe("Axe Fighter");
-		expect(hasan.weapon.type).toBe(WeaponType.AXE);
+		expect(hasan.weapon?.type).toBe(WeaponType.AXE);
 		expect(hasan.stats.strength).toBeGreaterThan(buildUnit(dardanDocument as UnitDocument).stats.strength);
 		expect(hasan.commander).toBe(false);
 	});
 
 	test("Catalogs are looked up by id", () => {
 		expect(getWeapon("bronze-axe").might).toBe(5);
+		expect(getWeapon("iron-sword").might).toBe(5);
+		expect(getItem("vulnerary").uses).toBe(3);
+		expect(getItem("vulnerary").heal).toBe(10);
+		expect(getItem("elixir").heal).toBe("full");
 		expect(getUnitClass("axe-fighter").weaponTypes).toStrictEqual([WeaponType.AXE]);
 
 		expect(() => getWeapon("mythril-lance")).toThrowError(GameError);
+		expect(() => getItem("panacea")).toThrowError(GameError);
 		expect(() => getUnitClass("dragon")).toThrowError(GameError);
+	});
+
+	test("A unit resolves its pack of weapons and items, one weapon readied", () => {
+		const dardan = buildUnit(dardanDocument as UnitDocument);
+
+		expect(dardan.inventory.map((entry) => entry.id)).toStrictEqual(["bronze-sword", "iron-sword", "iron-blade", "vulnerary"]);
+
+		const ironSword = dardan.inventory[1];
+		expect(ironSword.kind).toBe(InventoryKind.WEAPON);
+		expect(ironSword.equippable).toBe(true);
+		expect(ironSword.equipped).toBe(false);
+
+		const vulnerary = dardan.inventory[3];
+		expect(vulnerary.kind).toBe(InventoryKind.ITEM);
+		expect(vulnerary.equippable).toBe(false);
+		expect(vulnerary.item?.name).toBe("Vulnerary");
+
+		const readied = dardan.inventory.filter((entry) => entry.equipped);
+		expect(readied).toHaveLength(1);
+		expect(readied[0].id).toBe("bronze-sword");
+		expect(dardan.weapon).toBe(readied[0].weapon);
+	});
+
+	test("With no inventory listed the pack is just the readied weapon", () => {
+		const loner = buildUnit({ ...(dardanDocument as UnitDocument), inventory: undefined });
+
+		expect(loner.inventory.map((entry) => entry.id)).toStrictEqual(["bronze-sword"]);
+		expect(loner.inventory[0].equipped).toBe(true);
+	});
+
+	test("An unknown pack entry is rejected", () => {
+		expect(() => buildUnit({ ...(dardanDocument as UnitDocument), inventory: ["bronze-sword", "moonstone"] })).toThrowError(GameError);
 	});
 
 	test("A unit that cannot wield its weapon is rejected", () => {

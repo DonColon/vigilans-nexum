@@ -72,6 +72,40 @@ export function randomBoolean(): boolean {
 	return Math.round(generator.next()) === 1;
 }
 
+/**
+ * A single pass/fail roll against a percentage. `percent <= 0` never passes,
+ * `percent >= 100` always does. This is the plain "1RN" check - use it for
+ * anything where the displayed odds should be the real odds (a critical hit, a
+ * skill proc).
+ */
+export function rollChance(percent: number): boolean {
+	if (percent <= 0) return false;
+	if (percent >= 100) return true;
+
+	return generator.next() * 100 < percent;
+}
+
+/**
+ * A pass/fail roll that averages `samples` draws before comparing to `percent` -
+ * the "true hit" system Fire Emblem uses for accuracy from the GBA games onward.
+ * Averaging pulls the real odds towards the extremes: a displayed 80% lands more
+ * than 80% of the time, a displayed 20% less than 20%, and 50% stays 50%. Two
+ * samples is the Fire Emblem default.
+ */
+export function rollChanceAveraged(percent: number, samples: number = 2): boolean {
+	if (percent <= 0) return false;
+	if (percent >= 100) return true;
+
+	const rolls = Math.max(1, Math.floor(samples));
+	let total = 0;
+
+	for (let i = 0; i < rolls; i++) {
+		total += generator.next() * 100;
+	}
+
+	return total / rolls < percent;
+}
+
 export function randomBooleans<L extends number>(length: L): Tuple<boolean, L> {
 	const values = [];
 
