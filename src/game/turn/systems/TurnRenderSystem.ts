@@ -1,15 +1,12 @@
 import { AssetStorage } from "@/core/assets/AssetStorage";
 import { Query } from "@/core/ecs/Query";
-import { RenderSystem } from "@/core/ecs/RenderSystem";
-import { TransformSystem } from "@/core/ecs/systems/TransformSystem";
-import { World } from "@/core/ecs/World";
-import { Display } from "@/core/graphics/Display";
 import { TextAlign } from "@/core/graphics/styles/text/TextAlign";
 import { TextBaseline } from "@/core/graphics/styles/text/TextBaseline";
 import { i18n } from "@/core/i18n/I18n";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { GridComponent } from "@/game/map/components/GridComponent";
+import { MapRenderSystem } from "@/game/map/systems/MapRenderSystem";
 import { TurnComponent } from "@/game/turn/components/TurnComponent";
 import { TurnHud, turnDigits } from "@/game/turn/model/TurnHud";
 
@@ -19,13 +16,7 @@ import { TurnHud, turnDigits } from "@/game/turn/model/TurnHud";
  * and clears that layer), so it stays visible over menus and redraws itself
  * every frame.
  */
-export class TurnRenderSystem extends RenderSystem {
-	@GameCoreService(World)
-	private world!: World;
-
-	@GameCoreService(Display)
-	private display!: Display;
-
+export class TurnRenderSystem extends MapRenderSystem {
 	@GameCoreService(AssetStorage)
 	private assetStorage!: AssetStorage;
 
@@ -38,18 +29,13 @@ export class TurnRenderSystem extends RenderSystem {
 
 	public execute(): void {
 		const turn = this.queries.turns.getSingleResult();
-		const map = this.queries.grids.getSingleResult();
+		const view = this.mapView(this.queries.grids.getSingleResult());
 
-		if (turn === null || map === null || !this.assetStorage.hasSpritesheet(TurnHud.sheet)) {
+		if (turn === null || view === null || !this.assetStorage.hasSpritesheet(TurnHud.sheet)) {
 			return;
 		}
 
-		const transforms = this.world.getSystem(TransformSystem) as TransformSystem;
-		const origin = transforms.getWorldPosition(map);
-
-		if (origin === null) {
-			return;
-		}
+		const origin = view.origin;
 
 		const digits = turnDigits(turn.getComponent(TurnComponent).read().number);
 		const size = TurnHud.glyph * TurnHud.scale;

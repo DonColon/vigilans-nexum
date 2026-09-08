@@ -1,29 +1,12 @@
 import { GameCommandConstructor } from "@/core/input/commands/GameCommand";
-import { InputBinding } from "@/core/input/commands/InputBinding";
-import { InputChannel } from "@/core/input/InputChannel";
-import { InputState } from "@/core/input/InputState";
 import { EventSystem } from "@/core/events/EventSystem";
-import { GamepadInput } from "@/core/input/gamepad/GamepadInput";
-import { KeyboardInput } from "@/core/input/keyboard/KeyboardInput";
 import { GameCoreService } from "@/core/service/GameCoreService";
+import { confirmBinding } from "@/game/input/Controls";
 import { MapCommand, MapCommandContext } from "@/game/map/commands/MapCommand";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
 import { GridSystem } from "@/game/map/systems/GridSystem";
 import { Terrain } from "@/game/map/model/Terrain";
-
-function confirmBinding(): InputBinding {
-	const keys = [KeyboardInput.ENTER, KeyboardInput.SPACE, KeyboardInput.KEY_Z, KeyboardInput.NUMPAD_ENTER];
-	const buttons = [GamepadInput.A];
-
-	return new InputBinding({
-		and: false,
-		bindings: [
-			...keys.map((input) => new InputBinding({ channel: InputChannel.KEYBOARD, input, state: InputState.JUST_PRESSED })),
-			...buttons.map((input) => new InputBinding({ channel: InputChannel.GAMEPAD, input, state: InputState.JUST_PRESSED }))
-		]
-	});
-}
 
 /**
  * Confirm on the tile under the cursor. The map itself does nothing with it - it

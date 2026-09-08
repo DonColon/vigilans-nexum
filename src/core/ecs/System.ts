@@ -1,6 +1,6 @@
 import { QueryList } from "@/core/ecs/Query";
 
-export type SystemConstructor = new (priority: number) => System;
+export type SystemConstructor<Type extends System = System> = new (priority: number) => Type;
 
 export abstract class System {
 	protected queries: QueryList;

@@ -1,5 +1,6 @@
 import { Entity } from "@/core/ecs/Entity";
 import { Query } from "@/core/ecs/Query";
+import { clamp } from "@/core/math/utils/Clamp";
 import { UpdateSystem } from "@/core/ecs/UpdateSystem";
 import { EventSystem } from "@/core/events/EventSystem";
 import { GameStateManager } from "@/core/GameStateManager";
@@ -7,6 +8,7 @@ import { GameCoreService } from "@/core/service/GameCoreService";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
+import { UnitSystem } from "@/game/units/systems/UnitSystem";
 import { ForecastCommand } from "@/game/combat/commands/ForecastCommands";
 import { ForecastComponent, ForecastData } from "@/game/combat/components/ForecastComponent";
 import { ForecastState } from "@/game/combat/states/ForecastState";
@@ -80,10 +82,10 @@ export class ForecastSystem extends UpdateSystem {
 			return;
 		}
 
-		const defenderIndex = clamp(data.defenderIndex, data.defenderIds.length);
+		const defenderIndex = clamp(data.defenderIndex, 0, data.defenderIds.length - 1);
 		const defenderId = data.defenderIds[defenderIndex];
-		const attacker = this.unitById(data.attackerId);
-		const defender = this.unitById(defenderId);
+		const attacker = this.unit(data.attackerId);
+		const defender = this.unit(defenderId);
 
 		if (attacker === null || defender === null) {
 			return;
@@ -91,7 +93,7 @@ export class ForecastSystem extends UpdateSystem {
 
 		const distance = CombatSystem.distance(attacker.getComponent(GridPositionComponent).read(), defender.getComponent(GridPositionComponent).read());
 		const weaponIds = CombatSystem.weaponsReaching(attacker.getComponent(UnitComponent).read(), distance).map((entry) => entry.id);
-		const weaponIndex = clamp(data.weaponIndex, Math.max(1, weaponIds.length));
+		const weaponIndex = clamp(data.weaponIndex, 0, Math.max(1, weaponIds.length) - 1);
 
 		if (defenderIndex === data.defenderIndex && defenderId === data.defenderId && weaponIndex === data.weaponIndex && sameList(weaponIds, data.weaponIds)) {
 			return;
@@ -101,7 +103,7 @@ export class ForecastSystem extends UpdateSystem {
 	}
 
 	private parkCursor(data: ForecastData): void {
-		const defender = this.unitById(data.defenderId);
+		const defender = this.unit(data.defenderId);
 		const cursor = this.queries.cursors.getSingleResult();
 
 		if (defender === null || cursor === null) {
@@ -128,8 +130,9 @@ export class ForecastSystem extends UpdateSystem {
 		}
 	}
 
-	private unitById(id: string): Entity | null {
-		return this.queries.units.getResult().find((entity) => entity.getComponent(UnitComponent).read().id === id) ?? null;
+	/** The unit with this id, out of the ones on the map right now. */
+	private unit(id: string): Entity | null {
+		return UnitSystem.byId(this.queries.units.getResult(), id);
 	}
 
 	private runCommands(elapsed: number, frame: number, state: ForecastState, forecast: Entity): void {
@@ -137,10 +140,6 @@ export class ForecastSystem extends UpdateSystem {
 			command.execute(elapsed, frame, { forecast });
 		}
 	}
-}
-
-function clamp(index: number, length: number): number {
-	return Math.max(0, Math.min(index, length - 1));
 }
 
 function sameList(a: readonly string[], b: readonly string[]): boolean {

@@ -1,12 +1,11 @@
 import { Entity } from "@/core/ecs/Entity";
-import { EventSystem } from "@/core/events/EventSystem";
-import { UnsubscribeFunction } from "@/core/events/GameEvents";
-import { GameFeature, GameFeatureConfig } from "@/core/GameFeature";
-import { GameCoreService } from "@/core/service/GameCoreService";
+import { GameFeatureConfig } from "@/core/GameFeature";
+import { BattleMapFeature } from "@/game/map/BattleMapFeature";
 import { TurnComponent } from "@/game/turn/components/TurnComponent";
 import { TurnRenderSystem } from "@/game/turn/systems/TurnRenderSystem";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
 import { UnitFaction } from "@/game/units/model/UnitData";
+import { UnitSystem } from "@/game/units/systems/UnitSystem";
 
 /**
  * The battle turn counter. It owns the `TurnComponent`, shows it in the map's
@@ -14,11 +13,7 @@ import { UnitFaction } from "@/game/units/model/UnitData";
  * global command menu, or on its own once every player unit has acted
  * (`unit:acted`). Ending a turn wakes every player unit back up.
  */
-export class TurnFeature extends GameFeature {
-	@GameCoreService(EventSystem)
-	private events!: EventSystem;
-
-	private subscriptions: UnsubscribeFunction[] = [];
+export class TurnFeature extends BattleMapFeature {
 	private turn: Entity | null = null;
 
 	constructor(config: GameFeatureConfig = {}) {
@@ -32,22 +27,18 @@ export class TurnFeature extends GameFeature {
 	}
 
 	protected onInstall(): void {
-		this.subscriptions.push(
-			this.events.subscribe("map:ready", () => this.begin()),
-			this.events.subscribe("map:closed", () => this.end()),
-			this.events.subscribe("turn:end", () => this.advance()),
-			this.events.subscribe("unit:acted", () => this.advanceIfDone())
-		);
+		super.onInstall();
+
+		this.subscribe("map:ready", () => this.begin());
+		this.subscribe("map:closed", () => this.end());
+		this.subscribe("turn:end", () => this.advance());
+		this.subscribe("unit:acted", () => this.advanceIfDone());
 	}
 
 	protected onUninstall(): void {
+		super.onUninstall();
+
 		this.end();
-
-		for (const unsubscribe of this.subscriptions) {
-			unsubscribe();
-		}
-
-		this.subscriptions = [];
 	}
 
 	private begin(): void {
@@ -92,6 +83,6 @@ export class TurnFeature extends GameFeature {
 	}
 
 	private playerUnits(): Entity[] {
-		return this.world.getEntities().filter((entity) => entity.hasComponent(UnitComponent) && entity.getComponent(UnitComponent).read().faction === UnitFaction.PLAYER);
+		return UnitSystem.ofFaction(UnitSystem.inWorld(this.world), UnitFaction.PLAYER);
 	}
 }

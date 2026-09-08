@@ -2,7 +2,7 @@ import { GameCoreService } from "@/core/service/GameCoreService";
 import type { GameCommand, GameCommandConstructor, GameCommandFamily } from "@/core/input/commands/GameCommand";
 import type { InputDevice } from "@/core/input/InputDevice";
 
-export type GameStateConstructor = (new () => GameState) & { readonly type: string };
+export type GameStateConstructor<Type extends GameState = GameState> = (new () => Type) & { readonly type: string };
 
 export abstract class GameState {
 	/**

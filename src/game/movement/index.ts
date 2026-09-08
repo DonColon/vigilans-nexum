@@ -17,3 +17,17 @@ export { pathTiles, OPPOSITE } from "@/game/movement/model/PathTiles";
 export type { PathTileSprite, PathKind, Direction } from "@/game/movement/model/PathTiles";
 export { walkPoint, WALK_STEP_MS } from "@/game/movement/model/PathWalk";
 export { MovementTheme } from "@/game/movement/model/MovementTheme";
+
+export {
+	MenuLabel,
+	unitCommandRows,
+	itemActionRows,
+	globalCommandRequest,
+	unitCommandRequest,
+	itemsRequest,
+	itemActionRequest,
+	COMMAND_MENU,
+	GLOBAL_MENU,
+	ITEMS_MENU,
+	ITEM_ACTION_MENU
+} from "@/game/movement/model/UnitMenus";

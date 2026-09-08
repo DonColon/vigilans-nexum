@@ -231,14 +231,14 @@ export class World {
 		}
 	}
 
-	public getSystem(systemType: SystemConstructor): System {
+	public getSystem<Type extends System>(systemType: SystemConstructor<Type>): Type {
 		const system = this.systems.get(systemType.name);
 
 		if (system === undefined) {
 			throw new GameError(`System ${systemType.name} is not registered`);
 		}
 
-		return system;
+		return system as Type;
 	}
 
 	public getUpdateSchedule(): System[] {

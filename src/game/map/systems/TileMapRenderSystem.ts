@@ -1,11 +1,7 @@
 import { AssetStorage } from "@/core/assets/AssetStorage";
 import { Query, QueryList } from "@/core/ecs/Query";
-import { RenderSystem } from "@/core/ecs/RenderSystem";
 import { TransformComponent } from "@/core/ecs/components/TransformComponent";
-import { TransformSystem } from "@/core/ecs/systems/TransformSystem";
-import { World } from "@/core/ecs/World";
 import { Color } from "@/core/graphics/color/Color";
-import { Display } from "@/core/graphics/Display";
 import { Graphics } from "@/core/graphics/rendering/Graphics";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { Vector2D } from "@/core/math/geometry/Vector2D";
@@ -13,6 +9,7 @@ import { GameCoreService } from "@/core/service/GameCoreService";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { TileMapComponent, TileMapData } from "@/game/map/components/TileMapComponent";
 import { EMPTY_TILE } from "@/game/map/model/TileMapFormat";
+import { MapRenderSystem } from "@/game/map/systems/MapRenderSystem";
 
 /**
  * Draws the tileset art of the battle map: every visual layer blitted cell by
@@ -22,14 +19,8 @@ import { EMPTY_TILE } from "@/game/map/model/TileMapFormat";
  * tileset spritesheet has finished loading, a frame or two after the map state
  * is entered.
  */
-export class TileMapRenderSystem extends RenderSystem {
+export class TileMapRenderSystem extends MapRenderSystem {
 	protected queries!: QueryList;
-
-	@GameCoreService(World)
-	private world!: World;
-
-	@GameCoreService(Display)
-	private display!: Display;
 
 	@GameCoreService(AssetStorage)
 	private assetStorage!: AssetStorage;
@@ -41,22 +32,15 @@ export class TileMapRenderSystem extends RenderSystem {
 	}
 
 	public execute(): void {
-		const entity = this.queries.tilemaps.getSingleResult();
+		const view = this.mapView(this.queries.tilemaps.getSingleResult());
 
-		if (entity === null) {
+		if (view === null) {
 			return;
 		}
 
-		const tilemap = entity.getComponent(TileMapComponent).read();
+		const tilemap = view.map.getComponent(TileMapComponent).read();
 
 		if (!this.assetStorage.hasSpritesheet(tilemap.tileset)) {
-			return;
-		}
-
-		const transforms = this.world.getSystem(TransformSystem) as TransformSystem;
-		const origin = transforms.getWorldPosition(entity);
-
-		if (origin === null) {
 			return;
 		}
 
@@ -66,14 +50,12 @@ export class TileMapRenderSystem extends RenderSystem {
 		// tile edge turns into a grey smear.
 		graphics.imageSmoothing();
 
-		const cellSize = entity.getComponent(GridComponent).read().cellSize;
-
 		if (tilemap.background) {
-			const size = new Rectangle(origin.x, origin.y, tilemap.columns * cellSize, tilemap.rows * cellSize);
+			const size = new Rectangle(view.origin.x, view.origin.y, tilemap.columns * view.cellSize, tilemap.rows * view.cellSize);
 			graphics.fillColor(Color.hex(tilemap.background)).fillRectangle(size);
 		}
 
-		this.renderLayers(graphics, tilemap, origin, cellSize);
+		this.renderLayers(graphics, tilemap, view.origin, view.cellSize);
 	}
 
 	private renderLayers(graphics: Graphics, tilemap: TileMapData, origin: Vector2D, cellSize: number) {

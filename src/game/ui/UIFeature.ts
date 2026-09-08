@@ -1,6 +1,3 @@
-import { EventSystem } from "@/core/events/EventSystem";
-import { UnsubscribeFunction } from "@/core/events/GameEvents";
-import { GameCoreService } from "@/core/service/GameCoreService";
 import { GameFeature, GameFeatureConfig } from "@/core/GameFeature";
 import { dialogCommands } from "@/game/ui/commands/DialogCommands";
 import { menuCommands } from "@/game/ui/commands/MenuCommands";
@@ -33,11 +30,7 @@ export interface UIFeatureConfig extends GameFeatureConfig {
  * than calling back - so a menu does not need to know what its rows mean.
  */
 export class UIFeature extends GameFeature {
-	@GameCoreService(EventSystem)
-	private events!: EventSystem;
-
 	private readonly demo: boolean;
-	private subscriptions: UnsubscribeFunction[] = [];
 	private lastTile: { column: number; row: number; terrain: string } | null = null;
 
 	constructor(config: UIFeatureConfig = {}) {
@@ -64,37 +57,27 @@ export class UIFeature extends GameFeature {
 			return;
 		}
 
-		this.subscriptions.push(
-			this.events.subscribe("map:tileConfirmed", (event) => {
-				this.lastTile = { column: event.column, row: event.row, terrain: event.terrain };
+		this.subscribe("map:tileConfirmed", (event) => {
+			this.lastTile = { column: event.column, row: event.row, terrain: event.terrain };
 
-				(this.stateManager.getState(MenuState) as MenuState).request(tileActionsMenu(event.terrain));
-				this.stateManager.push(MenuState);
-			}),
+			this.stateManager.getState(MenuState).request(tileActionsMenu(event.terrain));
+			this.stateManager.push(MenuState);
+		});
 
-			this.events.subscribe("ui:menuConfirmed", (event) => {
-				if (event.menu !== DEMO_MENU_ID) {
-					return;
-				}
+		this.subscribe("ui:menuConfirmed", (event) => {
+			if (event.menu !== DEMO_MENU_ID) {
+				return;
+			}
 
-				const dialog = this.stateManager.getState(DialogState) as DialogState;
+			const dialog = this.stateManager.getState(DialogState);
 
-				if (event.item === "Untersuchen" && this.lastTile) {
-					dialog.request(terrainDialog(this.lastTile.terrain, this.lastTile.column, this.lastTile.row));
-					this.stateManager.push(DialogState);
-				} else if (event.item === "Überlieferung") {
-					dialog.request(LORE_DIALOG);
-					this.stateManager.push(DialogState);
-				}
-			})
-		);
-	}
-
-	protected onUninstall(): void {
-		for (const unsubscribe of this.subscriptions) {
-			unsubscribe();
-		}
-
-		this.subscriptions = [];
+			if (event.item === "Untersuchen" && this.lastTile) {
+				dialog.request(terrainDialog(this.lastTile.terrain, this.lastTile.column, this.lastTile.row));
+				this.stateManager.push(DialogState);
+			} else if (event.item === "Überlieferung") {
+				dialog.request(LORE_DIALOG);
+				this.stateManager.push(DialogState);
+			}
+		});
 	}
 }

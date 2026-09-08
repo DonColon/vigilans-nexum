@@ -1,15 +1,11 @@
 import { Query } from "@/core/ecs/Query";
-import { RenderSystem } from "@/core/ecs/RenderSystem";
 import { TransformComponent } from "@/core/ecs/components/TransformComponent";
-import { TransformSystem } from "@/core/ecs/systems/TransformSystem";
-import { World } from "@/core/ecs/World";
 import { Color } from "@/core/graphics/color/Color";
-import { Display } from "@/core/graphics/Display";
 import { Graphics } from "@/core/graphics/rendering/Graphics";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { Vector2D } from "@/core/math/geometry/Vector2D";
-import { GameCoreService } from "@/core/service/GameCoreService";
 import { GridComponent } from "@/game/map/components/GridComponent";
+import { MapRenderSystem } from "@/game/map/systems/MapRenderSystem";
 import { GridPositionData } from "@/game/map/components/GridPositionComponent";
 import { MovementComponent } from "@/game/movement/components/MovementComponent";
 import { MovementTheme } from "@/game/movement/model/MovementTheme";
@@ -26,13 +22,7 @@ import { Direction, OPPOSITE, pathTiles } from "@/game/movement/model/PathTiles"
  * every rotation of that lands half a pixel off, so a turned corner never meets
  * the straight beside it. A centred band has no such seam.
  */
-export class MovementRenderSystem extends RenderSystem {
-	@GameCoreService(World)
-	private world!: World;
-
-	@GameCoreService(Display)
-	private display!: Display;
-
+export class MovementRenderSystem extends MapRenderSystem {
 	public initialize(): void {
 		this.queries = {
 			movements: new Query({ allowlist: [MovementComponent] }),
@@ -54,15 +44,14 @@ export class MovementRenderSystem extends RenderSystem {
 			return;
 		}
 
-		const transforms = this.world.getSystem(TransformSystem) as TransformSystem;
-		const origin = transforms.getWorldPosition(map);
+		const view = this.mapView(map);
 
-		if (origin === null) {
+		if (view === null) {
 			return;
 		}
 
 		const graphics = this.display.getLayer("background");
-		const { cellSize } = map.getComponent(GridComponent).read();
+		const { origin, cellSize } = view;
 
 		this.renderRange(graphics, movement.attack, origin, cellSize, MovementTheme.attackFill, MovementTheme.attackEdge);
 		this.renderRange(graphics, movement.movement, origin, cellSize, MovementTheme.moveFill, MovementTheme.moveEdge);

@@ -1,6 +1,6 @@
 import { Entity } from "@/core/ecs/Entity";
+import { Query } from "@/core/ecs/Query";
 import { UpdateSystem } from "@/core/ecs/UpdateSystem";
-import { World } from "@/core/ecs/World";
 import { EventSystem } from "@/core/events/EventSystem";
 import { GameStateManager } from "@/core/GameStateManager";
 import { GameCoreService } from "@/core/service/GameCoreService";
@@ -21,16 +21,17 @@ import { BattleAnimationState } from "@/game/combat/states/BattleAnimationState"
  * only delays the *visual* and takes fallen units off the map afterwards.
  */
 export class BattleAnimationSystem extends UpdateSystem {
-	@GameCoreService(World)
-	private world!: World;
-
 	@GameCoreService(GameStateManager)
 	private stateManager!: GameStateManager;
 
 	@GameCoreService(EventSystem)
 	private eventSystem!: EventSystem;
 
-	public initialize(): void {}
+	public initialize(): void {
+		this.queries = {
+			units: new Query({ allowlist: [UnitComponent] })
+		};
+	}
 
 	public execute(elapsed: number): void {
 		const state = this.stateManager.peek();
@@ -48,7 +49,7 @@ export class BattleAnimationSystem extends UpdateSystem {
 		const component = entity.getComponent(BattleAnimationComponent);
 		const data = component.read();
 
-		const units = this.world.getEntities().filter((candidate) => candidate.hasComponent(UnitComponent));
+		const units = this.queries.units.getResult();
 		const attacker = UnitSystem.byId(units, data.attackerId);
 		const defender = UnitSystem.byId(units, data.defenderId);
 

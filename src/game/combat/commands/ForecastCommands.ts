@@ -1,11 +1,10 @@
 import { Entity } from "@/core/ecs/Entity";
 import { GameCommand, GameCommandConstructor } from "@/core/input/commands/GameCommand";
 import { InputBinding } from "@/core/input/commands/InputBinding";
-import { InputChannel } from "@/core/input/InputChannel";
-import { InputState } from "@/core/input/InputState";
-import { GamepadInput, GamepadInputType } from "@/core/input/gamepad/GamepadInput";
-import { KeyboardInput, KeyboardInputType } from "@/core/input/keyboard/KeyboardInput";
-import { confirmBinding } from "@/game/ui/commands/DialogCommands";
+import { InputSet, pressed } from "@/core/input/commands/InputBindings";
+import { GamepadInput } from "@/core/input/gamepad/GamepadInput";
+import { KeyboardInput } from "@/core/input/keyboard/KeyboardInput";
+import { cancelBinding, confirmBinding } from "@/game/input/Controls";
 import { ForecastComponent } from "@/game/combat/components/ForecastComponent";
 
 /** What a forecast command is handed each tick. */
@@ -17,15 +16,15 @@ export interface ForecastCommandContext {
 /** Input the player can trigger during an attack - target picking and the battle forecast both. */
 export abstract class ForecastCommand extends GameCommand<ForecastCommandContext> {}
 
-function pressBinding(keys: readonly KeyboardInputType[], buttons: readonly GamepadInputType[]): InputBinding {
-	return new InputBinding({
-		and: false,
-		bindings: [
-			...keys.map((input) => new InputBinding({ channel: InputChannel.KEYBOARD, input, state: InputState.JUST_PRESSED })),
-			...buttons.map((input) => new InputBinding({ channel: InputChannel.GAMEPAD, input, state: InputState.JUST_PRESSED }))
-		]
-	});
-}
+/**
+ * Target cycling takes any direction, weapon cycling only left / right. Both
+ * stay on the d-pad rather than the shared direction sets: the left stick is
+ * too easy to nudge while lining a fight up.
+ */
+const NEXT_TARGET: InputSet = { keys: [KeyboardInput.ARROW_RIGHT, KeyboardInput.ARROW_DOWN, KeyboardInput.KEY_D, KeyboardInput.KEY_S], buttons: [GamepadInput.DPAD_RIGHT, GamepadInput.DPAD_DOWN] };
+const PREVIOUS_TARGET: InputSet = { keys: [KeyboardInput.ARROW_LEFT, KeyboardInput.ARROW_UP, KeyboardInput.KEY_A, KeyboardInput.KEY_W], buttons: [GamepadInput.DPAD_LEFT, GamepadInput.DPAD_UP] };
+const NEXT_WEAPON: InputSet = { keys: [KeyboardInput.ARROW_RIGHT, KeyboardInput.KEY_D], buttons: [GamepadInput.DPAD_RIGHT] };
+const PREVIOUS_WEAPON: InputSet = { keys: [KeyboardInput.ARROW_LEFT, KeyboardInput.KEY_A], buttons: [GamepadInput.DPAD_LEFT] };
 
 /**
  * Steps the previewed target by `step`, wrapping around the list - only in the
@@ -55,13 +54,13 @@ abstract class CycleTargetCommand extends ForecastCommand {
 
 export class ForecastNextTargetCommand extends CycleTargetCommand {
 	constructor() {
-		super(1, pressBinding([KeyboardInput.ARROW_RIGHT, KeyboardInput.ARROW_DOWN, KeyboardInput.KEY_D, KeyboardInput.KEY_S], [GamepadInput.DPAD_RIGHT, GamepadInput.DPAD_DOWN]));
+		super(1, pressed(NEXT_TARGET));
 	}
 }
 
 export class ForecastPrevTargetCommand extends CycleTargetCommand {
 	constructor() {
-		super(-1, pressBinding([KeyboardInput.ARROW_LEFT, KeyboardInput.ARROW_UP, KeyboardInput.KEY_A, KeyboardInput.KEY_W], [GamepadInput.DPAD_LEFT, GamepadInput.DPAD_UP]));
+		super(-1, pressed(PREVIOUS_TARGET));
 	}
 }
 
@@ -92,13 +91,13 @@ abstract class CycleWeaponCommand extends ForecastCommand {
 
 export class ForecastNextWeaponCommand extends CycleWeaponCommand {
 	constructor() {
-		super(1, pressBinding([KeyboardInput.ARROW_RIGHT, KeyboardInput.KEY_D], [GamepadInput.DPAD_RIGHT]));
+		super(1, pressed(NEXT_WEAPON));
 	}
 }
 
 export class ForecastPrevWeaponCommand extends CycleWeaponCommand {
 	constructor() {
-		super(-1, pressBinding([KeyboardInput.ARROW_LEFT, KeyboardInput.KEY_A], [GamepadInput.DPAD_LEFT]));
+		super(-1, pressed(PREVIOUS_WEAPON));
 	}
 }
 
@@ -123,7 +122,7 @@ export class ForecastConfirmCommand extends ForecastCommand {
 /** Cancel: `forecast` phase drops back to picking a target; `target` phase backs out of the attack entirely. */
 export class ForecastCancelCommand extends ForecastCommand {
 	constructor() {
-		super(pressBinding([KeyboardInput.ESCAPE, KeyboardInput.KEY_X, KeyboardInput.BACKSPACE], [GamepadInput.B]));
+		super(cancelBinding());
 	}
 
 	protected action(_elapsed: number, _frame: number, { forecast }: ForecastCommandContext): void {

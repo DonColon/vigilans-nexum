@@ -1,10 +1,6 @@
-import { Entity } from "@/core/ecs/Entity";
-import { EventSystem } from "@/core/events/EventSystem";
-import { UnsubscribeFunction } from "@/core/events/GameEvents";
-import { GameFeature, GameFeatureConfig } from "@/core/GameFeature";
-import { GameCoreService } from "@/core/service/GameCoreService";
+import { GameFeatureConfig } from "@/core/GameFeature";
 import { CombatConfirmedEvent, CombatRequestedEvent, UnitDiedEvent } from "@/game.events";
-import { GridComponent } from "@/game/map/components/GridComponent";
+import { BattleMapFeature } from "@/game/map/BattleMapFeature";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
 import { equipInventoryItem, spendWeaponUses } from "@/game/units/model/Inventory";
@@ -36,13 +32,7 @@ import { ForecastState } from "@/game/combat/states/ForecastState";
  *    HP-drain animation plays, then `unit:died` takes any fallen unit off the
  *    map and `combat:resolved` lets MovementFeature spend the attacker.
  */
-export class CombatFeature extends GameFeature {
-	@GameCoreService(EventSystem)
-	private events!: EventSystem;
-
-	private subscriptions: UnsubscribeFunction[] = [];
-	private mapId: string | null = null;
-
+export class CombatFeature extends BattleMapFeature {
 	constructor(config: GameFeatureConfig = {}) {
 		super({
 			components: [ForecastComponent, BattleAnimationComponent, CombatAnimationComponent],
@@ -61,26 +51,15 @@ export class CombatFeature extends GameFeature {
 	}
 
 	protected onInstall(): void {
-		this.subscriptions.push(
-			this.events.subscribe("map:ready", (event) => (this.mapId = event.mapId)),
-			this.events.subscribe("map:closed", () => (this.mapId = null)),
-			this.events.subscribe("combat:requested", (event) => this.openForecast(event)),
-			this.events.subscribe("combat:confirmed", (event) => this.resolve(event)),
-			this.events.subscribe("unit:died", (event) => this.removeUnit(event))
-		);
-	}
+		super.onInstall();
 
-	protected onUninstall(): void {
-		for (const unsubscribe of this.subscriptions) {
-			unsubscribe();
-		}
-
-		this.subscriptions = [];
-		this.mapId = null;
+		this.subscribe("combat:requested", (event) => this.openForecast(event));
+		this.subscribe("combat:confirmed", (event) => this.resolve(event));
+		this.subscribe("unit:died", (event) => this.removeUnit(event));
 	}
 
 	private openForecast(event: CombatRequestedEvent): void {
-		const units = this.units();
+		const units = UnitSystem.inWorld(this.world);
 		const attacker = UnitSystem.byId(units, event.attackerId);
 
 		if (attacker === null) {
@@ -92,7 +71,7 @@ export class CombatFeature extends GameFeature {
 
 		// Every enemy the attacker can hit from here, nearest first; the requested
 		// one leads when it is still in reach.
-		const enemies = units.filter((entity) => entity.getComponent(UnitComponent).read().faction !== attackerData.faction);
+		const enemies = UnitSystem.enemiesOf(units, attackerData.faction);
 		const targets = CombatSystem.targetsInReach(attackerData, attackerTile, enemies, (enemy) => enemy.getComponent(GridPositionComponent).read());
 
 		if (targets.length === 0) {
@@ -107,7 +86,7 @@ export class CombatFeature extends GameFeature {
 		const weaponIds = CombatSystem.weaponsReaching(attackerData, distance).map((entry) => entry.id);
 		const equippedIndex = weaponIds.indexOf(attackerData.weapon?.id ?? "");
 
-		(this.stateManager.getState(ForecastState) as ForecastState).request({
+		this.stateManager.getState(ForecastState).request({
 			attackerId: event.attackerId,
 			defenderIds,
 			defenderIndex,
@@ -121,7 +100,7 @@ export class CombatFeature extends GameFeature {
 
 	private resolve(event: CombatConfirmedEvent): void {
 		const grid = this.grid();
-		const units = this.units();
+		const units = UnitSystem.inWorld(this.world);
 		const attacker = UnitSystem.byId(units, event.attackerId);
 		const defender = UnitSystem.byId(units, event.defenderId);
 
@@ -154,7 +133,7 @@ export class CombatFeature extends GameFeature {
 		attackerComponent.update(attackerAfter);
 		defenderComponent.update(defenderAfter);
 
-		(this.stateManager.getState(BattleAnimationState) as BattleAnimationState).request({
+		this.stateManager.getState(BattleAnimationState).request({
 			attackerId: event.attackerId,
 			defenderId: event.defenderId,
 			attackerColumn: attackerTile.column,
@@ -173,24 +152,10 @@ export class CombatFeature extends GameFeature {
 
 	/** `unit:died` (from the animation landing) - take the unit off the map. */
 	private removeUnit(event: UnitDiedEvent): void {
-		const unit = UnitSystem.byId(this.units(), event.unitId);
+		const unit = UnitSystem.byId(UnitSystem.inWorld(this.world), event.unitId);
 
 		if (unit !== null) {
 			this.world.unregisterEntity(unit);
 		}
-	}
-
-	private units(): Entity[] {
-		return this.world.getEntities().filter((entity) => entity.hasComponent(UnitComponent));
-	}
-
-	private grid() {
-		if (this.mapId === null || !this.world.hasEntity(this.mapId)) {
-			return null;
-		}
-
-		const map = this.world.getEntity(this.mapId);
-
-		return map.hasComponent(GridComponent) ? map.getComponent(GridComponent).read() : null;
 	}
 }

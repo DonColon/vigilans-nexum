@@ -3,6 +3,7 @@ import { World } from "@/core/ecs/World";
 import { identityTransform, TransformComponent } from "@/core/ecs/components/TransformComponent";
 import { GameState } from "@/core/GameState";
 import { Display } from "@/core/graphics/Display";
+import { clamp } from "@/core/math/utils/Clamp";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { MenuComponent } from "@/game/ui/components/MenuComponent";
 import { menuCommands } from "@/game/ui/commands/MenuCommands";
@@ -190,9 +191,5 @@ export class MenuState extends GameState {
 }
 
 function clampIndex(index: number, length: number): number {
-	if (!Number.isInteger(index) || index < 0) {
-		return 0;
-	}
-
-	return Math.min(index, length - 1);
+	return Number.isInteger(index) ? clamp(index, 0, length - 1) : 0;
 }

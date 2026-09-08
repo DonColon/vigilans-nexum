@@ -1,25 +1,7 @@
 import { GameCommandConstructor } from "@/core/input/commands/GameCommand";
-import { InputBinding } from "@/core/input/commands/InputBinding";
-import { InputChannel } from "@/core/input/InputChannel";
-import { InputState } from "@/core/input/InputState";
-import { GamepadInput } from "@/core/input/gamepad/GamepadInput";
-import { KeyboardInput } from "@/core/input/keyboard/KeyboardInput";
+import { confirmBinding } from "@/game/input/Controls";
 import { DialogComponent } from "@/game/ui/components/DialogComponent";
 import { DialogCommand, DialogCommandContext } from "@/game/ui/commands/UICommand";
-
-/** Keys and buttons that mean "yes, go on" across the whole UI. */
-export function confirmBinding(): InputBinding {
-	const keys = [KeyboardInput.ENTER, KeyboardInput.SPACE, KeyboardInput.KEY_Z, KeyboardInput.NUMPAD_ENTER];
-	const buttons = [GamepadInput.A];
-
-	return new InputBinding({
-		and: false,
-		bindings: [
-			...keys.map((input) => new InputBinding({ channel: InputChannel.KEYBOARD, input, state: InputState.JUST_PRESSED })),
-			...buttons.map((input) => new InputBinding({ channel: InputChannel.GAMEPAD, input, state: InputState.JUST_PRESSED }))
-		]
-	});
-}
 
 /**
  * One press does the next sensible thing for a textbox:

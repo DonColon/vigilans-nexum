@@ -1,10 +1,7 @@
 import { Entity } from "@/core/ecs/Entity";
-import { EventSystem } from "@/core/events/EventSystem";
-import { UnsubscribeFunction } from "@/core/events/GameEvents";
-import { GameFeature, GameFeatureConfig } from "@/core/GameFeature";
+import { GameFeatureConfig } from "@/core/GameFeature";
 import { identityTransform, TransformComponent } from "@/core/ecs/components/TransformComponent";
-import { GameCoreService } from "@/core/service/GameCoreService";
-import { CursorComponent } from "@/game/map/components/CursorComponent";
+import { BattleMapFeature } from "@/game/map/BattleMapFeature";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
 import { CommanderComponent } from "@/game/units/components/CommanderComponent";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
@@ -31,11 +28,7 @@ const UNIT_DOCUMENTS: Record<string, UnitDocument> = {
  * and drops the cursor onto that unit; on `map:closed` it clears them. With no
  * map on screen the events have no effect.
  */
-export class UnitsFeature extends GameFeature {
-	@GameCoreService(EventSystem)
-	private events!: EventSystem;
-
-	private subscriptions: UnsubscribeFunction[] = [];
+export class UnitsFeature extends BattleMapFeature {
 	private units: Entity[] = [];
 
 	constructor(config: GameFeatureConfig = {}) {
@@ -49,20 +42,16 @@ export class UnitsFeature extends GameFeature {
 	}
 
 	protected onInstall(): void {
-		this.subscriptions.push(
-			this.events.subscribe("map:ready", (event) => this.deploy(event.mapId)),
-			this.events.subscribe("map:closed", () => this.withdraw())
-		);
+		super.onInstall();
+
+		this.subscribe("map:ready", (event) => this.deploy(event.mapId));
+		this.subscribe("map:closed", () => this.withdraw());
 	}
 
 	protected onUninstall(): void {
+		super.onUninstall();
+
 		this.withdraw();
-
-		for (const unsubscribe of this.subscriptions) {
-			unsubscribe();
-		}
-
-		this.subscriptions = [];
 	}
 
 	private deploy(mapId: string): void {
@@ -95,9 +84,9 @@ export class UnitsFeature extends GameFeature {
 	/** Drops the map cursor onto the commander so a battle opens focused on Dardan. */
 	private centreCursorOnCommander(): void {
 		const commander = this.units.find((unit) => unit.hasComponent(CommanderComponent));
-		const cursor = this.world.getEntities().find((entity) => entity.hasComponent(CursorComponent));
+		const cursor = this.cursor();
 
-		if (commander === undefined || cursor === undefined) {
+		if (commander === undefined || cursor === null) {
 			return;
 		}
 

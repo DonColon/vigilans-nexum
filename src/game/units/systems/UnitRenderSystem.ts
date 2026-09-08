@@ -1,23 +1,20 @@
 import { Entity } from "@/core/ecs/Entity";
 import { Query } from "@/core/ecs/Query";
-import { RenderSystem } from "@/core/ecs/RenderSystem";
 import { TransformComponent } from "@/core/ecs/components/TransformComponent";
-import { TransformSystem } from "@/core/ecs/systems/TransformSystem";
-import { World } from "@/core/ecs/World";
 import { Color } from "@/core/graphics/color/Color";
-import { Display } from "@/core/graphics/Display";
 import { Graphics } from "@/core/graphics/rendering/Graphics";
 import { Circle } from "@/core/math/geometry/Circle";
+import { clamp01 } from "@/core/math/utils/Clamp";
 import { Line } from "@/core/math/geometry/Line";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { TextAlign } from "@/core/graphics/styles/text/TextAlign";
-import { GameCoreService } from "@/core/service/GameCoreService";
 import { WalkComponent } from "@/game/movement/components/WalkComponent";
 import { walkPoint } from "@/game/movement/model/PathWalk";
 import { CombatAnimationComponent, CombatAnimationData } from "@/game/combat/components/CombatAnimationComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
+import { MapRenderSystem } from "@/game/map/systems/MapRenderSystem";
 import { drawText } from "@/game/ui/model/UIPanel";
 import { UITheme } from "@/game/ui/model/UITheme";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
@@ -42,13 +39,7 @@ const POP_OUTLINE: readonly [number, number][] = [
  * never clears anything (GridRenderSystem wipes the layer every frame). The
  * cursor is drawn over the top from its own layer.
  */
-export class UnitRenderSystem extends RenderSystem {
-	@GameCoreService(World)
-	private world!: World;
-
-	@GameCoreService(Display)
-	private display!: Display;
-
+export class UnitRenderSystem extends MapRenderSystem {
 	public initialize(): void {
 		this.queries = {
 			units: new Query({ allowlist: [UnitComponent, GridPositionComponent] }),
@@ -57,21 +48,14 @@ export class UnitRenderSystem extends RenderSystem {
 	}
 
 	public execute(): void {
-		const map = this.queries.grids.getSingleResult();
+		const view = this.mapView(this.queries.grids.getSingleResult());
 
-		if (map === null) {
-			return;
-		}
-
-		const transforms = this.world.getSystem(TransformSystem) as TransformSystem;
-		const origin = transforms.getWorldPosition(map);
-
-		if (origin === null) {
+		if (view === null) {
 			return;
 		}
 
 		const graphics = this.display.getLayer("background");
-		const { cellSize } = map.getComponent(GridComponent).read();
+		const { origin, cellSize } = view;
 
 		// Floating "Miss" / damage labels are drawn in a second pass so no token can overdraw them.
 		const pops: { text: string; age: number; x: number; y: number }[] = [];
@@ -102,7 +86,7 @@ export class UnitRenderSystem extends RenderSystem {
 	 * number stays legible over bright terrain.
 	 */
 	private renderPop(graphics: Graphics, text: string, age: number, x: number, y: number, cellSize: number): void {
-		const t = Math.max(0, Math.min(1, age));
+		const t = clamp01(age);
 		const rise = UnitTheme.combatPop.rise * (1 - Math.pow(1 - t, 3));
 		const fade = t < 0.6 ? 1 : Math.max(0, 1 - (t - 0.6) / 0.4);
 
@@ -194,7 +178,7 @@ export class UnitRenderSystem extends RenderSystem {
 			return;
 		}
 
-		const ratio = Math.max(0, Math.min(1, currentHP / maxHP));
+		const ratio = clamp01(currentHP / maxHP);
 		const height = UnitTheme.healthBarHeight;
 		const width = cellSize - UnitTheme.healthBarPadding * 2;
 		const left = x + UnitTheme.healthBarPadding;

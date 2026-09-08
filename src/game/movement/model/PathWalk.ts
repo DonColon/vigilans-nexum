@@ -1,3 +1,4 @@
+import { clamp01 } from "@/core/math/utils/Clamp";
 import { GridPositionData } from "@/game/map/components/GridPositionComponent";
 
 /** Milliseconds a walking unit spends crossing one tile. */
@@ -17,7 +18,7 @@ export function walkPoint(path: readonly GridPositionData[], progress: number): 
 		return { column: path[0].column, row: path[0].row };
 	}
 
-	const clamped = Math.min(1, Math.max(0, progress));
+	const clamped = clamp01(progress);
 	const scaled = clamped * (path.length - 1);
 	const index = Math.min(path.length - 2, Math.floor(scaled));
 	const fraction = scaled - index;

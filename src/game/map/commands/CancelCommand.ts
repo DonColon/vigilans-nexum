@@ -1,25 +1,8 @@
 import { GameCommandConstructor } from "@/core/input/commands/GameCommand";
-import { InputBinding } from "@/core/input/commands/InputBinding";
-import { InputChannel } from "@/core/input/InputChannel";
-import { InputState } from "@/core/input/InputState";
 import { EventSystem } from "@/core/events/EventSystem";
-import { GamepadInput } from "@/core/input/gamepad/GamepadInput";
-import { KeyboardInput } from "@/core/input/keyboard/KeyboardInput";
 import { GameCoreService } from "@/core/service/GameCoreService";
+import { cancelBinding } from "@/game/input/Controls";
 import { MapCommand, MapCommandContext } from "@/game/map/commands/MapCommand";
-
-function cancelBinding(): InputBinding {
-	const keys = [KeyboardInput.ESCAPE, KeyboardInput.KEY_X, KeyboardInput.BACKSPACE];
-	const buttons = [GamepadInput.B];
-
-	return new InputBinding({
-		and: false,
-		bindings: [
-			...keys.map((input) => new InputBinding({ channel: InputChannel.KEYBOARD, input, state: InputState.JUST_PRESSED })),
-			...buttons.map((input) => new InputBinding({ channel: InputChannel.GAMEPAD, input, state: InputState.JUST_PRESSED }))
-		]
-	});
-}
 
 /**
  * The map's back button - Fire Emblem's B. Like ConfirmCommand it does nothing

@@ -1,3 +1,5 @@
+import { EventSystem } from "@/core/events/EventSystem";
+import { EventHandler, EventNames, UnsubscribeFunction } from "@/core/events/GameEvents";
 import { ComponentConstructor } from "@/core/ecs/Component";
 import { Entity, EntityType } from "@/core/ecs/Entity";
 import { JsonSchema } from "@/core/ecs/JsonSchema";
@@ -36,6 +38,12 @@ export abstract class GameFeature {
 
 	@GameCoreService(InputDevice)
 	protected inputDevice!: InputDevice;
+
+	@GameCoreService(EventSystem)
+	protected events!: EventSystem;
+
+	/** Handed back by `subscribe`, dropped again when the feature is uninstalled. */
+	private subscriptions: UnsubscribeFunction[] = [];
 
 	protected installed: boolean;
 
@@ -144,9 +152,25 @@ export abstract class GameFeature {
 				this.world.unregisterComponent(componentType);
 			}
 		}
-
 		this.onUninstall();
+
+		// Dropped after onUninstall, so a feature tearing its own state down can
+		// still react to whatever that dispatches.
+		for (const unsubscribe of this.subscriptions) {
+			unsubscribe();
+		}
+
+		this.subscriptions = [];
 		this.installed = false;
+	}
+
+	/**
+	 * Listens for an event for as long as the feature is installed - the
+	 * subscription is dropped again on uninstall, so a feature never has to
+	 * keep the unsubscribe functions itself.
+	 */
+	protected subscribe<Name extends EventNames>(eventName: Name, handler: EventHandler<Name>, priority: number = 0): void {
+		this.subscriptions.push(this.events.subscribe(eventName, handler, priority));
 	}
 
 	protected onInstall() {}

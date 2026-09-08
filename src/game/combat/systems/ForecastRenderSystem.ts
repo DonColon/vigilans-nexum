@@ -14,6 +14,7 @@ import { GameCoreService } from "@/core/service/GameCoreService";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
+import { UnitSystem } from "@/game/units/systems/UnitSystem";
 import { BattleForecast, CombatantForecast } from "@/game/combat/model/BattleForecast";
 import { CombatTheme } from "@/game/combat/model/CombatTheme";
 import { CombatSystem } from "@/game/combat/systems/CombatSystem";
@@ -59,8 +60,8 @@ export class ForecastRenderSystem extends RenderSystem {
 			return;
 		}
 
-		const attacker = this.unitById(data.attackerId);
-		const defender = this.unitById(data.defenderId);
+		const attacker = this.unit(data.attackerId);
+		const defender = this.unit(data.defenderId);
 
 		if (attacker === null || defender === null) {
 			return;
@@ -86,8 +87,9 @@ export class ForecastRenderSystem extends RenderSystem {
 		this.render(this.display.getLayer("ui"), forecast, data.weaponIds.length > 1);
 	}
 
-	private unitById(id: string): Entity | null {
-		return this.queries.units.getResult().find((entity) => entity.getComponent(UnitComponent).read().id === id) ?? null;
+	/** The unit with this id, out of the ones on the map right now. */
+	private unit(id: string): Entity | null {
+		return UnitSystem.byId(this.queries.units.getResult(), id);
 	}
 
 	private render(graphics: Graphics, forecast: BattleForecast, canCycle: boolean): void {

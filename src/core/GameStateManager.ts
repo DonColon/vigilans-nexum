@@ -8,7 +8,7 @@ export class GameStateManager {
 	private readonly currentStates: GameState[] = [];
 
 	public switch(stateType: GameStateConstructor | string) {
-		const state = this.getState(stateType);
+		const state = this.resolve(stateType);
 
 		if (this.currentStates.length > 0) {
 			const currentState = this.peek();
@@ -25,7 +25,7 @@ export class GameStateManager {
 	}
 
 	public push(stateType: GameStateConstructor | string) {
-		const state = this.getState(stateType);
+		const state = this.resolve(stateType);
 
 		if (this.currentStates.length > 0) {
 			const currentState = this.peek();
@@ -86,7 +86,18 @@ export class GameStateManager {
 		return this;
 	}
 
-	public getState(stateType: GameStateConstructor | string): GameState {
+	/**
+	 * The registered instance of a state. Passing the class resolves to that
+	 * class's own type, so a caller reaching for the state's own API - a
+	 * MenuState's `request()`, say - does not have to cast the result.
+	 */
+	public getState<Type extends GameState>(stateType: GameStateConstructor<Type>): Type;
+	public getState(stateType: string): GameState;
+	public getState(stateType: GameStateConstructor<any> | string): GameState {
+		return this.resolve(stateType);
+	}
+
+	private resolve(stateType: GameStateConstructor<any> | string): GameState {
 		const name = typeof stateType === "string" ? stateType : stateType.type;
 		const state = this.states.get(name);
 

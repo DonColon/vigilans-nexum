@@ -1,30 +1,20 @@
 import { Query, QueryList } from "@/core/ecs/Query";
-import { RenderSystem } from "@/core/ecs/RenderSystem";
-import { TransformSystem } from "@/core/ecs/systems/TransformSystem";
-import { World } from "@/core/ecs/World";
-import { Display } from "@/core/graphics/Display";
 import { Graphics } from "@/core/graphics/rendering/Graphics";
 import { Line } from "@/core/math/geometry/Line";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { Vector2D } from "@/core/math/geometry/Vector2D";
-import { GameCoreService } from "@/core/service/GameCoreService";
 import { GridComponent, GridData } from "@/game/map/components/GridComponent";
 import { MapTheme } from "@/game/map/model/MapTheme";
 import { GridSystem } from "@/game/map/systems/GridSystem";
+import { MapRenderSystem } from "@/game/map/systems/MapRenderSystem";
 
 /**
  * Draws the battle map: one flat block per tile, a hairline grid on top and a
  * frame around the whole thing - the look of the minimaps the Fire Emblem
  * games show their battle maps on.
  */
-export class GridRenderSystem extends RenderSystem {
+export class GridRenderSystem extends MapRenderSystem {
 	protected queries!: QueryList;
-
-	@GameCoreService(World)
-	private world!: World;
-
-	@GameCoreService(Display)
-	private display!: Display;
 
 	public initialize(): void {
 		this.queries = {
@@ -36,24 +26,15 @@ export class GridRenderSystem extends RenderSystem {
 		const graphics = this.display.getLayer("background");
 		graphics.clearCanvas();
 
-		const map = this.queries.grids.getSingleResult();
+		const view = this.mapView(this.queries.grids.getSingleResult());
 
-		if (map === null) {
+		if (view === null) {
 			return;
 		}
 
-		const transforms = this.world.getSystem(TransformSystem) as TransformSystem;
-		const origin = transforms.getWorldPosition(map);
-
-		if (origin === null) {
-			return;
-		}
-
-		const grid = map.getComponent(GridComponent).read();
-
-		this.renderTiles(graphics, grid, origin);
-		this.renderGridLines(graphics, grid, origin);
-		this.renderBorder(graphics, grid, origin);
+		this.renderTiles(graphics, view.grid, view.origin);
+		this.renderGridLines(graphics, view.grid, view.origin);
+		this.renderBorder(graphics, view.grid, view.origin);
 	}
 
 	private renderTiles(graphics: Graphics, grid: GridData, origin: Vector2D) {

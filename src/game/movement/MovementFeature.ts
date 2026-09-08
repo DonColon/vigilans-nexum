@@ -1,50 +1,37 @@
 import { Entity } from "@/core/ecs/Entity";
-import { EventSystem } from "@/core/events/EventSystem";
-import { UnsubscribeFunction } from "@/core/events/GameEvents";
-import { GameFeature, GameFeatureConfig } from "@/core/GameFeature";
+import { GameFeatureConfig } from "@/core/GameFeature";
 import { TransformComponent } from "@/core/ecs/components/TransformComponent";
-import { i18n } from "@/core/i18n/I18n";
-import { GameCoreService } from "@/core/service/GameCoreService";
 import { CombatCancelledEvent, CombatResolvedEvent, MenuConfirmedEvent, MenuCancelledEvent, TileConfirmedEvent, UnitMovedEvent } from "@/game.events";
-import { CursorComponent } from "@/game/map/components/CursorComponent";
-import { GridComponent, GridData } from "@/game/map/components/GridComponent";
+import { BattleMapFeature } from "@/game/map/BattleMapFeature";
+import { GridData } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
 import { idleMovement, MovementComponent } from "@/game/movement/components/MovementComponent";
 import { PendingMoveComponent } from "@/game/movement/components/PendingMoveComponent";
 import { WalkComponent } from "@/game/movement/components/WalkComponent";
 import { WALK_STEP_MS } from "@/game/movement/model/PathWalk";
+import {
+	COMMAND_MENU,
+	GLOBAL_MENU,
+	ITEMS_MENU,
+	ITEM_ACTION_MENU,
+	ITEMS_MENU_WIDTH,
+	ITEM_ACTION_MENU_GAP,
+	MenuLabel,
+	globalCommandRequest,
+	itemActionRequest,
+	itemsRequest,
+	unitCommandRequest
+} from "@/game/movement/model/UnitMenus";
 import { MovementRenderSystem } from "@/game/movement/systems/MovementRenderSystem";
 import { MovementSystem } from "@/game/movement/systems/MovementSystem";
 import { PathPreviewSystem } from "@/game/movement/systems/PathPreviewSystem";
 import { UnitWalkSystem } from "@/game/movement/systems/UnitWalkSystem";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { dropInventoryItem, equipInventoryItem, healingAmount, isHealingItem, unequipInventoryItem, useHealingItem } from "@/game/units/model/Inventory";
-import { InventoryEntry, InventoryKind, UnitData, UnitFaction } from "@/game/units/model/UnitData";
+import { dropInventoryItem, equipInventoryItem, unequipInventoryItem, useHealingItem } from "@/game/units/model/Inventory";
+import { UnitFaction } from "@/game/units/model/UnitData";
 import { UnitSystem } from "@/game/units/systems/UnitSystem";
 import { CombatSystem } from "@/game/combat/systems/CombatSystem";
 import { MenuRequest, MenuState } from "@/game/ui/states/MenuState";
-
-/** Menu ids, echoed by the `ui:menu*` events. */
-const COMMAND_MENU = "unit-command";
-const GLOBAL_MENU = "global-command";
-const ITEMS_MENU = "unit-items";
-const ITEM_ACTION_MENU = "unit-item-action";
-const COMMAND_MENU_WIDTH = 160;
-const GLOBAL_MENU_WIDTH = 190;
-const ITEMS_MENU_WIDTH = 300;
-const ITEM_ACTION_MENU_WIDTH = 190;
-/** Gap between the items panel and the action submenu tucked against its right edge. */
-const ITEM_ACTION_MENU_GAP = 4;
-
-/** Menu row labels, resolved fresh so a locale switch is picked up. */
-const attack = () => i18n("menu.attack");
-const wait = () => i18n("menu.wait");
-const endTurn = () => i18n("menu.endTurn");
-const items = () => i18n("menu.items");
-const equip = () => i18n("menu.equip");
-const unequip = () => i18n("menu.unequip");
-const use = () => i18n("menu.use");
-const drop = () => i18n("menu.drop");
 
 /**
  * The Fire Emblem move flow, wired to the map's `map:*` events on top of the
@@ -65,16 +52,14 @@ const drop = () => i18n("menu.drop");
  *  - Confirm on a tile with nothing to pick up opens the global command menu
  *    ("End Turn" -> `turn:end`) next to the cursor.
  *
+ * The menus themselves are built in `model/UnitMenus`; this feature only decides
+ * when one opens and what a chosen row does.
+ *
  * It handles `map:tileConfirmed` at priority 10 and stops the event once it has
  * consumed a press.
  */
-export class MovementFeature extends GameFeature {
-	@GameCoreService(EventSystem)
-	private events!: EventSystem;
-
-	private subscriptions: UnsubscribeFunction[] = [];
+export class MovementFeature extends BattleMapFeature {
 	private movement: Entity | null = null;
-	private mapId: string | null = null;
 	/** Pack slot the open item-action menu (equip / unequip / drop) works on. */
 	private actionSlot = -1;
 
@@ -95,32 +80,27 @@ export class MovementFeature extends GameFeature {
 	}
 
 	protected onInstall(): void {
-		this.subscriptions.push(
-			this.events.subscribe("map:ready", (event) => this.open(event.mapId)),
-			this.events.subscribe("map:closed", () => this.close()),
-			this.events.subscribe("map:tileConfirmed", (event) => this.onConfirm(event), 10),
-			this.events.subscribe("map:cancelled", () => this.onCancel(), 10),
-			this.events.subscribe("unit:moved", (event) => this.onArrived(event)),
-			this.events.subscribe("ui:menuConfirmed", (event) => this.onCommand(event)),
-			this.events.subscribe("ui:menuCancelled", (event) => this.onCommandCancelled(event)),
-			this.events.subscribe("combat:cancelled", (event) => this.onCombatCancelled(event)),
-			this.events.subscribe("combat:resolved", (event) => this.onCombatResolved(event))
-		);
+		super.onInstall();
+
+		this.subscribe("map:ready", () => this.open());
+		this.subscribe("map:closed", () => this.close());
+		this.subscribe("map:tileConfirmed", (event) => this.onConfirm(event), 10);
+		this.subscribe("map:cancelled", () => this.onCancel(), 10);
+		this.subscribe("unit:moved", (event) => this.onArrived(event));
+		this.subscribe("ui:menuConfirmed", (event) => this.onCommand(event));
+		this.subscribe("ui:menuCancelled", (event) => this.onCommandCancelled(event));
+		this.subscribe("combat:cancelled", (event) => this.onCombatCancelled(event));
+		this.subscribe("combat:resolved", (event) => this.onCombatResolved(event));
 	}
 
 	protected onUninstall(): void {
+		super.onUninstall();
+
 		this.close();
-
-		for (const unsubscribe of this.subscriptions) {
-			unsubscribe();
-		}
-
-		this.subscriptions = [];
 	}
 
-	private open(mapId: string): void {
+	private open(): void {
 		this.close();
-		this.mapId = mapId;
 
 		this.movement = this.world.createEntity();
 		this.movement.addComponent(MovementComponent, idleMovement());
@@ -131,8 +111,6 @@ export class MovementFeature extends GameFeature {
 			this.world.unregisterEntity(this.movement);
 			this.movement = null;
 		}
-
-		this.mapId = null;
 	}
 
 	private onConfirm(event: TileConfirmedEvent): void {
@@ -164,12 +142,12 @@ export class MovementFeature extends GameFeature {
 			// Confirm on nothing to pick up (empty tile, an enemy, a spent or
 			// mid-move unit) opens the global command menu instead.
 			if (unit === null || data === undefined || data.faction !== UnitFaction.PLAYER || data.hasMoved || unit.hasComponent(PendingMoveComponent)) {
-				this.openMenu({ id: GLOBAL_MENU, items: [endTurn()], width: GLOBAL_MENU_WIDTH }, event.column, event.row);
+				this.openMenu(globalCommandRequest(), event.column, event.row);
 				event.stopPropagation();
 				return;
 			}
 
-			const position = unit.getComponent(GridPositionComponent).read();
+			const position = UnitSystem.tileOf(unit);
 			this.select(data.id, position.column, position.row, grid, units);
 			event.stopPropagation();
 			return;
@@ -189,24 +167,30 @@ export class MovementFeature extends GameFeature {
 		const canMove = MovementSystem.contains(state.movement, event.column, event.row) && (occupant === null || occupant === mover);
 
 		if (canMove) {
-			const origin = { column: state.originColumn, row: state.originRow };
-			const target = { column: event.column, row: event.row };
-			const blocked = MovementSystem.blockedTiles(UnitSystem.locations(units), state.unitId);
-			const route = MovementSystem.path(grid, origin, target, mover.getComponent(UnitComponent).read().movement, blocked);
-
-			// The logical tile jumps to the target now - occupancy and blocking stay
-			// correct - and the token walks the route to catch up. The command menu
-			// opens on `unit:moved`, once the walk lands.
-			mover.getComponent(GridPositionComponent).update(target);
-			mover.addComponent(PendingMoveComponent, { originColumn: origin.column, originRow: origin.row });
-
-			const walk = route.length >= 2 ? route : [origin, target];
-			mover.addComponent(WalkComponent, { path: walk, elapsed: 0, duration: (walk.length - 1) * WALK_STEP_MS });
+			this.walk(mover, { column: state.originColumn, row: state.originRow }, { column: event.column, row: event.row }, grid, units);
 		} else {
 			this.events.dispatch("unit:deselected", { unitId: state.unitId });
 		}
 
 		component.update(idleMovement());
+	}
+
+	/**
+	 * Sends the unit off along the shortest route to `target`. The logical tile
+	 * jumps to the target now - occupancy and blocking stay correct - and the
+	 * token walks the route to catch up. The command menu opens on `unit:moved`,
+	 * once the walk lands.
+	 */
+	private walk(mover: Entity, origin: { column: number; row: number }, target: { column: number; row: number }, grid: GridData, units: Entity[]): void {
+		const data = mover.getComponent(UnitComponent).read();
+		const blocked = MovementSystem.blockedTiles(UnitSystem.locations(units), data.id);
+		const route = MovementSystem.path(grid, origin, target, data.movement, blocked);
+
+		mover.getComponent(GridPositionComponent).update(target);
+		mover.addComponent(PendingMoveComponent, { originColumn: origin.column, originRow: origin.row });
+
+		const path = route.length >= 2 ? route : [origin, target];
+		mover.addComponent(WalkComponent, { path, elapsed: 0, duration: (path.length - 1) * WALK_STEP_MS });
 	}
 
 	private onCancel(): void {
@@ -239,21 +223,9 @@ export class MovementFeature extends GameFeature {
 	/** The unit command menu: "Attack" (with a target in reach), "Items" (with something to show), then "Wait". */
 	private openCommandMenu(mover: Entity): void {
 		const data = mover.getComponent(UnitComponent).read();
-		const position = mover.getComponent(GridPositionComponent).read();
+		const position = UnitSystem.tileOf(mover);
 
-		const rows: string[] = [];
-
-		if (this.attackTargets(mover).length > 0) {
-			rows.push(attack());
-		}
-
-		if (data.inventory.length > 0) {
-			rows.push(items());
-		}
-
-		rows.push(wait());
-
-		this.openMenu({ id: COMMAND_MENU, items: rows, width: COMMAND_MENU_WIDTH }, position.column, position.row);
+		this.openMenu(unitCommandRequest(data, this.attackTargets(mover).length > 0), position.column, position.row);
 	}
 
 	/**
@@ -262,17 +234,9 @@ export class MovementFeature extends GameFeature {
 	 */
 	private attackTargets(mover: Entity): Entity[] {
 		const data = mover.getComponent(UnitComponent).read();
-		const from = mover.getComponent(GridPositionComponent).read();
+		const enemies = UnitSystem.enemiesOf(this.units(), data.faction);
 
-		return this.enemiesOf(data.faction)
-			.map((enemy) => ({ enemy, distance: CombatSystem.distance(from, enemy.getComponent(GridPositionComponent).read()) }))
-			.filter(({ distance }) => CombatSystem.weaponsReaching(data, distance).length > 0)
-			.sort((first, second) => first.distance - second.distance)
-			.map(({ enemy }) => enemy);
-	}
-
-	private enemiesOf(faction: UnitData["faction"]): Entity[] {
-		return this.units().filter((entity) => entity.getComponent(UnitComponent).read().faction !== faction);
+		return CombatSystem.targetsInReach(data, UnitSystem.tileOf(mover), enemies, UnitSystem.tileOf);
 	}
 
 	/**
@@ -283,9 +247,7 @@ export class MovementFeature extends GameFeature {
 	private requestCombat(attacker: Entity, defender: Entity): void {
 		// The command menu is already gone in-game (MenuSystem popped it); a test
 		// driving the events by hand still has it on top, so drop it.
-		if (this.stateManager.peek() instanceof MenuState) {
-			this.stateManager.pop();
-		}
+		this.closeOpenMenu();
 
 		this.events.dispatch("combat:requested", {
 			attackerId: attacker.getComponent(UnitComponent).read().id,
@@ -293,61 +255,37 @@ export class MovementFeature extends GameFeature {
 		});
 	}
 
-	/** The `MenuRequest` for the unit's pack: a badged, right-aligned-durability list that stays open for its submenu. */
-	private itemsRequest(mover: Entity, selectedIndex?: number): MenuRequest {
-		const data = mover.getComponent(UnitComponent).read();
-		const position = mover.getComponent(GridPositionComponent).read();
-		const cursor =
-			selectedIndex ??
-			Math.max(
-				0,
-				data.inventory.findIndex((entry) => entry.equipped)
-			);
-
-		return {
-			id: ITEMS_MENU,
-			title: items(),
-			items: data.inventory.map((entry) => entry.name),
-			badges: data.inventory.map((entry) => (entry.equipped ? i18n("menu.equipped") : "")),
-			values: data.inventory.map((entry) => `${entry.uses}/${entry.maxUses}`),
-			width: ITEMS_MENU_WIDTH,
-			selectedIndex: cursor,
-			keepOpen: true,
-			anchor: this.tileToScreen(position.column, position.row) ?? undefined
-		};
-	}
-
 	/** The unit's pack: every carried weapon and item, the readied weapon badged. Replaces the command menu. */
 	private openItemsMenu(mover: Entity, selectedIndex?: number): void {
-		const request = this.itemsRequest(mover, selectedIndex);
+		const anchor = this.tileOnScreen(mover);
 
-		if (request.anchor === undefined) {
+		if (anchor === null) {
 			return;
 		}
 
-		if (this.stateManager.peek() instanceof MenuState) {
-			this.stateManager.pop();
-		}
-
-		(this.stateManager.getState(MenuState) as MenuState).request(request);
-		this.stateManager.push(MenuState);
+		this.closeOpenMenu();
+		this.pushMenu(itemsRequest(mover.getComponent(UnitComponent).read(), anchor, selectedIndex));
 	}
 
 	/** Rebuilds the still-open items menu after the pack changed (badge moved, item dropped, ...). */
 	private refreshItemsMenu(mover: Entity, selectedIndex?: number): void {
-		(this.stateManager.getState(MenuState) as MenuState).updateMenu(this.itemsRequest(mover, selectedIndex));
+		const anchor = this.tileOnScreen(mover);
+
+		if (anchor === null) {
+			return;
+		}
+
+		this.menuState().updateMenu(itemsRequest(mover.getComponent(UnitComponent).read(), anchor, selectedIndex));
 	}
 
 	/**
-	 * The per-item menu, Fire Emblem style: "Equip" or "Unequip" for a weapon
-	 * the class can wield, then "Drop" for anything. It is layered on top of the
-	 * items menu, which stays on screen; `actionSlot` remembers which pack entry
-	 * it acts on.
+	 * The per-item menu, layered on top of the items menu, which stays on screen;
+	 * `actionSlot` remembers which pack entry it acts on.
 	 */
 	private openItemActionMenu(mover: Entity, index: number): void {
 		const data = mover.getComponent(UnitComponent).read();
 		const entry = data.inventory[index];
-		const state = this.stateManager.getState(MenuState) as MenuState;
+		const state = this.menuState();
 		const itemsMenu = state.getMenu();
 
 		if (entry === undefined || itemsMenu === null) {
@@ -360,9 +298,7 @@ export class MovementFeature extends GameFeature {
 		const panel = itemsMenu.getComponent(TransformComponent).read();
 		const position = { x: panel.x + ITEMS_MENU_WIDTH + ITEM_ACTION_MENU_GAP, y: panel.y };
 
-		const canUse = entry.item !== null && isHealingItem(entry) && healingAmount(data, entry.item) > 0;
-
-		state.openSubmenu({ id: ITEM_ACTION_MENU, title: entry.name, items: itemActionRows(entry, canUse), width: ITEM_ACTION_MENU_WIDTH, position });
+		state.openSubmenu(itemActionRequest(data, entry, position));
 	}
 
 	/**
@@ -377,33 +313,32 @@ export class MovementFeature extends GameFeature {
 			return;
 		}
 
-		if (this.stateManager.peek() instanceof MenuState) {
-			this.stateManager.pop();
-		}
-
-		(this.stateManager.getState(MenuState) as MenuState).request({ ...request, anchor });
-		this.stateManager.push(MenuState);
+		this.closeOpenMenu();
+		this.pushMenu({ ...request, anchor });
 	}
 
 	private onCommand(event: MenuConfirmedEvent): void {
 		if (event.menu === GLOBAL_MENU) {
-			if (event.item === endTurn()) {
+			if (event.item === MenuLabel.endTurn()) {
 				this.events.dispatch("turn:end", {});
 			}
+
 			return;
 		}
 
-		if (event.menu === ITEMS_MENU || event.menu === ITEM_ACTION_MENU) {
-			const holder = this.units().find((entity) => entity.hasComponent(PendingMoveComponent));
+		const mover = this.pendingMover();
 
-			if (holder !== undefined) {
-				if (event.menu === ITEMS_MENU) {
-					this.openItemActionMenu(holder, event.index);
-				} else {
-					this.onItemAction(holder, event.item);
-				}
-			}
+		if (mover === null) {
+			return;
+		}
 
+		if (event.menu === ITEMS_MENU) {
+			this.openItemActionMenu(mover, event.index);
+			return;
+		}
+
+		if (event.menu === ITEM_ACTION_MENU) {
+			this.onItemAction(mover, event.item);
 			return;
 		}
 
@@ -411,13 +346,7 @@ export class MovementFeature extends GameFeature {
 			return;
 		}
 
-		const mover = this.units().find((entity) => entity.hasComponent(PendingMoveComponent));
-
-		if (mover === undefined) {
-			return;
-		}
-
-		if (event.item === attack()) {
+		if (event.item === MenuLabel.attack()) {
 			const [nearest] = this.attackTargets(mover);
 
 			if (nearest !== undefined) {
@@ -429,15 +358,14 @@ export class MovementFeature extends GameFeature {
 			return;
 		}
 
-		if (event.item === items()) {
+		if (event.item === MenuLabel.items()) {
 			this.openItemsMenu(mover);
 			return;
 		}
 
-		if (event.item === wait()) {
-			const unit = mover.getComponent(UnitComponent);
-			unit.update({ ...unit.read(), hasMoved: true });
-			this.events.dispatch("unit:acted", { unitId: unit.read().id });
+		if (event.item === MenuLabel.wait()) {
+			this.spendMover(mover);
+			return;
 		}
 
 		mover.removeComponent(PendingMoveComponent);
@@ -456,26 +384,20 @@ export class MovementFeature extends GameFeature {
 	private onCombatResolved(event: CombatResolvedEvent): void {
 		const mover = UnitSystem.byId(this.units(), event.attackerId);
 
-		if (mover === null || !mover.hasComponent(PendingMoveComponent)) {
-			return;
+		if (mover !== null && mover.hasComponent(PendingMoveComponent)) {
+			this.spendMover(mover);
 		}
-
-		const unit = mover.getComponent(UnitComponent);
-		unit.update({ ...unit.read(), hasMoved: true });
-		mover.removeComponent(PendingMoveComponent);
-		this.events.dispatch("unit:acted", { unitId: event.attackerId });
 	}
 
-	/** Ends the unit's action the way "Wait" does: spend it, drop any menu still open, report `unit:acted`. */
+	/**
+	 * Ends the unit's action: spend it and put it down, then report `unit:acted`.
+	 * "Wait", a used item and a resolved fight all end here.
+	 */
 	private spendMover(mover: Entity): void {
 		const unit = mover.getComponent(UnitComponent);
 
 		unit.update({ ...unit.read(), hasMoved: true });
 		mover.removeComponent(PendingMoveComponent);
-
-		if (this.stateManager.peek() instanceof MenuState) {
-			this.stateManager.pop();
-		}
 
 		this.events.dispatch("unit:acted", { unitId: unit.read().id });
 	}
@@ -484,7 +406,7 @@ export class MovementFeature extends GameFeature {
 	private onItemAction(mover: Entity, choice: string): void {
 		// MenuSystem drops the submenu once it reports the row; close it here too so
 		// the flow is the same when a test drives the events directly.
-		(this.stateManager.getState(MenuState) as MenuState).closeSubmenu();
+		this.menuState().closeSubmenu();
 
 		const component = mover.getComponent(UnitComponent);
 		const before = component.read();
@@ -496,7 +418,7 @@ export class MovementFeature extends GameFeature {
 			return;
 		}
 
-		if (choice === use()) {
+		if (choice === MenuLabel.use()) {
 			const after = useHealingItem(before, slot);
 
 			if (after === before) {
@@ -507,12 +429,14 @@ export class MovementFeature extends GameFeature {
 			component.update(after);
 			this.events.dispatch("unit:usedItem", { unitId: after.id, itemId: entry.id, healed: after.currentHP - before.currentHP });
 
-			// Using an item is the unit's action for the turn, Fire Emblem style.
+			// Using an item is the unit's action for the turn, Fire Emblem style -
+			// the pack menu it was chosen from goes with it.
+			this.closeOpenMenu();
 			this.spendMover(mover);
 			return;
 		}
 
-		if (choice === equip()) {
+		if (choice === MenuLabel.equip()) {
 			const after = equipInventoryItem(before, slot);
 
 			if (after !== before) {
@@ -525,7 +449,7 @@ export class MovementFeature extends GameFeature {
 			return;
 		}
 
-		if (choice === unequip()) {
+		if (choice === MenuLabel.unequip()) {
 			const after = unequipInventoryItem(before);
 
 			if (after !== before) {
@@ -537,7 +461,7 @@ export class MovementFeature extends GameFeature {
 			return;
 		}
 
-		if (choice === drop()) {
+		if (choice === MenuLabel.drop()) {
 			const after = dropInventoryItem(before, slot);
 
 			if (after !== before) {
@@ -566,14 +490,14 @@ export class MovementFeature extends GameFeature {
 		// The items menu underneath stays exactly as it was; just make sure the
 		// submenu is gone (MenuSystem already does this in the running game).
 		if (event.menu === ITEM_ACTION_MENU) {
-			(this.stateManager.getState(MenuState) as MenuState).closeSubmenu();
+			this.menuState().closeSubmenu();
 			return;
 		}
 
-		if (event.menu === ITEMS_MENU) {
-			const mover = this.units().find((entity) => entity.hasComponent(PendingMoveComponent));
+		const mover = this.pendingMover();
 
-			if (mover !== undefined) {
+		if (event.menu === ITEMS_MENU) {
+			if (mover !== null) {
 				this.openCommandMenu(mover);
 			}
 
@@ -585,9 +509,8 @@ export class MovementFeature extends GameFeature {
 		}
 
 		const grid = this.grid();
-		const mover = this.units().find((entity) => entity.hasComponent(PendingMoveComponent));
 
-		if (grid === null || mover === undefined) {
+		if (grid === null || mover === null) {
 			return;
 		}
 
@@ -600,8 +523,9 @@ export class MovementFeature extends GameFeature {
 		const data = mover.getComponent(UnitComponent).read();
 		this.select(data.id, origin.column, origin.row, grid, this.units());
 
-		const cursor = this.world.getEntities().find((entity) => entity.hasComponent(CursorComponent));
-		cursor?.getComponent(GridPositionComponent).update({ ...origin });
+		this.cursor()
+			?.getComponent(GridPositionComponent)
+			.update({ ...origin });
 	}
 
 	/** Picks a unit up: works out its range from `column, row` and lights the overlay. */
@@ -634,7 +558,12 @@ export class MovementFeature extends GameFeature {
 	}
 
 	private units(): Entity[] {
-		return this.world.getEntities().filter((entity) => entity.hasComponent(UnitComponent));
+		return UnitSystem.inWorld(this.world);
+	}
+
+	/** The unit that has moved but not yet decided what to do - the one every open menu belongs to. */
+	private pendingMover(): Entity | null {
+		return this.units().find((entity) => entity.hasComponent(PendingMoveComponent)) ?? null;
 	}
 
 	/** A unit is mid-walk - every confirm and cancel is ignored until it lands. */
@@ -642,52 +571,25 @@ export class MovementFeature extends GameFeature {
 		return this.world.getEntities().some((entity) => entity.hasComponent(WalkComponent));
 	}
 
-	private grid() {
-		if (this.mapId === null || !this.world.hasEntity(this.mapId)) {
-			return null;
+	private menuState(): MenuState {
+		return this.stateManager.getState(MenuState);
+	}
+
+	/** Drops a menu still on top of the stack, so the next one does not stack MenuState on itself. */
+	private closeOpenMenu(): void {
+		if (this.stateManager.peek() instanceof MenuState) {
+			this.stateManager.pop();
 		}
-
-		const map = this.world.getEntity(this.mapId);
-
-		return map.hasComponent(GridComponent) ? map.getComponent(GridComponent).read() : null;
 	}
 
-	/** Top-left screen pixel of a map tile - the map transform plus the tile offset. */
-	private tileToScreen(column: number, row: number): { x: number; y: number } | null {
-		if (this.mapId === null || !this.world.hasEntity(this.mapId)) {
-			return null;
-		}
-
-		const map = this.world.getEntity(this.mapId);
-
-		if (!map.hasComponent(TransformComponent) || !map.hasComponent(GridComponent)) {
-			return null;
-		}
-
-		const transform = map.getComponent(TransformComponent).read();
-		const { cellSize } = map.getComponent(GridComponent).read();
-
-		return { x: transform.x + column * cellSize, y: transform.y + row * cellSize };
-	}
-}
-
-/**
- * The item-action menu rows for one pack entry: "Use" for a healing item that
- * would restore HP, "Equip"/"Unequip" for a wieldable weapon, "Drop" for
- * anything.
- */
-function itemActionRows(entry: InventoryEntry, canUse: boolean): string[] {
-	const rows: string[] = [];
-
-	if (canUse) {
-		rows.push(use());
+	private pushMenu(request: MenuRequest): void {
+		this.menuState().request(request);
+		this.stateManager.push(MenuState);
 	}
 
-	if (entry.kind === InventoryKind.WEAPON && entry.equippable) {
-		rows.push(entry.equipped ? unequip() : equip());
+	/** Top-left screen pixel of the tile a unit stands on. */
+	private tileOnScreen(unit: Entity): { x: number; y: number } | null {
+		const position = UnitSystem.tileOf(unit);
+		return this.tileToScreen(position.column, position.row);
 	}
-
-	rows.push(drop());
-
-	return rows;
 }
