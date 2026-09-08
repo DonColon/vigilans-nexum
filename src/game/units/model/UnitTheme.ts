@@ -44,6 +44,18 @@ export const UnitTheme = {
 	critRing: Color.hex("#ffe27a"),
 
 	/**
+	 * The floating "Miss" / damage number that pops over a struck token during a
+	 * battle animation - drawn with a dark outline pass so it reads on any terrain.
+	 */
+	combatPop: {
+		damage: Color.hex("#fff4d6"),
+		miss: Color.hex("#d4dae4"),
+		outline: Color.hex("#141a26"),
+		/** Pixels the label drifts upward across its lifetime. */
+		rise: 15
+	},
+
+	/**
 	 * The HP bar slung under each token: it runs the full width of the tile,
 	 * pinned to the bottom edge. `track` is the empty channel; the fill is the
 	 * unit's own faction colour, drawn at full opacity even for a spent unit so

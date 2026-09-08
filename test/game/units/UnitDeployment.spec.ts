@@ -64,12 +64,13 @@ suite("Unit Deployment Test Suite", () => {
 		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
 		eventSystem.processQueue();
 
-		expect(units()).toHaveLength(2);
+		expect(units()).toHaveLength(3);
 
 		const dardan = UnitSystem.byId(units(), "dardan") as Entity;
 		expect(dardan.getComponent(GridPositionComponent).read()).toStrictEqual({ column: 4, row: 10 });
 		expect(dardan.getComponent(UnitComponent).read().classLabel).toBe("Swordsman");
 		expect(UnitSystem.byId(units(), "hasan")?.getComponent(UnitComponent).read().faction).toBe("enemy");
+		expect(UnitSystem.byId(units(), "besnik")?.getComponent(GridPositionComponent).read()).toStrictEqual({ column: 2, row: 14 });
 	});
 
 	test("The commander is tagged and the cursor starts on him", () => {
@@ -87,7 +88,7 @@ suite("Unit Deployment Test Suite", () => {
 	test("map:closed clears the units", () => {
 		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
 		eventSystem.processQueue();
-		expect(units()).toHaveLength(2);
+		expect(units()).toHaveLength(3);
 
 		eventSystem.dispatch("map:closed", {});
 		eventSystem.processQueue();
@@ -101,6 +102,6 @@ suite("Unit Deployment Test Suite", () => {
 		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
 		eventSystem.processQueue();
 
-		expect(units()).toHaveLength(2);
+		expect(units()).toHaveLength(3);
 	});
 });

@@ -24,8 +24,10 @@ const CRIT_HOLD_MS = 260;
 const GAP_MS = 70;
 /** How long a defeated unit takes to fade out. */
 const DEATH_FADE_MS = 420;
-/** A beat to hold on the final state before handing control back. */
-const END_HOLD_MS = 360;
+/** How long the "Miss" / damage number floats over a struck token before it is gone. */
+const POP_LIFETIME_MS = 560;
+/** A beat to hold on the final state before handing control back - long enough for the last damage number to land. */
+const END_HOLD_MS = 420;
 
 /** Peak lunge reach, in tiles. */
 const LUNGE_TILES = 0.42;
@@ -37,6 +39,8 @@ export interface BattleAnimationStep extends JsonSchema {
 	role: StrikeSide;
 	connected: boolean;
 	critical: boolean;
+	/** HP this swing takes off the target (0 on a miss) - shown as the floating number. */
+	damage: number;
 	/** Both units' HP the instant this swing resolves. */
 	attackerHp: number;
 	defenderHp: number;
@@ -55,6 +59,10 @@ export interface TokenAnimationState extends JsonSchema {
 	hp: number;
 	/** 0-1 token opacity. */
 	alpha: number;
+	/** Floating combat text over this token - "" when none, else "Miss" or the damage number. */
+	popText: string;
+	/** 0-1 through the floating text's lifetime - the renderer rises and fades it by this. */
+	popAge: number;
 }
 
 export interface BattleAnimationFrame {
@@ -76,7 +84,7 @@ export function battleAnimationSteps(startAttackerHp: number, startDefenderHp: n
 			attackerHp = strike.targetHp;
 		}
 
-		return { role: strike.side, connected: strike.connected, critical: strike.critical, attackerHp, defenderHp };
+		return { role: strike.side, connected: strike.connected, critical: strike.critical, damage: strike.damage, attackerHp, defenderHp };
 	});
 }
 
@@ -98,7 +106,41 @@ function lerp(from: number, to: number, t: number): number {
 }
 
 function idle(hp: number, alpha: number): TokenAnimationState {
-	return { offsetColumn: 0, offsetRow: 0, flash: 0, critFlash: 0, hp, alpha };
+	return { offsetColumn: 0, offsetRow: 0, flash: 0, critFlash: 0, hp, alpha, popText: "", popAge: 0 };
+}
+
+/** One token's floating "Miss" / damage number - the latest strike on it that is still within its lifetime. */
+interface Pop {
+	text: string;
+	age: number;
+}
+
+const NO_POP: Pop = { text: "", age: 0 };
+
+/** Walks every step and returns the pop showing over each token at `elapsed`. */
+function popsAt(steps: readonly BattleAnimationStep[], elapsed: number): { attacker: Pop; defender: Pop } {
+	let attacker = NO_POP;
+	let defender = NO_POP;
+	let stepStart = 0;
+
+	for (const step of steps) {
+		const contactAt = stepStart + CONTACT_MS;
+
+		if (elapsed >= contactAt && elapsed < contactAt + POP_LIFETIME_MS) {
+			const pop: Pop = { text: step.connected ? `${step.damage}` : "Miss", age: clamp01((elapsed - contactAt) / POP_LIFETIME_MS) };
+
+			// The attacker's swing lands on the defender, and a counter lands on the attacker.
+			if (step.role === "attacker") {
+				defender = pop;
+			} else {
+				attacker = pop;
+			}
+		}
+
+		stepStart += stepDuration(step);
+	}
+
+	return { attacker, defender };
 }
 
 /**
@@ -158,12 +200,17 @@ export function battleAnimationFrame(
 	const attackerAlpha = elapsed >= attackerDeathAt ? clamp01(1 - (elapsed - attackerDeathAt) / DEATH_FADE_MS) : 1;
 	const defenderAlpha = elapsed >= defenderDeathAt ? clamp01(1 - (elapsed - defenderDeathAt) / DEATH_FADE_MS) : 1;
 
+	const pops = popsAt(steps, elapsed);
+
 	if (active === null) {
-		return {
-			attacker: idle(attackerHp, attackerAlpha),
-			defender: idle(defenderHp, defenderAlpha),
-			done: elapsed >= battleAnimationDuration(steps)
-		};
+		return stampPops(
+			{
+				attacker: idle(attackerHp, attackerAlpha),
+				defender: idle(defenderHp, defenderAlpha),
+				done: elapsed >= battleAnimationDuration(steps)
+			},
+			pops
+		);
 	}
 
 	const { step, start } = active;
@@ -184,7 +231,9 @@ export function battleAnimationFrame(
 		flash: 0,
 		critFlash: 0,
 		hp: step.role === "attacker" ? active.beforeAttackerHp : active.beforeDefenderHp,
-		alpha: step.role === "attacker" ? attackerAlpha : defenderAlpha
+		alpha: step.role === "attacker" ? attackerAlpha : defenderAlpha,
+		popText: "",
+		popAge: 0
 	};
 
 	const struck: TokenAnimationState = {
@@ -193,12 +242,26 @@ export function battleAnimationFrame(
 		flash,
 		critFlash,
 		hp: step.role === "attacker" ? lerp(active.beforeDefenderHp, step.defenderHp, step.connected ? drain : 0) : lerp(active.beforeAttackerHp, step.attackerHp, step.connected ? drain : 0),
-		alpha: step.role === "attacker" ? defenderAlpha : attackerAlpha
+		alpha: step.role === "attacker" ? defenderAlpha : attackerAlpha,
+		popText: "",
+		popAge: 0
 	};
 
-	return {
-		attacker: step.role === "attacker" ? swinger : struck,
-		defender: step.role === "attacker" ? struck : swinger,
-		done: false
-	};
+	return stampPops(
+		{
+			attacker: step.role === "attacker" ? swinger : struck,
+			defender: step.role === "attacker" ? struck : swinger,
+			done: false
+		},
+		pops
+	);
+}
+
+/** Writes each token's floating text onto the frame just before it is returned. */
+function stampPops(frame: BattleAnimationFrame, pops: { attacker: Pop; defender: Pop }): BattleAnimationFrame {
+	frame.attacker.popText = pops.attacker.text;
+	frame.attacker.popAge = pops.attacker.age;
+	frame.defender.popText = pops.defender.text;
+	frame.defender.popAge = pops.defender.age;
+	return frame;
 }

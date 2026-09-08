@@ -1,7 +1,7 @@
 export { CombatFeature } from "@/game/combat/CombatFeature";
 
 export { ForecastComponent } from "@/game/combat/components/ForecastComponent";
-export type { ForecastData } from "@/game/combat/components/ForecastComponent";
+export type { ForecastData, ForecastPhase } from "@/game/combat/components/ForecastComponent";
 export { BattleAnimationComponent } from "@/game/combat/components/BattleAnimationComponent";
 export type { BattleAnimationData } from "@/game/combat/components/BattleAnimationComponent";
 export { CombatAnimationComponent } from "@/game/combat/components/CombatAnimationComponent";

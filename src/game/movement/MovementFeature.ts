@@ -54,7 +54,9 @@ const drop = () => i18n("menu.drop");
  *    attack (red) tiles; `PathPreviewSystem` traces the shortest route to the
  *    cursor.
  *  - Confirm again on a blue tile walks it there and opens the command menu
- *    beside it. "Items" opens the unit's pack; a row opens a per-item menu to
+ *    beside it. "Attack" opens the battle forecast (`combat:requested`); the
+ *    forecast itself moves the map cursor between the enemies in reach, Fire
+ *    Emblem style. "Items" opens the unit's pack; a row opens a per-item menu to
  *    use / equip / unequip / drop it (`unit:usedItem` / `unit:equipped` /
  *    `unit:unequipped` / `unit:droppedItem`). "Use" heals the unit off a
  *    vulnerary-style consumable and spends its turn. "Wait" spends the unit (it
@@ -241,7 +243,7 @@ export class MovementFeature extends GameFeature {
 
 		const rows: string[] = [];
 
-		if (this.attackTarget(mover) !== null) {
+		if (this.attackTargets(mover).length > 0) {
 			rows.push(attack());
 		}
 
@@ -254,31 +256,41 @@ export class MovementFeature extends GameFeature {
 		this.openMenu({ id: COMMAND_MENU, items: rows, width: COMMAND_MENU_WIDTH }, position.column, position.row);
 	}
 
-	/** The enemy this unit would attack from where it stands - the nearest one something in its pack reaches, or null. */
-	private attackTarget(mover: Entity): Entity | null {
+	/**
+	 * Every enemy this unit could strike from where it stands - the ones something
+	 * in its pack reaches - nearest first. Empty when there is no one to attack.
+	 */
+	private attackTargets(mover: Entity): Entity[] {
 		const data = mover.getComponent(UnitComponent).read();
 		const from = mover.getComponent(GridPositionComponent).read();
 
-		let best: { entity: Entity; distance: number } | null = null;
-
-		for (const enemy of this.enemiesOf(data.faction)) {
-			const at = enemy.getComponent(GridPositionComponent).read();
-			const distance = CombatSystem.distance(from, at);
-
-			if (CombatSystem.weaponsReaching(data, distance).length === 0) {
-				continue;
-			}
-
-			if (best === null || distance < best.distance) {
-				best = { entity: enemy, distance };
-			}
-		}
-
-		return best?.entity ?? null;
+		return this.enemiesOf(data.faction)
+			.map((enemy) => ({ enemy, distance: CombatSystem.distance(from, enemy.getComponent(GridPositionComponent).read()) }))
+			.filter(({ distance }) => CombatSystem.weaponsReaching(data, distance).length > 0)
+			.sort((first, second) => first.distance - second.distance)
+			.map(({ enemy }) => enemy);
 	}
 
 	private enemiesOf(faction: UnitData["faction"]): Entity[] {
 		return this.units().filter((entity) => entity.getComponent(UnitComponent).read().faction !== faction);
+	}
+
+	/**
+	 * Drops the command menu and opens the battle forecast. `defender` is just the
+	 * nearest enemy - the forecast picks up every other enemy in reach and lets
+	 * the player cycle the map cursor between them.
+	 */
+	private requestCombat(attacker: Entity, defender: Entity): void {
+		// The command menu is already gone in-game (MenuSystem popped it); a test
+		// driving the events by hand still has it on top, so drop it.
+		if (this.stateManager.peek() instanceof MenuState) {
+			this.stateManager.pop();
+		}
+
+		this.events.dispatch("combat:requested", {
+			attackerId: attacker.getComponent(UnitComponent).read().id,
+			defenderId: defender.getComponent(UnitComponent).read().id
+		});
 	}
 
 	/** The `MenuRequest` for the unit's pack: a badged, right-aligned-durability list that stays open for its submenu. */
@@ -406,19 +418,12 @@ export class MovementFeature extends GameFeature {
 		}
 
 		if (event.item === attack()) {
-			const target = this.attackTarget(mover);
+			const [nearest] = this.attackTargets(mover);
 
-			if (target !== null) {
-				// The command menu is already gone (MenuSystem popped it); a test that
-				// drives the events by hand still has it on top, so drop it.
-				if (this.stateManager.peek() instanceof MenuState) {
-					this.stateManager.pop();
-				}
-
-				this.events.dispatch("combat:requested", {
-					attackerId: mover.getComponent(UnitComponent).read().id,
-					defenderId: target.getComponent(UnitComponent).read().id
-				});
+			if (nearest !== undefined) {
+				// The forecast takes it from here - it gathers every enemy in reach
+				// and moves the cursor between them.
+				this.requestCombat(mover, nearest);
 			}
 
 			return;

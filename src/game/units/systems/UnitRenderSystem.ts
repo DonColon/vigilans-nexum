@@ -11,18 +11,29 @@ import { Circle } from "@/core/math/geometry/Circle";
 import { Line } from "@/core/math/geometry/Line";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { Vector2D } from "@/core/math/geometry/Vector2D";
+import { TextAlign } from "@/core/graphics/styles/text/TextAlign";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { WalkComponent } from "@/game/movement/components/WalkComponent";
 import { walkPoint } from "@/game/movement/model/PathWalk";
 import { CombatAnimationComponent, CombatAnimationData } from "@/game/combat/components/CombatAnimationComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
+import { drawText } from "@/game/ui/model/UIPanel";
+import { UITheme } from "@/game/ui/model/UITheme";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
 import { UnitData, WeaponType } from "@/game/units/model/UnitData";
 import { UnitTheme } from "@/game/units/model/UnitTheme";
 
 /** No fight animation running on this token - the neutral values. */
-const RESTING: CombatAnimationData = { offsetColumn: 0, offsetRow: 0, flash: 0, critFlash: 0, hp: 0, alpha: 1 };
+const RESTING: CombatAnimationData = { offsetColumn: 0, offsetRow: 0, flash: 0, critFlash: 0, hp: 0, alpha: 1, popText: "", popAge: 0 };
+
+/** Dark-outline offsets for the floating combat text, so it reads on any terrain. */
+const POP_OUTLINE: readonly [number, number][] = [
+	[-1, 0],
+	[1, 0],
+	[0, -1],
+	[0, 1]
+];
 
 /**
  * Draws the unit tokens - one disc per unit, faction-coloured, with a schematic
@@ -62,6 +73,9 @@ export class UnitRenderSystem extends RenderSystem {
 		const graphics = this.display.getLayer("background");
 		const { cellSize } = map.getComponent(GridComponent).read();
 
+		// Floating "Miss" / damage labels are drawn in a second pass so no token can overdraw them.
+		const pops: { text: string; age: number; x: number; y: number }[] = [];
+
 		for (const entity of this.queries.units.getResult()) {
 			const unit = entity.getComponent(UnitComponent).read();
 			const anim = entity.hasComponent(CombatAnimationComponent) ? entity.getComponent(CombatAnimationComponent).read() : RESTING;
@@ -71,7 +85,40 @@ export class UnitRenderSystem extends RenderSystem {
 			const y = origin.y + (tile.row + anim.offsetRow) * cellSize;
 
 			this.renderUnit(graphics, unit, anim, x, y, cellSize);
+
+			if (anim.popText !== "") {
+				pops.push({ text: anim.popText, age: anim.popAge, x, y });
+			}
 		}
+
+		for (const pop of pops) {
+			this.renderPop(graphics, pop.text, pop.age, pop.x, pop.y, cellSize);
+		}
+	}
+
+	/**
+	 * The floating combat label over a struck token: it drifts up and fades over
+	 * its life. Drawn with a dark outline pass first so a "Miss" or a damage
+	 * number stays legible over bright terrain.
+	 */
+	private renderPop(graphics: Graphics, text: string, age: number, x: number, y: number, cellSize: number): void {
+		const t = Math.max(0, Math.min(1, age));
+		const rise = UnitTheme.combatPop.rise * (1 - Math.pow(1 - t, 3));
+		const fade = t < 0.6 ? 1 : Math.max(0, 1 - (t - 0.6) / 0.4);
+
+		const centreX = x + cellSize / 2;
+		const centreY = y + cellSize * 0.14 - rise;
+		const color = text === "Miss" ? UnitTheme.combatPop.miss : UnitTheme.combatPop.damage;
+
+		graphics.alpha(fade);
+
+		for (const [ox, oy] of POP_OUTLINE) {
+			drawText(graphics, text, centreX + ox, centreY + oy, { font: UITheme.badge, color: UnitTheme.combatPop.outline, align: TextAlign.CENTER });
+		}
+
+		drawText(graphics, text, centreX, centreY, { font: UITheme.badge, color, align: TextAlign.CENTER });
+
+		graphics.alpha(1);
 	}
 
 	/**

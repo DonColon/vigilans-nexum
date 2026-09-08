@@ -8,7 +8,7 @@ import { Display } from "@/core/graphics/Display";
 import { GameStateManager } from "@/core/GameStateManager";
 import { InputDevice } from "@/core/input/InputDevice";
 import { ServiceRegistry } from "@/core/service/ServiceRegistry";
-import { UnitMovedEvent, UnitUsedItemEvent } from "@/game.events";
+import { CombatRequestedEvent, UnitMovedEvent, UnitUsedItemEvent } from "@/game.events";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
@@ -402,6 +402,39 @@ suite("Unit Movement Test Suite", () => {
 		expect(selected.unitId).toBe("dardan");
 		expect(selected).toMatchObject({ originColumn: 4, originRow: 10 });
 		expect(MovementSystem.contains(selected.movement, 4, 13)).toBe(true);
+	});
+
+	test("Attack asks the combat feature to open a forecast against the nearest enemy", () => {
+		let requested: CombatRequestedEvent | null = null;
+		eventSystem.subscribe("combat:requested", (event) => (requested = event));
+
+		eventSystem.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
+		eventSystem.processQueue();
+		walkTo(4, 13); // adjacent to Hasan at 4,14
+
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", index: 0, item: i18n("menu.attack") });
+		eventSystem.processQueue();
+		eventSystem.processQueue(); // deliver combat:requested
+
+		expect(requested).toMatchObject({ attackerId: "dardan", defenderId: "hasan" });
+		expect(stateManager.peek()).not.toBeInstanceOf(MenuState); // the command menu is gone
+		expect(unit("dardan").hasComponent(PendingMoveComponent)).toBe(true); // still mid-turn until the fight resolves
+	});
+
+	test("Attack picks the nearest enemy when several are in reach (the forecast cycles the rest)", () => {
+		let requested: CombatRequestedEvent | null = null;
+		eventSystem.subscribe("combat:requested", (event) => (requested = event));
+
+		eventSystem.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
+		eventSystem.processQueue();
+		walkTo(3, 14); // one tile from both Hasan (4,14) and Besnik (2,14)
+
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", index: 0, item: i18n("menu.attack") });
+		eventSystem.processQueue();
+		eventSystem.processQueue();
+
+		// Both are one tile away; the deploy order breaks the tie, so Hasan leads.
+		expect(requested).toMatchObject({ attackerId: "dardan", defenderId: "hasan" });
 	});
 
 	test("Another unit cannot be picked up while one is walking", () => {

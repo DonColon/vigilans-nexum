@@ -10,11 +10,11 @@ import { ForecastComponent } from "@/game/combat/components/ForecastComponent";
 
 /** What a forecast command is handed each tick. */
 export interface ForecastCommandContext {
-	/** Entity carrying the open forecast. */
+	/** Entity carrying the open attack. */
 	forecast: Entity;
 }
 
-/** Input the player can trigger while the battle forecast is on screen. */
+/** Input the player can trigger during an attack - target picking and the battle forecast both. */
 export abstract class ForecastCommand extends GameCommand<ForecastCommandContext> {}
 
 function pressBinding(keys: readonly KeyboardInputType[], buttons: readonly GamepadInputType[]): InputBinding {
@@ -27,7 +27,48 @@ function pressBinding(keys: readonly KeyboardInputType[], buttons: readonly Game
 	});
 }
 
-/** Steps the previewed weapon by `step`, wrapping around the list. */
+/**
+ * Steps the previewed target by `step`, wrapping around the list - only in the
+ * `target` phase. The map cursor follows (ForecastSystem parks it on the current
+ * target), Fire Emblem style; the weapon resets to the readied one.
+ */
+abstract class CycleTargetCommand extends ForecastCommand {
+	constructor(
+		private readonly step: number,
+		binding: InputBinding
+	) {
+		super(binding);
+	}
+
+	protected action(_elapsed: number, _frame: number, { forecast }: ForecastCommandContext): void {
+		const component = forecast.getComponent(ForecastComponent);
+		const data = component.read();
+
+		if (data.phase !== "target" || data.defenderIds.length < 2) {
+			return;
+		}
+
+		const defenderIndex = (data.defenderIndex + this.step + data.defenderIds.length) % data.defenderIds.length;
+		component.update({ ...data, defenderIndex, defenderId: data.defenderIds[defenderIndex], weaponIndex: 0 });
+	}
+}
+
+export class ForecastNextTargetCommand extends CycleTargetCommand {
+	constructor() {
+		super(1, pressBinding([KeyboardInput.ARROW_RIGHT, KeyboardInput.ARROW_DOWN, KeyboardInput.KEY_D, KeyboardInput.KEY_S], [GamepadInput.DPAD_RIGHT, GamepadInput.DPAD_DOWN]));
+	}
+}
+
+export class ForecastPrevTargetCommand extends CycleTargetCommand {
+	constructor() {
+		super(-1, pressBinding([KeyboardInput.ARROW_LEFT, KeyboardInput.ARROW_UP, KeyboardInput.KEY_A, KeyboardInput.KEY_W], [GamepadInput.DPAD_LEFT, GamepadInput.DPAD_UP]));
+	}
+}
+
+/**
+ * Steps the previewed weapon by `step` (left/right - the `< >` around the weapon
+ * name), wrapping around the list - only in the `forecast` phase.
+ */
 abstract class CycleWeaponCommand extends ForecastCommand {
 	constructor(
 		private readonly step: number,
@@ -40,7 +81,7 @@ abstract class CycleWeaponCommand extends ForecastCommand {
 		const component = forecast.getComponent(ForecastComponent);
 		const data = component.read();
 
-		if (data.weaponIds.length < 2) {
+		if (data.phase !== "forecast" || data.weaponIds.length < 2) {
 			return;
 		}
 
@@ -61,7 +102,7 @@ export class ForecastPrevWeaponCommand extends CycleWeaponCommand {
 	}
 }
 
-/** Commits to the fight with the previewed weapon. */
+/** Confirm: `target` phase locks the enemy in and opens the forecast; `forecast` phase commits to the fight. */
 export class ForecastConfirmCommand extends ForecastCommand {
 	constructor() {
 		super(confirmBinding());
@@ -69,11 +110,17 @@ export class ForecastConfirmCommand extends ForecastCommand {
 
 	protected action(_elapsed: number, _frame: number, { forecast }: ForecastCommandContext): void {
 		const component = forecast.getComponent(ForecastComponent);
-		component.update({ ...component.read(), confirmed: true });
+		const data = component.read();
+
+		if (data.phase === "target") {
+			component.update({ ...data, phase: "forecast", weaponIndex: 0 });
+		} else {
+			component.update({ ...data, confirmed: true });
+		}
 	}
 }
 
-/** Backs out of the forecast without fighting. */
+/** Cancel: `forecast` phase drops back to picking a target; `target` phase backs out of the attack entirely. */
 export class ForecastCancelCommand extends ForecastCommand {
 	constructor() {
 		super(pressBinding([KeyboardInput.ESCAPE, KeyboardInput.KEY_X, KeyboardInput.BACKSPACE], [GamepadInput.B]));
@@ -81,9 +128,22 @@ export class ForecastCancelCommand extends ForecastCommand {
 
 	protected action(_elapsed: number, _frame: number, { forecast }: ForecastCommandContext): void {
 		const component = forecast.getComponent(ForecastComponent);
-		component.update({ ...component.read(), cancelled: true });
+		const data = component.read();
+
+		if (data.phase === "forecast") {
+			component.update({ ...data, phase: "target" });
+		} else {
+			component.update({ ...data, cancelled: true });
+		}
 	}
 }
 
-/** The forecast commands as one list, so the state allowing them and the feature registering them stay in step. */
-export const forecastCommands: GameCommandConstructor[] = [ForecastNextWeaponCommand, ForecastPrevWeaponCommand, ForecastConfirmCommand, ForecastCancelCommand];
+/** The commands as one list, so the state allowing them and the feature registering them stay in step. */
+export const forecastCommands: GameCommandConstructor[] = [
+	ForecastNextTargetCommand,
+	ForecastPrevTargetCommand,
+	ForecastNextWeaponCommand,
+	ForecastPrevWeaponCommand,
+	ForecastConfirmCommand,
+	ForecastCancelCommand
+];

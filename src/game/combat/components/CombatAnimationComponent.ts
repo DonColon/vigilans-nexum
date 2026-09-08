@@ -13,6 +13,10 @@ export interface CombatAnimationData extends JsonSchema {
 	hp: number;
 	/** 0-1 token opacity, for a death fade. */
 	alpha: number;
+	/** Floating combat text over the token - "" when none, else "Miss" or the damage number. */
+	popText: string;
+	/** 0-1 through the floating text's lifetime; the renderer rises and fades it by this. */
+	popAge: number;
 }
 
 /**

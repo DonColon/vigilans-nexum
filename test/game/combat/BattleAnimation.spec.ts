@@ -14,16 +14,16 @@ suite("Battle Animation Test Suite", () => {
 		];
 
 		expect(battleAnimationSteps(20, 26, strikes)).toStrictEqual([
-			{ role: "attacker", connected: true, critical: false, attackerHp: 20, defenderHp: 22 },
-			{ role: "defender", connected: true, critical: false, attackerHp: 13, defenderHp: 22 },
-			{ role: "attacker", connected: false, critical: false, attackerHp: 13, defenderHp: 22 }
+			{ role: "attacker", connected: true, critical: false, damage: 4, attackerHp: 20, defenderHp: 22 },
+			{ role: "defender", connected: true, critical: false, damage: 7, attackerHp: 13, defenderHp: 22 },
+			{ role: "attacker", connected: false, critical: false, damage: 0, attackerHp: 13, defenderHp: 22 }
 		]);
 	});
 
 	const steps: BattleAnimationStep[] = [
-		{ role: "attacker", connected: true, critical: false, attackerHp: 20, defenderHp: 22 },
-		{ role: "defender", connected: true, critical: false, attackerHp: 13, defenderHp: 22 },
-		{ role: "attacker", connected: false, critical: false, attackerHp: 13, defenderHp: 22 }
+		{ role: "attacker", connected: true, critical: false, damage: 4, attackerHp: 20, defenderHp: 22 },
+		{ role: "defender", connected: true, critical: false, damage: 7, attackerHp: 13, defenderHp: 22 },
+		{ role: "attacker", connected: false, critical: false, damage: 0, attackerHp: 13, defenderHp: 22 }
 	];
 
 	const frame = (elapsed: number) => battleAnimationFrame(steps, 20, 26, attackerTile, defenderTile, elapsed);
@@ -54,7 +54,7 @@ suite("Battle Animation Test Suite", () => {
 	});
 
 	test("Once every swing has played the tokens rest on the final HP and report done", () => {
-		expect(battleAnimationDuration(steps)).toBe(3 * (200 + 70) + 360);
+		expect(battleAnimationDuration(steps)).toBe(3 * (200 + 70) + 420);
 
 		const over = frame(5000);
 		expect(over).toMatchObject({
@@ -64,8 +64,33 @@ suite("Battle Animation Test Suite", () => {
 		});
 	});
 
+	test("A connecting swing pops the damage number over the struck token", () => {
+		const oneHit: BattleAnimationStep[] = [{ role: "attacker", connected: true, critical: false, damage: 4, attackerHp: 20, defenderHp: 22 }];
+		const shot = (elapsed: number) => battleAnimationFrame(oneHit, 20, 26, attackerTile, defenderTile, elapsed);
+
+		// The swing contacts at 90ms; the number rides the defender, not the swinger.
+		expect(shot(90).defender.popText).toBe("4");
+		expect(shot(90).defender.popAge).toBeCloseTo(0, 1);
+		expect(shot(90).attacker.popText).toBe("");
+
+		// It ages as time passes, then is gone once its lifetime runs out.
+		expect(shot(90 + 280).defender.popAge).toBeGreaterThan(0.4);
+		expect(shot(90 + 560).defender.popText).toBe("");
+	});
+
+	test('A missed swing pops "Miss" instead of a number', () => {
+		// Step 2 is the miss; it starts after the first two swings (2 * 270ms).
+		const missContact = frame(2 * 270 + 90);
+		expect(missContact.defender.popText).toBe("Miss");
+	});
+
+	test("A counter pops its damage over the attacker", () => {
+		// Step 1 is Hasan's counter for 7, contacting at 270 + 90.
+		expect(frame(270 + 90).attacker.popText).toBe("7");
+	});
+
 	test("A lethal blow fades the fallen unit out", () => {
-		const lethal: BattleAnimationStep[] = [{ role: "attacker", connected: true, critical: false, attackerHp: 20, defenderHp: 0 }];
+		const lethal: BattleAnimationStep[] = [{ role: "attacker", connected: true, critical: false, damage: 26, attackerHp: 20, defenderHp: 0 }];
 		const shot = (elapsed: number) => battleAnimationFrame(lethal, 20, 26, attackerTile, defenderTile, elapsed);
 
 		expect(shot(90).defender.alpha).toBeCloseTo(1, 1); // fade just starting

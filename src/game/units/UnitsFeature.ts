@@ -10,13 +10,15 @@ import { CommanderComponent } from "@/game/units/components/CommanderComponent";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
 import { buildUnit, UnitDocument } from "@/game/units/model/UnitData";
 import { UnitRenderSystem } from "@/game/units/systems/UnitRenderSystem";
+import besnikDocument from "@/game/units/data/besnik.unit.json";
 import dardanDocument from "@/game/units/data/dardan.unit.json";
 import hasanDocument from "@/game/units/data/hasan.unit.json";
 import deployment from "@/game/units/data/skirmish.deployment.json";
 
 const UNIT_DOCUMENTS: Record<string, UnitDocument> = {
 	dardan: dardanDocument as UnitDocument,
-	hasan: hasanDocument as UnitDocument
+	hasan: hasanDocument as UnitDocument,
+	besnik: besnikDocument as UnitDocument
 };
 
 /**

@@ -1,0 +1,44 @@
+{
+	"format": "vigilans-unit",
+	"version": 1,
+	"id": "besnik",
+	"name": "Besnik Kastrati",
+	"faction": "enemy",
+	"class": "axe-fighter",
+	"level": 1,
+	"weapon": "bronze-axe",
+	"inventory": ["bronze-axe", "vulnerary"],
+	"stats": {
+		"hp": 22,
+		"mp": 0,
+		"strength": 7,
+		"magic": 0,
+		"dexterity": 4,
+		"speed": 6,
+		"luck": 3,
+		"defense": 6,
+		"resistance": 0
+	},
+	"growths": {
+		"hp": 90,
+		"mp": 5,
+		"strength": 60,
+		"magic": 5,
+		"dexterity": 40,
+		"speed": 45,
+		"luck": 30,
+		"defense": 40,
+		"resistance": 10
+	},
+	"maxStats": {
+		"hp": 62,
+		"mp": 20,
+		"strength": 28,
+		"magic": 12,
+		"dexterity": 24,
+		"speed": 25,
+		"luck": 27,
+		"defense": 26,
+		"resistance": 16
+	}
+}

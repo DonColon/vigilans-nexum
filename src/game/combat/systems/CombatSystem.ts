@@ -32,6 +32,19 @@ export class CombatSystem {
 		return targets.some((target) => CombatSystem.weaponsReaching(unit, CombatSystem.distance(from, target)).length > 0);
 	}
 
+	/**
+	 * The `candidates` `attacker` could strike from `from` with something in its
+	 * pack, nearest first - the targets the battle forecast cycles the cursor
+	 * through. `tile` picks each candidate's position.
+	 */
+	public static targetsInReach<T>(attacker: UnitData, from: GridPositionData, candidates: readonly T[], tile: (candidate: T) => GridPositionData): T[] {
+		return candidates
+			.map((candidate) => ({ candidate, distance: CombatSystem.distance(from, tile(candidate)) }))
+			.filter(({ distance }) => CombatSystem.weaponsReaching(attacker, distance).length > 0)
+			.sort((first, second) => first.distance - second.distance)
+			.map(({ candidate }) => candidate);
+	}
+
 	/** Builds the forecast for `attacker` swinging `weapon` at `defender`, reading terrain off the grid. */
 	public static forecast(attacker: UnitData, attackerTile: GridPositionData, weapon: WeaponData, defender: UnitData, defenderTile: GridPositionData, grid: GridData): BattleForecast {
 		return buildForecast({

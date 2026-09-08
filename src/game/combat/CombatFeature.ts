@@ -82,27 +82,39 @@ export class CombatFeature extends GameFeature {
 	private openForecast(event: CombatRequestedEvent): void {
 		const units = this.units();
 		const attacker = UnitSystem.byId(units, event.attackerId);
-		const defender = UnitSystem.byId(units, event.defenderId);
 
-		if (attacker === null || defender === null) {
+		if (attacker === null) {
 			return;
 		}
 
 		const attackerData = attacker.getComponent(UnitComponent).read();
-		const distance = CombatSystem.distance(attacker.getComponent(GridPositionComponent).read(), defender.getComponent(GridPositionComponent).read());
-		const weaponIds = CombatSystem.weaponsReaching(attackerData, distance).map((entry) => entry.id);
+		const attackerTile = attacker.getComponent(GridPositionComponent).read();
 
-		if (weaponIds.length === 0) {
+		// Every enemy the attacker can hit from here, nearest first; the requested
+		// one leads when it is still in reach.
+		const enemies = units.filter((entity) => entity.getComponent(UnitComponent).read().faction !== attackerData.faction);
+		const targets = CombatSystem.targetsInReach(attackerData, attackerTile, enemies, (enemy) => enemy.getComponent(GridPositionComponent).read());
+
+		if (targets.length === 0) {
 			return;
 		}
 
+		const defenderIds = targets.map((enemy) => enemy.getComponent(UnitComponent).read().id);
+		const requestedIndex = defenderIds.indexOf(event.defenderId);
+		const defenderIndex = requestedIndex >= 0 ? requestedIndex : 0;
+
+		const distance = CombatSystem.distance(attackerTile, targets[defenderIndex].getComponent(GridPositionComponent).read());
+		const weaponIds = CombatSystem.weaponsReaching(attackerData, distance).map((entry) => entry.id);
 		const equippedIndex = weaponIds.indexOf(attackerData.weapon?.id ?? "");
 
 		(this.stateManager.getState(ForecastState) as ForecastState).request({
 			attackerId: event.attackerId,
-			defenderId: event.defenderId,
+			defenderIds,
+			defenderIndex,
 			weaponIds,
-			weaponIndex: equippedIndex >= 0 ? equippedIndex : 0
+			weaponIndex: equippedIndex >= 0 ? equippedIndex : 0,
+			restoreColumn: attackerTile.column,
+			restoreRow: attackerTile.row
 		});
 		this.stateManager.push(ForecastState);
 	}

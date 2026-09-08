@@ -66,6 +66,23 @@ suite("Combat Flow Test Suite", () => {
 	const sheet = (id: string) => (unit(id) as Entity).getComponent(UnitComponent).read();
 	const menu = () => (stateManager.peek() as MenuState).getMenu()?.getComponent(MenuComponent).read();
 	const forecast = () => (stateManager.getState(ForecastState) as ForecastState).getForecast()?.getComponent(ForecastComponent);
+	const cursorAt = () => cursor.getComponent(GridPositionComponent).read();
+
+	/** "Attack" from the command menu - opens the target-picking phase (cursor on the nearest enemy, no panel yet). */
+	const beginAttack = () => {
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", index: 0, item: i18n("menu.attack") });
+		eventSystem.processQueue();
+		eventSystem.processQueue(); // deliver combat:requested
+	};
+
+	/** Confirm the current target - the same step `ForecastConfirmCommand` runs in the `target` phase. */
+	const lockTarget = () => forecast()?.update({ ...forecast()!.read(), phase: "forecast", weaponIndex: 0 });
+
+	/** Begin the attack and lock the nearest enemy in, so the forecast panel / weapon cycling is live. */
+	const openForecast = () => {
+		beginAttack();
+		lockTarget();
+	};
 
 	const finishWalk = () => {
 		const walkSystem = new UnitWalkSystem(8);
@@ -150,20 +167,107 @@ suite("Combat Flow Test Suite", () => {
 		expect(menu()?.items).toStrictEqual([i18n("menu.items"), i18n("menu.wait")]);
 	});
 
-	test('"Attack" opens the forecast with the reaching weapons, readied one first', () => {
+	test('"Attack" opens target-picking first, then the forecast on confirm', () => {
 		moveTo(4, 13);
-
-		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", index: 0, item: i18n("menu.attack") });
-		eventSystem.processQueue();
-		eventSystem.processQueue(); // deliver combat:requested
+		beginAttack();
 
 		expect(stateManager.peek()).toBeInstanceOf(ForecastState);
 		expect(forecast()?.read()).toMatchObject({
+			phase: "target", // no panel yet - just the cursor on the enemy
 			attackerId: "dardan",
 			defenderId: "hasan",
 			weaponIds: ["bronze-sword", "iron-sword", "iron-blade"],
 			weaponIndex: 0
 		});
+
+		lockTarget();
+		expect(forecast()?.read().phase).toBe("forecast");
+	});
+
+	test("Cancelling in the forecast phase drops back to picking a target, not out of the attack", () => {
+		moveTo(3, 14); // Hasan and Besnik both in reach
+		beginAttack();
+		lockTarget();
+		expect(forecast()?.read().phase).toBe("forecast");
+
+		// ForecastCancelCommand in the forecast phase: back to target, still the same attack.
+		forecast()?.update({ ...forecast()!.read(), phase: "target" });
+		pumpForecast();
+
+		// Still in the attack (ForecastState), not back at the command menu.
+		expect(stateManager.peek()).toBeInstanceOf(ForecastState);
+		expect(forecast()?.read().phase).toBe("target");
+	});
+
+	test("Switching weapon in the forecast sticks - ForecastSystem's reconcile does not reset it", () => {
+		moveTo(4, 13);
+		openForecast();
+
+		// What ForecastNextWeaponCommand does: bump weaponIndex, nothing else.
+		forecast()?.update({ ...forecast()!.read(), weaponIndex: 2 });
+		pumpForecast();
+		pumpForecast();
+
+		expect(forecast()?.read().weaponIndex).toBe(2);
+		expect(forecast()?.read().weaponIds[2]).toBe("iron-blade");
+	});
+
+	test("Target picking lands the map cursor on the enemy, even when it is the only one in reach", () => {
+		moveTo(4, 13); // only Hasan (4,14) within a sword's reach
+		beginAttack();
+
+		expect(stateManager.peek()).toBeInstanceOf(ForecastState);
+		expect(forecast()?.read()).toMatchObject({ phase: "target", defenderId: "hasan", defenderIds: ["hasan"] });
+
+		pumpForecast(); // parks the cursor on the target
+		expect(cursorAt()).toStrictEqual({ column: 4, row: 14 });
+	});
+
+	test("Target picking cycles the map cursor between the enemies in reach", () => {
+		moveTo(3, 14); // one tile from Hasan (4,14) and Besnik (2,14)
+		beginAttack();
+
+		expect(forecast()?.read().defenderIds).toStrictEqual(["hasan", "besnik"]);
+
+		pumpForecast();
+		expect(cursorAt()).toStrictEqual({ column: 4, row: 14 }); // starts on the nearest, Hasan
+
+		// Cycle to the next target - `defenderId` resolves and the cursor follows.
+		forecast()?.update({ ...forecast()!.read(), defenderIndex: 1 });
+		pumpForecast();
+
+		expect(forecast()?.read().defenderId).toBe("besnik");
+		expect(cursorAt()).toStrictEqual({ column: 2, row: 14 });
+	});
+
+	test("Confirming fights whichever target was picked", () => {
+		moveTo(3, 14);
+		beginAttack();
+
+		// Cycle to Besnik, lock him in, then commit from the forecast.
+		forecast()?.update({ ...forecast()!.read(), defenderIndex: 1 });
+		pumpForecast();
+		lockTarget();
+		forecast()?.update({ ...forecast()!.read(), confirmed: true });
+		pumpForecast();
+		finishBattleAnimation();
+
+		expect(sheet("besnik").currentHP).toBeLessThan(22); // Besnik took the hit
+		expect(sheet("hasan").currentHP).toBe(26); // Hasan untouched
+	});
+
+	test("Backing out of target picking puts the cursor back on the attacker", () => {
+		moveTo(3, 14);
+		beginAttack();
+
+		pumpForecast();
+		expect(cursorAt()).toStrictEqual({ column: 4, row: 14 });
+
+		forecast()?.update({ ...forecast()!.read(), cancelled: true });
+		pumpForecast();
+
+		expect(cursorAt()).toStrictEqual({ column: 3, row: 14 }); // Dardan's tile
+		expect(menu()?.id).toBe("unit-command");
 	});
 
 	test("Confirming the forecast readies the chosen weapon, fights, and spends the attacker", () => {
@@ -173,9 +277,7 @@ suite("Combat Flow Test Suite", () => {
 		eventSystem.subscribe("unit:acted", (event) => (acted = event.unitId));
 
 		moveTo(4, 13);
-		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", index: 0, item: i18n("menu.attack") });
-		eventSystem.processQueue();
-		eventSystem.processQueue();
+		openForecast();
 
 		// Preview and pick the Iron Blade (slot 2), then commit.
 		forecast()?.update({ ...forecast()!.read(), weaponIndex: 2, confirmed: true });
@@ -202,11 +304,9 @@ suite("Combat Flow Test Suite", () => {
 		expect(unit("hasan")).not.toBeNull();
 	});
 
-	test("Backing out of the forecast re-opens the command menu", () => {
+	test("Backing out of target picking re-opens the command menu", () => {
 		moveTo(4, 13);
-		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", index: 0, item: i18n("menu.attack") });
-		eventSystem.processQueue();
-		eventSystem.processQueue();
+		beginAttack();
 		expect(stateManager.peek()).toBeInstanceOf(ForecastState);
 
 		forecast()?.update({ ...forecast()!.read(), cancelled: true });
@@ -226,9 +326,7 @@ suite("Combat Flow Test Suite", () => {
 		const hasanComponent = (unit("hasan") as Entity).getComponent(UnitComponent);
 		hasanComponent.update({ ...hasanComponent.read(), currentHP: 1 });
 
-		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", index: 0, item: i18n("menu.attack") });
-		eventSystem.processQueue();
-		eventSystem.processQueue();
+		openForecast();
 		forecast()?.update({ ...forecast()!.read(), confirmed: true });
 		pumpForecast();
 

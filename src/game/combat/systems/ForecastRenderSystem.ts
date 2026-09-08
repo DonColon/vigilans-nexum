@@ -52,6 +52,13 @@ export class ForecastRenderSystem extends RenderSystem {
 		}
 
 		const data = forecastEntity.getComponent(ForecastComponent).read();
+
+		// The panel only shows once a target is locked in; the `target` phase is
+		// just the map cursor moving between enemies.
+		if (data.phase !== "forecast") {
+			return;
+		}
+
 		const attacker = this.unitById(data.attackerId);
 		const defender = this.unitById(data.defenderId);
 
