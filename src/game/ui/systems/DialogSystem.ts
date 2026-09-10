@@ -7,9 +7,9 @@ import { GameStateManager } from "@/core/GameStateManager";
 import { Display } from "@/core/graphics/Display";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { DialogCommand } from "@/game/ui/commands/UICommand";
-import { DialogComponent } from "@/game/ui/components/DialogComponent";
+import { DialogComponent, DialogData } from "@/game/ui/components/DialogComponent";
 import { countWords, revealedWordCount, wrapText } from "@/game/ui/model/TextReveal";
-import { dialogBox } from "@/game/ui/model/UILayout";
+import { dialogBox, DialogSide } from "@/game/ui/model/UILayout";
 import { UITheme } from "@/game/ui/model/UITheme";
 import { DialogState } from "@/game/ui/states/DialogState";
 
@@ -55,10 +55,29 @@ export class DialogSystem extends UpdateSystem {
 		const pageElapsed = data.pageElapsed + elapsed;
 		component.update({ ...data, pageElapsed });
 
+		this.pinToSpeaker(entity, data);
+
 		const totalWords = this.pageWordCount(data.pages[data.pageIndex]);
 		const fullyRevealed = data.revealAll || revealedWordCount(pageElapsed, UITheme.wordRevealDelay, totalWords) >= totalWords;
 
 		this.runCommands(elapsed, frame, entity, fullyRevealed);
+	}
+
+	/**
+	 * Keeps the box on the side of the screen the current speaker holds. A
+	 * one-voice dialog never moves; a two-hander swaps ends as it changes hands.
+	 */
+	private pinToSpeaker(entity: Entity, data: DialogData): void {
+		const side = (data.sides[data.pageIndex] ?? DialogSide.BOTTOM) as DialogSide;
+		const box = dialogBox(this.display.getViewportDimension(), side);
+
+		const transform = entity.getComponent(TransformComponent);
+		const current = transform.read();
+		const { x, y } = box.getPosition();
+
+		if (current.x !== x || current.y !== y) {
+			transform.update({ ...current, x, y });
+		}
 	}
 
 	/** How many words the page wraps to inside the box, so the advance command knows whether the reveal is done. */

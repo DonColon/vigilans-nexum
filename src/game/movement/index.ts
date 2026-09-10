@@ -18,6 +18,7 @@ export type { PathTileSprite, PathKind, Direction } from "@/game/movement/model/
 export { walkPoint, WALK_STEP_MS } from "@/game/movement/model/PathWalk";
 export { MovementTheme } from "@/game/movement/model/MovementTheme";
 
+export type { UnitCommands } from "@/game/movement/model/UnitMenus";
 export {
 	UnitMenuRow,
 	rowLabel,

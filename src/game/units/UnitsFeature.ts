@@ -1,5 +1,7 @@
+import { AssetStorage } from "@/core/assets/AssetStorage";
 import { Entity } from "@/core/ecs/Entity";
 import { GameFeatureConfig } from "@/core/GameFeature";
+import { GameCoreService } from "@/core/service/GameCoreService";
 import { identityTransform, TransformComponent } from "@/core/ecs/components/TransformComponent";
 import { BattleMapFeature } from "@/game/map/BattleMapFeature";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
@@ -7,33 +9,40 @@ import { UnitUsedItemEvent } from "@/game.events";
 import { CommanderComponent } from "@/game/units/components/CommanderComponent";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
 import { UnitPopComponent } from "@/game/units/components/UnitPopComponent";
+import { loadUnitCatalogs } from "@/game/units/model/UnitCatalog";
 import { buildUnit, UnitDocument } from "@/game/units/model/UnitData";
 import { healPopText, PopKind, POP_LIFETIME_MS } from "@/game/units/model/UnitPop";
 import { UnitPopSystem } from "@/game/units/systems/UnitPopSystem";
 import { UnitRenderSystem } from "@/game/units/systems/UnitRenderSystem";
 import { UnitSystem } from "@/game/units/systems/UnitSystem";
-import besnikDocument from "@/game/units/data/besnik.unit.json";
-import dardanDocument from "@/game/units/data/dardan.unit.json";
-import hasanDocument from "@/game/units/data/hasan.unit.json";
-import deployment from "@/game/units/data/skirmish.deployment.json";
 
-const UNIT_DOCUMENTS: Record<string, UnitDocument> = {
-	dardan: dardanDocument as UnitDocument,
-	hasan: hasanDocument as UnitDocument,
-	besnik: besnikDocument as UnitDocument
-};
+/** Asset id of the deployment sheet this battle puts on the map. */
+const DEPLOYMENT_ASSET = "deployment-skirmish";
+
+/** A deployment sheet, as authored in `src/assets/data/deployments/*.deployment.json`. */
+interface DeploymentDocument {
+	units: { unit: string; column: number; row: number }[];
+}
 
 /**
  * Puts the playable units on the battle map. It only owns the units themselves -
  * their sheets, tokens and where they stand. Picking one up and moving it is the
  * [[MovementFeature]]'s job, wired to the same `map:*` events.
  *
- * On `map:ready` it deploys the units from `data/*.deployment.json`, parented to
+ * On `map:ready` it deploys the units named by the deployment sheet, parented to
  * the map so their tile coordinates travel with it, tags the army's commander
  * and drops the cursor onto that unit; on `map:closed` it clears them. With no
  * map on screen the events have no effect.
+ *
+ * The sheets and the catalogs behind them are content, not code: they ship as
+ * JSON assets (`src/assets/data`) and are read back out of [[AssetStorage]]
+ * here, so a new character is a sheet plus a manifest entry. `Game.start` has
+ * the bundle in storage before the first `map:ready` is delivered.
  */
 export class UnitsFeature extends BattleMapFeature {
+	@GameCoreService(AssetStorage)
+	private assets!: AssetStorage;
+
 	private units: Entity[] = [];
 
 	constructor(config: GameFeatureConfig = {}) {
@@ -67,10 +76,14 @@ export class UnitsFeature extends BattleMapFeature {
 	private deploy(mapId: string): void {
 		this.withdraw();
 
-		for (const placement of deployment.units) {
-			const document = UNIT_DOCUMENTS[placement.unit];
+		// Every sheet resolves its class and weapon against the catalogs, so they
+		// have to be in place before the first unit is built.
+		loadUnitCatalogs(this.assets);
 
-			if (document === undefined) {
+		for (const placement of this.deployment().units) {
+			const document = this.unitDocument(placement.unit);
+
+			if (document === null) {
 				continue;
 			}
 
@@ -89,6 +102,30 @@ export class UnitsFeature extends BattleMapFeature {
 		}
 
 		this.centreCursorOnCommander();
+	}
+
+	/** The deployment sheet for this battle, or an empty one when it is not in storage. */
+	private deployment(): DeploymentDocument {
+		try {
+			return this.assets.getJson<DeploymentDocument>(DEPLOYMENT_ASSET);
+		} catch (error) {
+			console.error(`Deployment "${DEPLOYMENT_ASSET}" is not in the asset bundle:`, error);
+			return { units: [] };
+		}
+	}
+
+	/**
+	 * The sheet a placement names, looked up as `unit-<id>`. A placement naming a
+	 * unit the bundle does not carry is skipped rather than taking the whole
+	 * battle down with it.
+	 */
+	private unitDocument(id: string): UnitDocument | null {
+		try {
+			return this.assets.getJson<UnitDocument>(`unit-${id}`);
+		} catch (error) {
+			console.error(`Deployment names unit "${id}", which is not in the asset bundle:`, error);
+			return null;
+		}
 	}
 
 	/**

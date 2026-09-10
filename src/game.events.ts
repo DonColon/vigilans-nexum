@@ -126,6 +126,48 @@ export interface UnitDiedEvent extends GameEvent {
 	unitId: string;
 }
 
+/** The player chose "Trade" and an ally beside the unit - the trade screen should open. */
+export interface TradeRequestedEvent extends GameEvent {
+	unitId: string;
+	partnerId: string;
+}
+
+/** A pack entry crossed between the two units on the trade screen. */
+export interface TradeSwappedEvent extends GameEvent {
+	unitId: string;
+	partnerId: string;
+}
+
+/** The trade screen closed. Trading is a free action, so the unit can still act. */
+export interface TradeClosedEvent extends GameEvent {
+	unitId: string;
+	partnerId: string;
+}
+
+/** The player chose "Talk" - the conversation between these two should play. */
+export interface TalkRequestedEvent extends GameEvent {
+	unitId: string;
+	partnerId: string;
+}
+
+/** The player settled on who to talk to - the conversation with them should play. */
+export interface TalkConfirmedEvent extends GameEvent {
+	unitId: string;
+	partnerId: string;
+}
+
+/** The player backed out of choosing who to talk to. */
+export interface TalkCancelledEvent extends GameEvent {
+	unitId: string;
+}
+
+/** A conversation finished. Talking is free, so the unit still has its turn. */
+export interface TalkFinishedEvent extends GameEvent {
+	unitId: string;
+	partnerId: string;
+	conversationId: string;
+}
+
 /** A request to end the current player turn (from the global command menu). */
 export type TurnEndEvent = GameEvent;
 
@@ -156,6 +198,13 @@ declare module "@/core/events/GameEvents" {
 		"combat:confirmed": CombatConfirmedEvent;
 		"combat:cancelled": CombatCancelledEvent;
 		"combat:resolved": CombatResolvedEvent;
+		"trade:requested": TradeRequestedEvent;
+		"trade:swapped": TradeSwappedEvent;
+		"trade:closed": TradeClosedEvent;
+		"talk:requested": TalkRequestedEvent;
+		"talk:confirmed": TalkConfirmedEvent;
+		"talk:cancelled": TalkCancelledEvent;
+		"talk:finished": TalkFinishedEvent;
 		"turn:end": TurnEndEvent;
 		"turn:changed": TurnChangedEvent;
 	}

@@ -1,6 +1,6 @@
 import { i18n } from "@/core/i18n/I18n";
 import { MenuRequest } from "@/game/ui/states/MenuState";
-import { healingAmount, isHealingItem } from "@/game/units/model/Inventory";
+import { healingAmount, isHealingItem, isUsableEntry } from "@/game/units/model/Inventory";
 import { InventoryEntry, InventoryKind, UnitData } from "@/game/units/model/UnitData";
 
 /** Menu ids, echoed by the `ui:menu*` events. */
@@ -24,7 +24,9 @@ export const ITEM_ACTION_MENU_GAP = 4;
  */
 export const UnitMenuRow = {
 	ATTACK: "attack",
+	TALK: "talk",
 	ITEMS: "items",
+	TRADE: "trade",
 	WAIT: "wait",
 	END_TURN: "end-turn",
 	USE: "use",
@@ -44,7 +46,9 @@ interface Row {
 /** The label of every row, resolved fresh so a locale switch is picked up. */
 const LABELS: Record<UnitMenuRow, () => string> = {
 	[UnitMenuRow.ATTACK]: () => i18n("menu.attack"),
+	[UnitMenuRow.TALK]: () => i18n("menu.talk"),
 	[UnitMenuRow.ITEMS]: () => i18n("menu.items"),
+	[UnitMenuRow.TRADE]: () => i18n("menu.trade"),
 	[UnitMenuRow.WAIT]: () => i18n("menu.wait"),
 	[UnitMenuRow.END_TURN]: () => i18n("menu.endTurn"),
 	[UnitMenuRow.USE]: () => i18n("menu.use"),
@@ -67,19 +71,39 @@ function toRequestRows(rows: readonly Row[]): { items: string[]; ids: string[] }
 	return { items: rows.map((entry) => entry.label), ids: rows.map((entry) => entry.id) };
 }
 
+/** What the unit can do from where it stands - what the command menu is built from. */
+export interface UnitCommands {
+	/** Something is in reach of a weapon it carries. */
+	canAttack?: boolean;
+	/** Someone beside it has a conversation left to have. */
+	canTalk?: boolean;
+	/** An ally is standing next to it. */
+	canTrade?: boolean;
+}
+
 /**
- * The rows of the unit command menu: "Attack" when something is in reach,
- * "Items" when the unit carries anything, then always "Wait".
+ * The rows of the unit command menu, in Fire Emblem's order: "Attack" when
+ * something is in reach, "Talk" when someone beside it has something to say,
+ * "Items" when the unit carries anything, "Trade" when an ally is standing next
+ * to it, then always "Wait".
  */
-export function unitCommandRows(unit: UnitData, canAttack: boolean): UnitMenuRow[] {
+export function unitCommandRows(unit: UnitData, commands: UnitCommands = {}): UnitMenuRow[] {
 	const rows: UnitMenuRow[] = [];
 
-	if (canAttack) {
+	if (commands.canAttack) {
 		rows.push(UnitMenuRow.ATTACK);
+	}
+
+	if (commands.canTalk) {
+		rows.push(UnitMenuRow.TALK);
 	}
 
 	if (unit.inventory.length > 0) {
 		rows.push(UnitMenuRow.ITEMS);
+	}
+
+	if (commands.canTrade) {
+		rows.push(UnitMenuRow.TRADE);
 	}
 
 	rows.push(UnitMenuRow.WAIT);
@@ -93,14 +117,15 @@ export function globalCommandRequest(): Omit<MenuRequest, "anchor"> {
 }
 
 /** The unit command menu, tucked against the tile the unit stands on. */
-export function unitCommandRequest(unit: UnitData, canAttack: boolean): Omit<MenuRequest, "anchor"> {
-	return { id: COMMAND_MENU, ...toRequestRows(unitCommandRows(unit, canAttack).map(row)), width: COMMAND_MENU_WIDTH };
+export function unitCommandRequest(unit: UnitData, commands: UnitCommands = {}): Omit<MenuRequest, "anchor"> {
+	return { id: COMMAND_MENU, ...toRequestRows(unitCommandRows(unit, commands).map(row)), width: COMMAND_MENU_WIDTH };
 }
 
 /**
- * The unit's pack: every carried weapon and item, the readied one badged and
- * durability right-aligned. It stays open after a row is confirmed so the
- * per-item action menu can be layered on top of it.
+ * The unit's pack: every carried weapon and item, the readied one badged,
+ * durability right-aligned and anything the unit's class cannot wield greyed
+ * out. It stays open after a row is confirmed so the per-item action menu can be
+ * layered on top of it.
  *
  * The rows report the catalog id of the entry they show. Which pack *slot* that
  * is stays with the reported index - a unit can carry the same item twice.
@@ -120,6 +145,7 @@ export function itemsRequest(unit: UnitData, anchor: { x: number; y: number }, s
 		ids: unit.inventory.map((entry) => entry.id),
 		badges: unit.inventory.map((entry) => (entry.equipped ? i18n("menu.equipped") : "")),
 		values: unit.inventory.map((entry) => `${entry.uses}/${entry.maxUses}`),
+		disabled: unit.inventory.map((entry) => !isUsableEntry(entry)),
 		width: ITEMS_MENU_WIDTH,
 		selectedIndex: cursor,
 		keepOpen: true,

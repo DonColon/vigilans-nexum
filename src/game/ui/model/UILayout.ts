@@ -1,5 +1,6 @@
 import { Dimension } from "@/core/math/geometry/Dimension";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
+import { MapTheme } from "@/game/map/model/MapTheme";
 import { UITheme } from "@/game/ui/model/UITheme";
 
 /** Gap between a UI panel and the edge of the screen. */
@@ -15,17 +16,29 @@ const DIALOG_MAX_WIDTH = 920;
 export const DIALOG_BODY_LINES = 4;
 
 /**
- * Where the textbox sits: a fixed-height panel spanning most of the screen
- * width, pinned to the bottom the way a Fire Emblem conversation box is. The
- * state positions the entity from `getPosition()`, the render system draws the
- * whole rectangle - deriving both from here keeps them in agreement.
+ * Which edge of the screen a textbox is pinned to. Radiant Dawn puts the one who
+ * opens a conversation along the top and whoever answers along the bottom, so
+ * the two speakers hold their own half of the screen for its whole length.
  */
-export function dialogBox(viewport: Dimension): Rectangle {
+export const DialogSide = {
+	TOP: "top",
+	BOTTOM: "bottom"
+} as const;
+
+export type DialogSide = (typeof DialogSide)[keyof typeof DialogSide];
+
+/**
+ * Where the textbox sits: a fixed-height panel spanning most of the screen
+ * width, pinned to one edge the way a Fire Emblem conversation box is. The state
+ * positions the entity from `getPosition()`, the render system draws the whole
+ * rectangle - deriving both from here keeps them in agreement.
+ */
+export function dialogBox(viewport: Dimension, side: DialogSide = DialogSide.BOTTOM): Rectangle {
 	const width = Math.min(DIALOG_MAX_WIDTH, viewport.width - 2 * SCREEN_MARGIN);
 	const height = UITheme.padding * 2 + UITheme.lineHeight + DIALOG_BODY_LINES * UITheme.lineHeight;
 
 	const x = Math.round((viewport.width - width) / 2);
-	const y = Math.round(viewport.height - height - SCREEN_MARGIN);
+	const y = side === DialogSide.TOP ? SCREEN_MARGIN : Math.round(viewport.height - height - SCREEN_MARGIN);
 
 	return new Rectangle(x, y, width, height);
 }
@@ -58,7 +71,7 @@ export function menuBox(viewport: Dimension, itemCount: number, hasTitle: boolea
  * to stay on screen. `cell` is the map tile size, so the panel clears the token
  * rather than covering it.
  */
-export function menuBeside(viewport: Dimension, anchor: { x: number; y: number }, width: number, height: number, cell = 24): Rectangle {
+export function menuBeside(viewport: Dimension, anchor: { x: number; y: number }, width: number, height: number, cell: number = MapTheme.cellSize): Rectangle {
 	const gap = 10;
 
 	let x = anchor.x + cell + gap;

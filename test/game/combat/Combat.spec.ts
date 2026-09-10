@@ -165,7 +165,8 @@ suite("Combat Flow Test Suite", () => {
 
 	test('"Attack" is left out with no enemy in range', () => {
 		moveTo(4, 10); // Hasan is 4 tiles away, out of a sword's reach
-		expect(menu()?.items).toStrictEqual([i18n("menu.items"), i18n("menu.wait")]);
+		// "Trade" is there instead: Elira is deployed on the next tile over.
+		expect(menu()?.items).toStrictEqual([i18n("menu.items"), i18n("menu.trade"), i18n("menu.wait")]);
 	});
 
 	test('"Attack" opens target-picking first, then the forecast on confirm', () => {

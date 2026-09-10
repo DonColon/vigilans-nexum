@@ -10,8 +10,8 @@ import { TurnComponent } from "@/game/turn/components/TurnComponent";
 import { TurnFeature } from "@/game/turn/TurnFeature";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
 import { buildUnit, UnitData } from "@/game/units/model/UnitData";
-import dardanDocument from "@/game/units/data/dardan.unit.json";
-import hasanDocument from "@/game/units/data/hasan.unit.json";
+import dardanDocument from "@/assets/data/units/dardan.unit.json";
+import hasanDocument from "@/assets/data/units/hasan.unit.json";
 
 suite("Turn Test Suite", () => {
 	test("turnDigits pads to two digits and maps to the sheet", () => {

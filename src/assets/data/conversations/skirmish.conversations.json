@@ -1,0 +1,67 @@
+{
+	"format": "vigilans-conversations",
+	"version": 1,
+	"conversations": [
+		{
+			"id": "dardan-elira",
+			"between": ["dardan", "elira"],
+			"pages": [
+				{
+					"speaker": "dardan",
+					"text": {
+						"de": "Elira. Du hast die Furt im Blick behalten, seit wir das Lager verlassen haben.",
+						"en": "Elira. You have kept your eyes on the ford ever since we broke camp."
+					}
+				},
+				{
+					"speaker": "elira",
+					"text": {
+						"de": "Jemand muss es tun. Der Fluss ist tief, und es gibt nur einen Übergang. Wer ihn hält, hält das Tal.",
+						"en": "Someone has to. The river runs deep, and there is only the one crossing. Whoever holds it holds the valley."
+					}
+				},
+				{
+					"speaker": "dardan",
+					"text": {
+						"de": "Dann halten wir ihn gemeinsam. Geh nicht allein vor - deine Axt trifft härter, wenn ich dir den Rücken decke.",
+						"en": "Then we hold it together. Do not go ahead alone - your axe lands harder when I am covering your back."
+					}
+				},
+				{
+					"speaker": "elira",
+					"text": {
+						"de": "Einverstanden, Kommandant. Aber wenn du fällst, trage ich dich zurück - und du wirst es nie wieder vergessen dürfen.",
+						"en": "Agreed, commander. But if you fall, I carry you back - and you will never be allowed to forget it."
+					}
+				}
+			]
+		},
+		{
+			"id": "elira-hasan",
+			"between": ["elira", "hasan"],
+			"pages": [
+				{
+					"speaker": "hasan",
+					"text": {
+						"de": "Du trägst die Axt der Grenzwache. Woher hast du sie?",
+						"en": "That is a border watch axe you are carrying. Where did you come by it?"
+					}
+				},
+				{
+					"speaker": "elira",
+					"text": {
+						"de": "Von meinem Vater. Er stand an dieser Furt, bevor sie euch gehörte.",
+						"en": "From my father. He stood at this ford before it was yours."
+					}
+				},
+				{
+					"speaker": "hasan",
+					"text": {
+						"de": "Dann wissen wir beide, wie das hier endet. Ich hätte dir lieber ein Feuer angeboten als eine Klinge.",
+						"en": "Then we both know how this ends. I would rather have offered you a fire than a blade."
+					}
+				}
+			]
+		}
+	]
+}

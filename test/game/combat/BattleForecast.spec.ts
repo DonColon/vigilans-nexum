@@ -3,8 +3,8 @@ import { Terrain } from "@/game/map/model/Terrain";
 import { buildUnit, UnitDocument } from "@/game/units/model/UnitData";
 import { unequipInventoryItem } from "@/game/units/model/Inventory";
 import { buildForecast, CombatRolls, resolveCombat } from "@/game/combat/model/BattleForecast";
-import dardanDocument from "@/game/units/data/dardan.unit.json";
-import hasanDocument from "@/game/units/data/hasan.unit.json";
+import dardanDocument from "@/assets/data/units/dardan.unit.json";
+import hasanDocument from "@/assets/data/units/hasan.unit.json";
 
 suite("Battle Forecast Test Suite", () => {
 	const dardan = () => buildUnit(dardanDocument as UnitDocument);

@@ -39,9 +39,11 @@ const gameConfiguration: GameConfiguration = {
 		}
 	},
 	display: {
+		// The 48x24 battle map drawn at MapTheme.cellSize (32) - the map fills the
+		// viewport exactly, with no band around it.
 		dimension: {
-			width: 1280,
-			height: 720
+			width: 1536,
+			height: 768
 		},
 		layers: {
 			1: "background",

@@ -1,3 +1,4 @@
+import { AssetStorage } from "@/core/assets/AssetStorage";
 import { Entity } from "@/core/ecs/Entity";
 import { World } from "@/core/ecs/World";
 import { identityTransform, TransformComponent } from "@/core/ecs/components/TransformComponent";
@@ -13,11 +14,19 @@ import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
 import { TileMapComponent } from "@/game/map/components/TileMapComponent";
 import { TileMapDocument, parseTileMapDocument } from "@/game/map/model/TileMapFormat";
+import { MapTheme } from "@/game/map/model/MapTheme";
 import { GridSystem } from "@/game/map/systems/GridSystem";
-import fantasyDocument from "@/game/map/data/fantasy.tilemap.json";
 
-/** Edge length of a tile in pixels. Keeps the 48x24 map inside the viewport. */
-const CELL_SIZE = 24;
+/**
+ * Asset id of the battle map this state builds. The map is content, so it ships
+ * as a JSON asset rather than in the bundle; `Game.start` has it in storage
+ * before this state is entered. Hardcoded the way the map always has been - a
+ * scenario system would pass it in.
+ */
+const MAP_ASSET = "map-fantasy";
+
+/** Edge length of a tile in pixels - the viewport is sized to a whole number of these. */
+const CELL_SIZE = MapTheme.cellSize;
 
 /** Tile the cursor starts on, the road junction south of the castle. */
 const CURSOR_START = { column: 6, row: 12 };
@@ -43,6 +52,9 @@ export class MapState extends GameState {
 	@GameCoreService(Display)
 	private display!: Display;
 
+	@GameCoreService(AssetStorage)
+	private assetStorage!: AssetStorage;
+
 	@GameCoreService(EventSystem)
 	private eventSystem!: EventSystem;
 
@@ -50,7 +62,7 @@ export class MapState extends GameState {
 	private cursor: Entity | null = null;
 
 	public onEnter(): void {
-		const tilemap = parseTileMapDocument(fantasyDocument as TileMapDocument);
+		const tilemap = parseTileMapDocument(this.assetStorage.getJson<TileMapDocument>(MAP_ASSET));
 
 		const grid = GridSystem.fromTileMap(tilemap, CELL_SIZE);
 		const dimension = GridSystem.getGridDimension(grid);

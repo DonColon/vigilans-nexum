@@ -1,7 +1,17 @@
 import { Entity } from "@/core/ecs/Entity";
 import { GameFeatureConfig } from "@/core/GameFeature";
 import { TransformComponent } from "@/core/ecs/components/TransformComponent";
-import { CombatCancelledEvent, CombatResolvedEvent, MenuConfirmedEvent, MenuCancelledEvent, TileConfirmedEvent, UnitMovedEvent } from "@/game.events";
+import {
+	CombatCancelledEvent,
+	CombatResolvedEvent,
+	MenuConfirmedEvent,
+	MenuCancelledEvent,
+	TalkCancelledEvent,
+	TalkFinishedEvent,
+	TileConfirmedEvent,
+	TradeClosedEvent,
+	UnitMovedEvent
+} from "@/game.events";
 import { BattleMapFeature } from "@/game/map/BattleMapFeature";
 import { GridData } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
@@ -31,6 +41,8 @@ import { dropInventoryItem, equipInventoryItem, unequipInventoryItem, useHealing
 import { UnitFaction } from "@/game/units/model/UnitData";
 import { UnitSystem } from "@/game/units/systems/UnitSystem";
 import { CombatSystem } from "@/game/combat/systems/CombatSystem";
+import { TalkComponent } from "@/game/talk/components/TalkComponent";
+import { TalkSystem } from "@/game/talk/systems/TalkSystem";
 import { MenuRequest, MenuState } from "@/game/ui/states/MenuState";
 
 /**
@@ -48,6 +60,18 @@ import { MenuRequest, MenuState } from "@/game/ui/states/MenuState";
  *    `unit:unequipped` / `unit:droppedItem`). "Use" heals the unit off a
  *    vulnerary-style consumable and spends its turn. "Wait" spends the unit (it
  *    greys out, `unit:acted`); backing out reverts the move and re-opens the range.
+ *  - "Trade" hands off to the trade screen (`trade:requested`), which first
+ *    moves the map cursor onto the ally to trade with and then opens both packs.
+ *    Closing it puts the command menu back.
+ *  - "Talk" hands off to the talk feature (`talk:requested`), which plays the
+ *    conversation the scenario wrote for the pair - moving the map cursor
+ *    between them first when several are in reach. It only shows when someone
+ *    beside the unit still has something to say.
+ *
+ * Only some of those commands finish the unit's turn: "Wait", a used item and a
+ * resolved fight all spend it (`unit:acted`, the token greys out). Talking,
+ * trading, equipping, unequipping and dropping are free - the command menu comes
+ * back and the unit still has its action.
  *  - Confirm off the range or `map:cancelled` sets it back down without moving.
  *  - Confirm on a tile with nothing to pick up opens the global command menu
  *    ("End Turn" -> `turn:end`) next to the cursor.
@@ -91,6 +115,9 @@ export class MovementFeature extends BattleMapFeature {
 		this.subscribe("ui:menuCancelled", (event) => this.onCommandCancelled(event));
 		this.subscribe("combat:cancelled", (event) => this.onCombatCancelled(event));
 		this.subscribe("combat:resolved", (event) => this.onCombatResolved(event));
+		this.subscribe("trade:closed", (event) => this.onTradeClosed(event));
+		this.subscribe("talk:finished", (event) => this.onTalkFinished(event));
+		this.subscribe("talk:cancelled", (event) => this.onTalkCancelled(event));
 	}
 
 	protected onUninstall(): void {
@@ -220,12 +247,53 @@ export class MovementFeature extends BattleMapFeature {
 		this.openCommandMenu(mover);
 	}
 
-	/** The unit command menu: "Attack" (with a target in reach), "Items" (with something to show), then "Wait". */
+	/** The unit command menu: "Attack" (with a target in reach), "Talk" (with something left to say), "Items" (with something to show), "Trade" (with an ally beside it), then "Wait". */
 	private openCommandMenu(mover: Entity): void {
 		const data = mover.getComponent(UnitComponent).read();
 		const position = UnitSystem.tileOf(mover);
 
-		this.openMenu(unitCommandRequest(data, this.attackTargets(mover).length > 0), position.column, position.row);
+		const commands = {
+			canAttack: this.attackTargets(mover).length > 0,
+			canTalk: this.talkPartner(mover) !== null,
+			canTrade: this.tradePartners(mover).length > 0
+		};
+
+		this.openMenu(unitCommandRequest(data, commands), position.column, position.row);
+	}
+
+	/**
+	 * The unit beside this one it still has a conversation with, or null. The
+	 * conversations are the talk feature's, but the lookup over them is pure - the
+	 * same way "Attack" asks CombatSystem what is in reach.
+	 */
+	private talkPartner(mover: Entity): Entity | null {
+		const talk = TalkSystem.inWorld(this.world);
+
+		if (talk === null) {
+			return null;
+		}
+
+		return TalkSystem.available(talk.getComponent(TalkComponent).read(), this.units(), mover)?.partner ?? null;
+	}
+
+	/** Every ally standing next to this unit - the ones it could trade packs with. */
+	private tradePartners(mover: Entity): Entity[] {
+		return UnitSystem.alliesBeside(this.units(), mover);
+	}
+
+	/**
+	 * Drops the command menu and hands off to the TradeFeature, the way "Attack"
+	 * hands off to the forecast. `partnerId` is just the first ally beside the
+	 * unit - the trade screen picks up every other one and lets the player move
+	 * the map cursor between them.
+	 */
+	private requestTrade(mover: Entity, partner: Entity): void {
+		this.closeOpenMenu();
+
+		this.events.dispatch("trade:requested", {
+			unitId: mover.getComponent(UnitComponent).read().id,
+			partnerId: partner.getComponent(UnitComponent).read().id
+		});
 	}
 
 	/**
@@ -358,8 +426,36 @@ export class MovementFeature extends BattleMapFeature {
 			return;
 		}
 
+		if (event.row === UnitMenuRow.TALK) {
+			const partner = this.talkPartner(mover);
+
+			if (partner !== null) {
+				// The talk feature takes it from here - it looks the conversation up
+				// and plays it in the textbox.
+				this.closeOpenMenu();
+				this.events.dispatch("talk:requested", {
+					unitId: mover.getComponent(UnitComponent).read().id,
+					partnerId: partner.getComponent(UnitComponent).read().id
+				});
+			}
+
+			return;
+		}
+
 		if (event.row === UnitMenuRow.ITEMS) {
 			this.openItemsMenu(mover);
+			return;
+		}
+
+		if (event.row === UnitMenuRow.TRADE) {
+			const [nearest] = this.tradePartners(mover);
+
+			if (nearest !== undefined) {
+				// The trade screen takes it from here - it gathers every ally beside
+				// the unit and moves the cursor between them.
+				this.requestTrade(mover, nearest);
+			}
+
 			return;
 		}
 
@@ -390,8 +486,44 @@ export class MovementFeature extends BattleMapFeature {
 	}
 
 	/**
+	 * A conversation finished. Talking is free, like trading - the unit is still
+	 * standing there with its turn to spend, so its command menu comes back.
+	 */
+	private onTalkFinished(event: TalkFinishedEvent): void {
+		this.reopenCommandMenu(event.unitId);
+	}
+
+	/** The player backed out of choosing who to talk to - nothing happened, so put the menu back. */
+	private onTalkCancelled(event: TalkCancelledEvent): void {
+		this.reopenCommandMenu(event.unitId);
+	}
+
+	/** Puts a mid-turn unit's command menu back after a free action it did not finish. */
+	private reopenCommandMenu(unitId: string): void {
+		const mover = UnitSystem.byId(this.units(), unitId);
+
+		if (mover !== null && mover.hasComponent(PendingMoveComponent)) {
+			this.openCommandMenu(mover);
+		}
+	}
+
+	/**
+	 * The trade screen closed. Trading is a free action - whatever changed hands,
+	 * the unit is still standing there with its turn to spend - so its command
+	 * menu simply comes back.
+	 */
+	private onTradeClosed(event: TradeClosedEvent): void {
+		const mover = UnitSystem.byId(this.units(), event.unitId);
+
+		if (mover !== null && mover.hasComponent(PendingMoveComponent)) {
+			this.openCommandMenu(mover);
+		}
+	}
+
+	/**
 	 * Ends the unit's action: spend it and put it down, then report `unit:acted`.
-	 * "Wait", a used item and a resolved fight all end here.
+	 * The commands that finish a turn - "Wait", a used item, a resolved fight -
+	 * all end here. The free ones (trading, equipping, dropping) never call it.
 	 */
 	private spendMover(mover: Entity): void {
 		const unit = mover.getComponent(UnitComponent);

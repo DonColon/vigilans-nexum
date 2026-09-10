@@ -1,8 +1,11 @@
-import { test, expect, suite } from "vitest";
+import { test, expect, suite, afterEach } from "vitest";
+import { AssetStorage } from "@/core/assets/AssetStorage";
 import { GameError } from "@/core/GameError";
+import { ServiceRegistry } from "@/core/service/ServiceRegistry";
+import { clearUnitCatalogs, hasUnitCatalogs, loadUnitCatalogs } from "@/game/units/model/UnitCatalog";
 import { buildUnit, getItem, getUnitClass, getWeapon, InventoryKind, UnitDocument, UnitFaction, WeaponType } from "@/game/units/model/UnitData";
-import dardanDocument from "@/game/units/data/dardan.unit.json";
-import hasanDocument from "@/game/units/data/hasan.unit.json";
+import dardanDocument from "@/assets/data/units/dardan.unit.json";
+import hasanDocument from "@/assets/data/units/hasan.unit.json";
 
 suite("Unit Data Test Suite", () => {
 	test("Dardan resolves to a player swordsman with a bronze sword", () => {
@@ -85,5 +88,37 @@ suite("Unit Data Test Suite", () => {
 		expect(() => buildUnit({ ...(dardanDocument as UnitDocument), format: "something-else" } as unknown as UnitDocument)).toThrowError(GameError);
 		expect(() => buildUnit({ ...(dardanDocument as UnitDocument), faction: "neutral" } as unknown as UnitDocument)).toThrowError(GameError);
 		expect(() => buildUnit({ ...(dardanDocument as UnitDocument), level: 0 } as UnitDocument)).toThrowError(GameError);
+	});
+});
+
+/**
+ * The catalogs are content, fetched into AssetStorage rather than bundled, so a
+ * lookup can be reached before they land. That is a wiring mistake, and it has
+ * to say so rather than failing somewhere further down on `undefined`.
+ */
+suite("Unit Catalog Test Suite", () => {
+	const assetStorage = ServiceRegistry.get<AssetStorage>(AssetStorage.name);
+
+	// vitest.setup.ts seeds them for every other spec; put them back.
+	afterEach(() => loadUnitCatalogs(assetStorage));
+
+	test("A lookup before the bundle has landed names the missing catalog", () => {
+		clearUnitCatalogs();
+		expect(hasUnitCatalogs()).toBe(false);
+
+		expect(() => getWeapon("bronze-sword")).toThrowError(/"weapons" catalog has not been loaded/);
+		expect(() => getItem("vulnerary")).toThrowError(/"items" catalog has not been loaded/);
+		expect(() => getUnitClass("swordsman")).toThrowError(/"classes" catalog has not been loaded/);
+		expect(() => buildUnit(dardanDocument as UnitDocument)).toThrowError(GameError);
+	});
+
+	test("Seeding from the asset bundle makes the lookups work again", () => {
+		clearUnitCatalogs();
+		loadUnitCatalogs(assetStorage);
+
+		expect(hasUnitCatalogs()).toBe(true);
+		expect(getWeapon("bronze-sword").name).toBe("Bronze Sword");
+		expect(getItem("vulnerary").name).toBe("Vulnerary");
+		expect(getUnitClass("swordsman").name).toBe("Swordsman");
 	});
 });

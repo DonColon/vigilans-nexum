@@ -2,8 +2,8 @@ import { test, expect, suite } from "vitest";
 import { Terrain } from "@/game/map/model/Terrain";
 import { buildUnit, UnitDocument, WeaponType } from "@/game/units/model/UnitData";
 import { attackSpeed, avoidRate, computeStrike, critRate, damagePerHit, doublesAt, hitRate, TRIANGLE_HIT, TRIANGLE_MIGHT, weaponReaches, weaponTriangle } from "@/game/combat/model/CombatMath";
-import dardanDocument from "@/game/units/data/dardan.unit.json";
-import hasanDocument from "@/game/units/data/hasan.unit.json";
+import dardanDocument from "@/assets/data/units/dardan.unit.json";
+import hasanDocument from "@/assets/data/units/hasan.unit.json";
 
 /**
  * The Radiant Dawn combat formulas. Numbers are worked out by hand from the two

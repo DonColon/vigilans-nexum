@@ -8,6 +8,7 @@ import { confirmCommands } from "@/game/map/commands/ConfirmCommand";
 import { moveCursorCommands } from "@/game/map/commands/MoveCursorCommand";
 import { MapState } from "@/game/map/states/MapState";
 import { CursorRenderSystem } from "@/game/map/systems/CursorRenderSystem";
+import { TileInfoRenderSystem } from "@/game/map/systems/TileInfoRenderSystem";
 import { CursorSystem } from "@/game/map/systems/CursorSystem";
 import { GridRenderSystem } from "@/game/map/systems/GridRenderSystem";
 import { TileMapRenderSystem } from "@/game/map/systems/TileMapRenderSystem";
@@ -33,7 +34,10 @@ export class MapFeature extends GameFeature {
 				// cursor on top of both.
 				{ system: GridRenderSystem, priority: 10 },
 				{ system: TileMapRenderSystem, priority: 15 },
-				{ system: CursorRenderSystem, priority: 20 }
+				{ system: CursorRenderSystem, priority: 20 },
+				// On the "ui" layer above UIRenderSystem (50), which owns and clears
+				// it - the corner readout stays legible over an open menu.
+				{ system: TileInfoRenderSystem, priority: 54 }
 			],
 			...config
 		});

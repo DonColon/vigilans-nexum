@@ -1,9 +1,7 @@
 import { AssetStorage } from "@/core/assets/AssetStorage";
 import { Entity } from "@/core/ecs/Entity";
 import { Query } from "@/core/ecs/Query";
-import { RenderSystem } from "@/core/ecs/RenderSystem";
 import { Color } from "@/core/graphics/color/Color";
-import { Display } from "@/core/graphics/Display";
 import { Graphics } from "@/core/graphics/rendering/Graphics";
 import { FontStyleSettings } from "@/core/graphics/styles/text/FontStyle";
 import { TextAlign, TextAlignType } from "@/core/graphics/styles/text/TextAlign";
@@ -12,7 +10,8 @@ import { Line } from "@/core/math/geometry/Line";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { GridComponent } from "@/game/map/components/GridComponent";
-import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
+import { GridPositionComponent, GridPositionData } from "@/game/map/components/GridPositionComponent";
+import { MapRenderSystem, MapView } from "@/game/map/systems/MapRenderSystem";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
 import { UnitSystem } from "@/game/units/systems/UnitSystem";
 import { BattleForecast, CombatantForecast } from "@/game/combat/model/BattleForecast";
@@ -20,6 +19,7 @@ import { CombatTheme } from "@/game/combat/model/CombatTheme";
 import { CombatSystem } from "@/game/combat/systems/CombatSystem";
 import { ForecastComponent } from "@/game/combat/components/ForecastComponent";
 import { drawPanel, drawText, uiAssetsReady } from "@/game/ui/model/UIPanel";
+import { menuBeside } from "@/game/ui/model/UILayout";
 import { UITheme } from "@/game/ui/model/UITheme";
 
 /**
@@ -28,11 +28,19 @@ import { UITheme } from "@/game/ui/model/UITheme";
  * middle, an `x2` where a follow-up lands and `< >` around the attacker's weapon
  * when more than one is on offer. Runs after UIRenderSystem (which owns and
  * clears the "ui" layer) so it survives the frame.
+ *
+ * The panel is tucked against the tile being attacked, the same way a unit's
+ * command menu is tucked against the unit - so the numbers land beside the two
+ * units the player is looking at rather than across the map from them. It flips
+ * to the other side of the tile, and is nudged inward, when it would run off the
+ * screen (see `menuBeside`).
+ *
+ * The numbers are set in the menu font and everything that labels them - the
+ * weapon names and the stat names down the middle - a step smaller in
+ * `UITheme.subheading`, so the eye lands on the values first. The rest of the
+ * hierarchy is carried by colour; see CombatTheme.
  */
-export class ForecastRenderSystem extends RenderSystem {
-	@GameCoreService(Display)
-	private display!: Display;
-
+export class ForecastRenderSystem extends MapRenderSystem {
 	@GameCoreService(AssetStorage)
 	private assetStorage!: AssetStorage;
 
@@ -46,9 +54,9 @@ export class ForecastRenderSystem extends RenderSystem {
 
 	public execute(): void {
 		const forecastEntity = this.queries.forecasts.getSingleResult();
-		const gridEntity = this.queries.grids.getSingleResult();
+		const view = this.mapView(this.queries.grids.getSingleResult());
 
-		if (forecastEntity === null || gridEntity === null || !uiAssetsReady(this.assetStorage)) {
+		if (forecastEntity === null || view === null || !uiAssetsReady(this.assetStorage)) {
 			return;
 		}
 
@@ -75,16 +83,16 @@ export class ForecastRenderSystem extends RenderSystem {
 			return;
 		}
 
-		const forecast = CombatSystem.forecast(
-			attackerData,
-			attacker.getComponent(GridPositionComponent).read(),
-			weapon,
-			defender.getComponent(UnitComponent).read(),
-			defender.getComponent(GridPositionComponent).read(),
-			gridEntity.getComponent(GridComponent).read()
-		);
+		const defenderTile = defender.getComponent(GridPositionComponent).read();
 
-		this.render(this.display.getLayer("ui"), forecast, data.weaponIds.length > 1);
+		const forecast = CombatSystem.forecast(attackerData, attacker.getComponent(GridPositionComponent).read(), weapon, defender.getComponent(UnitComponent).read(), defenderTile, view.grid);
+
+		this.render(this.display.getLayer("ui"), forecast, data.weaponIds.length > 1, view, defenderTile);
+	}
+
+	/** Top-left screen pixel of the tile being attacked - what the panel is tucked against. */
+	private tileAnchor(view: MapView, tile: GridPositionData): { x: number; y: number } {
+		return { x: view.origin.x + tile.column * view.cellSize, y: view.origin.y + tile.row * view.cellSize };
 	}
 
 	/** The unit with this id, out of the ones on the map right now. */
@@ -92,14 +100,15 @@ export class ForecastRenderSystem extends RenderSystem {
 		return UnitSystem.byId(this.queries.units.getResult(), id);
 	}
 
-	private render(graphics: Graphics, forecast: BattleForecast, canCycle: boolean): void {
+	private render(graphics: Graphics, forecast: BattleForecast, canCycle: boolean, view: MapView, defenderTile: GridPositionData): void {
 		const viewport = this.display.getViewportDimension();
 		const { width, padding, rowHeight: row, headerGap } = CombatTheme;
-		const x = Math.round((viewport.width - width) / 2);
-		const y = CombatTheme.topMargin;
 
 		const rows = 6; // name, weapon, HP, Dmg, Hit, Crit
 		const height = padding * 2 + rows * row + headerGap;
+
+		const box = menuBeside(viewport, this.tileAnchor(view, defenderTile), width, height, view.cellSize);
+		const { x, y } = box.getPosition();
 
 		drawPanel(graphics, this.assetStorage, new Rectangle(x, y, width, height));
 
@@ -110,10 +119,10 @@ export class ForecastRenderSystem extends RenderSystem {
 		graphics.fillColor(CombatTheme.factionWash[forecast.attacker.faction]).fillRectangle(new Rectangle(x + inset, y + inset, centreX - x - inset, height - 2 * inset));
 		graphics.fillColor(CombatTheme.factionWash[forecast.defender.faction]).fillRectangle(new Rectangle(centreX, y + inset, x + width - inset - centreX, height - 2 * inset));
 
-		const leftName = x + width * 0.27;
-		const rightName = x + width * 0.73;
-		const leftValue = centreX - 42;
-		const rightValue = centreX + 42;
+		const leftName = x + width * CombatTheme.columnCentre;
+		const rightName = x + width * (1 - CombatTheme.columnCentre);
+		const leftValue = centreX - CombatTheme.valueGap;
+		const rightValue = centreX + CombatTheme.valueGap;
 
 		let rowTop = y + padding;
 		const centreOf = (top: number) => top + row / 2;
@@ -123,10 +132,18 @@ export class ForecastRenderSystem extends RenderSystem {
 		this.text(graphics, firstName(forecast.defender.name), rightName, centreOf(rowTop), CombatTheme.factionHeading[forecast.defender.faction], TextAlign.CENTER, UITheme.name);
 		rowTop += row;
 
-		const attackerWeapon = canCycle ? `< ${forecast.attacker.weaponName} >` : forecast.attacker.weaponName;
-		this.text(graphics, attackerWeapon, leftName, centreOf(rowTop), canCycle ? CombatTheme.accent : CombatTheme.label, TextAlign.CENTER, UITheme.badge);
+		// The name sits in the middle of its column and the chevrons either side of
+		// it, at a fixed distance - so cycling swaps the name without shuffling them.
+		const weaponCentreY = centreOf(rowTop);
+		this.text(graphics, forecast.attacker.weaponName, leftName, weaponCentreY, canCycle ? CombatTheme.accent : CombatTheme.label, TextAlign.CENTER, UITheme.subheading);
+
+		if (canCycle) {
+			this.text(graphics, "<", leftName - CombatTheme.cycleGap, weaponCentreY, CombatTheme.accent, TextAlign.CENTER, UITheme.subheading);
+			this.text(graphics, ">", leftName + CombatTheme.cycleGap, weaponCentreY, CombatTheme.accent, TextAlign.CENTER, UITheme.subheading);
+		}
+
 		const defends = forecast.defender.attacks > 0;
-		this.text(graphics, defends ? forecast.defender.weaponName : "--", rightName, centreOf(rowTop), defends ? CombatTheme.label : CombatTheme.muted, TextAlign.CENTER, UITheme.badge);
+		this.text(graphics, defends ? forecast.defender.weaponName : "--", rightName, weaponCentreY, defends ? CombatTheme.label : CombatTheme.muted, TextAlign.CENTER, UITheme.subheading);
 		rowTop += row;
 
 		graphics
@@ -150,13 +167,13 @@ export class ForecastRenderSystem extends RenderSystem {
 	}
 
 	private statRow(graphics: Graphics, label: string, attackerValue: string, defenderValue: string, centreY: number, columns: { centreX: number; leftValue: number; rightValue: number }): void {
-		this.text(graphics, label, columns.centreX, centreY, CombatTheme.label, TextAlign.CENTER, UITheme.badge);
+		this.text(graphics, label, columns.centreX, centreY, CombatTheme.label, TextAlign.CENTER, UITheme.subheading);
 		this.text(graphics, attackerValue, columns.leftValue, centreY, attackerValue === "--" ? CombatTheme.muted : CombatTheme.value, TextAlign.RIGHT);
 		this.text(graphics, defenderValue, columns.rightValue, centreY, defenderValue === "--" ? CombatTheme.muted : CombatTheme.value, TextAlign.LEFT);
 	}
 
 	private damageRow(graphics: Graphics, forecast: BattleForecast, centreY: number, columns: { centreX: number; leftValue: number; rightValue: number }): void {
-		this.text(graphics, i18n("forecast.damage"), columns.centreX, centreY, CombatTheme.label, TextAlign.CENTER, UITheme.badge);
+		this.text(graphics, i18n("forecast.damage"), columns.centreX, centreY, CombatTheme.label, TextAlign.CENTER, UITheme.subheading);
 
 		this.text(
 			graphics,

@@ -4,6 +4,7 @@ import { Graphics } from "@/core/graphics/rendering/Graphics";
 import { FontStyleSettings } from "@/core/graphics/styles/text/FontStyle";
 import { TextAlign, TextAlignType } from "@/core/graphics/styles/text/TextAlign";
 import { TextBaseline } from "@/core/graphics/styles/text/TextBaseline";
+import { Circle } from "@/core/math/geometry/Circle";
 import { Line } from "@/core/math/geometry/Line";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { drawNineSlice, NineSlice } from "@/game/ui/model/NineSlice";
@@ -102,6 +103,28 @@ function cornerBrackets(rect: Rectangle, ratio: number): Line[] {
 		new Line(bottomRight.x, bottomRight.y, bottomRight.x - arm, bottomRight.y),
 		new Line(bottomRight.x, bottomRight.y, bottomRight.x, bottomRight.y - arm)
 	];
+}
+
+/** Diameter of a row badge disc - sized off the row height so it never crowds the label. */
+export const BADGE_DIAMETER = Math.round(UITheme.lineHeight * 0.56);
+
+/**
+ * The Fire Emblem "equipped" mark: a small gold coin with a dark letter,
+ * sitting in the gutter left of a row. Drawn at integer coordinates so the
+ * pixel font stays crisp.
+ */
+export function drawBadge(graphics: Graphics, letter: string, centreX: number, centreY: number, diameter: number = BADGE_DIAMETER): void {
+	const cx = Math.round(centreX);
+	const cy = Math.round(centreY);
+	const radius = diameter / 2;
+
+	graphics.fillColor(UITheme.menuBadgeFill).fillCircle(new Circle(cx, cy, radius));
+	graphics
+		.strokeColor(UITheme.menuBadgeRim)
+		.lineStyle({ width: 2 })
+		.strokeCircle(new Circle(cx, cy, radius - 1));
+
+	drawText(graphics, letter, cx, cy, { font: UITheme.badge, color: UITheme.menuBadgeText, align: TextAlign.CENTER });
 }
 
 /**

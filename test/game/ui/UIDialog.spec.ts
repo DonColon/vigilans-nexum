@@ -93,6 +93,8 @@ suite("UI Dialog Test Suite", () => {
 		entity.addComponent(DialogComponent, {
 			id: "dialog",
 			speaker: "",
+			speakers: [],
+			sides: [],
 			pages,
 			pageIndex: 0,
 			pageElapsed: 0,

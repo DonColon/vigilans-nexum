@@ -3,6 +3,8 @@ import { gameConfiguration } from "@/game.config";
 import { CombatFeature } from "@/game/combat";
 import { MapFeature } from "@/game/map";
 import { MovementFeature } from "@/game/movement";
+import { TalkFeature } from "@/game/talk";
+import { TradeFeature } from "@/game/trade";
 import { TurnFeature } from "@/game/turn";
 import { UIFeature } from "@/game/ui";
 import { UnitsFeature } from "@/game/units";
@@ -18,6 +20,11 @@ game.install(units);
 game.install(new TurnFeature({ dependencies: [units] }));
 // The battle forecast the "Attack" command opens; needs the units on the map.
 game.install(new CombatFeature({ dependencies: [units] }));
+// The conversations the "Talk" command plays; needs the units on the map and
+// the UI feature for the textbox they are shown in.
+game.install(new TalkFeature({ dependencies: [units, ui] }));
+// The trade screen the "Trade" command opens; needs the units on the map.
+game.install(new TradeFeature({ dependencies: [units] }));
 // Moving a unit needs the units on the map and the UI feature for its command
 // menus - the install order and the dependencies both say so.
 game.install(new MovementFeature({ dependencies: [units, ui] }));

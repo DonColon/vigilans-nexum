@@ -9,9 +9,10 @@ export interface TileMapDefinition {
 }
 
 /**
- * Characters a map sketch is written with. Sketching maps as text keeps them
- * readable in a diff until they are authored in an editor and shipped as an
- * asset bundle.
+ * Characters a map sketch is written with. The battle maps themselves are
+ * authored as `*.tilemap.json` and shipped as assets (`src/assets/data/maps`);
+ * a sketch is the compact way to spell out a terrain grid inline, which is what
+ * the tests build their maps from.
  */
 const legend: Record<string, TerrainType> = {
 	".": Terrain.PLAIN,
@@ -52,9 +53,9 @@ export function parseTileMap(sketch: string[]): TileMapDefinition {
 }
 
 /**
- * Placeholder battle map: a river splitting the field, a ford in the middle
- * and a fort on either side of it. Only meant to give the grid and the cursor
- * something to sit on until maps are loaded from assets.
+ * A sample sketch: a river splitting the field, a ford in the middle and a fort
+ * on either side of it. The game builds its map from the `map-fantasy` asset -
+ * this is here as a ready-made grid to exercise the map systems against.
  */
 export const skirmishMap: TileMapDefinition = parseTileMap([
 	"MMMM..FF....~~......",

@@ -13,11 +13,11 @@ const FONT_PRESETS = {
 	// 1024 em on a 128-unit grid -> crisp at multiples of 8. Tall, the more legible
 	// of the two. `capRatio` is the font's cap height over its em (640/1024), used
 	// to sit a line of text on its optical centre rather than the em-box centre.
-	mini: { family: "kenney-mini", body: "24px", name: "16px", menu: "24px", badge: "16px", lineHeight: 30, padding: 24, capRatio: 0.625 },
+	mini: { family: "kenney-mini", body: "24px", name: "16px", menu: "24px", badge: "16px", subheading: "16px", lineHeight: 30, padding: 24, capRatio: 0.625 },
 	// 1024 em on a 64-unit grid -> crisp at multiples of 16. Short, blocky, chunkier
 	// retro look. Speaker name shares the body size (16px would be a squint); the
 	// gold colour carries the hierarchy instead. capRatio 448/1024.
-	pixel: { family: "kenney-pixel", body: "32px", name: "32px", menu: "32px", badge: "16px", lineHeight: 34, padding: 24, capRatio: 0.4375 }
+	pixel: { family: "kenney-pixel", body: "32px", name: "32px", menu: "32px", badge: "16px", subheading: "24px", lineHeight: 34, padding: 24, capRatio: 0.4375 }
 } as const;
 
 const FONT = FONT_PRESETS.pixel;
@@ -79,6 +79,13 @@ export const UITheme = {
 	/** Menu row that is not highlighted. */
 	menuItem: Color.hex("#d8ceb6"),
 	menuItemSelected: Color.hex("#fff6dd"),
+	/**
+	 * A row the unit can do nothing with - a weapon its class cannot wield,
+	 * carried out of a trade. Cool and desaturated against the warm palette of a
+	 * live row, and still lifted under the cursor so the highlight reads.
+	 */
+	menuItemDisabled: Color.hex("#7d8088"),
+	menuItemDisabledSelected: Color.hex("#a3a6ae"),
 	menuTitle: Color.hex("#ffe07a"),
 
 	/**
@@ -96,6 +103,14 @@ export const UITheme = {
 	name: { size: FONT.name, family: fontFamily, weight: "normal" } as FontStyleSettings,
 	menu: { size: FONT.menu, family: fontFamily, weight: "normal" } as FontStyleSettings,
 	badge: { size: FONT.badge, family: fontFamily, weight: "normal" } as FontStyleSettings,
+	/**
+	 * Between `badge` and `menu` - for a line that has to read as secondary to the
+	 * numbers beside it but is still meant to be glanced at, like the weapon names
+	 * in the battle forecast. The only size in the set that is not on the pixel
+	 * face's own grid, so keep it for short strings where the softness does not
+	 * show.
+	 */
+	subheading: { size: FONT.subheading, family: fontFamily, weight: "normal" } as FontStyleSettings,
 
 	/** Inner margin between the panel edge and its content. */
 	padding: FONT.padding,

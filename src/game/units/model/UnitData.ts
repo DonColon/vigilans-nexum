@@ -1,8 +1,14 @@
 import { GameError } from "@/core/GameError";
 import { JsonSchema } from "@/core/ecs/JsonSchema";
-import classesDocument from "@/game/units/data/classes.json";
-import itemsDocument from "@/game/units/data/items.json";
-import weaponsDocument from "@/game/units/data/weapons.json";
+import { getItem, getUnitClass, getWeapon, isCatalogItem, isCatalogWeapon, ItemData, WeaponData, WeaponType } from "@/game/units/model/UnitCatalog";
+
+/**
+ * The catalog vocabulary lives in [[UnitCatalog]], which owns the rulebook the
+ * sheets resolve against. It is re-exported here so nothing that already reads
+ * a weapon or an item off this module has to learn a second import path.
+ */
+export { getWeapon, getItem, getUnitClass, WeaponType } from "@/game/units/model/UnitCatalog";
+export type { WeaponData, ItemData, UnitClassData, HealAmount } from "@/game/units/model/UnitCatalog";
 
 /**
  * The eight-plus-one attributes every unit carries, matching the character
@@ -23,20 +29,6 @@ export interface UnitStats extends JsonSchema {
 
 const STAT_KEYS: (keyof UnitStats)[] = ["hp", "mp", "strength", "magic", "dexterity", "speed", "luck", "defense", "resistance"];
 
-/** The weapon categories a class may be trained in - see `design/catalog/Unit-Classes.md`. */
-export type WeaponType = (typeof WeaponType)[keyof typeof WeaponType];
-
-export const WeaponType = {
-	SWORD: "sword",
-	LANCE: "lance",
-	AXE: "axe",
-	BOW: "bow",
-	KNIFE: "knife",
-	GAUNTLET: "gauntlet"
-} as const;
-
-const weaponTypeValues = new Set<string>(Object.values(WeaponType));
-
 /** Which side of the battle a unit fights on. Only `player` units answer to the cursor. */
 export type UnitFaction = (typeof UnitFaction)[keyof typeof UnitFaction];
 
@@ -45,37 +37,6 @@ export const UnitFaction = {
 	ENEMY: "enemy"
 } as const;
 
-/** A weapon as authored in `data/weapons.json`, resolved onto the unit that holds it. */
-export interface WeaponData extends JsonSchema {
-	id: string;
-	name: string;
-	type: WeaponType;
-	rank: string;
-	/** Added to strength (or magic) when the hit lands. */
-	might: number;
-	hit: number;
-	critical: number;
-	weight: number;
-	/** Closest and furthest tile distance the weapon can strike, Manhattan. */
-	minRange: number;
-	maxRange: number;
-	uses: number;
-}
-
-/** How much HP a consumable restores: a flat amount, or `"full"` for a complete heal. */
-export type HealAmount = number | "full";
-
-/** A consumable as authored in `data/items.json` - anything a unit carries that is not a weapon. */
-export interface ItemData extends JsonSchema {
-	id: string;
-	name: string;
-	/** Charges left before the item is spent. */
-	uses: number;
-	/** HP restored when a unit uses this - a flat number, `"full"`, or 0 for an item that does not heal. */
-	heal: HealAmount;
-	description: string;
-}
-
 /** What an [[InventoryEntry]] holds - a weapon that can be readied, or a plain consumable. */
 export type InventoryKind = (typeof InventoryKind)[keyof typeof InventoryKind];
 
@@ -83,6 +44,13 @@ export const InventoryKind = {
 	WEAPON: "weapon",
 	ITEM: "item"
 } as const;
+
+/**
+ * Slots in a unit's pack. Fire Emblem's five: a unit carries at most this many
+ * weapons and items, and the trade screen shows exactly this many rows a side,
+ * so a free slot is somewhere an item can be put down.
+ */
+export const INVENTORY_SIZE = 5;
 
 /**
  * One line of a unit's pack, resolved from the catalogs. Weapons carry a
@@ -107,18 +75,6 @@ export interface InventoryEntry extends JsonSchema {
 	weapon: WeaponData | null;
 	/** Resolved consumable when `kind` is `item`, else null. */
 	item: ItemData | null;
-}
-
-/** A class as authored in `data/classes.json`. */
-export interface UnitClassData {
-	id: string;
-	name: string;
-	tier: string;
-	weaponTypes: WeaponType[];
-	/** Tiles of movement the class is granted before terrain cost. */
-	movement: number;
-	ability: string;
-	promotesTo: string[];
 }
 
 /**
@@ -177,14 +133,6 @@ export interface UnitData extends JsonSchema {
 	hasMoved: boolean;
 }
 
-type RawClass = { name: string; tier: string; weaponTypes: string[]; movement: number; ability: string; promotesTo: string[] };
-type RawWeapon = { name: string; type: string; rank: string; might: number; hit: number; critical: number; weight: number; minRange: number; maxRange: number; uses: number };
-type RawItem = { name: string; uses: number; heal?: HealAmount; description: string };
-
-const classCatalog = classesDocument.classes as Record<string, RawClass>;
-const weaponCatalog = weaponsDocument.weapons as Record<string, RawWeapon>;
-const itemCatalog = itemsDocument.items as Record<string, RawItem>;
-
 function assertStats(value: unknown, where: string): UnitStats {
 	if (typeof value !== "object" || value === null) {
 		throw new GameError(`${where} is missing its stat block`);
@@ -201,43 +149,13 @@ function assertStats(value: unknown, where: string): UnitStats {
 	return value as UnitStats;
 }
 
-function assertWeaponType(value: string, where: string): WeaponType {
-	if (!weaponTypeValues.has(value)) {
-		throw new GameError(`${where} refers to unknown weapon type "${value}"`);
-	}
-
-	return value as WeaponType;
-}
-
-/** Resolves a weapon id against `data/weapons.json`. */
-export function getWeapon(id: string): WeaponData {
-	const weapon = weaponCatalog[id];
-
-	if (weapon === undefined) {
-		throw new GameError(`Weapon "${id}" is not in the catalog`);
-	}
-
-	return { id, ...weapon, type: assertWeaponType(weapon.type, `Weapon "${id}"`) };
-}
-
-/** Resolves a consumable id against `data/items.json`. */
-export function getItem(id: string): ItemData {
-	const item = itemCatalog[id];
-
-	if (item === undefined) {
-		throw new GameError(`Item "${id}" is not in the catalog`);
-	}
-
-	return { id, heal: 0, ...item };
-}
-
 /**
  * Resolves one pack id to an [[InventoryEntry]]: a weapon (flagged `equippable`
  * when `classWeaponTypes` covers it, `equipped` when it matches `equippedId`) or
  * a consumable. Throws when the id is in neither catalog.
  */
 export function resolveInventoryEntry(id: string, classWeaponTypes: readonly WeaponType[], equippedId: string): InventoryEntry {
-	if (weaponCatalog[id] !== undefined) {
+	if (isCatalogWeapon(id)) {
 		const weapon = getWeapon(id);
 
 		return {
@@ -253,26 +171,13 @@ export function resolveInventoryEntry(id: string, classWeaponTypes: readonly Wea
 		};
 	}
 
-	if (itemCatalog[id] !== undefined) {
+	if (isCatalogItem(id)) {
 		const item = getItem(id);
 
 		return { id, name: item.name, kind: InventoryKind.ITEM, equippable: false, equipped: false, uses: item.uses, maxUses: item.uses, weapon: null, item };
 	}
 
 	throw new GameError(`Inventory entry "${id}" is not a known weapon or item`);
-}
-
-/** Resolves a class id against `data/classes.json`. */
-export function getUnitClass(id: string): UnitClassData {
-	const unitClass = classCatalog[id];
-
-	if (unitClass === undefined) {
-		throw new GameError(`Class "${id}" is not in the catalog`);
-	}
-
-	const weaponTypes = unitClass.weaponTypes.map((type) => assertWeaponType(type, `Class "${id}"`));
-
-	return { id, ...unitClass, weaponTypes };
 }
 
 /**
@@ -314,6 +219,10 @@ export function buildUnit(document: UnitDocument): UnitData {
 
 	if (!packIds.includes(document.weapon)) {
 		packIds.unshift(document.weapon);
+	}
+
+	if (packIds.length > INVENTORY_SIZE) {
+		throw new GameError(`Unit "${document.id}" carries ${packIds.length} entries, a pack holds ${INVENTORY_SIZE}`);
 	}
 
 	const inventory = packIds.map((id) => resolveInventoryEntry(id, unitClass.weaponTypes, document.weapon));

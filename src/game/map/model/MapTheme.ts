@@ -7,6 +7,15 @@ import { Terrain, TerrainType } from "@/game/map/model/Terrain";
  * top of them and a warm cursor that reads against every tile colour.
  */
 export const MapTheme = {
+	/**
+	 * Edge length of a tile on screen, in pixels. The tileset art is 16x16, so
+	 * this draws it at exactly 2x - a whole number of screen pixels per art
+	 * pixel, which is what keeps it crisp. The viewport is sized from it: the
+	 * 48x24 map fills 1536x768 exactly, with no band around it (see
+	 * `game.config.ts`).
+	 */
+	cellSize: 32,
+
 	terrain: {
 		[Terrain.PLAIN]: Color.hex("#7fa653"),
 		[Terrain.FOREST]: Color.hex("#3f6b3c"),

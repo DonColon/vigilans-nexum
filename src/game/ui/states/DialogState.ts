@@ -6,19 +6,33 @@ import { Display } from "@/core/graphics/Display";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { DialogComponent } from "@/game/ui/components/DialogComponent";
 import { dialogCommands } from "@/game/ui/commands/DialogCommands";
-import { dialogBox } from "@/game/ui/model/UILayout";
+import { dialogBox, DialogSide } from "@/game/ui/model/UILayout";
 
 export interface DialogRequest {
 	id?: string;
+	/** Name above the box for every page that does not name its own speaker. */
 	speaker?: string;
 	/** One entry per page of raw text; a newline forces a hard break inside a page. */
 	pages: string[];
+	/**
+	 * Per-page speaker, parallel to `pages` - for a conversation that changes
+	 * voice from page to page. Same "shorter is fine" rule as a menu's badges:
+	 * an entry left out falls back to `speaker`.
+	 */
+	speakers?: string[];
+	/**
+	 * Per-page edge to pin the box to, parallel to `pages`. Left out, every page
+	 * sits along the bottom as a single-voice box always has.
+	 */
+	sides?: DialogSide[];
 }
 
 const FALLBACK: Required<DialogRequest> = {
 	id: "dialog",
 	speaker: "",
-	pages: ["..."]
+	pages: ["..."],
+	speakers: [],
+	sides: []
 };
 
 /**
@@ -54,13 +68,22 @@ export class DialogState extends GameState {
 		this.pending = null;
 
 		const viewport = this.display.getViewportDimension();
-		const box = dialogBox(viewport);
+
+		const speaker = request.speaker ?? FALLBACK.speaker;
+		const pages = request.pages.length > 0 ? [...request.pages] : [...FALLBACK.pages];
+		const sides = pages.map((_, index) => request.sides?.[index] ?? DialogSide.BOTTOM);
+
+		// The first page decides where the box opens; DialogSystem moves it as the
+		// conversation changes hands.
+		const box = dialogBox(viewport, sides[0]);
 
 		this.dialog = this.world.createEntity();
 		this.dialog.addComponent(DialogComponent, {
 			id: request.id ?? FALLBACK.id,
-			speaker: request.speaker ?? FALLBACK.speaker,
-			pages: request.pages.length > 0 ? [...request.pages] : [...FALLBACK.pages],
+			speaker,
+			pages,
+			speakers: pages.map((_, index) => request.speakers?.[index] ?? speaker),
+			sides,
 			pageIndex: 0,
 			pageElapsed: 0,
 			revealAll: false,

@@ -57,6 +57,32 @@ export class UnitSystem {
 		return units.filter((unit) => unit.getComponent(UnitComponent).read().faction !== faction);
 	}
 
+	/**
+	 * The other units standing on a tile orthogonally next to this one, whichever
+	 * side they fight for - who it is close enough to reach out to. A spent unit
+	 * counts: being traded with, or talked to, costs the other party nothing.
+	 */
+	public static beside(units: readonly Entity[], unit: Entity): Entity[] {
+		const tile = UnitSystem.tileOf(unit);
+
+		return units.filter((other) => {
+			if (other === unit) {
+				return false;
+			}
+
+			const position = UnitSystem.tileOf(other);
+
+			return Math.abs(position.column - tile.column) + Math.abs(position.row - tile.row) === 1;
+		});
+	}
+
+	/** Of those, the ones on `unit`'s own side - the allies it could trade packs with. */
+	public static alliesBeside(units: readonly Entity[], unit: Entity): Entity[] {
+		const faction = unit.getComponent(UnitComponent).read().faction;
+
+		return UnitSystem.beside(units, unit).filter((other) => other.getComponent(UnitComponent).read().faction === faction);
+	}
+
 	/** Every unit's id and tile, the form the movement math consumes. */
 	public static locations(units: readonly Entity[]): UnitLocation[] {
 		return units.map((unit) => {

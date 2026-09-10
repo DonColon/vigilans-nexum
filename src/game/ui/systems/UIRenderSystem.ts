@@ -7,12 +7,11 @@ import { Display } from "@/core/graphics/Display";
 import { Graphics } from "@/core/graphics/rendering/Graphics";
 import { FontStyleSettings } from "@/core/graphics/styles/text/FontStyle";
 import { TextAlign, TextAlignType } from "@/core/graphics/styles/text/TextAlign";
-import { Circle } from "@/core/math/geometry/Circle";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { DialogComponent, DialogData } from "@/game/ui/components/DialogComponent";
 import { MenuComponent, MenuData } from "@/game/ui/components/MenuComponent";
-import { drawDivider, drawMenuHighlight, drawPanel, drawText, uiAssetsReady } from "@/game/ui/model/UIPanel";
+import { BADGE_DIAMETER, drawBadge, drawDivider, drawMenuHighlight, drawPanel, drawText, uiAssetsReady } from "@/game/ui/model/UIPanel";
 import { countWords, revealedWordCount, splitWords, wrapText } from "@/game/ui/model/TextReveal";
 import { dialogBox, menuHeight } from "@/game/ui/model/UILayout";
 import { UITheme } from "@/game/ui/model/UITheme";
@@ -85,8 +84,11 @@ export class UIRenderSystem extends RenderSystem {
 		// Every line - speaker included - is centred in its own lineHeight slot.
 		let slotTop = y + UITheme.padding;
 
-		if (data.speaker.length > 0) {
-			this.label(graphics, data.speaker, innerX, slotTop + UITheme.lineHeight / 2, UITheme.name, UITheme.speaker, TextAlign.LEFT);
+		// Whoever is talking on this page - a two-hander swaps the name as it goes.
+		const speaker = data.speakers[data.pageIndex] ?? data.speaker;
+
+		if (speaker.length > 0) {
+			this.label(graphics, speaker, innerX, slotTop + UITheme.lineHeight / 2, UITheme.name, UITheme.speaker, TextAlign.LEFT);
 		}
 
 		slotTop += UITheme.lineHeight;
@@ -146,8 +148,7 @@ export class UIRenderSystem extends RenderSystem {
 		// A left gutter for the badge discs, reserved for every row only when some
 		// row actually carries one, so a plain menu is unchanged.
 		const badged = data.badges.some((badge) => badge.length > 0);
-		const badgeDiameter = Math.round(UITheme.lineHeight * 0.56);
-		const textX = x + UITheme.padding + (badged ? badgeDiameter + 8 : 0);
+		const textX = x + UITheme.padding + (badged ? BADGE_DIAMETER + 8 : 0);
 
 		for (const [index, item] of data.items.entries()) {
 			const rowTop = slotTop + index * UITheme.lineHeight;
@@ -161,10 +162,10 @@ export class UIRenderSystem extends RenderSystem {
 			const badge = data.badges[index] ?? "";
 
 			if (badge.length > 0) {
-				this.drawBadge(graphics, badge, x + UITheme.padding + badgeDiameter / 2, centreY, badgeDiameter);
+				drawBadge(graphics, badge, x + UITheme.padding + BADGE_DIAMETER / 2, centreY);
 			}
 
-			const color = index === data.selectedIndex ? UITheme.menuItemSelected : UITheme.menuItem;
+			const color = menuRowColor(index === data.selectedIndex, data.disabled[index] ?? false);
 			this.label(graphics, item, textX, centreY, UITheme.menu, color, TextAlign.LEFT);
 
 			const value = data.values[index] ?? "";
@@ -175,26 +176,17 @@ export class UIRenderSystem extends RenderSystem {
 		}
 	}
 
-	/**
-	 * The Fire Emblem "equipped" mark: a small gold coin with a dark letter,
-	 * sitting in the menu's left gutter. Drawn at integer coordinates so the pixel
-	 * font stays crisp.
-	 */
-	private drawBadge(graphics: Graphics, letter: string, centreX: number, centreY: number, diameter: number): void {
-		const cx = Math.round(centreX);
-		const cy = Math.round(centreY);
-		const radius = diameter / 2;
-
-		graphics.fillColor(UITheme.menuBadgeFill).fillCircle(new Circle(cx, cy, radius));
-		graphics
-			.strokeColor(UITheme.menuBadgeRim)
-			.lineStyle({ width: 2 })
-			.strokeCircle(new Circle(cx, cy, radius - 1));
-		this.label(graphics, letter, cx, cy, UITheme.badge, UITheme.menuBadgeText, TextAlign.CENTER);
-	}
-
 	/** A line of text on its optical centre - see `drawText` in UIPanel. */
 	private label(graphics: Graphics, value: string, x: number, centreY: number, font: FontStyleSettings, color: Color, align: TextAlignType): void {
 		drawText(graphics, value, x, centreY, { font, color, align });
 	}
+}
+
+/** The four states a menu row can be drawn in: live or greyed out, under the cursor or not. */
+export function menuRowColor(selected: boolean, disabled: boolean): Color {
+	if (disabled) {
+		return selected ? UITheme.menuItemDisabledSelected : UITheme.menuItemDisabled;
+	}
+
+	return selected ? UITheme.menuItemSelected : UITheme.menuItem;
 }

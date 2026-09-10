@@ -1,0 +1,44 @@
+{
+	"format": "vigilans-unit",
+	"version": 1,
+	"id": "elira",
+	"name": "Elira Krasniqi",
+	"faction": "player",
+	"class": "axe-fighter",
+	"level": 1,
+	"weapon": "iron-axe",
+	"inventory": ["iron-axe", "bronze-axe", "concoction"],
+	"stats": {
+		"hp": 21,
+		"mp": 0,
+		"strength": 7,
+		"magic": 1,
+		"dexterity": 6,
+		"speed": 7,
+		"luck": 6,
+		"defense": 5,
+		"resistance": 2
+	},
+	"growths": {
+		"hp": 85,
+		"mp": 10,
+		"strength": 60,
+		"magic": 10,
+		"dexterity": 50,
+		"speed": 50,
+		"luck": 45,
+		"defense": 35,
+		"resistance": 20
+	},
+	"maxStats": {
+		"hp": 61,
+		"mp": 25,
+		"strength": 27,
+		"magic": 14,
+		"dexterity": 26,
+		"speed": 27,
+		"luck": 29,
+		"defense": 25,
+		"resistance": 20
+	}
+}

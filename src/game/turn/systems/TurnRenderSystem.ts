@@ -6,15 +6,16 @@ import { i18n } from "@/core/i18n/I18n";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { GridComponent } from "@/game/map/components/GridComponent";
+import { TILE_INFO_BOTTOM } from "@/game/map/model/TileInfoHud";
 import { MapRenderSystem } from "@/game/map/systems/MapRenderSystem";
 import { TurnComponent } from "@/game/turn/components/TurnComponent";
 import { TurnHud, turnDigits } from "@/game/turn/model/TurnHud";
 
 /**
- * Draws the turn counter tucked into the map's top-left corner from
- * `kenney-1bit` digit tiles. On the "ui" layer above UIRenderSystem (which owns
- * and clears that layer), so it stays visible over menus and redraws itself
- * every frame.
+ * Draws the turn counter from `kenney-1bit` digit tiles, in the map's top-left
+ * corner under the terrain readout (see TileInfoHud). On the "ui" layer above
+ * UIRenderSystem (which owns and clears that layer), so it stays visible over
+ * menus and redraws itself every frame.
  */
 export class TurnRenderSystem extends MapRenderSystem {
 	@GameCoreService(AssetStorage)
@@ -53,7 +54,9 @@ export class TurnRenderSystem extends MapRenderSystem {
 		const height = TurnHud.padding * 2 + size;
 
 		const plateX = origin.x + TurnHud.inset;
-		const plateY = origin.y + TurnHud.inset;
+		// Tucked under the terrain readout, which holds the top of the corner. Its
+		// height is fixed, so this never shifts as the cursor moves.
+		const plateY = origin.y + TILE_INFO_BOTTOM;
 
 		graphics.fillColor(TurnHud.plate).fillRoundRectangle(new Rectangle(plateX, plateY, width, height), 4);
 

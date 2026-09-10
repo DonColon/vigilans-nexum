@@ -118,12 +118,16 @@ export class Game {
 	}
 
 	public async start() {
-		this.stateManager.switch(this.config.initial.state);
-
+		// Loaded before the first state is entered: the bundle carries the content
+		// as well as the art - maps, unit sheets, the catalogs - and a state builds
+		// from it the moment it is switched to.
+		//
 		// Awaited rather than waited for through bundleLoaded: dispatched events
 		// are queued and only delivered by the loop, which is what start is about
 		// to set off - subscribing here would wait for an event that never lands.
 		await this.assetLoader.load(this.config.initial.bundle);
+
+		this.stateManager.switch(this.config.initial.state);
 		await this.resume();
 	}
 

@@ -16,6 +16,9 @@ export { MapRenderSystem } from "@/game/map/systems/MapRenderSystem";
 export type { MapView } from "@/game/map/systems/MapRenderSystem";
 export { CursorSystem } from "@/game/map/systems/CursorSystem";
 export { CursorRenderSystem } from "@/game/map/systems/CursorRenderSystem";
+export { TileInfoRenderSystem } from "@/game/map/systems/TileInfoRenderSystem";
+export { TileInfoHud, terrainName, tileInfoRows, movementCostText, TILE_INFO_HEIGHT, TILE_INFO_BOTTOM, TILE_INFO_ROWS, IMPASSABLE_COST } from "@/game/map/model/TileInfoHud";
+export type { TileInfoRow } from "@/game/map/model/TileInfoHud";
 export { GridRenderSystem } from "@/game/map/systems/GridRenderSystem";
 export { TileMapRenderSystem } from "@/game/map/systems/TileMapRenderSystem";
 

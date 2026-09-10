@@ -28,6 +28,13 @@ export interface MenuData extends JsonSchema {
 	 */
 	values: string[];
 	/**
+	 * Per-row "the holder can do nothing with this" flag, parallel to `items` - a
+	 * set entry is drawn greyed out (a weapon the unit's class cannot wield). The
+	 * row still selects and confirms; only its colour changes. `[]` for a menu
+	 * where every row is live.
+	 */
+	disabled: boolean[];
+	/**
 	 * When set, confirming a row reports it through `ui:menuConfirmed` but leaves
 	 * the menu open (so a submenu can be layered on top). It still closes on
 	 * cancel. Plain menus leave this false and close on confirm.

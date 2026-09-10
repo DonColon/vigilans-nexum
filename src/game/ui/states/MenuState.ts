@@ -32,6 +32,12 @@ export interface MenuRequest {
 	 */
 	values?: string[];
 	/**
+	 * Per-row "greyed out" flag, parallel to `items` - a set entry is drawn in the
+	 * disabled colour but still selects and confirms. Same "shorter is fine" rule
+	 * as `badges`.
+	 */
+	disabled?: boolean[];
+	/**
 	 * Keep the menu open after a row is confirmed (the outcome is still reported)
 	 * so a submenu can be layered on top with {@link MenuState.openSubmenu}.
 	 */
@@ -166,6 +172,7 @@ export class MenuState extends GameState {
 		const ids = items.map((_, index) => request.ids?.[index] ?? "");
 		const badges = items.map((_, index) => request.badges?.[index] ?? "");
 		const values = items.map((_, index) => request.values?.[index] ?? "");
+		const disabled = items.map((_, index) => request.disabled?.[index] ?? false);
 
 		const viewport = this.display.getViewportDimension();
 		const height = menuHeight(items.length, title.length > 0);
@@ -184,6 +191,7 @@ export class MenuState extends GameState {
 			ids,
 			badges,
 			values,
+			disabled,
 			keepOpen: request.keepOpen ?? false,
 			selectedIndex: clampIndex(request.selectedIndex ?? 0, items.length),
 			confirmedIndex: -1,
