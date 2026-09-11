@@ -1,4 +1,4 @@
-import { AudioTrack } from "@/core/audio/AudioTrack";
+import { AudioClip } from "@/core/audio/AudioClip";
 import { Sprite } from "@/core/graphics/components/Sprite";
 import { Spritesheet } from "@/core/graphics/components/Spritesheet";
 import { GameError } from "@/core/GameError";
@@ -6,7 +6,7 @@ import { GameCoreService } from "@/core/service/GameCoreService";
 
 @GameCoreService()
 export class AssetStorage {
-	private audio: Map<string, AudioTrack>;
+	private audio: Map<string, AudioClip>;
 	private images: Map<string, Sprite>;
 	private spritesheets: Map<string, Spritesheet>;
 	private videos: Map<string, HTMLVideoElement>;
@@ -18,7 +18,7 @@ export class AssetStorage {
 	private scripts: Map<string, HTMLScriptElement>;
 
 	constructor() {
-		this.audio = new Map<string, AudioTrack>();
+		this.audio = new Map<string, AudioClip>();
 		this.images = new Map<string, Sprite>();
 		this.spritesheets = new Map<string, Spritesheet>();
 		this.videos = new Map<string, HTMLVideoElement>();
@@ -30,18 +30,18 @@ export class AssetStorage {
 		this.scripts = new Map<string, HTMLScriptElement>();
 	}
 
-	public getAudio(id: string): AudioTrack {
-		const track = this.audio.get(id);
+	public getAudio(id: string): AudioClip {
+		const clip = this.audio.get(id);
 
-		if (track === undefined) {
-			throw new GameError(`Track ${id} does not exist`);
+		if (clip === undefined) {
+			throw new GameError(`Audio ${id} does not exist`);
 		}
 
-		return track;
+		return clip;
 	}
 
-	public setAudio(id: string, track: AudioTrack) {
-		this.audio.set(id, track);
+	public setAudio(id: string, clip: AudioClip) {
+		this.audio.set(id, clip);
 	}
 
 	public deleteAudio(id: string): boolean {

@@ -196,7 +196,7 @@ export function gameOptions(locales: readonly string[] = [], channels: readonly 
 			label: () => i18n("options.masterVolume"),
 			choices: volumeChoices(),
 			defaultValue: DEFAULT_VOLUME,
-			apply: (value) => audio()?.volume(Number(value))
+			apply: (value) => audio()?.setVolume(Number(value))
 		},
 		// One row per channel the audio device was actually built with, so a new
 		// channel in the game config shows up here without a change to this list.
@@ -206,7 +206,7 @@ export function gameOptions(locales: readonly string[] = [], channels: readonly 
 			label: () => i18n(`options.volume.${channel}`),
 			choices: volumeChoices(),
 			defaultValue: DEFAULT_VOLUME,
-			apply: (value: string) => audio()?.volume(Number(value), channel)
+			apply: (value: string) => audio()?.setVolume(Number(value), channel)
 		}))
 	];
 }

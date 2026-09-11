@@ -1,103 +1,185 @@
-import { GameError } from "@/core/GameError";
-import { UserGestures } from "@/core/UserGestures";
-import { AudioChannel } from "@/core/audio/AudioChannel";
-import { gainFromPercentage, percentageFromGain } from "@/core/audio/AudioVolume";
-import { GameCoreService } from "@/core/service/GameCoreService";
 import { AssetStorage } from "@/core/assets/AssetStorage";
+import { AudioClip } from "@/core/audio/AudioClip";
+import { AudioMixer } from "@/core/audio/AudioMixer";
+import { AudioVoice, VoiceOptions } from "@/core/audio/AudioVoice";
+import { MusicOptions, MusicPlayer } from "@/core/audio/MusicPlayer";
+import { GameCoreService } from "@/core/service/GameCoreService";
 
-export interface AudioConfiguration {
-	channels: string[];
+export interface DuckingConfiguration {
+	/** Channels that dip while a spoken line plays - the music, as a rule. */
+	channels?: string[];
+	/** What they dip to, as a percentage of their set volume. */
+	level?: number;
+	/** Seconds the dip takes going down and coming back up. */
+	fade?: number;
 }
 
+export interface AudioConfiguration {
+	/** The mixing channels to build - one volume row each on the options screen. A clip names the one it plays on. */
+	channels: string[];
+	/** The channel `playMusic` drives. Defaults to "music". */
+	music?: string;
+	/** How `playVoice` makes room for a spoken line. Defaults to dipping the music channel to 30% over a quarter second. */
+	ducking?: DuckingConfiguration;
+	/** Whether audio halts while the tab is hidden, like the game loop does. Defaults to on. */
+	suspendWhenHidden?: boolean;
+}
+
+const DEFAULT_MUSIC_CHANNEL = "music";
+const DEFAULT_DUCK_LEVEL = 30;
+const DEFAULT_DUCK_FADE = 0.25;
+
+/**
+ * The audio system as the game sees it: the one service anything that makes
+ * a noise talks to. A sound effect, the music, a spoken line and the volume
+ * sliders all come through here, by asset id, and nothing outside this folder
+ * needs to know a Web Audio node exists.
+ *
+ * Underneath, the `AudioMixer` owns the context and the channels, an
+ * `AudioVoice` is one playback, and the `MusicPlayer` handles one track
+ * giving way to the next. What comes back from a `play*` call is the voice,
+ * which is the handle to stop, fade or pan that one playback later.
+ */
 @GameCoreService()
 export class AudioDevice {
-	private context: AudioContext;
-	private channels: Map<string, AudioChannel>;
-	private masterVolume: GainNode;
+	private readonly mixer: AudioMixer;
+	private readonly musicChannel: string;
+	private readonly ducking: Required<DuckingConfiguration>;
+
+	private musicPlayer: MusicPlayer | null = null;
+
+	/** Spoken lines under way right now: the ducked channels come back up when the last one ends. */
+	private speaking = 0;
 
 	@GameCoreService(AssetStorage)
 	private assetStorage!: AssetStorage;
 
-	constructor(config?: AudioConfiguration) {
-		this.context = new AudioContext();
-		this.channels = new Map<string, AudioChannel>();
+	constructor(config?: AudioConfiguration, mixer?: AudioMixer) {
+		this.mixer = mixer ?? new AudioMixer(undefined, config?.suspendWhenHidden ?? true);
+		this.musicChannel = config?.music ?? DEFAULT_MUSIC_CHANNEL;
+		this.ducking = {
+			channels: config?.ducking?.channels ?? [this.musicChannel],
+			level: config?.ducking?.level ?? DEFAULT_DUCK_LEVEL,
+			fade: config?.ducking?.fade ?? DEFAULT_DUCK_FADE
+		};
 
-		this.masterVolume = this.context.createGain();
-		this.masterVolume.connect(this.context.destination);
-
-		if (config) {
-			for (const channel of config.channels) {
-				this.addChannel(channel);
-			}
+		for (const channel of config?.channels ?? []) {
+			this.mixer.addChannel(channel);
 		}
+	}
 
-		this.start();
+	// ---- Sounds -------------------------------------------------------------
+
+	/**
+	 * Plays a clip on the channel it was loaded for. Fire and forget: any
+	 * number of sounds overlap, and a finished one cleans itself up. Keep the
+	 * voice to stop or fade this particular playback later.
+	 */
+	public playSound(id: string, options?: VoiceOptions): AudioVoice {
+		const clip = this.getClip(id);
+		return this.mixer.getChannel(clip.channel).play(clip, options);
 	}
 
 	/**
-	 * A browser will not let an AudioContext start until the player has interacted
-	 * with the page, so the first gesture of any kind resumes it. The handler is
-	 * kept on the instance because taking a listener off needs the very function
-	 * that was added - a fresh arrow removes nothing, and would leave one listener
-	 * per gesture behind for the life of the page.
+	 * Plays a spoken line and makes room for it: the ducked channels dip while
+	 * it speaks and come back up once the last line under way has ended.
 	 */
-	private readonly unlockListener = () => this.unlock();
+	public playVoice(id: string, options?: VoiceOptions): AudioVoice {
+		const voice = this.playSound(id, options);
 
-	private start() {
-		for (const userGesture of UserGestures) {
-			document.addEventListener(userGesture, this.unlockListener);
-		}
-	}
-
-	private unlock() {
-		if (this.context.state === "suspended") {
-			this.context.resume();
+		if (voice.getState() === "stopped") {
+			return voice;
 		}
 
-		if (this.context.state === "running") {
-			for (const userGesture of UserGestures) {
-				document.removeEventListener(userGesture, this.unlockListener);
+		this.speaking++;
+		this.setDucked(true);
+
+		const release = voice.onStopped;
+		voice.onStopped = (ended) => {
+			release?.(ended);
+
+			this.speaking = Math.max(0, this.speaking - 1);
+
+			if (this.speaking === 0) {
+				this.setDucked(false);
 			}
+		};
+
+		return voice;
+	}
+
+	// ---- Music --------------------------------------------------------------
+
+	/** Starts a track on the music channel, crossfading from whatever was playing if asked to. */
+	public playMusic(id: string, options?: MusicOptions): AudioVoice {
+		return this.music().play(this.getClip(id), options);
+	}
+
+	public stopMusic(fadeSeconds: number = 0): void {
+		this.musicPlayer?.stop(fadeSeconds);
+	}
+
+	public pauseMusic(): void {
+		this.musicPlayer?.pause();
+	}
+
+	public resumeMusic(): void {
+		this.musicPlayer?.resume();
+	}
+
+	public isMusicPlaying(): boolean {
+		return this.musicPlayer?.isPlaying() ?? false;
+	}
+
+	/** The track playing or paused right now, if any. */
+	public getMusic(): AudioVoice | null {
+		return this.musicPlayer?.getCurrent() ?? null;
+	}
+
+	// ---- Everything at once -------------------------------------------------
+
+	/** Holds every voice on every channel where it is - a pause screen. Menu blips still play. */
+	public pauseAll(): void {
+		for (const channel of this.mixer.getChannels()) {
+			channel.pauseAll();
 		}
 	}
 
-	public play(id: string, loop: boolean = false) {
-		const track = this.assetStorage.getAudio(id);
-		const channel = this.getChannel(track.channel);
-
-		if (loop) {
-			this.assetStorage.setAudio(id, channel.loop(track));
-		} else {
-			this.assetStorage.setAudio(id, channel.play(track));
+	public resumeAll(): void {
+		for (const channel of this.mixer.getChannels()) {
+			channel.resumeAll();
 		}
 	}
 
-	public pause(id: string) {
-		const track = this.assetStorage.getAudio(id);
+	/** Ends every voice - on one channel when named, everywhere when not. */
+	public stopAll(fadeSeconds: number = 0, channel?: string): void {
+		if (channel) {
+			this.mixer.getChannel(channel).stopAll(fadeSeconds);
+			return;
+		}
 
-		if (track.source && track.startedAt) {
-			track.source.stop();
+		this.musicPlayer?.stop(fadeSeconds);
 
-			track.offset = this.context.currentTime - track.startedAt;
-			delete track.source;
-
-			this.assetStorage.setAudio(id, track);
+		for (const each of this.mixer.getChannels()) {
+			each.stopAll(fadeSeconds);
 		}
 	}
 
-	public stop(id: string) {
-		const track = this.assetStorage.getAudio(id);
-
-		if (track.source) {
-			track.source.stop();
-		}
-
-		delete track.offset;
-		delete track.startedAt;
-		delete track.source;
-
-		this.assetStorage.setAudio(id, track);
+	/** Halts the clock itself: nothing plays and nothing advances until `resume`. */
+	public suspend(): Promise<void> {
+		return this.mixer.suspend();
 	}
+
+	public resume(): Promise<void> {
+		return this.mixer.resume();
+	}
+
+	/** Whether the player's first gesture has let audio run yet. Sounds before that are dropped. */
+	public isUnlocked(): boolean {
+		return this.mixer.isUnlocked();
+	}
+
+	// ---- Volume -------------------------------------------------------------
 
 	/**
 	 * Sets a loudness, 0 (silent) to 100 (as recorded) - one channel's when it is
@@ -105,48 +187,105 @@ export class AudioDevice {
 	 * clamped rather than thrown: a volume slider should not be able to crash the
 	 * game.
 	 */
-	public volume(volume: number, channel?: string) {
+	public setVolume(volume: number, channel?: string): void {
 		if (channel) {
-			this.getChannel(channel).setVolume(volume);
+			this.mixer.getChannel(channel).setVolume(volume);
 		} else {
-			this.masterVolume.gain.value = gainFromPercentage(volume);
+			this.mixer.setMasterVolume(volume);
 		}
 	}
 
-	/** What a channel, or the master, is currently set to - as a percentage. */
+	/** What a channel, or the master, is set to - as a percentage, mute or not. */
 	public getVolume(channel?: string): number {
-		return channel ? this.getChannel(channel).getVolume() : percentageFromGain(this.masterVolume.gain.value);
+		return channel ? this.mixer.getChannel(channel).getVolume() : this.mixer.getMasterVolume();
 	}
+
+	public mute(channel?: string): void {
+		if (channel) {
+			this.mixer.getChannel(channel).mute();
+		} else {
+			this.mixer.muteMaster();
+		}
+	}
+
+	public unmute(channel?: string): void {
+		if (channel) {
+			this.mixer.getChannel(channel).unmute();
+		} else {
+			this.mixer.unmuteMaster();
+		}
+	}
+
+	public isMuted(channel?: string): boolean {
+		return channel ? this.mixer.getChannel(channel).isMuted() : this.mixer.isMasterMuted();
+	}
+
+	// ---- Channels -----------------------------------------------------------
 
 	/** The channels this device was built with - what an options screen offers a row for. */
 	public getChannelNames(): string[] {
-		return [...this.channels.keys()];
+		return this.mixer.getChannelNames();
+	}
+
+	public hasChannel(name: string): boolean {
+		return this.mixer.hasChannel(name);
 	}
 
 	public addChannel(name: string): this {
-		if (this.channels.has(name)) {
-			throw new GameError(`Channel ${name} already exists`);
-		}
-
-		const channel = new AudioChannel(this.context);
-		channel.connect(this.masterVolume);
-
-		this.channels.set(name, channel);
+		this.mixer.addChannel(name);
 		return this;
 	}
 
+	/** Stops whatever is on the channel and drops it. */
 	public removeChannel(name: string): this {
-		this.channels.delete(name);
+		if (name === this.musicChannel) {
+			this.musicPlayer = null;
+		}
+
+		this.mixer.removeChannel(name);
 		return this;
 	}
 
-	private getChannel(name: string): AudioChannel {
-		const channel = this.channels.get(name);
+	// ---- Loading ------------------------------------------------------------
 
-		if (channel === undefined) {
-			throw new GameError(`Channel ${name} does not exist`);
+	/** Turns a fetched file into samples, on the context that will play them. What the AssetLoader calls. */
+	public decode(data: ArrayBuffer): Promise<AudioBuffer> {
+		return this.mixer.decode(data);
+	}
+
+	/** Tears everything down. The device is done after this. */
+	public dispose(): Promise<void> {
+		this.musicPlayer = null;
+		return this.mixer.dispose();
+	}
+
+	// ---- Internals ----------------------------------------------------------
+
+	private getClip(id: string): AudioClip {
+		return this.assetStorage.getAudio(id);
+	}
+
+	private music(): MusicPlayer {
+		if (!this.musicPlayer) {
+			this.musicPlayer = new MusicPlayer(this.mixer.getChannel(this.musicChannel));
 		}
 
-		return channel;
+		return this.musicPlayer;
+	}
+
+	private setDucked(ducked: boolean): void {
+		for (const name of this.ducking.channels) {
+			if (!this.mixer.hasChannel(name)) {
+				continue;
+			}
+
+			const channel = this.mixer.getChannel(name);
+
+			if (ducked) {
+				channel.duckTo(this.ducking.level, this.ducking.fade);
+			} else {
+				channel.unduck(this.ducking.fade);
+			}
+		}
 	}
 }

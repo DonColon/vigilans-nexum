@@ -1,9 +1,9 @@
-import { AudioTrack } from "@/core/audio/AudioTrack";
+import { AudioClip } from "@/core/audio/AudioClip";
 import { Sprite } from "@/core/graphics/components/Sprite";
 
 export interface LoadableAssets {
 	image: Sprite;
-	audio: AudioTrack;
+	audio: AudioClip;
 	video: HTMLVideoElement;
 	font: FontFace;
 	json: object;

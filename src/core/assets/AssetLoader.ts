@@ -6,6 +6,7 @@ import { Spritesheet, TexturePackerHash } from "@/core/graphics/components/Sprit
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { EventSystem } from "@/core/events/EventSystem";
 import { AssetStorage } from "@/core/assets/AssetStorage";
+import { AudioDevice } from "@/core/audio/AudioDevice";
 
 type LoaderMap = Record<AssetType["type"], (asset: any) => Promise<void>>;
 type UnloaderMap = Record<AssetType["type"], (id: string) => void>;
@@ -25,7 +26,6 @@ export class AssetLoader {
 	private cache!: Cache;
 
 	private renderContext: CanvasRenderingContext2D;
-	private audioContext: AudioContext;
 	private domParser: DOMParser;
 
 	@GameCoreService(AssetStorage)
@@ -33,6 +33,11 @@ export class AssetLoader {
 
 	@GameCoreService(EventSystem)
 	private eventSystem!: EventSystem;
+
+	// Decoding happens on the context that plays the samples - the device owns the
+	// page's one AudioContext. Resolved lazily, so it need not exist before the loader.
+	@GameCoreService(AudioDevice)
+	private audioDevice!: AudioDevice;
 
 	constructor(id: string, config: LoaderConfiguration) {
 		this.manifest = config.manifest;
@@ -49,7 +54,6 @@ export class AssetLoader {
 		}
 
 		this.renderContext = renderContext;
-		this.audioContext = new AudioContext();
 		this.domParser = new DOMParser();
 	}
 
@@ -310,7 +314,7 @@ export class AssetLoader {
 		const buffer = await response.arrayBuffer();
 
 		try {
-			const audioBuffer = await this.audioContext.decodeAudioData(buffer);
+			const audioBuffer = await this.audioDevice.decode(buffer);
 
 			this.assetStorage.setAudio(asset.id, {
 				buffer: audioBuffer,

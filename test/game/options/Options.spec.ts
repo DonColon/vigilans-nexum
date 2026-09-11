@@ -65,7 +65,7 @@ suite("Options Test Suite", () => {
 		public readonly channels = ["sound", "music"];
 		public readonly volumes = new Map<string, number>();
 
-		public volume(volume: number, channel?: string): void {
+		public setVolume(volume: number, channel?: string): void {
 			this.volumes.set(channel ?? "master", volume);
 		}
 

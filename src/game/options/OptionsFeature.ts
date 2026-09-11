@@ -32,7 +32,7 @@ import { OptionsSystem } from "@/game/options/systems/OptionsSystem";
  * request and refuses without one - so a remembered "on" is carried until the
  * player touches something, and applied on that first gesture. It is the closest
  * the web allows to starting in fullscreen, and it is the same trick the
- * AudioDevice uses to unlock its AudioContext.
+ * AudioMixer uses to unlock its AudioContext.
  */
 export class OptionsFeature extends GameFeature {
 	/** Row the screen was last left on, so re-opening it comes back to the same setting. */
