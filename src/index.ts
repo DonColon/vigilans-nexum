@@ -4,6 +4,7 @@ import { CombatFeature } from "@/game/combat";
 import { ConvoyFeature } from "@/game/convoy";
 import { MapFeature } from "@/game/map";
 import { MovementFeature } from "@/game/movement";
+import { OptionsFeature } from "@/game/options";
 import { RosterFeature } from "@/game/roster";
 import { TalkFeature } from "@/game/talk";
 import { ThreatFeature } from "@/game/threat";
@@ -24,6 +25,9 @@ game.install(units);
 game.install(new TurnFeature({ dependencies: [units] }));
 // The army list the global menu's "Units" row opens; needs the units on the map.
 game.install(new RosterFeature({ dependencies: [units] }));
+// The settings screen its "Options" row opens. It owns no map state of its own -
+// the settings live on the OptionsService, which everything else reads.
+game.install(new OptionsFeature());
 // The battle forecast the "Attack" command opens; needs the units on the map.
 game.install(new CombatFeature({ dependencies: [units] }));
 // The conversations the "Talk" command plays; needs the units on the map and

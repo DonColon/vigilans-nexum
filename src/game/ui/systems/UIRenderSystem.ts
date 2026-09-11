@@ -16,6 +16,7 @@ import { BADGE_DIAMETER, drawBadge, drawDivider, drawMenuHighlight, drawPanel, d
 import { countWords, revealedWordCount, splitWords, wrapText } from "@/game/ui/model/TextReveal";
 import { dialogBox, menuHeight, popupBox } from "@/game/ui/model/UILayout";
 import { UITheme } from "@/game/ui/model/UITheme";
+import { textRevealDelay } from "@/game/options/GameSettings";
 
 /**
  * Draws the UI layer: the menu panel first, the textbox over it, both framed
@@ -105,7 +106,7 @@ export class UIRenderSystem extends RenderSystem {
 		graphics.fontStyle(UITheme.body);
 		const lines = wrapText(data.pages[data.pageIndex] ?? "", innerWidth, (text) => graphics.measureText(text).width);
 		const totalWords = countWords(lines);
-		const visibleWords = data.revealAll ? totalWords : revealedWordCount(data.pageElapsed, UITheme.wordRevealDelay, totalWords);
+		const visibleWords = data.revealAll ? totalWords : revealedWordCount(data.pageElapsed, textRevealDelay(), totalWords);
 
 		// Each line is drawn twice: once whole at the hidden alpha, then its
 		// revealed prefix on top at full alpha. Left-aligned text means the prefix

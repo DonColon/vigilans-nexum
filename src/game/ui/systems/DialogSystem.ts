@@ -12,6 +12,7 @@ import { countWords, revealedWordCount, wrapText } from "@/game/ui/model/TextRev
 import { dialogBox, DialogSide } from "@/game/ui/model/UILayout";
 import { UITheme } from "@/game/ui/model/UITheme";
 import { DialogState } from "@/game/ui/states/DialogState";
+import { textRevealDelay } from "@/game/options/GameSettings";
 
 /**
  * Drives the open textbox: it ages the current page so words appear one at a
@@ -58,7 +59,7 @@ export class DialogSystem extends UpdateSystem {
 		this.pinToSpeaker(entity, data);
 
 		const totalWords = this.pageWordCount(data.pages[data.pageIndex]);
-		const fullyRevealed = data.revealAll || revealedWordCount(pageElapsed, UITheme.wordRevealDelay, totalWords) >= totalWords;
+		const fullyRevealed = data.revealAll || revealedWordCount(pageElapsed, textRevealDelay(), totalWords) >= totalWords;
 
 		this.runCommands(elapsed, frame, entity, fullyRevealed);
 	}

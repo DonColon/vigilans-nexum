@@ -222,6 +222,19 @@ export interface ThreatShownEvent extends GameEvent {
 /** The enemy-range overlay came back down. */
 export type ThreatClearedEvent = GameEvent;
 
+/** A request to open the options screen (from the global command menu). */
+export type OptionsRequestedEvent = GameEvent;
+
+/**
+ * The options screen was closed. Every change was applied as it was made, so all
+ * this reports is the row it was left on - which is what re-opening it comes
+ * back to. The screen is gone by the time this lands, which is why the row
+ * travels with the event rather than being read back off the state.
+ */
+export interface OptionsClosedEvent extends GameEvent {
+	selectedIndex: number;
+}
+
 /** A request to open the army list (from the global command menu). */
 export type RosterRequestedEvent = GameEvent;
 
@@ -281,6 +294,8 @@ declare module "@/core/events/GameEvents" {
 		"visit:requested": VisitRequestedEvent;
 		"visit:cancelled": VisitCancelledEvent;
 		"visit:finished": VisitFinishedEvent;
+		"options:requested": OptionsRequestedEvent;
+		"options:closed": OptionsClosedEvent;
 		"roster:requested": RosterRequestedEvent;
 		"roster:closed": RosterClosedEvent;
 		"turn:end": TurnEndEvent;

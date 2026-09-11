@@ -31,12 +31,12 @@ import { UnitSystem } from "@/game/units/systems/UnitSystem";
 import { UnitsFeature } from "@/game/units/UnitsFeature";
 
 suite("Global Menu Test Suite", () => {
-	test("The map's own menu offers the army list, then ending the turn", () => {
+	test("The map's own menu offers the army list and the settings, then ending the turn", () => {
 		const request = globalCommandRequest();
 
 		expect(request.id).toBe(GLOBAL_MENU);
-		expect(request.ids).toStrictEqual([UnitMenuRow.UNITS, UnitMenuRow.END_TURN]);
-		expect(request.items).toStrictEqual([i18n("menu.units"), i18n("menu.endTurn")]);
+		expect(request.ids).toStrictEqual([UnitMenuRow.UNITS, UnitMenuRow.OPTIONS, UnitMenuRow.END_TURN]);
+		expect(request.items).toStrictEqual([i18n("menu.units"), i18n("menu.options"), i18n("menu.endTurn")]);
 
 		// Ending the turn is the one row here that cannot be taken back, so it is last.
 		expect(request.ids?.[request.ids.length - 1]).toBe(UnitMenuRow.END_TURN);

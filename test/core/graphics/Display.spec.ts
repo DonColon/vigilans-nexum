@@ -1,7 +1,7 @@
 import { test, expect, suite, beforeEach, afterEach, vi } from "vitest";
 import { createContext } from "@miyauci/get-event-listeners";
 
-import { Display } from "../../../src/core/graphics/Display";
+import { Display, MAX_BRIGHTNESS, MIN_BRIGHTNESS } from "../../../src/core/graphics/Display";
 import { GameError } from "../../../src/core/GameError";
 
 suite("Display Class Unit Tests", () => {
@@ -323,5 +323,51 @@ suite("Display Class Unit Tests", () => {
 		const center = display.getCenter();
 		expect(center.x).toBe(0);
 		expect(center.y).toBe(0);
+	});
+});
+
+suite("Display Brightness Unit Tests", () => {
+	const display = () => new Display(`brightness-${Math.random().toString(36).slice(2)}`, { dimension: { width: 640, height: 480 } });
+
+	test("should leave the viewport alone at full brightness", () => {
+		const screen = display();
+
+		expect(screen.getBrightness()).toBe(100);
+		expect(screen.setBrightness(100).getBrightness()).toBe(100);
+	});
+
+	test("should darken and lift the whole viewport at once", () => {
+		const screen = display();
+
+		expect(screen.setBrightness(70).getBrightness()).toBe(70);
+		expect(screen.setBrightness(130).getBrightness()).toBe(130);
+	});
+
+	test("should clamp to a range that keeps the game playable", () => {
+		const screen = display();
+
+		expect(screen.setBrightness(0).getBrightness()).toBe(MIN_BRIGHTNESS);
+		expect(screen.setBrightness(1000).getBrightness()).toBe(MAX_BRIGHTNESS);
+		expect(screen.setBrightness(Number.NaN).getBrightness()).toBe(100);
+	});
+});
+
+suite("Display Fullscreen Unit Tests", () => {
+	const display = () => new Display(`fullscreen-${Math.random().toString(36).slice(2)}`, { dimension: { width: 640, height: 480 } });
+
+	test("should resolve false rather than reject when the browser refuses", async () => {
+		const screen = display();
+
+		// jsdom has no fullscreen, so requestFullscreen is either absent or rejects -
+		// which is exactly the case a player hits by asking without a gesture. It has
+		// to come back as an answer, not as an unhandled rejection.
+		await expect(screen.enterFullscreen()).resolves.toBe(false);
+	});
+
+	test("should report leaving fullscreen as done when it was never in it", async () => {
+		const screen = display();
+
+		await expect(screen.exitFullscreen()).resolves.toBe(true);
+		expect(screen.isFullscreen()).toBe(false);
 	});
 });

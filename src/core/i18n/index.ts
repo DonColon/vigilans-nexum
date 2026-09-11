@@ -1,4 +1,4 @@
-export { i18n, detectLocale, I18nService, DEFAULT_LOCALE } from "@/core/i18n/I18n";
+export { i18n, getI18n, detectLocale, I18nService, DEFAULT_LOCALE } from "@/core/i18n/I18n";
 export type { I18nOptions } from "@/core/i18n/I18n";
 
 export { interpolate, placeholderNames, parseLocaleFile, findDuplicateKeys } from "@/core/i18n/Locale";

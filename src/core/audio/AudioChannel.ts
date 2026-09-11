@@ -1,4 +1,5 @@
 import { AudioTrack } from "@/core/audio/AudioTrack";
+import { gainFromPercentage, percentageFromGain } from "@/core/audio/AudioVolume";
 
 export class AudioChannel {
 	private context: AudioContext;
@@ -44,14 +45,14 @@ export class AudioChannel {
 		return track;
 	}
 
+	/** Sets this channel's loudness, 0 (silent) to 100 (as recorded). Out of range is clamped. */
 	public setVolume(volume: number) {
-		if (volume < 0 || volume > 100) {
-			throw new RangeError("volume must be percentage");
-		}
+		this.volume.gain.value = gainFromPercentage(volume);
+	}
 
-		const value = this.volume.gain.minValue + (volume / 100) * (this.volume.gain.maxValue - this.volume.gain.minValue);
-
-		this.volume.gain.value = value;
+	/** What this channel is currently set to, as a percentage. */
+	public getVolume(): number {
+		return percentageFromGain(this.volume.gain.value);
 	}
 
 	public connect(node: AudioNode) {

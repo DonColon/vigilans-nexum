@@ -1,6 +1,7 @@
 import { GameError } from "@/core/GameError";
 import { UserGestures } from "@/core/UserGestures";
 import { AudioChannel } from "@/core/audio/AudioChannel";
+import { gainFromPercentage, percentageFromGain } from "@/core/audio/AudioVolume";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { AssetStorage } from "@/core/assets/AssetStorage";
 
@@ -33,9 +34,18 @@ export class AudioDevice {
 		this.start();
 	}
 
+	/**
+	 * A browser will not let an AudioContext start until the player has interacted
+	 * with the page, so the first gesture of any kind resumes it. The handler is
+	 * kept on the instance because taking a listener off needs the very function
+	 * that was added - a fresh arrow removes nothing, and would leave one listener
+	 * per gesture behind for the life of the page.
+	 */
+	private readonly unlockListener = () => this.unlock();
+
 	private start() {
 		for (const userGesture of UserGestures) {
-			document.addEventListener(userGesture, () => this.unlock());
+			document.addEventListener(userGesture, this.unlockListener);
 		}
 	}
 
@@ -46,7 +56,7 @@ export class AudioDevice {
 
 		if (this.context.state === "running") {
 			for (const userGesture of UserGestures) {
-				document.removeEventListener(userGesture, () => this.unlock());
+				document.removeEventListener(userGesture, this.unlockListener);
 			}
 		}
 	}
@@ -89,23 +99,28 @@ export class AudioDevice {
 		this.assetStorage.setAudio(id, track);
 	}
 
+	/**
+	 * Sets a loudness, 0 (silent) to 100 (as recorded) - one channel's when it is
+	 * named, the master everything runs through when it is not. Out of range is
+	 * clamped rather than thrown: a volume slider should not be able to crash the
+	 * game.
+	 */
 	public volume(volume: number, channel?: string) {
 		if (channel) {
-			const audioChannel = this.getChannel(channel);
-			audioChannel.setVolume(volume);
+			this.getChannel(channel).setVolume(volume);
 		} else {
-			this.setVolume(volume);
+			this.masterVolume.gain.value = gainFromPercentage(volume);
 		}
 	}
 
-	private setVolume(volume: number) {
-		if (volume < 0 || volume > 100) {
-			throw new RangeError("volume must be percentage");
-		}
+	/** What a channel, or the master, is currently set to - as a percentage. */
+	public getVolume(channel?: string): number {
+		return channel ? this.getChannel(channel).getVolume() : percentageFromGain(this.masterVolume.gain.value);
+	}
 
-		const value = this.masterVolume.gain.minValue + (volume / 100) * (this.masterVolume.gain.maxValue - this.masterVolume.gain.minValue);
-
-		this.masterVolume.gain.value = value;
+	/** The channels this device was built with - what an options screen offers a row for. */
+	public getChannelNames(): string[] {
+		return [...this.channels.keys()];
 	}
 
 	public addChannel(name: string): this {

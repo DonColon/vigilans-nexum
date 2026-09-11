@@ -7,6 +7,8 @@ import { GridComponent, GridData } from "@/game/map/components/GridComponent";
 import { MapTheme } from "@/game/map/model/MapTheme";
 import { GridSystem } from "@/game/map/systems/GridSystem";
 import { MapRenderSystem } from "@/game/map/systems/MapRenderSystem";
+import { OptionId } from "@/game/options/model/GameOptions";
+import { optionEnabled } from "@/game/options/GameSettings";
 
 /**
  * Draws the battle map: one flat block per tile, a hairline grid on top and a
@@ -33,7 +35,11 @@ export class GridRenderSystem extends MapRenderSystem {
 		}
 
 		this.renderTiles(graphics, view.grid, view.origin);
-		this.renderGridLines(graphics, view.grid, view.origin);
+		// The tile lattice is a readability aid some players would rather not see -
+		// the terrain colours and the tileset art read on their own without it.
+		if (optionEnabled(OptionId.GRID_LINES)) {
+			this.renderGridLines(graphics, view.grid, view.origin);
+		}
 		this.renderBorder(graphics, view.grid, view.origin);
 	}
 

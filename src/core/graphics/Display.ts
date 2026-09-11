@@ -5,6 +5,10 @@ import { Graphics } from "@/core/graphics/rendering/Graphics";
 import { DisplayOrientationType } from "@/core/graphics/DisplayOrientation";
 import { GameCoreService } from "@/core/service/GameCoreService";
 
+/** Darkest and lightest the screen can be set to - far enough either way to be useful, not far enough to be unplayable. */
+export const MIN_BRIGHTNESS = 50;
+export const MAX_BRIGHTNESS = 150;
+
 export interface DisplayConfiguration {
 	dimension?: Dimension;
 	layers?: {
@@ -25,6 +29,7 @@ export class Display {
 	private readonly center: Vector2D;
 
 	private orientationLocked: boolean;
+	private brightness: number;
 
 	constructor(id: string, config?: DisplayConfiguration) {
 		this.viewport = document.createElement("main");
@@ -69,6 +74,7 @@ export class Display {
 		this.center = new Vector2D(this.dimension.width / 2, this.dimension.height / 2);
 
 		this.orientationLocked = false;
+		this.brightness = 100;
 	}
 
 	public async screenshot(): Promise<Blob> {
@@ -166,20 +172,79 @@ export class Display {
 		return canvas;
 	}
 
-	public enterFullscreen() {
-		if (!this.isFullscreen()) {
-			this.viewport.requestFullscreen({ navigationUI: "hide" });
+	/**
+	 * Brightness of everything on screen, as a percentage of normal: 100 leaves it
+	 * alone, less darkens, more lifts. Applied as a css filter on the viewport, so
+	 * it costs nothing per frame and covers every layer at once - no renderer has
+	 * to know about it. Clamped to a range that cannot make the game unplayable.
+	 */
+	public setBrightness(percentage: number): this {
+		const clamped = Math.min(Math.max(Number.isFinite(percentage) ? percentage : 100, MIN_BRIGHTNESS), MAX_BRIGHTNESS);
+
+		this.brightness = clamped;
+		this.viewport.style.filter = clamped === 100 ? "" : `brightness(${clamped / 100})`;
+
+		return this;
+	}
+
+	/** What the screen brightness is set to, as a percentage. */
+	public getBrightness(): number {
+		return this.brightness;
+	}
+
+	/**
+	 * Asks the browser for fullscreen, resolving to whether it is now in it.
+	 *
+	 * The browser is allowed to say no - `requestFullscreen` needs a real user
+	 * gesture behind it and rejects without one - so the refusal is caught here
+	 * rather than left to every caller. A rejected promise that nobody handles is
+	 * an unhandled error in the console, and asking for fullscreen at the wrong
+	 * moment is an ordinary thing to do, not a fault.
+	 */
+	public async enterFullscreen(): Promise<boolean> {
+		if (this.isFullscreen()) {
+			return true;
+		}
+
+		try {
+			await this.viewport.requestFullscreen({ navigationUI: "hide" });
+			return true;
+		} catch {
+			return false;
 		}
 	}
 
-	public exitFullscreen() {
-		if (this.isFullscreen()) {
-			document.exitFullscreen();
+	/** Leaves fullscreen, resolving to whether it is now out of it. Never rejects. */
+	public async exitFullscreen(): Promise<boolean> {
+		if (!this.isFullscreen()) {
+			return true;
+		}
+
+		try {
+			await document.exitFullscreen();
+			return true;
+		} catch {
+			return false;
 		}
 	}
 
 	public isFullscreen(): boolean {
 		return document.fullscreenElement === this.viewport;
+	}
+
+	/**
+	 * Called whenever the browser enters or leaves fullscreen, with what it is
+	 * now. Worth listening to even when nothing here asked: the player can leave
+	 * with Escape or the window chrome, and the browser does not tell whoever
+	 * requested it - so anything showing a fullscreen state has to follow the
+	 * browser rather than its own last instruction.
+	 */
+	public addFullscreenListener(onChange: (fullscreen: boolean) => void): () => void {
+		const listener = () => onChange(this.isFullscreen());
+
+		document.addEventListener("fullscreenchange", listener);
+
+		return () => document.removeEventListener("fullscreenchange", listener);
 	}
 
 	public lockPointer() {

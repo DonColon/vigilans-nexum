@@ -154,7 +154,7 @@ export class I18nService {
  * story - a browser-language default is stood up on first use so `i18n()` still
  * works with zero setup.
  */
-function getI18n(): I18nService {
+export function getI18n(): I18nService {
 	if (!ServiceRegistry.has(I18nService)) {
 		new I18nService();
 	}

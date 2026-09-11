@@ -30,6 +30,7 @@ export const UnitMenuRow = {
 	TRADE: "trade",
 	WAIT: "wait",
 	UNITS: "units",
+	OPTIONS: "options",
 	END_TURN: "end-turn",
 	USE: "use",
 	EQUIP: "equip",
@@ -54,6 +55,7 @@ const LABELS: Record<UnitMenuRow, () => string> = {
 	[UnitMenuRow.TRADE]: () => i18n("menu.trade"),
 	[UnitMenuRow.WAIT]: () => i18n("menu.wait"),
 	[UnitMenuRow.UNITS]: () => i18n("menu.units"),
+	[UnitMenuRow.OPTIONS]: () => i18n("menu.options"),
 	[UnitMenuRow.END_TURN]: () => i18n("menu.endTurn"),
 	[UnitMenuRow.USE]: () => i18n("menu.use"),
 	[UnitMenuRow.EQUIP]: () => i18n("menu.equip"),
@@ -124,11 +126,12 @@ export function unitCommandRows(unit: UnitData, commands: UnitCommands = {}): Un
 
 /**
  * The menu opened on a tile with nothing to pick up: the army-wide commands.
- * "Units" opens the army list, which changes nothing; "End Turn" comes last,
- * because it is the one row here that cannot be taken back.
+ * "Units" opens the army list and "Options" the settings, neither of which
+ * changes anything on the board; "End Turn" comes last, because it is the one
+ * row here that cannot be taken back.
  */
 export function globalCommandRequest(): Omit<MenuRequest, "anchor"> {
-	return { id: GLOBAL_MENU, ...toRequestRows([row(UnitMenuRow.UNITS), row(UnitMenuRow.END_TURN)]), width: GLOBAL_MENU_WIDTH };
+	return { id: GLOBAL_MENU, ...toRequestRows([row(UnitMenuRow.UNITS), row(UnitMenuRow.OPTIONS), row(UnitMenuRow.END_TURN)]), width: GLOBAL_MENU_WIDTH };
 }
 
 /** The unit command menu, tucked against the tile the unit stands on. */

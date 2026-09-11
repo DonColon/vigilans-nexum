@@ -9,13 +9,15 @@ import { forecastCommands } from "@/game/combat/commands/ForecastCommands";
 import { BattleAnimationComponent } from "@/game/combat/components/BattleAnimationComponent";
 import { CombatAnimationComponent } from "@/game/combat/components/CombatAnimationComponent";
 import { ForecastComponent } from "@/game/combat/components/ForecastComponent";
-import { battleAnimationSteps } from "@/game/combat/model/BattleAnimation";
+import { battleAnimationDuration, battleAnimationSteps } from "@/game/combat/model/BattleAnimation";
 import { resolveCombat } from "@/game/combat/model/BattleForecast";
 import { CombatSystem } from "@/game/combat/systems/CombatSystem";
 import { BattleAnimationSystem } from "@/game/combat/systems/BattleAnimationSystem";
 import { ForecastRenderSystem } from "@/game/combat/systems/ForecastRenderSystem";
 import { ForecastSystem } from "@/game/combat/systems/ForecastSystem";
 import { BattleAnimationState } from "@/game/combat/states/BattleAnimationState";
+import { OptionId } from "@/game/options/model/GameOptions";
+import { optionEnabled } from "@/game/options/GameSettings";
 import { ForecastState } from "@/game/combat/states/ForecastState";
 
 /**
@@ -133,6 +135,14 @@ export class CombatFeature extends BattleMapFeature {
 		attackerComponent.update(attackerAfter);
 		defenderComponent.update(defenderAfter);
 
+		const steps = battleAnimationSteps(armed.currentHP, defenderData.currentHP, outcome.strikes);
+
+		// With animations turned off the fight still goes through the animation
+		// state, just starting at the end of itself: the deaths, the pop and the
+		// `combat:resolved` that the move flow waits on all come from the one place
+		// they always did, and only the watching is skipped.
+		const elapsed = optionEnabled(OptionId.BATTLE_ANIMATIONS) ? 0 : battleAnimationDuration(steps);
+
 		this.stateManager.getState(BattleAnimationState).request({
 			attackerId: event.attackerId,
 			defenderId: event.defenderId,
@@ -142,8 +152,8 @@ export class CombatFeature extends BattleMapFeature {
 			defenderRow: defenderTile.row,
 			startAttackerHp: armed.currentHP,
 			startDefenderHp: defenderData.currentHP,
-			steps: battleAnimationSteps(armed.currentHP, defenderData.currentHP, outcome.strikes),
-			elapsed: 0,
+			steps,
+			elapsed,
 			attackerDefeated: outcome.attackerDefeated,
 			defenderDefeated: outcome.defenderDefeated
 		});
