@@ -7,6 +7,7 @@
 	"class": "swordsman",
 	"level": 1,
 	"weapon": "bronze-sword",
+	"movement": 99,
 	"inventory": ["bronze-sword", "iron-sword", "iron-blade", "vulnerary"],
 	"commander": true,
 	"stats": {

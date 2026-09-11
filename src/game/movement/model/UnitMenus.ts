@@ -24,6 +24,7 @@ export const ITEM_ACTION_MENU_GAP = 4;
  */
 export const UnitMenuRow = {
 	ATTACK: "attack",
+	VISIT: "visit",
 	TALK: "talk",
 	ITEMS: "items",
 	TRADE: "trade",
@@ -46,6 +47,7 @@ interface Row {
 /** The label of every row, resolved fresh so a locale switch is picked up. */
 const LABELS: Record<UnitMenuRow, () => string> = {
 	[UnitMenuRow.ATTACK]: () => i18n("menu.attack"),
+	[UnitMenuRow.VISIT]: () => i18n("menu.visit"),
 	[UnitMenuRow.TALK]: () => i18n("menu.talk"),
 	[UnitMenuRow.ITEMS]: () => i18n("menu.items"),
 	[UnitMenuRow.TRADE]: () => i18n("menu.trade"),
@@ -75,6 +77,8 @@ function toRequestRows(rows: readonly Row[]): { items: string[]; ids: string[] }
 export interface UnitCommands {
 	/** Something is in reach of a weapon it carries. */
 	canAttack?: boolean;
+	/** It is standing beside the door of a house nobody has called on yet. */
+	canVisit?: boolean;
 	/** Someone beside it has a conversation left to have. */
 	canTalk?: boolean;
 	/** An ally is standing next to it. */
@@ -83,7 +87,8 @@ export interface UnitCommands {
 
 /**
  * The rows of the unit command menu, in Fire Emblem's order: "Attack" when
- * something is in reach, "Talk" when someone beside it has something to say,
+ * something is in reach, "Visit" when it is standing beside the door of a house
+ * nobody has called on, "Talk" when someone beside it has something to say,
  * "Items" when the unit carries anything, "Trade" when an ally is standing next
  * to it, then always "Wait".
  */
@@ -92,6 +97,10 @@ export function unitCommandRows(unit: UnitData, commands: UnitCommands = {}): Un
 
 	if (commands.canAttack) {
 		rows.push(UnitMenuRow.ATTACK);
+	}
+
+	if (commands.canVisit) {
+		rows.push(UnitMenuRow.VISIT);
 	}
 
 	if (commands.canTalk) {

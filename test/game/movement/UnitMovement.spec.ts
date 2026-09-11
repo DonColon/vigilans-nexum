@@ -51,6 +51,9 @@ suite("Unit Movement Test Suite", () => {
 	// All plain, big enough to hold the deployment (Dardan 4,10 - Hasan 4,14).
 	const sketch = new Array(16).fill(".".repeat(8));
 
+	/** Tiles the player's units walk in this suite - short enough to leave the map corners out of reach. */
+	const TEST_MOVEMENT = 5;
+
 	let units: UnitsFeature;
 	let ui: UIFeature;
 	let movement: MovementFeature;
@@ -103,6 +106,15 @@ suite("Unit Movement Test Suite", () => {
 
 		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
 		eventSystem.processQueue();
+
+		// The move flow is what is under test here, not how far anybody's sheet says
+		// they walk: half of this suite is about what happens *off* a unit's range,
+		// which needs a range the 8x16 map is bigger than. Pinned so editing a unit
+		// sheet cannot quietly delete those cases by putting the whole map in reach.
+		for (const id of ["dardan", "elira"]) {
+			const component = unit(id).getComponent(UnitComponent);
+			component.update({ ...component.read(), movement: TEST_MOVEMENT });
+		}
 	});
 
 	afterEach(() => {

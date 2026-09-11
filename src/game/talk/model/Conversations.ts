@@ -1,5 +1,6 @@
 import { GameError } from "@/core/GameError";
 import { JsonSchema } from "@/core/ecs/JsonSchema";
+import { LocalizedText, localizedText } from "@/core/i18n/LocalizedText";
 import { DialogRequest } from "@/game/ui/states/DialogState";
 import { DialogSide } from "@/game/ui/model/UILayout";
 
@@ -14,8 +15,8 @@ import { DialogSide } from "@/game/ui/model/UILayout";
  * string table and makes a missing translation visible in the same file.
  */
 
-/** One page of script, in every language it has been written in, keyed by locale. */
-export type LocalizedText = Record<string, string>;
+/** Re-exported so a caller already reading a page off this module has one import path for its text. */
+export type { LocalizedText };
 
 /** A page as authored: who is speaking, and what they say. */
 export interface ConversationPageDocument extends JsonSchema {
@@ -128,7 +129,7 @@ export function partnersOf(conversations: readonly Conversation[], unitId: strin
  * rather than showing an empty box.
  */
 export function pageText(page: ConversationPageDocument, locale: string, fallbackLocale: string): string {
-	return page.text[locale] ?? page.text[fallbackLocale] ?? Object.values(page.text)[0] ?? "";
+	return localizedText(page.text, locale, fallbackLocale);
 }
 
 /**

@@ -6,6 +6,7 @@ import { TileMapComponent } from "@/game/map/components/TileMapComponent";
 import { cancelCommands } from "@/game/map/commands/CancelCommand";
 import { confirmCommands } from "@/game/map/commands/ConfirmCommand";
 import { moveCursorCommands } from "@/game/map/commands/MoveCursorCommand";
+import { threatCommands } from "@/game/map/commands/ThreatCommand";
 import { MapState } from "@/game/map/states/MapState";
 import { CursorRenderSystem } from "@/game/map/systems/CursorRenderSystem";
 import { TileInfoRenderSystem } from "@/game/map/systems/TileInfoRenderSystem";
@@ -24,7 +25,7 @@ export class MapFeature extends GameFeature {
 			states: [MapState],
 			// Registered here, allowed by the MapState: the feature owns the
 			// instances, the state decides when the player may trigger them.
-			commands: [...moveCursorCommands, ...confirmCommands, ...cancelCommands],
+			commands: [...moveCursorCommands, ...confirmCommands, ...cancelCommands, ...threatCommands],
 			systems: [
 				// The cursor transform has to be up to date before the sync phase
 				// resolves the transform hierarchy for this frame.
@@ -33,7 +34,10 @@ export class MapFeature extends GameFeature {
 				// the flat terrain colours first, the tileset art over them, the
 				// cursor on top of both.
 				{ system: GridRenderSystem, priority: 10 },
-				{ system: TileMapRenderSystem, priority: 15 },
+				// 14 rather than 15: it leaves the slot right above the terrain art
+				// free for the enemy-range overlay (ThreatRenderSystem), which has to
+				// land between the map and the move overlay (16).
+				{ system: TileMapRenderSystem, priority: 14 },
 				{ system: CursorRenderSystem, priority: 20 },
 				// On the "ui" layer above UIRenderSystem (50), which owns and clears
 				// it - the corner readout stays legible over an open menu.

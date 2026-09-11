@@ -88,6 +88,13 @@ const assetManifest: AssetManifest = {
 				type: "json",
 				url: "/data/units/besnik.unit.json"
 			},
+			// The houses on the map, who is in and what they hand over - see
+			// src/game/visit.
+			{
+				id: "houses-skirmish",
+				type: "json",
+				url: "/data/houses/skirmish.houses.json"
+			},
 			// Who may talk to whom, and the script they speak - see src/game/talk.
 			{
 				id: "conversations-skirmish",

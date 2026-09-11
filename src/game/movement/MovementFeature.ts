@@ -10,7 +10,9 @@ import {
 	TalkFinishedEvent,
 	TileConfirmedEvent,
 	TradeClosedEvent,
-	UnitMovedEvent
+	UnitMovedEvent,
+	VisitCancelledEvent,
+	VisitFinishedEvent
 } from "@/game.events";
 import { BattleMapFeature } from "@/game/map/BattleMapFeature";
 import { GridData } from "@/game/map/components/GridComponent";
@@ -44,6 +46,9 @@ import { CombatSystem } from "@/game/combat/systems/CombatSystem";
 import { TalkComponent } from "@/game/talk/components/TalkComponent";
 import { TalkSystem } from "@/game/talk/systems/TalkSystem";
 import { MenuRequest, MenuState } from "@/game/ui/states/MenuState";
+import { VisitComponent } from "@/game/visit/components/VisitComponent";
+import { House } from "@/game/visit/model/Houses";
+import { VisitSystem } from "@/game/visit/systems/VisitSystem";
 
 /**
  * The Fire Emblem move flow, wired to the map's `map:*` events on top of the
@@ -67,11 +72,14 @@ import { MenuRequest, MenuState } from "@/game/ui/states/MenuState";
  *    conversation the scenario wrote for the pair - moving the map cursor
  *    between them first when several are in reach. It only shows when someone
  *    beside the unit still has something to say.
+ *  - "Visit" hands off to the visit feature (`visit:requested`), which plays what
+ *    the villager has to say and shuts the door behind the unit. It only shows
+ *    when the unit is standing beside the door of a house nobody has called on.
  *
- * Only some of those commands finish the unit's turn: "Wait", a used item and a
- * resolved fight all spend it (`unit:acted`, the token greys out). Talking,
- * trading, equipping, unequipping and dropping are free - the command menu comes
- * back and the unit still has its action.
+ * Only some of those commands finish the unit's turn: "Wait", a used item, a
+ * resolved fight and a visited house all spend it (`unit:acted`, the token greys
+ * out). Talking, trading, equipping, unequipping and dropping are free - the
+ * command menu comes back and the unit still has its action.
  *  - Confirm off the range or `map:cancelled` sets it back down without moving.
  *  - Confirm on a tile with nothing to pick up opens the global command menu
  *    ("End Turn" -> `turn:end`) next to the cursor.
@@ -118,6 +126,8 @@ export class MovementFeature extends BattleMapFeature {
 		this.subscribe("trade:closed", (event) => this.onTradeClosed(event));
 		this.subscribe("talk:finished", (event) => this.onTalkFinished(event));
 		this.subscribe("talk:cancelled", (event) => this.onTalkCancelled(event));
+		this.subscribe("visit:finished", (event) => this.onVisitFinished(event));
+		this.subscribe("visit:cancelled", (event) => this.onVisitCancelled(event));
 	}
 
 	protected onUninstall(): void {
@@ -254,6 +264,7 @@ export class MovementFeature extends BattleMapFeature {
 
 		const commands = {
 			canAttack: this.attackTargets(mover).length > 0,
+			canVisit: this.house(mover) !== null,
 			canTalk: this.talkPartner(mover) !== null,
 			canTrade: this.tradePartners(mover).length > 0
 		};
@@ -274,6 +285,21 @@ export class MovementFeature extends BattleMapFeature {
 		}
 
 		return TalkSystem.available(talk.getComponent(TalkComponent).read(), this.units(), mover)?.partner ?? null;
+	}
+
+	/**
+	 * The house this unit is standing beside and could still knock at, or null. The
+	 * houses are the visit feature's, but the lookup over them is pure - the same
+	 * way "Attack" asks CombatSystem what is in reach.
+	 */
+	private house(mover: Entity): House | null {
+		const visit = VisitSystem.inWorld(this.world);
+
+		if (visit === null) {
+			return null;
+		}
+
+		return VisitSystem.available(visit.getComponent(VisitComponent).read(), mover);
 	}
 
 	/** Every ally standing next to this unit - the ones it could trade packs with. */
@@ -426,6 +452,19 @@ export class MovementFeature extends BattleMapFeature {
 			return;
 		}
 
+		if (event.row === UnitMenuRow.VISIT) {
+			const house = this.house(mover);
+
+			if (house !== null) {
+				// The visit feature takes it from here - it plays what the villager has
+				// to say and shuts the door behind the unit.
+				this.closeOpenMenu();
+				this.events.dispatch("visit:requested", { unitId: mover.getComponent(UnitComponent).read().id, houseId: house.id });
+			}
+
+			return;
+		}
+
 		if (event.row === UnitMenuRow.TALK) {
 			const partner = this.talkPartner(mover);
 
@@ -495,6 +534,24 @@ export class MovementFeature extends BattleMapFeature {
 
 	/** The player backed out of choosing who to talk to - nothing happened, so put the menu back. */
 	private onTalkCancelled(event: TalkCancelledEvent): void {
+		this.reopenCommandMenu(event.unitId);
+	}
+
+	/**
+	 * The house was called on. Unlike talking, visiting is the unit's action for
+	 * the turn, Fire Emblem style - it knocked, it was handed something, it is
+	 * done - so it is spent the same way "Wait" spends it.
+	 */
+	private onVisitFinished(event: VisitFinishedEvent): void {
+		const mover = UnitSystem.byId(this.units(), event.unitId);
+
+		if (mover !== null && mover.hasComponent(PendingMoveComponent)) {
+			this.spendMover(mover);
+		}
+	}
+
+	/** Nobody was in after all - nothing happened, so put the command menu back. */
+	private onVisitCancelled(event: VisitCancelledEvent): void {
 		this.reopenCommandMenu(event.unitId);
 	}
 

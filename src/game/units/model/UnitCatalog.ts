@@ -190,6 +190,23 @@ export function getUnitClass(id: string): UnitClassData {
 	return { id, ...unitClass, weaponTypes };
 }
 
+/**
+ * The name the catalogs give an id, whichever of them it is in - for a notice
+ * about an item that is in neither a pack nor the map, and so has no resolved
+ * entry to read a name off. Falls back to the id itself for an unknown one.
+ */
+export function catalogName(id: string): string {
+	if (isCatalogWeapon(id)) {
+		return getWeapon(id).name;
+	}
+
+	if (isCatalogItem(id)) {
+		return getItem(id).name;
+	}
+
+	return id;
+}
+
 /** Whether the catalogs know this id as a weapon - what tells a pack entry's kind. */
 export function isCatalogWeapon(id: string): boolean {
 	return catalog("weapons")[id] !== undefined;

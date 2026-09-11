@@ -6,5 +6,8 @@ export type { LocaleParams, LocaleMessages, RawLocaleCatalog } from "@/core/i18n
 
 export { loadLocaleCatalog } from "@/core/i18n/LocaleCatalog";
 
+export { localizedText } from "@/core/i18n/LocalizedText";
+export type { LocalizedText } from "@/core/i18n/LocalizedText";
+
 export { validateLocaleCatalog, assertLocaleCatalog } from "@/core/i18n/LocaleValidation";
 export type { LocaleValidationResult, LocaleValidationIssue, LocaleIssueKind } from "@/core/i18n/LocaleValidation";

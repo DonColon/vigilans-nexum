@@ -11,9 +11,10 @@ import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { DialogComponent, DialogData } from "@/game/ui/components/DialogComponent";
 import { MenuComponent, MenuData } from "@/game/ui/components/MenuComponent";
+import { PopupComponent, PopupData } from "@/game/ui/components/PopupComponent";
 import { BADGE_DIAMETER, drawBadge, drawDivider, drawMenuHighlight, drawPanel, drawText, uiAssetsReady } from "@/game/ui/model/UIPanel";
 import { countWords, revealedWordCount, splitWords, wrapText } from "@/game/ui/model/TextReveal";
-import { dialogBox, menuHeight } from "@/game/ui/model/UILayout";
+import { dialogBox, menuHeight, popupBox } from "@/game/ui/model/UILayout";
 import { UITheme } from "@/game/ui/model/UITheme";
 
 /**
@@ -40,7 +41,8 @@ export class UIRenderSystem extends RenderSystem {
 	public initialize(): void {
 		this.queries = {
 			dialogs: new Query({ allowlist: [DialogComponent, TransformComponent] }),
-			menus: new Query({ allowlist: [MenuComponent, TransformComponent] })
+			menus: new Query({ allowlist: [MenuComponent, TransformComponent] }),
+			popups: new Query({ allowlist: [PopupComponent, TransformComponent] })
 		};
 
 		this.blink = 0;
@@ -52,8 +54,9 @@ export class UIRenderSystem extends RenderSystem {
 
 		const menus = this.queries.menus.getResult();
 		const dialog = this.queries.dialogs.getSingleResult();
+		const popup = this.queries.popups.getSingleResult();
 
-		if ((menus.length === 0 && dialog === null) || !uiAssetsReady(this.assetStorage)) {
+		if ((menus.length === 0 && dialog === null && popup === null) || !uiAssetsReady(this.assetStorage)) {
 			return;
 		}
 
@@ -68,6 +71,12 @@ export class UIRenderSystem extends RenderSystem {
 		if (dialog !== null) {
 			const position = dialog.getComponent(TransformComponent).read();
 			this.renderDialog(graphics, dialog.getComponent(DialogComponent).read(), position.x, position.y);
+		}
+
+		// Last, so a notice lands over whatever opened it.
+		if (popup !== null) {
+			const position = popup.getComponent(TransformComponent).read();
+			this.renderPopup(graphics, popup.getComponent(PopupComponent).read(), position.x, position.y);
 		}
 	}
 
@@ -123,6 +132,35 @@ export class UIRenderSystem extends RenderSystem {
 		if (showChevron) {
 			const glyph = data.pageIndex < data.pages.length - 1 ? "▼" : "■";
 			this.label(graphics, glyph, x + box.getWidth() - UITheme.padding, y + box.getHeight() - UITheme.padding, UITheme.name, UITheme.hint, TextAlign.RIGHT);
+		}
+	}
+
+	/**
+	 * A notice: a heading and its lines, every one of them centred, with the
+	 * blinking acknowledge mark in the corner. No reveal - a popup is a single
+	 * short statement and drip-feeding it would only make it slower to read.
+	 */
+	private renderPopup(graphics: Graphics, data: PopupData, x: number, y: number): void {
+		const hasTitle = data.title.length > 0;
+		const size = popupBox(this.display.getViewportDimension(), data.lines.length, hasTitle);
+		const box = new Rectangle(x, y, size.getWidth(), size.getHeight());
+
+		drawPanel(graphics, this.assetStorage, box);
+
+		const centreX = x + box.getWidth() / 2;
+		let slotTop = y + UITheme.padding;
+
+		if (hasTitle) {
+			this.label(graphics, data.title, centreX, slotTop + UITheme.lineHeight / 2, UITheme.name, UITheme.speaker, TextAlign.CENTER);
+			slotTop += UITheme.lineHeight;
+		}
+
+		for (const [index, line] of data.lines.entries()) {
+			this.label(graphics, line, centreX, slotTop + index * UITheme.lineHeight + UITheme.lineHeight / 2, UITheme.body, UITheme.text, TextAlign.CENTER);
+		}
+
+		if (Math.floor(this.blink / 500) % 2 === 0) {
+			this.label(graphics, "■", x + box.getWidth() - UITheme.padding, y + box.getHeight() - UITheme.padding / 2, UITheme.name, UITheme.hint, TextAlign.RIGHT);
 		}
 	}
 

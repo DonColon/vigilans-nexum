@@ -32,6 +32,11 @@ export interface DialogClosedEvent extends GameEvent {
 	dialog: string;
 }
 
+/** A notice was acknowledged and closed. */
+export interface PopupClosedEvent extends GameEvent {
+	popup: string;
+}
+
 /** The player pressed the cancel button on a battle map (Fire Emblem's B). */
 export type TileCancelledEvent = GameEvent;
 
@@ -168,6 +173,55 @@ export interface TalkFinishedEvent extends GameEvent {
 	conversationId: string;
 }
 
+/** Hand this catalog item to this unit, putting it in the army convoy if the pack is full. */
+export interface ConvoyRequestedEvent extends GameEvent {
+	unitId: string;
+	itemId: string;
+}
+
+/**
+ * The item has been handed over: it is in the pack, or something is in the
+ * convoy to make room for it.
+ */
+export interface ConvoyDeliveredEvent extends GameEvent {
+	unitId: string;
+	/** Catalog id of what was handed over, empty when the id was in neither catalog. */
+	itemId: string;
+	/** Catalog id of what went to the convoy - the incoming item itself, one the unit gave up, or empty when the pack had room. */
+	storedId: string;
+}
+
+/** The player chose "Visit" on the house their unit is standing on - the villager should speak. */
+export interface VisitRequestedEvent extends GameEvent {
+	unitId: string;
+	houseId: string;
+}
+
+/** Nobody was in after all - the visit never happened, so the unit still has its turn. */
+export interface VisitCancelledEvent extends GameEvent {
+	unitId: string;
+}
+
+/** A house was called on. The door has shut and anything handed over is already in the pack. */
+export interface VisitFinishedEvent extends GameEvent {
+	unitId: string;
+	houseId: string;
+	/** Catalog id of what was handed over, empty when the house only had words or the pack was full. */
+	itemId: string;
+}
+
+/** The player asked for the army-wide enemy-range overlay to be switched on or off. */
+export type MapThreatToggledEvent = GameEvent;
+
+/** The enemy-range overlay went up. `unitIds` are the enemies it covers; `all` marks the army-wide one. */
+export interface ThreatShownEvent extends GameEvent {
+	unitIds: string[];
+	all: boolean;
+}
+
+/** The enemy-range overlay came back down. */
+export type ThreatClearedEvent = GameEvent;
+
 /** A request to end the current player turn (from the global command menu). */
 export type TurnEndEvent = GameEvent;
 
@@ -182,9 +236,11 @@ declare module "@/core/events/GameEvents" {
 		"map:cancelled": TileCancelledEvent;
 		"map:ready": MapReadyEvent;
 		"map:closed": MapClosedEvent;
+		"map:threatToggled": MapThreatToggledEvent;
 		"ui:menuConfirmed": MenuConfirmedEvent;
 		"ui:menuCancelled": MenuCancelledEvent;
 		"ui:dialogClosed": DialogClosedEvent;
+		"ui:popupClosed": PopupClosedEvent;
 		"unit:selected": UnitSelectedEvent;
 		"unit:moved": UnitMovedEvent;
 		"unit:deselected": UnitDeselectedEvent;
@@ -205,6 +261,13 @@ declare module "@/core/events/GameEvents" {
 		"talk:confirmed": TalkConfirmedEvent;
 		"talk:cancelled": TalkCancelledEvent;
 		"talk:finished": TalkFinishedEvent;
+		"threat:shown": ThreatShownEvent;
+		"threat:cleared": ThreatClearedEvent;
+		"convoy:requested": ConvoyRequestedEvent;
+		"convoy:delivered": ConvoyDeliveredEvent;
+		"visit:requested": VisitRequestedEvent;
+		"visit:cancelled": VisitCancelledEvent;
+		"visit:finished": VisitFinishedEvent;
 		"turn:end": TurnEndEvent;
 		"turn:changed": TurnChangedEvent;
 	}

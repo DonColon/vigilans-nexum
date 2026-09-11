@@ -46,11 +46,12 @@ export const InventoryKind = {
 } as const;
 
 /**
- * Slots in a unit's pack. Fire Emblem's five: a unit carries at most this many
- * weapons and items, and the trade screen shows exactly this many rows a side,
- * so a free slot is somewhere an item can be put down.
+ * Slots in a unit's pack: a unit carries at most this many weapons and items,
+ * and the trade screen shows exactly this many rows a side, so a free slot is
+ * somewhere an item can be put down. Anything a unit is given once all eight are
+ * taken goes to the army convoy instead - see src/game/convoy.
  */
-export const INVENTORY_SIZE = 5;
+export const INVENTORY_SIZE = 8;
 
 /**
  * One line of a unit's pack, resolved from the catalogs. Weapons carry a
@@ -97,6 +98,12 @@ export interface UnitDocument {
 	 * just the equipped weapon.
 	 */
 	inventory?: string[];
+	/**
+	 * Tiles of movement, overriding what the class grants. For the character who
+	 * is meant to be quicker (or slower) than the rest of their class; left out,
+	 * the class decides.
+	 */
+	movement?: number;
 	/** Marks the army's leader - the cursor starts on this unit at the top of a battle. */
 	commander?: boolean;
 	stats: UnitStats;
@@ -117,7 +124,7 @@ export interface UnitData extends JsonSchema {
 	className: string;
 	classLabel: string;
 	level: number;
-	/** Base movement from the class, before per-tile terrain cost. */
+	/** Tiles of movement before per-tile terrain cost - the sheet's own, or the class's. */
 	movement: number;
 	/** The army's leader - see `CommanderComponent`. */
 	commander: boolean;
@@ -206,6 +213,10 @@ export function buildUnit(document: UnitDocument): UnitData {
 		throw new GameError(`Unit "${document.id}" needs a positive integer level, got ${document.level}`);
 	}
 
+	if (document.movement !== undefined && (!Number.isInteger(document.movement) || document.movement <= 0)) {
+		throw new GameError(`Unit "${document.id}" needs a positive integer movement, got ${document.movement}`);
+	}
+
 	const unitClass = getUnitClass(document.class);
 	const weapon = getWeapon(document.weapon);
 
@@ -235,7 +246,7 @@ export function buildUnit(document: UnitDocument): UnitData {
 		className: unitClass.id,
 		classLabel: unitClass.name,
 		level: document.level,
-		movement: unitClass.movement,
+		movement: document.movement ?? unitClass.movement,
 		commander: document.commander ?? false,
 		weaponTypes: [...unitClass.weaponTypes],
 		stats,

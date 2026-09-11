@@ -43,6 +43,26 @@ export function dialogBox(viewport: Dimension, side: DialogSide = DialogSide.BOT
 	return new Rectangle(x, y, width, height);
 }
 
+/** Width of a notice panel. Fixed: a popup says one short thing, and a box that resized around it would jump about. */
+export const POPUP_WIDTH = 520;
+
+/** Height a notice panel needs for its heading and lines. */
+export function popupHeight(lineCount: number, hasTitle: boolean): number {
+	return UITheme.padding * 2 + (hasTitle ? UITheme.lineHeight : 0) + lineCount * UITheme.lineHeight;
+}
+
+/**
+ * Where a notice sits: dead centre of the screen, sized to its lines. Fire
+ * Emblem puts its "you got an item" box in the middle and stops everything else
+ * until it is acknowledged, which is what the middle is for.
+ */
+export function popupBox(viewport: Dimension, lineCount: number, hasTitle: boolean): Rectangle {
+	const width = Math.min(POPUP_WIDTH, viewport.width - 2 * SCREEN_MARGIN);
+	const height = popupHeight(lineCount, hasTitle);
+
+	return new Rectangle(Math.round((viewport.width - width) / 2), Math.round((viewport.height - height) / 2), width, height);
+}
+
 /** Height a menu panel needs for its title and rows. */
 export function menuHeight(itemCount: number, hasTitle: boolean): number {
 	const rows = itemCount * UITheme.lineHeight;

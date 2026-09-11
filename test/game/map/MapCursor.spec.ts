@@ -14,6 +14,7 @@ import { KeyboardInput } from "@/core/input/keyboard/KeyboardInput";
 import { ServiceRegistry } from "@/core/service/ServiceRegistry";
 import { cancelCommands } from "@/game/map/commands/CancelCommand";
 import { confirmCommands } from "@/game/map/commands/ConfirmCommand";
+import { threatCommands } from "@/game/map/commands/ThreatCommand";
 import { MoveCursorDownCommand, MoveCursorLeftCommand, MoveCursorRightCommand, MoveCursorUpCommand, moveCursorCommands } from "@/game/map/commands/MoveCursorCommand";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
@@ -78,7 +79,7 @@ suite("Map Cursor Test Suite", () => {
 
 	// Allowed by MapState alongside the cursor commands; registered here so
 	// resetCommands() can resolve every command the state lists.
-	for (const commandType of [...confirmCommands, ...cancelCommands]) {
+	for (const commandType of [...confirmCommands, ...cancelCommands, ...threatCommands]) {
 		inputDevice.registerCommand(commandType);
 	}
 
@@ -116,7 +117,7 @@ suite("Map Cursor Test Suite", () => {
 	});
 
 	test("State lists the cursor commands the map system runs", () => {
-		expect(state.getCommands()).toHaveLength(moveCursorCommands.length + confirmCommands.length + cancelCommands.length);
+		expect(state.getCommands()).toHaveLength(moveCursorCommands.length + confirmCommands.length + cancelCommands.length + threatCommands.length);
 		expect(state.getCommands(MoveCursorRightCommand)).toStrictEqual([inputDevice.getCommand(MoveCursorRightCommand)]);
 	});
 

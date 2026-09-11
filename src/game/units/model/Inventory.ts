@@ -1,4 +1,5 @@
-import { InventoryEntry, InventoryKind, INVENTORY_SIZE, ItemData, UnitData } from "@/game/units/model/UnitData";
+import { isCatalogItem, isCatalogWeapon } from "@/game/units/model/UnitCatalog";
+import { InventoryEntry, InventoryKind, INVENTORY_SIZE, ItemData, resolveInventoryEntry, UnitData } from "@/game/units/model/UnitData";
 
 /**
  * Pure inventory edits over a resolved [[UnitData]], kept off the component the
@@ -259,4 +260,26 @@ export function tradeInventoryItems(left: UnitData, leftIndex: number, right: Un
 	}
 
 	return { left: { ...left, inventory: [...left.inventory, received(rightEntry, left)] }, right: dropInventoryItem(right, rightIndex) };
+}
+
+/** Whether the unit has a free slot - somewhere a gift could still go. */
+export function hasPackRoom(unit: UnitData): boolean {
+	return unit.inventory.length < INVENTORY_SIZE;
+}
+
+/**
+ * Puts a catalog weapon or item into the back of `unit`'s pack - what a village
+ * hands over. It arrives the way anything a unit is given arrives: never
+ * readied, and wieldable only when the holder's class trains in that weapon
+ * type. Returns `unit` unchanged when the id is in neither catalog or the pack
+ * is already full, so a caller can tell nothing was taken by comparing.
+ */
+export function giveInventoryItem(unit: UnitData, catalogId: string): UnitData {
+	if (!hasPackRoom(unit) || (!isCatalogWeapon(catalogId) && !isCatalogItem(catalogId))) {
+		return unit;
+	}
+
+	const entry = resolveInventoryEntry(catalogId, unit.weaponTypes, "");
+
+	return { ...unit, inventory: [...unit.inventory, received(entry, unit)] };
 }

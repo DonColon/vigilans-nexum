@@ -14,7 +14,7 @@ suite("Unit Data Test Suite", () => {
 		expect(dardan.name).toBe("Dardan Niveli");
 		expect(dardan.faction).toBe(UnitFaction.PLAYER);
 		expect(dardan.classLabel).toBe("Swordsman");
-		expect(dardan.movement).toBe(5);
+		expect(dardan.movement).toBe(99); // his sheet overrides the swordsman class
 		expect(dardan.weaponTypes).toContain(WeaponType.SWORD);
 		expect(dardan.weapon?.name).toBe("Bronze Sword");
 		expect(dardan.weapon?.minRange).toBe(1);
@@ -32,6 +32,21 @@ suite("Unit Data Test Suite", () => {
 		expect(hasan.weapon?.type).toBe(WeaponType.AXE);
 		expect(hasan.stats.strength).toBeGreaterThan(buildUnit(dardanDocument as UnitDocument).stats.strength);
 		expect(hasan.commander).toBe(false);
+	});
+
+	test("A sheet may set its own movement, and falls back to the class without one", () => {
+		// The class grants five; Dardan's sheet asks for more.
+		expect(getUnitClass("swordsman").movement).toBe(5);
+		expect(buildUnit(dardanDocument as UnitDocument).movement).toBe(99);
+
+		const { movement: _dropped, ...noOverride } = dardanDocument as UnitDocument;
+		expect(buildUnit(noOverride as UnitDocument).movement).toBe(5);
+	});
+
+	test("Movement that is not a positive whole number of tiles is rejected", () => {
+		for (const movement of [0, -3, 2.5]) {
+			expect(() => buildUnit({ ...(dardanDocument as UnitDocument), movement })).toThrow(/positive integer movement/);
+		}
 	});
 
 	test("Catalogs are looked up by id", () => {

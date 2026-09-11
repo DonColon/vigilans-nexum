@@ -13,6 +13,7 @@ import besnikDocument from "./src/assets/data/units/besnik.unit.json";
 import skirmishDeployment from "./src/assets/data/deployments/skirmish.deployment.json";
 import fantasyMap from "./src/assets/data/maps/fantasy.tilemap.json";
 import skirmishConversations from "./src/assets/data/conversations/skirmish.conversations.json";
+import skirmishHouses from "./src/assets/data/houses/skirmish.houses.json";
 
 new EventSystem({
 	history: {
@@ -45,6 +46,7 @@ assetStorage.setJson("unit-hasan", hasanDocument);
 assetStorage.setJson("unit-besnik", besnikDocument);
 assetStorage.setJson("map-fantasy", fantasyMap);
 assetStorage.setJson("conversations-skirmish", skirmishConversations);
+assetStorage.setJson("houses-skirmish", skirmishHouses);
 
 // Seeded once here as well, so a spec that calls buildUnit directly - without
 // ever going through the UnitsFeature - resolves its classes and weapons.

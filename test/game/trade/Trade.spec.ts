@@ -246,12 +246,18 @@ suite("Unit Trade Test Suite", () => {
 		expect(state()).toMatchObject({ phase: "trade", partnerId: "besnik" });
 	});
 
+	/** What a pack panel shows: the carried ids, then an empty slot for every one left over. */
+	const slotIds = (carried: string[]) => [...carried, ...new Array<null>(INVENTORY_SIZE - carried.length).fill(null)];
+
+	/** The same padding for a per-slot flag - an empty slot is never flagged. */
+	const slotFlags = (carried: boolean[]) => [...carried, ...new Array<boolean>(INVENTORY_SIZE - carried.length).fill(false)];
+
 	test("Confirming the partner opens both packs, a slot at a time and empty slots included", () => {
 		openPacks();
 
 		expect(state()).toMatchObject({ phase: "trade", side: TradeSide.UNIT, unitSlot: 0, partnerSlot: 0, heldSide: NOTHING_HELD });
-		expect(tradeSlots(sheet("dardan")).map((entry) => entry?.id ?? null)).toStrictEqual(["bronze-sword", "iron-sword", "iron-blade", "vulnerary", null]);
-		expect(tradeSlots(sheet("elira")).map((entry) => entry?.id ?? null)).toStrictEqual(["iron-axe", "bronze-axe", "concoction", null, null]);
+		expect(tradeSlots(sheet("dardan")).map((entry) => entry?.id ?? null)).toStrictEqual(slotIds(["bronze-sword", "iron-sword", "iron-blade", "vulnerary"]));
+		expect(tradeSlots(sheet("elira")).map((entry) => entry?.id ?? null)).toStrictEqual(slotIds(["iron-axe", "bronze-axe", "concoction"]));
 		expect(tradeSlots(sheet("elira"))).toHaveLength(INVENTORY_SIZE);
 	});
 
@@ -296,9 +302,12 @@ suite("Unit Trade Test Suite", () => {
 		confirmSlot(TradeSide.PARTNER, 1); // Elira's bronze axe
 		confirmSlot(TradeSide.UNIT, 4); // onto Dardan's free slot
 
-		// What the trade panels colour a slot by - his own consumables stay live.
-		expect(tradeSlots(sheet("dardan")).map((entry) => entry !== null && !isUsableEntry(entry))).toStrictEqual([false, false, false, false, true]);
-		expect(tradeSlots(sheet("elira")).map((entry) => entry !== null && !isUsableEntry(entry))).toStrictEqual([false, false, false, false, false]);
+		// What the trade panels colour a slot by - his own consumables stay live, and
+		// an empty slot is nobody's dead weight.
+		const greyed = (id: string) => tradeSlots(sheet(id)).map((entry) => entry !== null && !isUsableEntry(entry));
+
+		expect(greyed("dardan")).toStrictEqual(slotFlags([false, false, false, false, true]));
+		expect(greyed("elira")).toStrictEqual(slotFlags([false, false, false, false]));
 
 		// ... and the same rule reaches the Items menu, through the menu's own flags.
 		expect(itemsRequest(sheet("dardan"), { x: 0, y: 0 }).disabled).toStrictEqual([false, false, false, false, true]);
@@ -348,17 +357,19 @@ suite("Unit Trade Test Suite", () => {
 	test("A full pack has no empty slot, so putting an entry down on it swaps", () => {
 		const component = unit("elira").getComponent(UnitComponent);
 		const elira = component.read();
+		const last = INVENTORY_SIZE - 1;
 
-		// Fill Elira's pack to its five slots.
-		component.update({ ...elira, inventory: [...elira.inventory, { ...elira.inventory[2] }, { ...elira.inventory[2] }] });
+		// Fill Elira's pack to its every slot, padding with copies of her concoction.
+		const padding = new Array(INVENTORY_SIZE - elira.inventory.length).fill(null).map(() => ({ ...elira.inventory[2] }));
+		component.update({ ...elira, inventory: [...elira.inventory, ...padding] });
 
 		openPacks();
 
-		confirmSlot(TradeSide.UNIT, 4); // Dardan's own empty slot has nothing to pick up
+		confirmSlot(TradeSide.UNIT, last); // Dardan's own empty slot has nothing to pick up
 		expect(state().heldSide).toBe(NOTHING_HELD);
 
 		confirmSlot(TradeSide.UNIT, 3); // the vulnerary, in hand
-		confirmSlot(TradeSide.PARTNER, 4); // Elira's last slot is taken, so this is a swap
+		confirmSlot(TradeSide.PARTNER, last); // Elira's last slot is taken, so this is a swap
 
 		expect(ids("dardan")).toStrictEqual(["bronze-sword", "iron-sword", "iron-blade", "concoction"]);
 		expect(sheet("elira").inventory).toHaveLength(INVENTORY_SIZE);

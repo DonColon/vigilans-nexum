@@ -10,7 +10,7 @@ import {
 	unequipInventoryItem,
 	useHealingItem
 } from "@/game/units/model/Inventory";
-import { buildUnit, getItem, UnitData, UnitDocument } from "@/game/units/model/UnitData";
+import { buildUnit, getItem, INVENTORY_SIZE, UnitData, UnitDocument } from "@/game/units/model/UnitData";
 import dardanDocument from "@/assets/data/units/dardan.unit.json";
 import eliraDocument from "@/assets/data/units/elira.unit.json";
 
@@ -205,18 +205,22 @@ suite("Inventory Trade Test Suite", () => {
 		const left = dardan();
 		const right = elira();
 
-		expect(tradeInventoryItems(left, 4, right, 4)).toStrictEqual({ left, right }); // two empty slots
-		expect(tradeInventoryItems(left, 5, right, 0)).toStrictEqual({ left, right }); // outside the pack
+		const empty = INVENTORY_SIZE - 1; // both packs are short of full, so the last slot is free
+
+		expect(tradeInventoryItems(left, empty, right, empty)).toStrictEqual({ left, right }); // two empty slots
+		expect(tradeInventoryItems(left, INVENTORY_SIZE, right, 0)).toStrictEqual({ left, right }); // outside the pack
 		expect(tradeInventoryItems(left, -1, right, 0)).toStrictEqual({ left, right });
 		expect(tradeInventoryItems(left, 0, left, 1)).toStrictEqual({ left, right: left }); // the same unit
 
 		// A full pack has no empty slot, so putting an entry down on one of its
-		// rows is always a straight swap - it never has to grow past the five.
-		const full = buildUnit({ ...(eliraDocument as UnitDocument), inventory: ["iron-axe", "bronze-axe", "concoction", "vulnerary", "elixir"] });
+		// rows is always a straight swap - it never has to grow past the eight.
+		const filler = new Array(INVENTORY_SIZE - 5).fill("vulnerary");
+		const full = buildUnit({ ...(eliraDocument as UnitDocument), inventory: ["iron-axe", "bronze-axe", "concoction", "vulnerary", "elixir", ...filler] });
 		const swapped = tradeInventoryItems(left, 3, full, 4);
 
+		expect(full.inventory).toHaveLength(INVENTORY_SIZE);
 		expect(ids(swapped.left)).toStrictEqual(["bronze-sword", "iron-sword", "iron-blade", "elixir"]);
-		expect(ids(swapped.right)).toStrictEqual(["iron-axe", "bronze-axe", "concoction", "vulnerary", "vulnerary"]);
+		expect(ids(swapped.right)).toStrictEqual(["iron-axe", "bronze-axe", "concoction", "vulnerary", "vulnerary", ...filler]);
 	});
 
 	test("The source units are left untouched", () => {
@@ -246,12 +250,17 @@ suite("Inventory Trade Test Suite", () => {
 		const unit = dardan();
 
 		expect(swapInventorySlots(unit, 2, 2)).toBe(unit); // the same slot
-		expect(swapInventorySlots(unit, 4, 4)).toBe(unit); // two empty slots
-		expect(swapInventorySlots(unit, 0, 5)).toBe(unit); // outside the pack
+		expect(swapInventorySlots(unit, 4, INVENTORY_SIZE - 1)).toBe(unit); // two empty slots
+		expect(swapInventorySlots(unit, 0, INVENTORY_SIZE)).toBe(unit); // outside the pack
 		expect(swapInventorySlots(unit, 3, 4)).toBe(unit); // the last entry, moved to the back it is already at
 	});
 
-	test("A pack sheet cannot be authored past the five slots", () => {
-		expect(() => buildUnit({ ...(dardanDocument as UnitDocument), inventory: ["bronze-sword", "iron-sword", "iron-blade", "vulnerary", "elixir", "concoction"] })).toThrow(/a pack holds 5/);
+	test("A pack sheet cannot be authored past its slots", () => {
+		// His readied weapon is added to the front when a sheet leaves it out, so a
+		// pack authored right up to the ceiling has to name it to stay there.
+		const pack = ["bronze-sword", ...new Array(INVENTORY_SIZE - 1).fill("vulnerary")];
+
+		expect(buildUnit({ ...(dardanDocument as UnitDocument), inventory: pack }).inventory).toHaveLength(INVENTORY_SIZE);
+		expect(() => buildUnit({ ...(dardanDocument as UnitDocument), inventory: [...pack, "elixir"] })).toThrow(new RegExp(`a pack holds ${INVENTORY_SIZE}`));
 	});
 });

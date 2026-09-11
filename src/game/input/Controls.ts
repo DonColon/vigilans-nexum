@@ -37,3 +37,15 @@ export function confirmBinding(): InputBinding {
 export function cancelBinding(): InputBinding {
 	return pressed(CANCEL);
 }
+
+/**
+ * "Show me what the enemy covers" - Radiant Dawn's enemy-range toggle, on its
+ * own button rather than a menu row so it can be flicked on and off while the
+ * cursor is being moved.
+ */
+export const THREAT: InputSet = { keys: [KeyboardInput.KEY_R, KeyboardInput.KEY_E], buttons: [GamepadInput.RB] };
+
+/** Keys and buttons that mean "show every enemy's range". */
+export function threatBinding(): InputBinding {
+	return pressed(THREAT);
+}

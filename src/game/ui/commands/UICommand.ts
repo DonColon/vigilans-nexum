@@ -31,3 +31,16 @@ export abstract class DialogCommand extends GameCommand<DialogCommandContext> {}
  * confirming a row, backing out. Listed by MenuState, run by MenuSystem.
  */
 export abstract class MenuCommand extends GameCommand<MenuCommandContext> {}
+
+/** What a popup command is handed each tick. */
+export interface PopupCommandContext {
+	/** Entity carrying the open popup. */
+	popup: Entity;
+}
+
+/**
+ * Input the player can trigger while a notice is on screen. There is only one
+ * thing to do with a popup - acknowledge it - so this is the whole vocabulary.
+ * Listed by PopupState, run by PopupSystem.
+ */
+export abstract class PopupCommand extends GameCommand<PopupCommandContext> {}
