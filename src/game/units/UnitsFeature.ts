@@ -5,7 +5,6 @@ import { GameCoreService } from "@/core/service/GameCoreService";
 import { identityTransform, TransformComponent } from "@/core/ecs/components/TransformComponent";
 import { BattleMapFeature } from "@/game/map/BattleMapFeature";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
-import { UnitUsedItemEvent } from "@/game.events";
 import { CommanderComponent } from "@/game/units/components/CommanderComponent";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
 import { UnitPopComponent } from "@/game/units/components/UnitPopComponent";
@@ -64,7 +63,8 @@ export class UnitsFeature extends BattleMapFeature {
 
 		this.subscribe("map:ready", (event) => this.deploy(event.mapId));
 		this.subscribe("map:closed", () => this.withdraw());
-		this.subscribe("unit:usedItem", (event) => this.showHealed(event));
+		this.subscribe("unit:usedItem", (event) => this.showHealed(event.unitId, event.healed));
+		this.subscribe("staff:resolved", (event) => this.showHealed(event.targetId, event.healed));
 	}
 
 	protected onUninstall(): void {
@@ -129,22 +129,22 @@ export class UnitsFeature extends BattleMapFeature {
 	}
 
 	/**
-	 * A vulnerary went down - float the HP it put back over the unit in green,
-	 * the same way a fight floats the damage it took. `UnitPopSystem` ages the
-	 * label and takes it off again.
+	 * A vulnerary went down, or a staff was raised - float the HP it put back over
+	 * the unit in green, the same way a fight floats the damage it took.
+	 * `UnitPopSystem` ages the label and takes it off again.
 	 */
-	private showHealed(event: UnitUsedItemEvent): void {
-		if (event.healed <= 0) {
+	private showHealed(unitId: string, healed: number): void {
+		if (healed <= 0) {
 			return;
 		}
 
-		const unit = UnitSystem.byId(UnitSystem.inWorld(this.world), event.unitId);
+		const unit = UnitSystem.byId(UnitSystem.inWorld(this.world), unitId);
 
 		if (unit === null) {
 			return;
 		}
 
-		const pop = { text: healPopText(event.healed), kind: PopKind.HEAL, elapsed: 0, duration: POP_LIFETIME_MS };
+		const pop = { text: healPopText(healed), kind: PopKind.HEAL, elapsed: 0, duration: POP_LIFETIME_MS };
 
 		if (unit.hasComponent(UnitPopComponent)) {
 			unit.getComponent(UnitPopComponent).update(pop);

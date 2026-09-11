@@ -214,7 +214,7 @@ export class UnitRenderSystem extends MapRenderSystem {
 		}
 	}
 
-	/** A schematic sword or axe, drawn from a couple of strokes so no font is needed. */
+	/** A schematic sword, axe or staff, drawn from a couple of strokes so no font is needed. */
 	private renderGlyph(graphics: Graphics, weapon: WeaponType, centre: Vector2D, radius: number, color: Color): void {
 		graphics.strokeColor(UnitTheme.tokenOutline).lineStyle({ width: UnitTheme.glyphWidth + 2 });
 		this.glyphStrokes(graphics, weapon, centre, radius);
@@ -234,6 +234,14 @@ export class UnitRenderSystem extends MapRenderSystem {
 			graphics.drawLine(new Line(haft, y - radius * 0.44, x + radius * 0.5, y - radius * 0.24));
 			graphics.drawLine(new Line(x + radius * 0.5, y - radius * 0.24, x + radius * 0.32, y + radius * 0.14));
 			graphics.drawLine(new Line(x + radius * 0.32, y + radius * 0.14, haft, y - radius * 0.02));
+			return;
+		}
+
+		if (weapon === WeaponType.STAFF) {
+			// Staff: a shaft down the middle with a small orb capping it, so a healer
+			// reads at a glance as neither sword nor axe.
+			graphics.drawLine(new Line(x, y - radius * 0.3, x, y + radius * 0.55));
+			graphics.strokeCircle(new Circle(x, y - radius * 0.42, radius * 0.16));
 			return;
 		}
 

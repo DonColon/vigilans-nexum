@@ -2,6 +2,8 @@ import { Game } from "@/core/Game";
 import { gameConfiguration } from "@/game.config";
 import { CombatFeature } from "@/game/combat";
 import { ConvoyFeature } from "@/game/convoy";
+import { StaffFeature } from "@/game/staff";
+import { LocksFeature } from "@/game/locks";
 import { MapFeature } from "@/game/map";
 import { MovementFeature } from "@/game/movement";
 import { OptionsFeature } from "@/game/options";
@@ -30,6 +32,9 @@ game.install(new RosterFeature({ dependencies: [units] }));
 game.install(new OptionsFeature());
 // The battle forecast the "Attack" command opens; needs the units on the map.
 game.install(new CombatFeature({ dependencies: [units] }));
+// The staff list and target choice the "Staff" command opens; needs the units
+// on the map and the UI feature for the list.
+game.install(new StaffFeature({ dependencies: [units, ui] }));
 // The conversations the "Talk" command plays; needs the units on the map and
 // the UI feature for the textbox they are shown in.
 game.install(new TalkFeature({ dependencies: [units, ui] }));
@@ -44,6 +49,9 @@ game.install(convoy);
 // the top of the battle, needs the units to hand anything over to and the
 // convoy to catch what will not fit.
 game.install(new VisitFeature({ dependencies: [units, convoy] }));
+// The locked doors and chests the "Door" and "Chest" commands open: needs the
+// units carrying the keys and the convoy to catch a find that will not fit.
+game.install(new LocksFeature({ dependencies: [units, convoy] }));
 // Moving a unit needs the units on the map and the UI feature for its command
 // menus - the install order and the dependencies both say so.
 game.install(new MovementFeature({ dependencies: [units, ui] }));

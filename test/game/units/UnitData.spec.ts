@@ -65,7 +65,7 @@ suite("Unit Data Test Suite", () => {
 	test("A unit resolves its pack of weapons and items, one weapon readied", () => {
 		const dardan = buildUnit(dardanDocument as UnitDocument);
 
-		expect(dardan.inventory.map((entry) => entry.id)).toStrictEqual(["bronze-sword", "iron-sword", "iron-blade", "vulnerary"]);
+		expect(dardan.inventory.map((entry) => entry.id)).toStrictEqual(["bronze-sword", "iron-sword", "iron-blade", "vulnerary", "door-key", "chest-key"]);
 
 		const ironSword = dardan.inventory[1];
 		expect(ironSword.kind).toBe(InventoryKind.WEAPON);

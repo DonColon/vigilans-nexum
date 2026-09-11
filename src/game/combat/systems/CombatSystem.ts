@@ -2,7 +2,7 @@ import { GridData } from "@/game/map/components/GridComponent";
 import { GridPositionData } from "@/game/map/components/GridPositionComponent";
 import { GridSystem } from "@/game/map/systems/GridSystem";
 import { Terrain } from "@/game/map/model/Terrain";
-import { InventoryEntry, InventoryKind, UnitData, WeaponData } from "@/game/units/model/UnitData";
+import { InventoryEntry, InventoryKind, isStaff, UnitData, WeaponData } from "@/game/units/model/UnitData";
 import { weaponReaches } from "@/game/combat/model/CombatMath";
 import { BattleForecast, buildForecast } from "@/game/combat/model/BattleForecast";
 
@@ -20,9 +20,12 @@ export class CombatSystem {
 	/**
 	 * The weapons `unit` carries that it can wield and that reach a target
 	 * `range` tiles away - the choices offered in a forecast, readied one first.
+	 * A staff is never one of them: it reaches allies, not enemies.
 	 */
 	public static weaponsReaching(unit: UnitData, range: number): InventoryEntry[] {
-		const reaching = unit.inventory.filter((entry) => entry.kind === InventoryKind.WEAPON && entry.equippable && entry.weapon !== null && weaponReaches(entry.weapon, range));
+		const reaching = unit.inventory.filter(
+			(entry) => entry.kind === InventoryKind.WEAPON && entry.equippable && entry.weapon !== null && !isStaff(entry.weapon) && weaponReaches(entry.weapon, range)
+		);
 
 		return reaching.sort((first, second) => Number(second.equipped) - Number(first.equipped));
 	}

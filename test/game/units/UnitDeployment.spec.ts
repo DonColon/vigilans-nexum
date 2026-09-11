@@ -17,6 +17,7 @@ import { UnitComponent } from "@/game/units/components/UnitComponent";
 import { UnitSystem } from "@/game/units/systems/UnitSystem";
 import { UnitPopComponent } from "@/game/units/components/UnitPopComponent";
 import { POP_LIFETIME_MS, PopKind } from "@/game/units/model/UnitPop";
+import { NO_BOOST } from "@/game/units/model/UnitData";
 import { UnitTheme } from "@/game/units/model/UnitTheme";
 import { UnitPopSystem } from "@/game/units/systems/UnitPopSystem";
 import { UnitsFeature } from "@/game/units/UnitsFeature";
@@ -68,7 +69,7 @@ suite("Unit Deployment Test Suite", () => {
 		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
 		eventSystem.processQueue();
 
-		expect(units()).toHaveLength(4);
+		expect(units()).toHaveLength(5);
 
 		const dardan = UnitSystem.byId(units(), "dardan") as Entity;
 		expect(dardan.getComponent(GridPositionComponent).read()).toStrictEqual({ column: 4, row: 10 });
@@ -98,7 +99,7 @@ suite("Unit Deployment Test Suite", () => {
 	test("map:closed clears the units", () => {
 		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
 		eventSystem.processQueue();
-		expect(units()).toHaveLength(4);
+		expect(units()).toHaveLength(5);
 
 		eventSystem.dispatch("map:closed", {});
 		eventSystem.processQueue();
@@ -112,7 +113,7 @@ suite("Unit Deployment Test Suite", () => {
 		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
 		eventSystem.processQueue();
 
-		expect(units()).toHaveLength(4);
+		expect(units()).toHaveLength(5);
 	});
 
 	test("Using a healing item floats the restored HP over the unit in green", () => {
@@ -122,7 +123,7 @@ suite("Unit Deployment Test Suite", () => {
 		const dardan = UnitSystem.byId(units(), "dardan") as Entity;
 		expect(dardan.hasComponent(UnitPopComponent)).toBe(false);
 
-		eventSystem.dispatch("unit:usedItem", { unitId: "dardan", itemId: "vulnerary", healed: 10 });
+		eventSystem.dispatch("unit:usedItem", { unitId: "dardan", itemId: "vulnerary", healed: 10, gains: NO_BOOST });
 		eventSystem.processQueue();
 
 		expect(dardan.getComponent(UnitPopComponent).read()).toStrictEqual({ text: "+10", kind: PopKind.HEAL, elapsed: 0, duration: POP_LIFETIME_MS });
@@ -138,7 +139,7 @@ suite("Unit Deployment Test Suite", () => {
 		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
 		eventSystem.processQueue();
 
-		eventSystem.dispatch("unit:usedItem", { unitId: "dardan", itemId: "vulnerary", healed: 0 });
+		eventSystem.dispatch("unit:usedItem", { unitId: "dardan", itemId: "vulnerary", healed: 0, gains: NO_BOOST });
 		eventSystem.processQueue();
 
 		expect((UnitSystem.byId(units(), "dardan") as Entity).hasComponent(UnitPopComponent)).toBe(false);
@@ -148,7 +149,7 @@ suite("Unit Deployment Test Suite", () => {
 		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
 		eventSystem.processQueue();
 
-		eventSystem.dispatch("unit:usedItem", { unitId: "dardan", itemId: "vulnerary", healed: 4 });
+		eventSystem.dispatch("unit:usedItem", { unitId: "dardan", itemId: "vulnerary", healed: 4, gains: NO_BOOST });
 		eventSystem.processQueue();
 
 		const dardan = UnitSystem.byId(units(), "dardan") as Entity;

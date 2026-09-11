@@ -14,9 +14,16 @@ import { buildUnit, getItem, INVENTORY_SIZE, UnitData, UnitDocument } from "@/ga
 import dardanDocument from "@/assets/data/units/dardan.unit.json";
 import eliraDocument from "@/assets/data/units/elira.unit.json";
 
+/**
+ * Dardan's sheet also carries the fort's keys; these suites are about pack
+ * mechanics, so they work on his classic four slots and leave the keys off.
+ */
+const FOUR_SLOTS = ["bronze-sword", "iron-sword", "iron-blade", "vulnerary"];
+const fourSlotDardan = () => buildUnit({ ...(dardanDocument as UnitDocument), inventory: FOUR_SLOTS });
+
 /** Pack edits over a resolved unit: ready a weapon, put it away, or drop an entry. */
 suite("Inventory Test Suite", () => {
-	const dardan = () => buildUnit(dardanDocument as UnitDocument);
+	const dardan = fourSlotDardan;
 
 	test("Equipping a wieldable weapon readies it and moves it to the front", () => {
 		const before = dardan();
@@ -83,7 +90,7 @@ suite("Inventory Test Suite", () => {
 
 /** Using a vulnerary-style consumable: restore HP up to the unit's cap, spend a charge. */
 suite("Healing Item Test Suite", () => {
-	const wounded = (hp: number) => ({ ...buildUnit(dardanDocument as UnitDocument), currentHP: hp }); // vulnerary in slot 3, heals 10
+	const wounded = (hp: number) => ({ ...fourSlotDardan(), currentHP: hp }); // vulnerary in slot 3, heals 10
 
 	test("isHealingItem picks out consumables that restore HP", () => {
 		const unit = buildUnit({ ...(dardanDocument as UnitDocument), inventory: ["bronze-sword", "vulnerary", "elixir"] });
@@ -142,7 +149,7 @@ suite("Healing Item Test Suite", () => {
 
 /** Handing pack entries across between two units, and tidying one pack's own slots. */
 suite("Inventory Trade Test Suite", () => {
-	const dardan = () => buildUnit(dardanDocument as UnitDocument); // swordsman: bronze-sword, iron-sword, iron-blade, vulnerary
+	const dardan = fourSlotDardan; // swordsman: bronze-sword, iron-sword, iron-blade, vulnerary
 	const elira = () => buildUnit(eliraDocument as UnitDocument); // axe fighter: iron-axe, bronze-axe, concoction
 	const ids = (unit: UnitData) => unit.inventory.map((entry) => entry.id);
 

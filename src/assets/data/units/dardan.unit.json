@@ -8,7 +8,7 @@
 	"level": 1,
 	"weapon": "bronze-sword",
 	"movement": 99,
-	"inventory": ["bronze-sword", "iron-sword", "iron-blade", "vulnerary"],
+	"inventory": ["bronze-sword", "iron-sword", "iron-blade", "vulnerary", "door-key", "chest-key"],
 	"commander": true,
 	"stats": {
 		"hp": 20,

@@ -19,6 +19,42 @@
 			"uses": 3,
 			"heal": "full",
 			"description": "A potent tonic. Fully restores HP."
+		},
+		"energy-drop": {
+			"name": "Energy Drop",
+			"uses": 1,
+			"boost": {
+				"strength": 2
+			},
+			"description": "A drop of distilled vigour. Permanently raises Strength by 2."
+		},
+		"speedwing": {
+			"name": "Speedwing",
+			"uses": 1,
+			"boost": {
+				"speed": 2
+			},
+			"description": "A feather that never settles. Permanently raises Speed by 2."
+		},
+		"dracoshield": {
+			"name": "Dracoshield",
+			"uses": 1,
+			"boost": {
+				"defense": 2
+			},
+			"description": "A scale from something old. Permanently raises Defense by 2."
+		},
+		"door-key": {
+			"name": "Door Key",
+			"uses": 1,
+			"unlocks": "door",
+			"description": "Opens one locked door."
+		},
+		"chest-key": {
+			"name": "Chest Key",
+			"uses": 1,
+			"unlocks": "chest",
+			"description": "Opens one locked chest."
 		}
 	}
 }

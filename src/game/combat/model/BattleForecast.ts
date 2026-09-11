@@ -1,6 +1,6 @@
 import { rollChance, rollChanceAveraged } from "@/core/math/generation/Randomizer";
 import { TerrainType } from "@/game/map/model/Terrain";
-import { UnitData, UnitFaction, WeaponData } from "@/game/units/model/UnitData";
+import { isStaff, UnitData, UnitFaction, WeaponData } from "@/game/units/model/UnitData";
 import { attackSpeed, computeStrike, CRIT_MULTIPLIER, doublesAt, weaponReaches } from "@/game/combat/model/CombatMath";
 
 /** One side of a battle forecast - the numbers Fire Emblem shows before you commit. */
@@ -49,7 +49,8 @@ export interface ForecastInputs {
  */
 export function buildForecast(input: ForecastInputs): BattleForecast {
 	const { attacker, attackerWeapon, defender, distance } = input;
-	const defenderWeapon = defender.weapon;
+	// A readied staff is no weapon to counter with - a healer caught in reach just takes the hit.
+	const defenderWeapon = defender.weapon !== null && isStaff(defender.weapon) ? null : defender.weapon;
 	const defenderCanCounter = defenderWeapon !== null && weaponReaches(defenderWeapon, distance);
 
 	const attackerStrike = computeStrike({

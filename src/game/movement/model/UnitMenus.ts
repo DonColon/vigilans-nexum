@@ -1,7 +1,8 @@
 import { i18n } from "@/core/i18n/I18n";
 import { MenuRequest } from "@/game/ui/states/MenuState";
-import { healingAmount, isHealingItem, isUsableEntry } from "@/game/units/model/Inventory";
-import { InventoryEntry, InventoryKind, UnitData } from "@/game/units/model/UnitData";
+import { canUseItem, isUsableEntry } from "@/game/units/model/Inventory";
+import { InventoryEntry, InventoryKind, STAT_NAMES, StatBoost, UnitData } from "@/game/units/model/UnitData";
+import { PopupRequest } from "@/game/ui/states/PopupState";
 
 /** Menu ids, echoed by the `ui:menu*` events. */
 export const COMMAND_MENU = "unit-command";
@@ -24,7 +25,10 @@ export const ITEM_ACTION_MENU_GAP = 4;
  */
 export const UnitMenuRow = {
 	ATTACK: "attack",
+	STAFF: "staff",
 	VISIT: "visit",
+	CHEST: "chest",
+	DOOR: "door",
 	TALK: "talk",
 	ITEMS: "items",
 	TRADE: "trade",
@@ -49,7 +53,10 @@ interface Row {
 /** The label of every row, resolved fresh so a locale switch is picked up. */
 const LABELS: Record<UnitMenuRow, () => string> = {
 	[UnitMenuRow.ATTACK]: () => i18n("menu.attack"),
+	[UnitMenuRow.STAFF]: () => i18n("menu.staff"),
 	[UnitMenuRow.VISIT]: () => i18n("menu.visit"),
+	[UnitMenuRow.CHEST]: () => i18n("menu.chest"),
+	[UnitMenuRow.DOOR]: () => i18n("menu.door"),
 	[UnitMenuRow.TALK]: () => i18n("menu.talk"),
 	[UnitMenuRow.ITEMS]: () => i18n("menu.items"),
 	[UnitMenuRow.TRADE]: () => i18n("menu.trade"),
@@ -81,8 +88,14 @@ function toRequestRows(rows: readonly Row[]): { items: string[]; ids: string[] }
 export interface UnitCommands {
 	/** Something is in reach of a weapon it carries. */
 	canAttack?: boolean;
+	/** A wounded ally is in reach of a staff it carries. */
+	canUseStaff?: boolean;
 	/** It is standing beside the door of a house nobody has called on yet. */
 	canVisit?: boolean;
+	/** It is standing on or beside a locked chest and carries a key for it. */
+	canOpenChest?: boolean;
+	/** It is standing beside a locked door and carries a key for it. */
+	canOpenDoor?: boolean;
 	/** Someone beside it has a conversation left to have. */
 	canTalk?: boolean;
 	/** An ally is standing next to it. */
@@ -91,10 +104,12 @@ export interface UnitCommands {
 
 /**
  * The rows of the unit command menu, in Fire Emblem's order: "Attack" when
- * something is in reach, "Visit" when it is standing beside the door of a house
- * nobody has called on, "Talk" when someone beside it has something to say,
- * "Items" when the unit carries anything, "Trade" when an ally is standing next
- * to it, then always "Wait".
+ * something is in reach, "Staff" when a wounded ally is in reach of a staff,
+ * "Visit" when it is standing beside the door of a house nobody has called on,
+ * "Chest" when it stands on or beside a locked chest with a key for it, "Door" when it
+ * stands beside a locked door with a key for it, "Talk" when someone beside it
+ * has something to say, "Items" when the unit carries anything, "Trade" when an
+ * ally is standing next to it, then always "Wait".
  */
 export function unitCommandRows(unit: UnitData, commands: UnitCommands = {}): UnitMenuRow[] {
 	const rows: UnitMenuRow[] = [];
@@ -103,8 +118,20 @@ export function unitCommandRows(unit: UnitData, commands: UnitCommands = {}): Un
 		rows.push(UnitMenuRow.ATTACK);
 	}
 
+	if (commands.canUseStaff) {
+		rows.push(UnitMenuRow.STAFF);
+	}
+
 	if (commands.canVisit) {
 		rows.push(UnitMenuRow.VISIT);
+	}
+
+	if (commands.canOpenChest) {
+		rows.push(UnitMenuRow.CHEST);
+	}
+
+	if (commands.canOpenDoor) {
+		rows.push(UnitMenuRow.DOOR);
 	}
 
 	if (commands.canTalk) {
@@ -172,14 +199,16 @@ export function itemsRequest(unit: UnitData, anchor: { x: number; y: number }, s
 }
 
 /**
- * The per-item menu, Fire Emblem style: "Use" for a healing item that would
- * restore HP, "Equip" / "Unequip" for a weapon the class can wield, "Drop" for
- * anything.
+ * The per-item menu, Fire Emblem style: "Use" for a consumable that would do
+ * something right now - a healing item while the unit is wounded, a stat
+ * booster while a stat it raises is still below its cap - "Equip" / "Unequip"
+ * for a weapon the class can wield, "Drop" for anything. A key is never "used"
+ * from the pack; it is turned from the command menu, at the door or the chest.
  */
 export function itemActionRows(unit: UnitData, entry: InventoryEntry): UnitMenuRow[] {
 	const rows: UnitMenuRow[] = [];
 
-	if (entry.item !== null && isHealingItem(entry) && healingAmount(unit, entry.item) > 0) {
+	if (canUseItem(unit, entry)) {
 		rows.push(UnitMenuRow.USE);
 	}
 
@@ -201,4 +230,16 @@ export function itemActionRequest(unit: UnitData, entry: InventoryEntry, positio
 		width: ITEM_ACTION_MENU_WIDTH,
 		position
 	};
+}
+
+/**
+ * The notice shown after a stat booster is used - one line per stat it raised,
+ * "Str +2" style, under the item's own name. Only the stats that actually
+ * climbed are listed: a booster used at the cap has nothing to say about that
+ * stat, and "Use" is not offered when it would have nothing to say at all.
+ */
+export function boostPopup(unitId: string, itemName: string, gains: StatBoost): PopupRequest {
+	const lines = STAT_NAMES.filter((stat) => gains[stat] > 0).map((stat) => i18n("boost.gain", { stat: i18n(`roster.${stat}`), amount: gains[stat] }));
+
+	return { id: `boost-${unitId}`, title: itemName, lines };
 }

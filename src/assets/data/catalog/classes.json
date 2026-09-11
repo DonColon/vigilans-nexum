@@ -17,6 +17,14 @@
 			"movement": 5,
 			"ability": "Strength +2",
 			"promotesTo": ["warrior", "axe-cavalier"]
+		},
+		"cleric": {
+			"name": "Cleric",
+			"tier": "base",
+			"weaponTypes": ["staff"],
+			"movement": 5,
+			"ability": "Magic +2",
+			"promotesTo": ["bishop", "valkyrie"]
 		}
 	}
 }

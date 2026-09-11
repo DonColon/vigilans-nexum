@@ -1,7 +1,7 @@
 import { GridData } from "@/game/map/components/GridComponent";
 import { GridPositionData } from "@/game/map/components/GridPositionComponent";
 import { MovementSystem } from "@/game/movement/systems/MovementSystem";
-import { InventoryKind, UnitData, WeaponData } from "@/game/units/model/UnitData";
+import { InventoryKind, isStaff, UnitData, WeaponData } from "@/game/units/model/UnitData";
 import { UnitLocation } from "@/game/units/systems/UnitSystem";
 
 /** How far a unit can strike, in tiles - the window its weapons cover. */
@@ -40,16 +40,17 @@ export class ThreatSystem {
 	/**
 	 * The window every weapon the unit can wield covers together, or null when it
 	 * carries nothing it could swing. A sword and a hand axe come out as 1-2 -
-	 * the union, not one weapon or the other.
+	 * the union, not one weapon or the other. A staff threatens nobody, so a
+	 * healer with nothing else in its pack has no reach at all.
 	 */
 	public static weaponReach(unit: UnitData): WeaponReach | null {
 		const weapons = unit.inventory
 			.filter((entry) => entry.kind === InventoryKind.WEAPON && entry.equippable)
 			.map((entry) => entry.weapon)
-			.filter((weapon): weapon is WeaponData => weapon !== null);
+			.filter((weapon): weapon is WeaponData => weapon !== null && !isStaff(weapon));
 
 		// A unit built without a pack still has whatever it has readied.
-		if (weapons.length === 0 && unit.weapon !== null) {
+		if (weapons.length === 0 && unit.weapon !== null && !isStaff(unit.weapon)) {
 			weapons.push(unit.weapon);
 		}
 

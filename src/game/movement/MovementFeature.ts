@@ -2,10 +2,16 @@ import { Entity } from "@/core/ecs/Entity";
 import { GameFeatureConfig } from "@/core/GameFeature";
 import { TransformComponent } from "@/core/ecs/components/TransformComponent";
 import {
+	ChestOpenedEvent,
 	CombatCancelledEvent,
 	CombatResolvedEvent,
+	DoorOpenedEvent,
+	StaffCancelledEvent,
+	StaffResolvedEvent,
+	LockCancelledEvent,
 	MenuConfirmedEvent,
 	MenuCancelledEvent,
+	PopupClosedEvent,
 	TalkCancelledEvent,
 	TalkFinishedEvent,
 	TileConfirmedEvent,
@@ -29,6 +35,7 @@ import {
 	ITEMS_MENU_WIDTH,
 	ITEM_ACTION_MENU_GAP,
 	UnitMenuRow,
+	boostPopup,
 	globalCommandRequest,
 	itemActionRequest,
 	itemsRequest,
@@ -39,10 +46,15 @@ import { MovementSystem } from "@/game/movement/systems/MovementSystem";
 import { PathPreviewSystem } from "@/game/movement/systems/PathPreviewSystem";
 import { UnitWalkSystem } from "@/game/movement/systems/UnitWalkSystem";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { dropInventoryItem, equipInventoryItem, unequipInventoryItem, useHealingItem } from "@/game/units/model/Inventory";
-import { UnitFaction } from "@/game/units/model/UnitData";
+import { boostGains, dropInventoryItem, equipInventoryItem, isAnyBoost, unequipInventoryItem, useInventoryItem } from "@/game/units/model/Inventory";
+import { isStaff, NO_BOOST, UnitFaction } from "@/game/units/model/UnitData";
 import { UnitSystem } from "@/game/units/systems/UnitSystem";
 import { CombatSystem } from "@/game/combat/systems/CombatSystem";
+import { StaffSystem } from "@/game/staff/systems/StaffSystem";
+import { LocksComponent } from "@/game/locks/components/LocksComponent";
+import { Chest, Door } from "@/game/locks/model/Locks";
+import { LockSystem } from "@/game/locks/systems/LockSystem";
+import { PopupState } from "@/game/ui/states/PopupState";
 import { TalkComponent } from "@/game/talk/components/TalkComponent";
 import { TalkSystem } from "@/game/talk/systems/TalkSystem";
 import { MenuRequest, MenuState } from "@/game/ui/states/MenuState";
@@ -63,8 +75,18 @@ import { VisitSystem } from "@/game/visit/systems/VisitSystem";
  *    Emblem style. "Items" opens the unit's pack; a row opens a per-item menu to
  *    use / equip / unequip / drop it (`unit:usedItem` / `unit:equipped` /
  *    `unit:unequipped` / `unit:droppedItem`). "Use" heals the unit off a
- *    vulnerary-style consumable and spends its turn. "Wait" spends the unit (it
- *    greys out, `unit:acted`); backing out reverts the move and re-opens the range.
+ *    vulnerary-style consumable, or raises its stats for good off a booster -
+ *    a notice lists the gains first - and spends its turn. "Wait" spends the
+ *    unit (it greys out, `unit:acted`); backing out reverts the move and
+ *    re-opens the range.
+ *  - "Staff" hands off to the staff feature (`staff:requested`), which offers the
+ *    unit's staves and then moves the map cursor between the wounded allies in
+ *    reach. It only shows when the unit carries a staff with someone to use it
+ *    on; raising one spends the unit.
+ *  - "Door" and "Chest" hand off to the locks feature (`door:requested` /
+ *    `chest:requested`). "Door" shows beside a locked door when the unit carries
+ *    a door key, "Chest" on or beside a locked chest when it carries a chest key; opening
+ *    either spends the unit.
  *  - "Trade" hands off to the trade screen (`trade:requested`), which first
  *    moves the map cursor onto the ally to trade with and then opens both packs.
  *    Closing it puts the command menu back.
@@ -77,9 +99,10 @@ import { VisitSystem } from "@/game/visit/systems/VisitSystem";
  *    when the unit is standing beside the door of a house nobody has called on.
  *
  * Only some of those commands finish the unit's turn: "Wait", a used item, a
- * resolved fight and a visited house all spend it (`unit:acted`, the token greys
- * out). Talking, trading, equipping, unequipping and dropping are free - the
- * command menu comes back and the unit still has its action.
+ * resolved fight, a raised staff, an opened lock and a visited house all spend
+ * it (`unit:acted`, the token greys out). Talking, trading, equipping,
+ * unequipping and dropping are free - the command menu comes back and the unit
+ * still has its action.
  *  - Confirm off the range or `map:cancelled` sets it back down without moving.
  *  - Confirm on a tile with nothing to pick up opens the global command menu
  *    next to the cursor: "Units" opens the army list (`roster:requested`),
@@ -96,6 +119,8 @@ export class MovementFeature extends BattleMapFeature {
 	private movement: Entity | null = null;
 	/** Pack slot the open item-action menu (equip / unequip / drop) works on. */
 	private actionSlot = -1;
+	/** The unit whose stat-gain notice is on screen, so it can be spent once the notice is acknowledged. */
+	private boosting: string | null = null;
 
 	constructor(config: GameFeatureConfig = {}) {
 		super({
@@ -130,6 +155,12 @@ export class MovementFeature extends BattleMapFeature {
 		this.subscribe("talk:cancelled", (event) => this.onTalkCancelled(event));
 		this.subscribe("visit:finished", (event) => this.onVisitFinished(event));
 		this.subscribe("visit:cancelled", (event) => this.onVisitCancelled(event));
+		this.subscribe("staff:resolved", (event) => this.onStaffResolved(event));
+		this.subscribe("staff:cancelled", (event) => this.onStaffCancelled(event));
+		this.subscribe("door:opened", (event) => this.onDoorOpened(event));
+		this.subscribe("chest:opened", (event) => this.onChestOpened(event));
+		this.subscribe("lock:cancelled", (event) => this.onLockCancelled(event));
+		this.subscribe("ui:popupClosed", (event) => this.onPopupClosed(event));
 	}
 
 	protected onUninstall(): void {
@@ -146,6 +177,8 @@ export class MovementFeature extends BattleMapFeature {
 	}
 
 	private close(): void {
+		this.boosting = null;
+
 		if (this.movement) {
 			this.world.unregisterEntity(this.movement);
 			this.movement = null;
@@ -259,14 +292,17 @@ export class MovementFeature extends BattleMapFeature {
 		this.openCommandMenu(mover);
 	}
 
-	/** The unit command menu: "Attack" (with a target in reach), "Talk" (with something left to say), "Items" (with something to show), "Trade" (with an ally beside it), then "Wait". */
+	/** The unit command menu: every command the unit could take from where it stands, then "Wait" - see `unitCommandRows`. */
 	private openCommandMenu(mover: Entity): void {
 		const data = mover.getComponent(UnitComponent).read();
 		const position = UnitSystem.tileOf(mover);
 
 		const commands = {
 			canAttack: this.attackTargets(mover).length > 0,
+			canUseStaff: StaffSystem.canUseStaff(data, position, this.units()),
 			canVisit: this.house(mover) !== null,
+			canOpenChest: this.chest(mover) !== null,
+			canOpenDoor: this.door(mover) !== null,
 			canTalk: this.talkPartner(mover) !== null,
 			canTrade: this.tradePartners(mover).length > 0
 		};
@@ -302,6 +338,32 @@ export class MovementFeature extends BattleMapFeature {
 		}
 
 		return VisitSystem.available(visit.getComponent(VisitComponent).read(), mover);
+	}
+
+	/**
+	 * The locked door this unit is standing beside and has a key for, or null. The
+	 * locks are the locks feature's, but the lookup over them is pure - the same
+	 * way "Visit" asks VisitSystem about the houses.
+	 */
+	private door(mover: Entity): Door | null {
+		const locks = LockSystem.inWorld(this.world);
+
+		if (locks === null) {
+			return null;
+		}
+
+		return LockSystem.doorBeside(locks.getComponent(LocksComponent).read(), mover);
+	}
+
+	/** The locked chest this unit is standing on or beside and has a key for, or null. */
+	private chest(mover: Entity): Chest | null {
+		const locks = LockSystem.inWorld(this.world);
+
+		if (locks === null) {
+			return null;
+		}
+
+		return LockSystem.chestAt(locks.getComponent(LocksComponent).read(), mover);
 	}
 
 	/** Every ally standing next to this unit - the ones it could trade packs with. */
@@ -461,6 +523,39 @@ export class MovementFeature extends BattleMapFeature {
 			return;
 		}
 
+		if (event.row === UnitMenuRow.STAFF) {
+			// The staff feature takes it from here - it offers the staves and moves
+			// the cursor between the wounded allies in reach.
+			this.closeOpenMenu();
+			this.events.dispatch("staff:requested", { unitId: mover.getComponent(UnitComponent).read().id });
+			return;
+		}
+
+		if (event.row === UnitMenuRow.CHEST) {
+			const chest = this.chest(mover);
+
+			if (chest !== null) {
+				// The locks feature takes it from here - it opens the lid and hands
+				// over what was inside.
+				this.closeOpenMenu();
+				this.events.dispatch("chest:requested", { unitId: mover.getComponent(UnitComponent).read().id, chestId: chest.id });
+			}
+
+			return;
+		}
+
+		if (event.row === UnitMenuRow.DOOR) {
+			const door = this.door(mover);
+
+			if (door !== null) {
+				// Likewise the locks feature, which swings the door open on the map.
+				this.closeOpenMenu();
+				this.events.dispatch("door:requested", { unitId: mover.getComponent(UnitComponent).read().id, doorId: door.id });
+			}
+
+			return;
+		}
+
 		if (event.row === UnitMenuRow.VISIT) {
 			const house = this.house(mover);
 
@@ -564,6 +659,52 @@ export class MovementFeature extends BattleMapFeature {
 		this.reopenCommandMenu(event.unitId);
 	}
 
+	/** The staff came down - healing is the unit's action for the turn, so it is spent the way "Wait" spends it. */
+	private onStaffResolved(event: StaffResolvedEvent): void {
+		this.spendPending(event.unitId);
+	}
+
+	/** The player backed out of the staff list or the target choice - nothing happened, so put the menu back. */
+	private onStaffCancelled(event: StaffCancelledEvent): void {
+		this.reopenCommandMenu(event.unitId);
+	}
+
+	/** The door swung open - turning the key is what the unit did this turn, so it is spent. */
+	private onDoorOpened(event: DoorOpenedEvent): void {
+		this.spendPending(event.unitId);
+	}
+
+	/** The chest was opened and its find acknowledged - the unit is spent. */
+	private onChestOpened(event: ChestOpenedEvent): void {
+		this.spendPending(event.unitId);
+	}
+
+	/** The lock was not there to open after all - nothing happened, so put the menu back. */
+	private onLockCancelled(event: LockCancelledEvent): void {
+		this.reopenCommandMenu(event.unitId);
+	}
+
+	/** The stat-gain notice was acknowledged - now the booster counts as used and the unit is spent. */
+	private onPopupClosed(event: PopupClosedEvent): void {
+		const boosting = this.boosting;
+
+		if (boosting === null || event.popup !== `boost-${boosting}`) {
+			return;
+		}
+
+		this.boosting = null;
+		this.spendPending(boosting);
+	}
+
+	/** Spends a unit that is still mid-turn, by id - the shared tail of every command that finishes elsewhere. */
+	private spendPending(unitId: string): void {
+		const mover = UnitSystem.byId(this.units(), unitId);
+
+		if (mover !== null && mover.hasComponent(PendingMoveComponent)) {
+			this.spendMover(mover);
+		}
+	}
+
 	/** Puts a mid-turn unit's command menu back after a free action it did not finish. */
 	private reopenCommandMenu(unitId: string): void {
 		const mover = UnitSystem.byId(this.units(), unitId);
@@ -617,7 +758,8 @@ export class MovementFeature extends BattleMapFeature {
 		}
 
 		if (action === UnitMenuRow.USE) {
-			const after = useHealingItem(before, slot);
+			const gains = entry.item === null ? NO_BOOST : boostGains(before, entry.item);
+			const after = useInventoryItem(before, slot);
 
 			if (after === before) {
 				this.refreshItemsMenu(mover, slot);
@@ -625,11 +767,21 @@ export class MovementFeature extends BattleMapFeature {
 			}
 
 			component.update(after);
-			this.events.dispatch("unit:usedItem", { unitId: after.id, itemId: entry.id, healed: after.currentHP - before.currentHP });
+			this.events.dispatch("unit:usedItem", { unitId: after.id, itemId: entry.id, healed: after.currentHP - before.currentHP, gains });
 
 			// Using an item is the unit's action for the turn, Fire Emblem style -
 			// the pack menu it was chosen from goes with it.
 			this.closeOpenMenu();
+
+			// A booster's gains are listed before the unit is spent, the way Fire
+			// Emblem lights the stat screen up; a heal just floats its number.
+			if (isAnyBoost(gains)) {
+				this.boosting = after.id;
+				this.stateManager.getState(PopupState).request(boostPopup(after.id, entry.name, gains));
+				this.stateManager.push(PopupState);
+				return;
+			}
+
 			this.spendMover(mover);
 			return;
 		}
@@ -741,7 +893,8 @@ export class MovementFeature extends BattleMapFeature {
 		const data = unit.getComponent(UnitComponent).read();
 		const blocked = MovementSystem.blockedTiles(UnitSystem.locations(units), unitId);
 		const reachable = MovementSystem.reachable(grid, { column, row }, data.movement, blocked);
-		const attack = data.weapon !== null ? MovementSystem.attackable(grid, reachable, data.weapon.minRange, data.weapon.maxRange) : [];
+		// A readied staff lights no red tiles - it reaches allies, not enemies.
+		const attack = data.weapon !== null && !isStaff(data.weapon) ? MovementSystem.attackable(grid, reachable, data.weapon.minRange, data.weapon.maxRange) : [];
 
 		this.movement.getComponent(MovementComponent).update({
 			unitId,

@@ -1,0 +1,44 @@
+{
+	"format": "vigilans-unit",
+	"version": 1,
+	"id": "teuta",
+	"name": "Teuta Berisha",
+	"faction": "player",
+	"class": "cleric",
+	"level": 1,
+	"weapon": "heal",
+	"inventory": ["heal", "door-key", "chest-key"],
+	"stats": {
+		"hp": 17,
+		"mp": 8,
+		"strength": 2,
+		"magic": 6,
+		"dexterity": 6,
+		"speed": 7,
+		"luck": 8,
+		"defense": 3,
+		"resistance": 6
+	},
+	"growths": {
+		"hp": 60,
+		"mp": 40,
+		"strength": 15,
+		"magic": 60,
+		"dexterity": 50,
+		"speed": 50,
+		"luck": 60,
+		"defense": 20,
+		"resistance": 50
+	},
+	"maxStats": {
+		"hp": 52,
+		"mp": 35,
+		"strength": 16,
+		"magic": 28,
+		"dexterity": 26,
+		"speed": 27,
+		"luck": 30,
+		"defense": 20,
+		"resistance": 28
+	}
+}

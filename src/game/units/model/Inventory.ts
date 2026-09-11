@@ -1,5 +1,5 @@
 import { isCatalogItem, isCatalogWeapon } from "@/game/units/model/UnitCatalog";
-import { InventoryEntry, InventoryKind, INVENTORY_SIZE, ItemData, resolveInventoryEntry, UnitData } from "@/game/units/model/UnitData";
+import { InventoryEntry, InventoryKind, INVENTORY_SIZE, ItemData, LockKind, NO_BOOST, resolveInventoryEntry, STAT_NAMES, StatBoost, UnitData, UnitStats } from "@/game/units/model/UnitData";
 
 /**
  * Pure inventory edits over a resolved [[UnitData]], kept off the component the
@@ -134,6 +134,28 @@ export function healingAmount(unit: UnitData, item: ItemData): number {
 }
 
 /**
+ * Spends one charge off the pack entry in slot `index` - what every use of a
+ * consumable and every turn of a key ends with. An entry that runs out is
+ * dropped from the pack; a readied weapon that breaks leaves the unit unarmed.
+ * Returns `unit` unchanged when the slot is out of range.
+ */
+export function spendInventoryUse(unit: UnitData, index: number): UnitData {
+	const entry = unit.inventory[index];
+
+	if (entry === undefined) {
+		return unit;
+	}
+
+	const uses = Math.max(0, entry.uses - 1);
+
+	if (uses > 0) {
+		return { ...unit, inventory: unit.inventory.map((current, position) => (position === index ? { ...current, uses } : current)) };
+	}
+
+	return dropInventoryItem(unit, index);
+}
+
+/**
  * Uses the healing consumable in pack slot `index`: `currentHP` climbs by the
  * item's heal value (never past the unit's maximum), one charge is spent, and an
  * item that runs out is dropped from the pack. Returns `unit` unchanged when the
@@ -152,10 +174,108 @@ export function useHealingItem(unit: UnitData, index: number): UnitData {
 		return unit;
 	}
 
-	const uses = Math.max(0, target.uses - 1);
-	const inventory = uses > 0 ? unit.inventory.map((entry, position) => (position === index ? { ...entry, uses } : entry)) : unit.inventory.filter((_, position) => position !== index);
+	return spendInventoryUse({ ...unit, currentHP: unit.currentHP + restored }, index);
+}
 
-	return { ...unit, currentHP: unit.currentHP + restored, inventory };
+/**
+ * A pack entry that raises a stat for good when used - Fire Emblem's Energy
+ * Drop, Speedwing and the rest: a consumable whose catalog `boost` raises
+ * anything at all.
+ */
+export function isBoostingItem(entry: InventoryEntry): boolean {
+	return entry.kind === InventoryKind.ITEM && entry.item !== null && isAnyBoost(entry.item.boost);
+}
+
+/**
+ * What `item` would actually add to `unit`'s stats right now: each gain clamped
+ * so no stat climbs past the sheet's cap for it, and zero for a stat already
+ * sitting on its cap. All zeros when the item would do nothing - which is when
+ * "Use" stays off the menu.
+ */
+export function boostGains(unit: UnitData, item: ItemData): StatBoost {
+	const gains: StatBoost = { ...NO_BOOST };
+
+	for (const stat of STAT_NAMES) {
+		gains[stat] = Math.max(0, Math.min(item.boost[stat], unit.maxStats[stat] - unit.stats[stat]));
+	}
+
+	return gains;
+}
+
+/** Whether any stat in a boost is above zero. */
+export function isAnyBoost(boost: StatBoost): boolean {
+	return STAT_NAMES.some((stat) => boost[stat] > 0);
+}
+
+/**
+ * Uses the stat booster in pack slot `index`: every stat it raises goes up by
+ * its clamped gain, a raised HP maximum lifts the current HP by the same amount
+ * (the unit is not wounded by growing), one charge is spent, and an item that
+ * runs out is dropped from the pack. Returns `unit` unchanged when the slot is
+ * not a booster or every stat it would raise is already capped.
+ */
+export function useBoostingItem(unit: UnitData, index: number): UnitData {
+	const target = unit.inventory[index];
+
+	if (target === undefined || !isBoostingItem(target) || target.item === null) {
+		return unit;
+	}
+
+	const gains = boostGains(unit, target.item);
+
+	if (!isAnyBoost(gains)) {
+		return unit;
+	}
+
+	const stats: UnitStats = { ...unit.stats };
+
+	for (const stat of STAT_NAMES) {
+		stats[stat] += gains[stat];
+	}
+
+	return spendInventoryUse({ ...unit, stats, currentHP: unit.currentHP + gains.hp }, index);
+}
+
+/**
+ * Whether the pack entry can be used on the unit carrying it right now: a
+ * healing item while it is wounded, a booster while something it raises is
+ * still below its cap. A key is turned at a door or a chest, never "used" from
+ * the pack, and a weapon is swung, not used.
+ */
+export function canUseItem(unit: UnitData, entry: InventoryEntry): boolean {
+	if (entry.item === null) {
+		return false;
+	}
+
+	if (isHealingItem(entry)) {
+		return healingAmount(unit, entry.item) > 0;
+	}
+
+	return isBoostingItem(entry) && isAnyBoost(boostGains(unit, entry.item));
+}
+
+/**
+ * Uses whichever consumable is in pack slot `index` - the one "Use" row for
+ * every kind of item. Returns `unit` unchanged when the slot holds nothing that
+ * can be used on the unit right now.
+ */
+export function useInventoryItem(unit: UnitData, index: number): UnitData {
+	const target = unit.inventory[index];
+
+	if (target === undefined) {
+		return unit;
+	}
+
+	if (isHealingItem(target)) {
+		return useHealingItem(unit, index);
+	}
+
+	return useBoostingItem(unit, index);
+}
+
+/** The pack slot of the first key that opens a lock of this kind, or -1 when the unit carries none. */
+export function keyIndex(unit: UnitData, kind: LockKind): number {
+	return unit.inventory.findIndex((entry) => entry.kind === InventoryKind.ITEM && entry.item !== null && entry.item.unlocks === kind);
 }
 
 /** A slot the trade screen can put a cursor on - inside the pack, occupied or not. */

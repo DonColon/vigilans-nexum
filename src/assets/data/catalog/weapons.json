@@ -97,6 +97,30 @@
 			"minRange": 1,
 			"maxRange": 1,
 			"uses": 45
+		},
+		"heal": {
+			"name": "Heal",
+			"type": "staff",
+			"rank": "E",
+			"might": 10,
+			"hit": 100,
+			"critical": 0,
+			"weight": 2,
+			"minRange": 1,
+			"maxRange": 1,
+			"uses": 30
+		},
+		"mend": {
+			"name": "Mend",
+			"type": "staff",
+			"rank": "D",
+			"might": 20,
+			"hit": 100,
+			"critical": 0,
+			"weight": 3,
+			"minRange": 1,
+			"maxRange": 1,
+			"uses": 20
 		}
 	}
 }

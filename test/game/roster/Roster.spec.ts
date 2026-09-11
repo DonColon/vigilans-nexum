@@ -177,9 +177,9 @@ suite("Roster Test Suite", () => {
 			openFromMenu();
 
 			expect(stateManager.peek()).toBeInstanceOf(RosterState);
-			// The deployment puts Dardan and Elira on the player's side, Hasan and
-			// Besnik on the other.
-			expect(state().read().unitIds).toStrictEqual(["dardan", "elira"]);
+			// The deployment puts Dardan, Elira and Teuta on the player's side, Hasan
+			// and Besnik on the other.
+			expect(state().read().unitIds).toStrictEqual(["dardan", "elira", "teuta"]);
 			expect(state().read().selectedIndex).toBe(0);
 		});
 
@@ -206,11 +206,12 @@ suite("Roster Test Suite", () => {
 			press(RosterDownCommand);
 			expect(state().read().selectedIndex).toBe(1);
 
+			press(RosterDownCommand);
 			press(RosterDownCommand); // past the end, back to the top
 			expect(state().read().selectedIndex).toBe(0);
 
 			press(RosterUpCommand); // before the start, round to the bottom
-			expect(state().read().selectedIndex).toBe(1);
+			expect(state().read().selectedIndex).toBe(2);
 		});
 	});
 
@@ -271,13 +272,13 @@ suite("Roster Test Suite", () => {
 	suite("An army that changes underneath it", () => {
 		test("A unit taken off the map drops out of the list it was opened with", () => {
 			openFromMenu();
-			expect(state().read().unitIds).toStrictEqual(["dardan", "elira"]);
+			expect(state().read().unitIds).toStrictEqual(["dardan", "elira", "teuta"]);
 
 			world.unregisterEntity(UnitSystem.byId(UnitSystem.inWorld(world), "elira") as Entity);
 
 			// The list keeps the ids it was given; the renderer is what skips the ones
 			// that have left, so the row the cursor is on stays where the player put it.
-			expect(state().read().unitIds).toStrictEqual(["dardan", "elira"]);
+			expect(state().read().unitIds).toStrictEqual(["dardan", "elira", "teuta"]);
 			expect(UnitSystem.byId(UnitSystem.inWorld(world), "elira")).toBeNull();
 		});
 

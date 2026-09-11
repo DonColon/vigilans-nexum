@@ -12,8 +12,33 @@ export type { UnitData, UnitDocument, UnitStats, InventoryEntry } from "@/game/u
 
 // The rulebook the sheets resolve against - loaded from the asset bundle, not
 // bundled with the code. See src/assets/data/catalog.
-export { getWeapon, getItem, getUnitClass, setUnitCatalogs, loadUnitCatalogs, clearUnitCatalogs, hasUnitCatalogs, WeaponType, CATALOG_ASSETS } from "@/game/units/model/UnitCatalog";
-export type { WeaponData, ItemData, HealAmount, UnitClassData, UnitCatalogs, ClassCatalogDocument, WeaponCatalogDocument, ItemCatalogDocument } from "@/game/units/model/UnitCatalog";
+export {
+	getWeapon,
+	getItem,
+	getUnitClass,
+	setUnitCatalogs,
+	loadUnitCatalogs,
+	clearUnitCatalogs,
+	hasUnitCatalogs,
+	WeaponType,
+	LockKind,
+	isStaff,
+	STAT_NAMES,
+	NO_BOOST,
+	CATALOG_ASSETS
+} from "@/game/units/model/UnitCatalog";
+export type {
+	WeaponData,
+	ItemData,
+	HealAmount,
+	StatBoost,
+	StatName,
+	UnitClassData,
+	UnitCatalogs,
+	ClassCatalogDocument,
+	WeaponCatalogDocument,
+	ItemCatalogDocument
+} from "@/game/units/model/UnitCatalog";
 export {
 	equipInventoryItem,
 	unequipInventoryItem,
@@ -23,6 +48,14 @@ export {
 	isUsableEntry,
 	healingAmount,
 	useHealingItem,
+	isBoostingItem,
+	boostGains,
+	isAnyBoost,
+	useBoostingItem,
+	canUseItem,
+	useInventoryItem,
+	spendInventoryUse,
+	keyIndex,
 	swapInventorySlots,
 	tradeInventoryItems
 } from "@/game/units/model/Inventory";

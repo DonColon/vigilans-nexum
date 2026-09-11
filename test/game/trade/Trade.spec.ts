@@ -177,6 +177,11 @@ suite("Unit Trade Test Suite", () => {
 
 		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
 		eventSystem.processQueue();
+
+		// Dardan's sheet also carries the fort's keys; this suite is about the
+		// pack flow, so it works on his classic four slots and leaves them off.
+		const dardanComponent = unit("dardan").getComponent(UnitComponent);
+		dardanComponent.update({ ...dardanComponent.read(), inventory: dardanComponent.read().inventory.slice(0, 4) });
 	});
 
 	afterEach(() => {

@@ -10,10 +10,12 @@ import dardanDocument from "./src/assets/data/units/dardan.unit.json";
 import eliraDocument from "./src/assets/data/units/elira.unit.json";
 import hasanDocument from "./src/assets/data/units/hasan.unit.json";
 import besnikDocument from "./src/assets/data/units/besnik.unit.json";
+import teutaDocument from "./src/assets/data/units/teuta.unit.json";
 import skirmishDeployment from "./src/assets/data/deployments/skirmish.deployment.json";
 import fantasyMap from "./src/assets/data/maps/fantasy.tilemap.json";
 import skirmishConversations from "./src/assets/data/conversations/skirmish.conversations.json";
 import skirmishHouses from "./src/assets/data/houses/skirmish.houses.json";
+import skirmishLocks from "./src/assets/data/locks/skirmish.locks.json";
 
 new EventSystem({
 	history: {
@@ -44,9 +46,11 @@ assetStorage.setJson("unit-dardan", dardanDocument);
 assetStorage.setJson("unit-elira", eliraDocument);
 assetStorage.setJson("unit-hasan", hasanDocument);
 assetStorage.setJson("unit-besnik", besnikDocument);
+assetStorage.setJson("unit-teuta", teutaDocument);
 assetStorage.setJson("map-fantasy", fantasyMap);
 assetStorage.setJson("conversations-skirmish", skirmishConversations);
 assetStorage.setJson("houses-skirmish", skirmishHouses);
+assetStorage.setJson("locks-skirmish", skirmishLocks);
 
 // Seeded once here as well, so a spec that calls buildUnit directly - without
 // ever going through the UnitsFeature - resolves its classes and weapons.

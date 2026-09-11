@@ -88,12 +88,24 @@ const assetManifest: AssetManifest = {
 				type: "json",
 				url: "/data/units/besnik.unit.json"
 			},
+			{
+				id: "unit-teuta",
+				type: "json",
+				url: "/data/units/teuta.unit.json"
+			},
 			// The houses on the map, who is in and what they hand over - see
 			// src/game/visit.
 			{
 				id: "houses-skirmish",
 				type: "json",
 				url: "/data/houses/skirmish.houses.json"
+			},
+			// The locked doors and chests on the map, and what the chests hold - see
+			// src/game/locks.
+			{
+				id: "locks-skirmish",
+				type: "json",
+				url: "/data/locks/skirmish.locks.json"
 			},
 			// Who may talk to whom, and the script they speak - see src/game/talk.
 			{

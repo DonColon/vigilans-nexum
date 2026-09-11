@@ -23,9 +23,12 @@ import { MovementSystem } from "@/game/movement/systems/MovementSystem";
 import { PathPreviewSystem } from "@/game/movement/systems/PathPreviewSystem";
 import { UnitWalkSystem } from "@/game/movement/systems/UnitWalkSystem";
 import { MenuComponent } from "@/game/ui/components/MenuComponent";
+import { PopupComponent } from "@/game/ui/components/PopupComponent";
 import { MenuState } from "@/game/ui/states/MenuState";
+import { PopupState } from "@/game/ui/states/PopupState";
 import { UIFeature } from "@/game/ui/UIFeature";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
+import { NO_BOOST, resolveInventoryEntry } from "@/game/units/model/UnitData";
 import { UnitSystem } from "@/game/units/systems/UnitSystem";
 import { UnitsFeature } from "@/game/units/UnitsFeature";
 
@@ -115,6 +118,11 @@ suite("Unit Movement Test Suite", () => {
 			const component = unit(id).getComponent(UnitComponent);
 			component.update({ ...component.read(), movement: TEST_MOVEMENT });
 		}
+
+		// Dardan's sheet also carries the fort's keys; this suite is about the
+		// pack flow, so it works on his classic four slots and leaves them off.
+		const dardanComponent = unit("dardan").getComponent(UnitComponent);
+		dardanComponent.update({ ...dardanComponent.read(), inventory: dardanComponent.read().inventory.slice(0, 4) });
 	});
 
 	afterEach(() => {
@@ -365,6 +373,79 @@ suite("Unit Movement Test Suite", () => {
 
 		// Every menu closed - the unit is done for the turn.
 		expect(stateManager.peek()).not.toBeInstanceOf(MenuState);
+	});
+
+	test("Use on a stat booster raises the stat for good, lists the gain, and spends the turn once it is read", () => {
+		const used: UnitUsedItemEvent[] = [];
+		eventSystem.subscribe("unit:usedItem", (event) => used.push(event));
+		let acted: string | null = null;
+		eventSystem.subscribe("unit:acted", (event) => (acted = event.unitId));
+
+		// Swap Dardan's vulnerary for an Energy Drop.
+		const component = unit("dardan").getComponent(UnitComponent);
+		component.update({ ...component.read(), inventory: [...component.read().inventory.slice(0, 3), resolveInventoryEntry("energy-drop", component.read().weaponTypes, "")] });
+		const strength = sheet("dardan").stats.strength;
+
+		openItems();
+
+		// A booster with headroom offers Use then Drop, like a vulnerary.
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-items", row: "energy-drop", index: 3, item: "Energy Drop" });
+		eventSystem.processQueue();
+		expect(submenu()?.items).toStrictEqual([i18n("menu.use"), i18n("menu.drop")]);
+
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-item-action", row: UnitMenuRow.USE, index: 0, item: i18n("menu.use") });
+		eventSystem.processQueue();
+		eventSystem.processQueue();
+
+		expect(sheet("dardan").stats.strength).toBe(strength + 2);
+		expect(sheet("dardan").inventory.map((entry) => entry.id)).toStrictEqual(["bronze-sword", "iron-sword", "iron-blade"]); // one use, and it is gone
+		expect(used).toMatchObject([{ unitId: "dardan", itemId: "energy-drop", healed: 0, gains: { ...NO_BOOST, strength: 2 } }]);
+
+		// The gain is on screen; the unit is not spent until it has been read.
+		expect(stateManager.peek()).toBeInstanceOf(PopupState);
+		const notice = stateManager.getState(PopupState).getPopup()?.getComponent(PopupComponent).read();
+		expect(notice).toMatchObject({ id: "boost-dardan", title: "Energy Drop", lines: [i18n("boost.gain", { stat: i18n("roster.strength"), amount: 2 })] });
+		expect(sheet("dardan").hasMoved).toBe(false);
+		expect(acted).toBeNull();
+
+		stateManager.pop();
+		eventSystem.dispatch("ui:popupClosed", { popup: "boost-dardan" });
+		eventSystem.processQueue();
+		eventSystem.processQueue();
+
+		expect(sheet("dardan").hasMoved).toBe(true);
+		expect(unit("dardan").hasComponent(PendingMoveComponent)).toBe(false);
+		expect(acted).toBe("dardan");
+	});
+
+	test("A booster the unit is already capped for offers no Use", () => {
+		const component = unit("dardan").getComponent(UnitComponent);
+		const data = component.read();
+		component.update({
+			...data,
+			stats: { ...data.stats, strength: data.maxStats.strength },
+			inventory: [...data.inventory.slice(0, 3), resolveInventoryEntry("energy-drop", data.weaponTypes, "")]
+		});
+
+		openItems();
+
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-items", row: "energy-drop", index: 3, item: "Energy Drop" });
+		eventSystem.processQueue();
+
+		expect(submenu()?.items).toStrictEqual([i18n("menu.drop")]);
+	});
+
+	test("A key offers no Use - it is turned at a lock, not from the pack", () => {
+		const component = unit("dardan").getComponent(UnitComponent);
+		const data = component.read();
+		component.update({ ...data, inventory: [...data.inventory.slice(0, 3), resolveInventoryEntry("door-key", data.weaponTypes, "")] });
+
+		openItems();
+
+		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-items", row: "door-key", index: 3, item: "Door Key" });
+		eventSystem.processQueue();
+
+		expect(submenu()?.items).toStrictEqual([i18n("menu.drop")]);
 	});
 
 	test("Backing out of the submenu keeps the items menu; then items -> command -> reverts", () => {

@@ -1,4 +1,5 @@
 import { GameEvent } from "@/core/events/GameEvent";
+import type { StatBoost } from "@/game/units/model/UnitCatalog";
 
 /** The player pressed confirm on a battle map tile. */
 export interface TileConfirmedEvent extends GameEvent {
@@ -93,11 +94,16 @@ export interface UnitDroppedItemEvent extends GameEvent {
 	itemId: string;
 }
 
-/** The player used a consumable from a unit's pack. `healed` is the HP it restored (0 for a non-healing item). */
+/**
+ * The player used a consumable from a unit's pack. `healed` is the HP it
+ * restored (0 for a non-healing item); `gains` the permanent stat gains it
+ * granted, every stat listed and zero where it granted nothing.
+ */
 export interface UnitUsedItemEvent extends GameEvent {
 	unitId: string;
 	itemId: string;
 	healed: number;
+	gains: StatBoost;
 }
 
 /** The player chose "Attack" and a target - the battle forecast should open. */
@@ -128,6 +134,63 @@ export interface CombatResolvedEvent extends GameEvent {
 
 /** A unit was reduced to 0 HP and taken off the map. */
 export interface UnitDiedEvent extends GameEvent {
+	unitId: string;
+}
+
+/** The player chose "Staff" - the unit's staves should be offered, then someone to use one on. */
+export interface StaffRequestedEvent extends GameEvent {
+	unitId: string;
+}
+
+/** The player settled on a staff and an ally to use it on. */
+export interface StaffConfirmedEvent extends GameEvent {
+	unitId: string;
+	targetId: string;
+	staffId: string;
+}
+
+/** The player backed out of the staff list or the target choice - no staff was raised, so the unit still has its turn. */
+export interface StaffCancelledEvent extends GameEvent {
+	unitId: string;
+}
+
+/** A staff was used. The HP is already restored and the staff's charge spent; healing is the unit's action for the turn. */
+export interface StaffResolvedEvent extends GameEvent {
+	unitId: string;
+	targetId: string;
+	staffId: string;
+	/** HP the staff put back. */
+	healed: number;
+}
+
+/** The player chose "Door" beside a locked door - it should be opened with the key the unit carries. */
+export interface DoorRequestedEvent extends GameEvent {
+	unitId: string;
+	doorId: string;
+}
+
+/** A door was opened: the map draws it open and the tile can be walked through. Opening it is the unit's action for the turn. */
+export interface DoorOpenedEvent extends GameEvent {
+	unitId: string;
+	doorId: string;
+}
+
+/** The player chose "Chest" on a locked chest - it should be opened with the key the unit carries. */
+export interface ChestRequestedEvent extends GameEvent {
+	unitId: string;
+	chestId: string;
+}
+
+/** A chest was opened and what was in it handed over. Opening it is the unit's action for the turn. */
+export interface ChestOpenedEvent extends GameEvent {
+	unitId: string;
+	chestId: string;
+	/** Catalog id of what was inside, empty when the chest was bare. */
+	itemId: string;
+}
+
+/** The lock was not there to open after all - nothing happened, so the unit still has its turn. */
+export interface LockCancelledEvent extends GameEvent {
 	unitId: string;
 }
 
@@ -280,6 +343,15 @@ declare module "@/core/events/GameEvents" {
 		"combat:confirmed": CombatConfirmedEvent;
 		"combat:cancelled": CombatCancelledEvent;
 		"combat:resolved": CombatResolvedEvent;
+		"staff:requested": StaffRequestedEvent;
+		"staff:confirmed": StaffConfirmedEvent;
+		"staff:cancelled": StaffCancelledEvent;
+		"staff:resolved": StaffResolvedEvent;
+		"door:requested": DoorRequestedEvent;
+		"door:opened": DoorOpenedEvent;
+		"chest:requested": ChestRequestedEvent;
+		"chest:opened": ChestOpenedEvent;
+		"lock:cancelled": LockCancelledEvent;
 		"trade:requested": TradeRequestedEvent;
 		"trade:swapped": TradeSwappedEvent;
 		"trade:closed": TradeClosedEvent;

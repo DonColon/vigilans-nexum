@@ -25,7 +25,9 @@ export const WeaponType = {
 	AXE: "axe",
 	BOW: "bow",
 	KNIFE: "knife",
-	GAUNTLET: "gauntlet"
+	GAUNTLET: "gauntlet",
+	/** A healing staff: carried and readied like a weapon, but it never strikes - see {@link isStaff}. */
+	STAFF: "staff"
 } as const;
 
 const weaponTypeValues = new Set<string>(Object.values(WeaponType));
@@ -44,21 +46,57 @@ export interface WeaponData extends JsonSchema {
 	name: string;
 	type: WeaponType;
 	rank: string;
-	/** Added to strength (or magic) when the hit lands. */
+	/** Added to strength (or magic) when the hit lands. For a staff: the HP it restores on top of the healer's magic. */
 	might: number;
 	hit: number;
 	critical: number;
 	weight: number;
-	/** Closest and furthest tile distance the weapon can strike, Manhattan. */
+	/** Closest and furthest tile distance the weapon can strike - or, for a staff, reach an ally - Manhattan. */
 	minRange: number;
 	maxRange: number;
 	uses: number;
 }
 
+/**
+ * Whether a weapon is a staff. A staff sits in the pack and is readied like any
+ * other weapon, but it heals rather than strikes: it never reaches an enemy,
+ * never counters and lights no attack tiles. Everything that asks "what can this
+ * unit swing?" filters on this; the heal feature is what asks for staves.
+ */
+export function isStaff(weapon: WeaponData): boolean {
+	return weapon.type === WeaponType.STAFF;
+}
+
 /** How much HP a consumable restores: a flat amount, or `"full"` for a complete heal. */
 export type HealAmount = number | "full";
 
-/** A consumable as authored in `catalog/items.json` - anything a unit carries that is not a weapon. */
+/** What a key opens - Fire Emblem's door keys and chest keys are not interchangeable. */
+export type LockKind = (typeof LockKind)[keyof typeof LockKind];
+
+export const LockKind = {
+	DOOR: "door",
+	CHEST: "chest"
+} as const;
+
+const lockKindValues = new Set<string>(Object.values(LockKind));
+
+/** The stat names a booster may raise - the sheet's eight-plus-one. */
+export type StatName = "hp" | "mp" | "strength" | "magic" | "dexterity" | "speed" | "luck" | "defense" | "resistance";
+
+export const STAT_NAMES: readonly StatName[] = ["hp", "mp", "strength", "magic", "dexterity", "speed", "luck", "defense", "resistance"];
+
+/** The permanent stat gains a consumable grants, one entry per stat, zero where it grants nothing. */
+export type StatBoost = Record<StatName, number>;
+
+/** A boost that raises nothing - what every item without a `boost` block resolves to. */
+export const NO_BOOST: StatBoost = { hp: 0, mp: 0, strength: 0, magic: 0, dexterity: 0, speed: 0, luck: 0, defense: 0, resistance: 0 };
+
+/**
+ * A consumable as authored in `catalog/items.json` - anything a unit carries
+ * that is not a weapon. Three kinds share the shape: a healing item (`heal`), a
+ * stat booster (`boost`) and a key (`unlocks`); an item may also be none of
+ * them and just sit in the pack.
+ */
 export interface ItemData extends JsonSchema {
 	id: string;
 	name: string;
@@ -66,6 +104,10 @@ export interface ItemData extends JsonSchema {
 	uses: number;
 	/** HP restored when a unit uses this - a flat number, `"full"`, or 0 for an item that does not heal. */
 	heal: HealAmount;
+	/** Permanent stat gains when a unit uses this - every stat listed, zero where the item grants nothing. */
+	boost: StatBoost;
+	/** What this key opens, or `""` for an item that is not a key. */
+	unlocks: LockKind | "";
 	description: string;
 }
 
@@ -84,7 +126,7 @@ export interface UnitClassData {
 /** The catalog entries as they sit on disk, before their weapon types are checked. */
 type RawClass = { name: string; tier: string; weaponTypes: string[]; movement: number; ability: string; promotesTo: string[] };
 type RawWeapon = { name: string; type: string; rank: string; might: number; hit: number; critical: number; weight: number; minRange: number; maxRange: number; uses: number };
-type RawItem = { name: string; uses: number; heal?: HealAmount; description: string };
+type RawItem = { name: string; uses: number; heal?: HealAmount; boost?: Partial<StatBoost>; unlocks?: string; description: string };
 
 /** The three catalog documents: a `format` / `version` header over a keyed record. */
 export interface ClassCatalogDocument {
@@ -174,7 +216,13 @@ export function getItem(id: string): ItemData {
 		throw new GameError(`Item "${id}" is not in the catalog`);
 	}
 
-	return { id, heal: 0, ...item };
+	const { boost, unlocks, ...rest } = item;
+
+	if (unlocks !== undefined && !lockKindValues.has(unlocks)) {
+		throw new GameError(`Item "${id}" unlocks unknown lock kind "${unlocks}"`);
+	}
+
+	return { id, heal: 0, ...rest, boost: { ...NO_BOOST, ...boost }, unlocks: (unlocks ?? "") as LockKind | "" };
 }
 
 /** Resolves a class id against the class catalog. */

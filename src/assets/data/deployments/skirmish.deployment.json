@@ -5,6 +5,7 @@
 	"units": [
 		{ "unit": "dardan", "column": 4, "row": 10 },
 		{ "unit": "elira", "column": 5, "row": 10 },
+		{ "unit": "teuta", "column": 5, "row": 11 },
 		{ "unit": "hasan", "column": 4, "row": 14 },
 		{ "unit": "besnik", "column": 2, "row": 14 }
 	]

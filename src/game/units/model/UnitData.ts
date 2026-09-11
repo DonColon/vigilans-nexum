@@ -7,8 +7,8 @@ import { getItem, getUnitClass, getWeapon, isCatalogItem, isCatalogWeapon, ItemD
  * sheets resolve against. It is re-exported here so nothing that already reads
  * a weapon or an item off this module has to learn a second import path.
  */
-export { getWeapon, getItem, getUnitClass, WeaponType } from "@/game/units/model/UnitCatalog";
-export type { WeaponData, ItemData, UnitClassData, HealAmount } from "@/game/units/model/UnitCatalog";
+export { getWeapon, getItem, getUnitClass, WeaponType, LockKind, isStaff, STAT_NAMES, NO_BOOST } from "@/game/units/model/UnitCatalog";
+export type { WeaponData, ItemData, UnitClassData, HealAmount, StatBoost, StatName } from "@/game/units/model/UnitCatalog";
 
 /**
  * The eight-plus-one attributes every unit carries, matching the character
