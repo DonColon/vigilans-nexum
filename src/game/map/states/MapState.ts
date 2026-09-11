@@ -10,6 +10,7 @@ import { cancelCommands } from "@/game/map/commands/CancelCommand";
 import { confirmCommands } from "@/game/map/commands/ConfirmCommand";
 import { moveCursorCommands } from "@/game/map/commands/MoveCursorCommand";
 import { threatCommands } from "@/game/map/commands/ThreatCommand";
+import { infoCommands } from "@/game/map/commands/InfoCommand";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
@@ -45,7 +46,7 @@ const CURSOR_START = { column: 6, row: 12 };
 export class MapState extends GameState {
 	public static readonly type = "map";
 
-	protected commands = [...moveCursorCommands, ...confirmCommands, ...cancelCommands, ...threatCommands];
+	protected commands = [...moveCursorCommands, ...confirmCommands, ...cancelCommands, ...threatCommands, ...infoCommands];
 
 	@GameCoreService(World)
 	private world!: World;

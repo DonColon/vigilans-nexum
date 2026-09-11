@@ -49,3 +49,15 @@ export const THREAT: InputSet = { keys: [KeyboardInput.KEY_R, KeyboardInput.KEY_
 export function threatBinding(): InputBinding {
 	return pressed(THREAT);
 }
+
+/**
+ * "Tell me about this unit" - Fire Emblem's R over a unit. A button of its own
+ * rather than a menu row, so a unit - yours, theirs, spent or not - can be
+ * looked at without picking anything up or opening anything else first.
+ */
+export const INFO: InputSet = { keys: [KeyboardInput.KEY_I, KeyboardInput.KEY_Q], buttons: [GamepadInput.Y, GamepadInput.LB] };
+
+/** Keys and buttons that mean "show me this unit's sheet". */
+export function infoBinding(): InputBinding {
+	return pressed(INFO);
+}

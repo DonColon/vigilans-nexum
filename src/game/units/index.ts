@@ -60,6 +60,7 @@ export {
 	tradeInventoryItems
 } from "@/game/units/model/Inventory";
 export { UnitTheme } from "@/game/units/model/UnitTheme";
+export { drawUnitToken, drawWeaponGlyph } from "@/game/units/model/UnitToken";
 
 export { UnitPopComponent } from "@/game/units/components/UnitPopComponent";
 export type { UnitPopData } from "@/game/units/components/UnitPopComponent";

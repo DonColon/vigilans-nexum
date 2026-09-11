@@ -285,6 +285,12 @@ export interface ThreatShownEvent extends GameEvent {
 /** The enemy-range overlay came back down. */
 export type ThreatClearedEvent = GameEvent;
 
+/** The player pressed the info button on a battle map tile - whoever is standing there should have their sheet shown. */
+export interface MapInfoRequestedEvent extends GameEvent {
+	column: number;
+	row: number;
+}
+
 /** A request to open the options screen (from the global command menu). */
 export type OptionsRequestedEvent = GameEvent;
 
@@ -296,6 +302,21 @@ export type OptionsRequestedEvent = GameEvent;
  */
 export interface OptionsClosedEvent extends GameEvent {
 	selectedIndex: number;
+}
+
+/** The unit sheet (status screen) went up for this unit. */
+export interface StatusOpenedEvent extends GameEvent {
+	unitId: string;
+}
+
+/**
+ * The status screen was closed. It is a readout, so nothing about the unit
+ * changed; it reports the unit it was left on - paging through the sheets moves
+ * the map cursor with them, so that is where the cursor now sits. The screen is
+ * gone by the time this lands, which is why the id travels with the event.
+ */
+export interface StatusClosedEvent extends GameEvent {
+	unitId: string;
 }
 
 /** A request to open the army list (from the global command menu). */
@@ -326,6 +347,7 @@ declare module "@/core/events/GameEvents" {
 		"map:ready": MapReadyEvent;
 		"map:closed": MapClosedEvent;
 		"map:threatToggled": MapThreatToggledEvent;
+		"map:infoRequested": MapInfoRequestedEvent;
 		"ui:menuConfirmed": MenuConfirmedEvent;
 		"ui:menuCancelled": MenuCancelledEvent;
 		"ui:dialogClosed": DialogClosedEvent;
@@ -370,6 +392,8 @@ declare module "@/core/events/GameEvents" {
 		"options:closed": OptionsClosedEvent;
 		"roster:requested": RosterRequestedEvent;
 		"roster:closed": RosterClosedEvent;
+		"status:opened": StatusOpenedEvent;
+		"status:closed": StatusClosedEvent;
 		"turn:end": TurnEndEvent;
 		"turn:changed": TurnChangedEvent;
 	}

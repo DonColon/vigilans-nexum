@@ -8,6 +8,7 @@ import { MapFeature } from "@/game/map";
 import { MovementFeature } from "@/game/movement";
 import { OptionsFeature } from "@/game/options";
 import { RosterFeature } from "@/game/roster";
+import { StatusFeature } from "@/game/status";
 import { TalkFeature } from "@/game/talk";
 import { ThreatFeature } from "@/game/threat";
 import { TradeFeature } from "@/game/trade";
@@ -59,6 +60,10 @@ game.install(new MovementFeature({ dependencies: [units, ui] }));
 // button. It sits above the move flow on map:tileConfirmed, so it is installed
 // after it; it only needs the units on the map.
 game.install(new ThreatFeature({ dependencies: [units] }));
+// Looking at a unit: the hover card beside whichever one the cursor rests on,
+// and the unit sheet the info button (I / Q, Y / LB) opens over it. It only
+// needs the units on the map.
+game.install(new StatusFeature({ dependencies: [units] }));
 game.start();
 
 // Dev-only handle so the loop can be driven by hand when rAF is throttled

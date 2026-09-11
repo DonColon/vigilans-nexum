@@ -7,6 +7,7 @@ import { cancelCommands } from "@/game/map/commands/CancelCommand";
 import { confirmCommands } from "@/game/map/commands/ConfirmCommand";
 import { moveCursorCommands } from "@/game/map/commands/MoveCursorCommand";
 import { threatCommands } from "@/game/map/commands/ThreatCommand";
+import { infoCommands } from "@/game/map/commands/InfoCommand";
 import { MapState } from "@/game/map/states/MapState";
 import { CursorRenderSystem } from "@/game/map/systems/CursorRenderSystem";
 import { TileInfoRenderSystem } from "@/game/map/systems/TileInfoRenderSystem";
@@ -25,7 +26,7 @@ export class MapFeature extends GameFeature {
 			states: [MapState],
 			// Registered here, allowed by the MapState: the feature owns the
 			// instances, the state decides when the player may trigger them.
-			commands: [...moveCursorCommands, ...confirmCommands, ...cancelCommands, ...threatCommands],
+			commands: [...moveCursorCommands, ...confirmCommands, ...cancelCommands, ...threatCommands, ...infoCommands],
 			systems: [
 				// The cursor transform has to be up to date before the sync phase
 				// resolves the transform hierarchy for this frame.

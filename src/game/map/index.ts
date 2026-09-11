@@ -25,6 +25,8 @@ export { TileMapRenderSystem } from "@/game/map/systems/TileMapRenderSystem";
 export { moveCursorCommands } from "@/game/map/commands/MoveCursorCommand";
 export { confirmCommands } from "@/game/map/commands/ConfirmCommand";
 export { cancelCommands } from "@/game/map/commands/CancelCommand";
+export { threatCommands } from "@/game/map/commands/ThreatCommand";
+export { infoCommands } from "@/game/map/commands/InfoCommand";
 export { MapCommand } from "@/game/map/commands/MapCommand";
 export type { MapCommandContext } from "@/game/map/commands/MapCommand";
 

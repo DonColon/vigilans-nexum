@@ -5,7 +5,6 @@ import { Color } from "@/core/graphics/color/Color";
 import { Graphics } from "@/core/graphics/rendering/Graphics";
 import { Circle } from "@/core/math/geometry/Circle";
 import { clamp01 } from "@/core/math/utils/Clamp";
-import { Line } from "@/core/math/geometry/Line";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { TextAlign } from "@/core/graphics/styles/text/TextAlign";
@@ -18,10 +17,11 @@ import { MapRenderSystem } from "@/game/map/systems/MapRenderSystem";
 import { drawText } from "@/game/ui/model/UIPanel";
 import { UITheme } from "@/game/ui/model/UITheme";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { UnitData, WeaponType } from "@/game/units/model/UnitData";
+import { UnitData } from "@/game/units/model/UnitData";
 import { PopKind } from "@/game/units/model/UnitPop";
 import { UnitPopComponent } from "@/game/units/components/UnitPopComponent";
 import { UnitTheme } from "@/game/units/model/UnitTheme";
+import { drawUnitToken } from "@/game/units/model/UnitToken";
 
 /** No fight animation running on this token - the neutral values. */
 const RESTING: CombatAnimationData = { offsetColumn: 0, offsetRow: 0, flash: 0, critFlash: 0, hp: 0, alpha: 1, popText: "", popKind: PopKind.DAMAGE, popAge: 0 };
@@ -149,20 +149,7 @@ export class UnitRenderSystem extends MapRenderSystem {
 		graphics.fillColor(UnitTheme.shadow).fillCircle(new Circle(centre.x, centre.y + radius * 0.28, radius));
 
 		graphics.alpha(tokenAlpha);
-		graphics.fillColor(colors.body).fillCircle(new Circle(centre.x, centre.y, radius));
-
-		graphics
-			.strokeColor(UnitTheme.tokenOutline)
-			.lineStyle({ width: UnitTheme.ringWidth + 2 })
-			.strokeCircle(new Circle(centre.x, centre.y, radius));
-		graphics
-			.strokeColor(colors.ring)
-			.lineStyle({ width: UnitTheme.ringWidth })
-			.strokeCircle(new Circle(centre.x, centre.y, radius));
-
-		if (unit.weapon !== null) {
-			this.renderGlyph(graphics, unit.weapon.type, centre, radius, colors.glyph);
-		}
+		drawUnitToken(graphics, unit.faction, unit.weapon?.type ?? null, centre, radius);
 
 		if (anim.flash > 0) {
 			graphics.alpha(anim.alpha * anim.flash * 0.8);
@@ -212,41 +199,5 @@ export class UnitRenderSystem extends MapRenderSystem {
 		if (fill > 0) {
 			graphics.fillColor(fillColor).fillRectangle(new Rectangle(left, top, fill, height));
 		}
-	}
-
-	/** A schematic sword, axe or staff, drawn from a couple of strokes so no font is needed. */
-	private renderGlyph(graphics: Graphics, weapon: WeaponType, centre: Vector2D, radius: number, color: Color): void {
-		graphics.strokeColor(UnitTheme.tokenOutline).lineStyle({ width: UnitTheme.glyphWidth + 2 });
-		this.glyphStrokes(graphics, weapon, centre, radius);
-
-		graphics.strokeColor(color).lineStyle({ width: UnitTheme.glyphWidth });
-		this.glyphStrokes(graphics, weapon, centre, radius);
-	}
-
-	private glyphStrokes(graphics: Graphics, weapon: WeaponType, centre: Vector2D, radius: number): void {
-		const { x, y } = centre;
-
-		if (weapon === WeaponType.AXE) {
-			// A near-upright haft with a bit-shaped wedge hanging off its top right,
-			// so it reads as an axe rather than a slash across the disc.
-			const haft = x - radius * 0.18;
-			graphics.drawLine(new Line(haft, y - radius * 0.5, haft, y + radius * 0.55));
-			graphics.drawLine(new Line(haft, y - radius * 0.44, x + radius * 0.5, y - radius * 0.24));
-			graphics.drawLine(new Line(x + radius * 0.5, y - radius * 0.24, x + radius * 0.32, y + radius * 0.14));
-			graphics.drawLine(new Line(x + radius * 0.32, y + radius * 0.14, haft, y - radius * 0.02));
-			return;
-		}
-
-		if (weapon === WeaponType.STAFF) {
-			// Staff: a shaft down the middle with a small orb capping it, so a healer
-			// reads at a glance as neither sword nor axe.
-			graphics.drawLine(new Line(x, y - radius * 0.3, x, y + radius * 0.55));
-			graphics.strokeCircle(new Circle(x, y - radius * 0.42, radius * 0.16));
-			return;
-		}
-
-		// Sword: blade down the middle, a short crossguard near the hilt.
-		graphics.drawLine(new Line(x, y - radius * 0.55, x, y + radius * 0.5));
-		graphics.drawLine(new Line(x - radius * 0.32, y + radius * 0.22, x + radius * 0.32, y + radius * 0.22));
 	}
 }
