@@ -4,6 +4,7 @@ import { CombatFeature } from "@/game/combat";
 import { ConvoyFeature } from "@/game/convoy";
 import { MapFeature } from "@/game/map";
 import { MovementFeature } from "@/game/movement";
+import { RosterFeature } from "@/game/roster";
 import { TalkFeature } from "@/game/talk";
 import { ThreatFeature } from "@/game/threat";
 import { TradeFeature } from "@/game/trade";
@@ -21,6 +22,8 @@ game.install(new MapFeature());
 game.install(ui);
 game.install(units);
 game.install(new TurnFeature({ dependencies: [units] }));
+// The army list the global menu's "Units" row opens; needs the units on the map.
+game.install(new RosterFeature({ dependencies: [units] }));
 // The battle forecast the "Attack" command opens; needs the units on the map.
 game.install(new CombatFeature({ dependencies: [units] }));
 // The conversations the "Talk" command plays; needs the units on the map and

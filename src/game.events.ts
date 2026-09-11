@@ -222,6 +222,19 @@ export interface ThreatShownEvent extends GameEvent {
 /** The enemy-range overlay came back down. */
 export type ThreatClearedEvent = GameEvent;
 
+/** A request to open the army list (from the global command menu). */
+export type RosterRequestedEvent = GameEvent;
+
+/**
+ * The army list was closed. Nothing about the army changed - it is a readout - so
+ * all it reports is the row it was left on, which is what re-opening it comes
+ * back to. The list itself is gone by the time this lands, which is exactly why
+ * the row travels with the event rather than being read back off the state.
+ */
+export interface RosterClosedEvent extends GameEvent {
+	selectedIndex: number;
+}
+
 /** A request to end the current player turn (from the global command menu). */
 export type TurnEndEvent = GameEvent;
 
@@ -268,6 +281,8 @@ declare module "@/core/events/GameEvents" {
 		"visit:requested": VisitRequestedEvent;
 		"visit:cancelled": VisitCancelledEvent;
 		"visit:finished": VisitFinishedEvent;
+		"roster:requested": RosterRequestedEvent;
+		"roster:closed": RosterClosedEvent;
 		"turn:end": TurnEndEvent;
 		"turn:changed": TurnChangedEvent;
 	}

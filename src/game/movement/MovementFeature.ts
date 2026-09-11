@@ -82,7 +82,8 @@ import { VisitSystem } from "@/game/visit/systems/VisitSystem";
  * command menu comes back and the unit still has its action.
  *  - Confirm off the range or `map:cancelled` sets it back down without moving.
  *  - Confirm on a tile with nothing to pick up opens the global command menu
- *    ("End Turn" -> `turn:end`) next to the cursor.
+ *    next to the cursor: "Units" opens the army list (`roster:requested`), "End
+ *    Turn" ends the turn (`turn:end`).
  *
  * The menus themselves are built in `model/UnitMenus`; this feature only decides
  * when one opens and what a chosen row does.
@@ -413,7 +414,11 @@ export class MovementFeature extends BattleMapFeature {
 
 	private onCommand(event: MenuConfirmedEvent): void {
 		if (event.menu === GLOBAL_MENU) {
-			if (event.row === UnitMenuRow.END_TURN) {
+			if (event.row === UnitMenuRow.UNITS) {
+				// The roster feature takes it from here - it gathers the army and puts
+				// the list up. Nothing about the map changes.
+				this.events.dispatch("roster:requested", {});
+			} else if (event.row === UnitMenuRow.END_TURN) {
 				this.events.dispatch("turn:end", {});
 			}
 
