@@ -60,9 +60,10 @@ export class PathPreviewSystem extends UpdateSystem {
 
 		const origin = { column: movement.originColumn, row: movement.originRow };
 		const units = this.queries.units.getResult();
-		const blocked = MovementSystem.blockedTiles(UnitSystem.locations(units), movement.unitId);
 		const mover = UnitSystem.byId(units, movement.unitId);
-		const budget = mover ? mover.getComponent(UnitComponent).read().movement : 0;
+		const data = mover?.getComponent(UnitComponent).read();
+		const blocked = data ? MovementSystem.blockedTiles(UnitSystem.locations(units), data) : new Set<string>();
+		const budget = data?.movement ?? 0;
 
 		const path = MovementSystem.contains(movement.movement, cursor.column, cursor.row) ? MovementSystem.path(gridEntity.getComponent(GridComponent).read(), origin, cursor, budget, blocked) : [];
 

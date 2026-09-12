@@ -43,7 +43,9 @@ function pathfinderFor(grid: GridData): AStar {
  *
  * Movement works the Fire Emblem way - a flood fill outward from the unit that
  * spends the class's movement points on the cost of *entering* each tile, stops
- * at impassable terrain and cannot pass through a tile another unit occupies.
+ * at impassable terrain and cannot pass through a tile an enemy occupies. An
+ * ally is different: the unit walks straight through its own side, it just
+ * cannot end the move on top of anyone.
  * The fill itself is `AStar.findReachable`; everything here is the rules it is
  * given - what a tile costs, who blocks it - and the tile shapes the game reads
  * back. `path` walks the same fill back to a target for the shortest route; the
@@ -56,12 +58,16 @@ export class MovementSystem {
 		return `${column},${row}`;
 	}
 
-	/** Tiles blocked because another unit is standing on them. */
-	public static blockedTiles(units: readonly UnitLocation[], mover?: string): ReadonlySet<string> {
+	/**
+	 * Tiles the mover can neither enter nor walk through: those held by a unit
+	 * of another faction. Its own side never bars the way - see `occupiedTiles`
+	 * for what allies do.
+	 */
+	public static blockedTiles(units: readonly UnitLocation[], mover: Pick<UnitLocation, "id" | "faction">): ReadonlySet<string> {
 		const blocked = new Set<string>();
 
 		for (const unit of units) {
-			if (unit.id === mover) {
+			if (unit.id === mover.id || unit.faction === mover.faction) {
 				continue;
 			}
 
@@ -72,13 +78,34 @@ export class MovementSystem {
 	}
 
 	/**
-	 * Every tile the unit can reach from `start` with `movement` points, the
-	 * start tile included at cost 0. `blocked` tiles are neither entered nor
-	 * walked through.
+	 * Tiles the mover can walk through but not stop on: every one another unit
+	 * is standing on, ally or enemy. Enemies are in `blockedTiles` as well, so
+	 * for the fill only the allies among these make a difference.
 	 */
-	public static reachable(grid: GridData, start: GridPositionData, movement: number, blocked: ReadonlySet<string> = new Set()): ReachableTile[] {
+	public static occupiedTiles(units: readonly UnitLocation[], mover: string): ReadonlySet<string> {
+		const occupied = new Set<string>();
+
+		for (const unit of units) {
+			if (unit.id === mover) {
+				continue;
+			}
+
+			occupied.add(MovementSystem.tileKey(unit.column, unit.row));
+		}
+
+		return occupied;
+	}
+
+	/**
+	 * Every tile the unit can end a move on from `start` with `movement` points,
+	 * the start tile included at cost 0. `blocked` tiles are neither entered nor
+	 * walked through; `occupied` tiles are walked through but left out of the
+	 * result - an ally in the way is passed, never landed on.
+	 */
+	public static reachable(grid: GridData, start: GridPositionData, movement: number, blocked: ReadonlySet<string> = new Set(), occupied: ReadonlySet<string> = new Set()): ReachableTile[] {
 		return MovementSystem.flood(grid, start, movement, blocked)
 			.getNodes()
+			.filter((node) => !occupied.has(MovementSystem.tileKey(node.position.x, node.position.y)))
 			.map((node) => ({ column: node.position.x, row: node.position.y, cost: node.cost }));
 	}
 
@@ -138,8 +165,8 @@ export class MovementSystem {
 
 	/**
 	 * What it costs this unit to step on to a tile: the terrain's movement cost,
-	 * or `IMPASSABLE` for terrain no one can enter and for a tile somebody else
-	 * is standing on - which is what stops the fill walking through either.
+	 * or `IMPASSABLE` for terrain no one can enter and for a tile an enemy is
+	 * standing on - which is what stops the fill walking through either.
 	 */
 	public static entryCost(grid: GridData, blocked: ReadonlySet<string>, column: number, row: number): number {
 		const terrain = GridSystem.getTerrain(grid, column, row);

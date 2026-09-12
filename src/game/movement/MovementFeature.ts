@@ -255,7 +255,7 @@ export class MovementFeature extends BattleMapFeature {
 	 */
 	private walk(mover: Entity, origin: { column: number; row: number }, target: { column: number; row: number }, grid: GridData, units: Entity[]): void {
 		const data = mover.getComponent(UnitComponent).read();
-		const blocked = MovementSystem.blockedTiles(UnitSystem.locations(units), data.id);
+		const blocked = MovementSystem.blockedTiles(UnitSystem.locations(units), data);
 		const route = MovementSystem.path(grid, origin, target, data.movement, blocked);
 
 		mover.getComponent(GridPositionComponent).update(target);
@@ -891,8 +891,10 @@ export class MovementFeature extends BattleMapFeature {
 		}
 
 		const data = unit.getComponent(UnitComponent).read();
-		const blocked = MovementSystem.blockedTiles(UnitSystem.locations(units), unitId);
-		const reachable = MovementSystem.reachable(grid, { column, row }, data.movement, blocked);
+		const locations = UnitSystem.locations(units);
+		const blocked = MovementSystem.blockedTiles(locations, data);
+		const occupied = MovementSystem.occupiedTiles(locations, unitId);
+		const reachable = MovementSystem.reachable(grid, { column, row }, data.movement, blocked, occupied);
 		// A readied staff lights no red tiles - it reaches allies, not enemies.
 		const attack = data.weapon !== null && !isStaff(data.weapon) ? MovementSystem.attackable(grid, reachable, data.weapon.minRange, data.weapon.maxRange) : [];
 

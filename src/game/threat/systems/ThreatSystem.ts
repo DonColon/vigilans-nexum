@@ -67,11 +67,13 @@ export class ThreatSystem {
 	/**
 	 * Everything one unit threatens from where it stands: the tiles it can move
 	 * onto and the tiles it could strike from any of them. `others` are the units
-	 * in its way - itself included, it is filtered out by id.
+	 * in its way - itself included, it is filtered out by id; its own side is
+	 * walked through, the other side blocks.
 	 */
 	public static rangeOf(grid: GridData, unit: ThreatUnit, others: readonly UnitLocation[]): ThreatRange {
-		const blocked = MovementSystem.blockedTiles(others, unit.data.id);
-		const reachable = MovementSystem.reachable(grid, unit.tile, unit.data.movement, blocked);
+		const blocked = MovementSystem.blockedTiles(others, unit.data);
+		const occupied = MovementSystem.occupiedTiles(others, unit.data.id);
+		const reachable = MovementSystem.reachable(grid, unit.tile, unit.data.movement, blocked, occupied);
 		const reach = ThreatSystem.weaponReach(unit.data);
 
 		return {

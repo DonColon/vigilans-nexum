@@ -16,7 +16,8 @@ import { UnitSystem } from "@/game/units/systems/UnitSystem";
  *  - The hover card: while the map cursor rests on a unit - yours or theirs -
  *    a small card beside it names it, its class and level, shows its HP and
  *    what it has readied. Nothing to press; it follows the cursor and goes
- *    away when nothing is under it or something is pushed over the map.
+ *    away when nothing is under it, when a unit is picked up to move or
+ *    attack, or when something is pushed over the map.
  *  - The unit sheet: the info button (`map:infoRequested`, I / Q, Y / LB) over
  *    a unit opens a [[StatusState]] over the map, which freezes it the way a
  *    menu does, with everything on the sheet - stats against their caps, the

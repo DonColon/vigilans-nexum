@@ -4,9 +4,10 @@ import { GridPositionComponent } from "@/game/map/components/GridPositionCompone
 import { UnitComponent } from "@/game/units/components/UnitComponent";
 import { UnitData, UnitFaction } from "@/game/units/model/UnitData";
 
-/** A unit reduced to its id and tile - all the movement math needs about it. */
+/** A unit reduced to its id, side and tile - all the movement math needs about it. */
 export interface UnitLocation {
 	id: string;
+	faction: UnitFaction;
 	column: number;
 	row: number;
 }
@@ -83,11 +84,12 @@ export class UnitSystem {
 		return UnitSystem.beside(units, unit).filter((other) => other.getComponent(UnitComponent).read().faction === faction);
 	}
 
-	/** Every unit's id and tile, the form the movement math consumes. */
+	/** Every unit's id, side and tile, the form the movement math consumes. */
 	public static locations(units: readonly Entity[]): UnitLocation[] {
 		return units.map((unit) => {
 			const position = unit.getComponent(GridPositionComponent).read();
-			return { id: unit.getComponent(UnitComponent).read().id, column: position.column, row: position.row };
+			const data = unit.getComponent(UnitComponent).read();
+			return { id: data.id, faction: data.faction, column: position.column, row: position.row };
 		});
 	}
 

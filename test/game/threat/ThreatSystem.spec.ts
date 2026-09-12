@@ -3,7 +3,7 @@ import { parseTileMap } from "@/game/map/model/TileMaps";
 import { GridSystem } from "@/game/map/systems/GridSystem";
 import { MovementSystem } from "@/game/movement/systems/MovementSystem";
 import { ThreatSystem, ThreatUnit } from "@/game/threat/systems/ThreatSystem";
-import { buildUnit, getWeapon, InventoryKind, UnitData, UnitDocument } from "@/game/units/model/UnitData";
+import { buildUnit, getWeapon, InventoryKind, UnitData, UnitDocument, UnitFaction } from "@/game/units/model/UnitData";
 import dardanDocument from "@/assets/data/units/dardan.unit.json";
 import hasanDocument from "@/assets/data/units/hasan.unit.json";
 
@@ -63,8 +63,8 @@ suite("Threat System Test Suite", () => {
 		test("Terrain and the units in the way shrink it, its own tile never does", () => {
 			const unit = enemy({ movement: 2 });
 			const others = [
-				{ id: unit.id, column: 0, row: 1 },
-				{ id: "dardan", column: 1, row: 1 }
+				{ id: unit.id, faction: unit.faction, column: 0, row: 1 },
+				{ id: "dardan", faction: UnitFaction.PLAYER, column: 1, row: 1 }
 			];
 
 			const range = ThreatSystem.rangeOf(grid(["...", "...", "###"]), at(unit, 0, 1), others);
@@ -80,6 +80,18 @@ suite("Threat System Test Suite", () => {
 
 			expect(range.movement).toHaveLength(5);
 			expect(range.attack).toStrictEqual([]);
+		});
+
+		test("Its own side is walked through, not around - but never stood on", () => {
+			const unit = enemy({ movement: 2 });
+			const others = [
+				{ id: unit.id, faction: unit.faction, column: 0, row: 0 },
+				{ id: "besnik", faction: unit.faction, column: 1, row: 0 }
+			];
+
+			const range = ThreatSystem.rangeOf(grid(["...."]), at(unit, 0, 0), others);
+
+			expect(keys(range.movement)).toStrictEqual(new Set(["0,0", "2,0"]));
 		});
 	});
 

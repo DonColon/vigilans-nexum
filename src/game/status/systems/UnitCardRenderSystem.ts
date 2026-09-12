@@ -13,6 +13,8 @@ import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
 import { MapState } from "@/game/map/states/MapState";
 import { MapRenderSystem } from "@/game/map/systems/MapRenderSystem";
+import { MovementComponent } from "@/game/movement/components/MovementComponent";
+import { PendingMoveComponent } from "@/game/movement/components/PendingMoveComponent";
 import { WalkComponent } from "@/game/movement/components/WalkComponent";
 import { UnitCard, unitCardLines, unitCardPlacement } from "@/game/status/model/UnitCard";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
@@ -25,14 +27,21 @@ import { UnitSystem } from "@/game/units/systems/UnitSystem";
  * speech bubble above its head, an arrow down to the token: its name, class
  * and level, an HP bar with the numbers, and the weapon it has readied. It
  * follows the cursor, so it changes as the player moves over
- * the map, and it is up whenever the map itself is what the player is driving
- * - a picked-up unit's range included - and never over a menu, a forecast or
- * a screen pushed on top: those have the unit's numbers on them already, or
- * the player's eyes elsewhere.
+ * the map, and it is up only while the player is browsing the map with
+ * nothing in hand: never over a menu, a forecast or a screen pushed on top -
+ * those have the unit's numbers on them already, or the player's eyes
+ * elsewhere - and never while a unit is selected. A picked-up unit's range
+ * is about where it can go and whom it can reach, and a bubble following the
+ * cursor through it would cover the very tiles being weighed; attack
+ * targeting lives in the forecast, which is a pushed state already.
  *
- * Nothing is drawn while a unit walks a move: input is locked, the token is
- * between tiles, and a card sat at its destination would give the move away
- * before it lands.
+ * Nothing is drawn while a unit walks a move either: input is locked, the
+ * token is between tiles, and a card sat at its destination would give the
+ * move away before it lands. Nor while a unit has landed but not decided
+ * (its [[PendingMoveComponent]] is still on): the command menu is what is
+ * up then - and on the single frame between the menu popping and the
+ * cancel event re-picking the unit, the map would otherwise look free and
+ * the card would flash over the token.
  *
  * On the "ui" layer right after UIRenderSystem (which owns and clears that
  * layer), below the corner HUDs - which it can sit next to but never needs to
@@ -47,12 +56,20 @@ export class UnitCardRenderSystem extends MapRenderSystem {
 			cursors: new Query({ allowlist: [CursorComponent, GridPositionComponent] }),
 			units: new Query({ allowlist: [UnitComponent, GridPositionComponent] }),
 			walks: new Query({ allowlist: [WalkComponent] }),
+			pending: new Query({ allowlist: [PendingMoveComponent] }),
+			movements: new Query({ allowlist: [MovementComponent] }),
 			grids: new Query({ allowlist: [GridComponent] })
 		};
 	}
 
 	public execute(): void {
-		if (!(this.stateManager.peek() instanceof MapState) || this.queries.walks.getResult().length > 0) {
+		if (!(this.stateManager.peek() instanceof MapState) || this.queries.walks.getResult().length > 0 || this.queries.pending.getResult().length > 0) {
+			return;
+		}
+
+		const movement = this.queries.movements.getSingleResult();
+
+		if (movement !== null && movement.getComponent(MovementComponent).read().unitId.length > 0) {
 			return;
 		}
 
