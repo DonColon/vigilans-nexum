@@ -5,6 +5,7 @@ Files in this folder, taken from "PNG/Default":
   panel.png   <- Panel/panel-000.png          (filled ornate panel, 48x48, 1-bit mask)
   frame.png   <- Border/panel-border-000.png   (ornate border ring, 48x48, 1-bit mask)
   divider.png <- Divider/divider-000.png       (horizontal flourish, 96x22, 1-bit mask)
+  divider-fade.png <- Divider Fade/divider-fade-000.png (the same flourish, tail fading out, 96x22, 8-bit alpha)
 
 The art is a 1-bit alpha mask (white on transparency). The UI feature tints it at
 runtime (see src/game/ui/model/NineSlice.ts) and nine-slices panel.png / frame.png

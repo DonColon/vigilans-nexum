@@ -85,7 +85,7 @@
 	"status.unarmed": "Unarmed",
 	"status.page": "{index} / {count}",
 	"turn.label": "Turn",
-	"turn.banner": "Turn {turn} - {faction}",
+	"turn.banner": "Turn {turn}",
 	"turn.playerPhase": "Player Phase",
 	"turn.enemyPhase": "Enemy Phase",
 	"terrain.plain": "Plain",

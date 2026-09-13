@@ -42,6 +42,16 @@ const assetManifest: AssetManifest = {
 				url: "/ui/divider.png",
 				layout: { type: "grid", tileWidth: 96, tileHeight: 22, columns: 1, rows: 1 }
 			},
+			// The same flourish with its tail fading out - one on each side of the
+			// phase banner (see src/game/turn/model/PhaseBanner.ts). Not 1-bit: the
+			// fade is a real alpha ramp, which the tint keeps.
+			{
+				id: "ui-divider-fade",
+				type: "image",
+				subtype: "spritesheet",
+				url: "/ui/divider-fade.png",
+				layout: { type: "grid", tileWidth: 96, tileHeight: 22, columns: 1, rows: 1 }
+			},
 			// The game's rulebook: the shared catalogs every unit sheet resolves
 			// against. Seeded into the catalog registry by the UnitsFeature - see
 			// src/game/units/model/UnitCatalog.ts.

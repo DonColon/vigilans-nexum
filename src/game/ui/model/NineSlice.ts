@@ -20,7 +20,8 @@ export interface NineSlice {
  */
 const tintCache = new WeakMap<HTMLImageElement, Map<string, CanvasImageSource>>();
 
-function tint(image: HTMLImageElement, color: Color): CanvasImageSource {
+/** `image` recoloured to `color`, keeping its alpha - cached, so it is free to call every frame. */
+export function tint(image: HTMLImageElement, color: Color): CanvasImageSource {
 	let byColour = tintCache.get(image);
 
 	if (byColour === undefined) {

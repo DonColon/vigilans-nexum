@@ -2,11 +2,16 @@ import { test, expect, suite, beforeEach, afterEach } from "vitest";
 import { Entity } from "@/core/ecs/Entity";
 import { World } from "@/core/ecs/World";
 import { EventSystem } from "@/core/events/EventSystem";
+import { GameState } from "@/core/GameState";
 import { GameStateManager } from "@/core/GameStateManager";
+import { Display } from "@/core/graphics/Display";
+import { InputDevice } from "@/core/input/InputDevice";
 import { ServiceRegistry } from "@/core/service/ServiceRegistry";
 import { TurnChangedEvent } from "@/game.events";
+import { MapState } from "@/game/map/states/MapState";
 import { DIGIT_ZERO, turnDigits } from "@/game/turn/model/TurnHud";
 import { TurnComponent } from "@/game/turn/components/TurnComponent";
+import { TurnSystem } from "@/game/turn/systems/TurnSystem";
 import { TurnFeature } from "@/game/turn/TurnFeature";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
 import { buildUnit, UnitData } from "@/game/units/model/UnitData";
@@ -22,14 +27,60 @@ suite("Turn Test Suite", () => {
 	});
 
 	suite("TurnFeature", () => {
+		/** Stands in for the battle map: `TurnSystem` only tells the map by its type. */
+		class MapStub extends GameState {
+			public static readonly type = MapState.type;
+			onEnter() {}
+			onExit() {}
+			onPause() {}
+			onResume() {}
+		}
+
+		/** Anything pushed over the map - an experience bar, a popup, a fight. */
+		class OverlayStub extends GameState {
+			public static readonly type = "turn-overlay-stub";
+			onEnter() {}
+			onExit() {}
+			onPause() {}
+			onResume() {}
+		}
+
 		const world = ServiceRegistry.get<World>(World.name);
 		const eventSystem = ServiceRegistry.get<EventSystem>(EventSystem.name);
 
 		world.registerComponent(UnitComponent);
 
-		new GameStateManager();
+		const stateManager = new GameStateManager();
+		// The phase banner state resets its command list on entry, which needs an input device - and that a display.
+		new Display("turn-test", { dimension: { width: 1280, height: 720 }, layers: { 1: "background", 2: "gameplay", 3: "ui" } });
+		new InputDevice({ gamepad: { axisThreshold: 0.5, deadZone: 0.1 } });
 
 		let feature: TurnFeature;
+
+		const systems: TurnSystem[] = [];
+
+		/** A TurnSystem whose queries already see the entities that exist right now. */
+		const turnSystem = () => {
+			const system = new TurnSystem(0);
+			systems.push(system);
+			return system;
+		};
+
+		/** One frame: the queued events land, then the turn system runs. */
+		const tick = () => {
+			eventSystem.processQueue();
+			turnSystem().execute();
+			eventSystem.processQueue();
+		};
+
+		/** Takes the phase banner down again, so the map is back on top. */
+		const dismissBanner = () => {
+			if (stateManager.peek() instanceof MapStub) {
+				return;
+			}
+
+			stateManager.pop();
+		};
 
 		const spawn = (document: unknown, moved = false) => {
 			const data: UnitData = { ...buildUnit(document as Parameters<typeof buildUnit>[0]), hasMoved: moved };
@@ -38,20 +89,32 @@ suite("Turn Test Suite", () => {
 			return entity;
 		};
 
-		const turn = () => (world.getEntities().find((entity) => entity.hasComponent(TurnComponent)) as Entity).getComponent(TurnComponent).read().number;
+		const turnEntity = () => world.getEntities().find((entity) => entity.hasComponent(TurnComponent)) as Entity;
+		const turn = () => turnEntity().getComponent(TurnComponent).read().number;
 		const moved = (unit: Entity, value: boolean) => {
 			const component = unit.getComponent(UnitComponent);
 			component.update({ ...component.read(), hasMoved: value });
 		};
 
 		beforeEach(() => {
+			stateManager.clear();
+			stateManager.registerState(MapStub);
+			stateManager.registerState(OverlayStub);
+			stateManager.switch(MapStub);
+
 			feature = new TurnFeature();
 			feature.install();
 			eventSystem.dispatch("map:ready", { mapId: "map", columns: 8, rows: 8 });
-			eventSystem.processQueue();
+			tick();
+			dismissBanner();
 		});
 
 		afterEach(() => {
+			while (systems.length > 0) {
+				(systems.pop() as TurnSystem).dispose();
+			}
+
+			stateManager.clear();
 			feature.uninstall();
 			for (const entity of world.getEntities()) {
 				world.unregisterEntity(entity);
@@ -66,7 +129,7 @@ suite("Turn Test Suite", () => {
 			feature.install();
 
 			eventSystem.dispatch("map:ready", { mapId: "map", columns: 8, rows: 8 });
-			eventSystem.processQueue();
+			tick();
 
 			expect(turn()).toBe(1);
 			expect(changed).toMatchObject({ number: 1 });
@@ -77,7 +140,7 @@ suite("Turn Test Suite", () => {
 			const hasan = spawn(hasanDocument, true); // enemy - left as-is
 
 			eventSystem.dispatch("turn:end", {});
-			eventSystem.processQueue();
+			tick();
 
 			expect(turn()).toBe(2);
 			expect(dardan.getComponent(UnitComponent).read().hasMoved).toBe(false);
@@ -91,15 +154,37 @@ suite("Turn Test Suite", () => {
 
 			moved(dardan, true);
 			eventSystem.dispatch("unit:acted", { unitId: "dardan" });
-			eventSystem.processQueue();
+			tick();
 			expect(turn()).toBe(1); // `other` still has to move
 
 			moved(other, true);
 			eventSystem.dispatch("unit:acted", { unitId: "dardan" });
-			eventSystem.processQueue();
+			tick();
 			expect(turn()).toBe(2);
 			expect(dardan.getComponent(UnitComponent).read().hasMoved).toBe(false);
 			expect(other.getComponent(UnitComponent).read().hasMoved).toBe(false);
+		});
+
+		test("A finished turn waits for whatever is over the map - the last fight's experience bar - before the next starts", () => {
+			const dardan = spawn(dardanDocument, true);
+
+			// The bar goes up in the same breath as the unit is spent.
+			stateManager.push(OverlayStub);
+			eventSystem.dispatch("unit:acted", { unitId: "dardan" });
+			tick();
+
+			expect(turnEntity().getComponent(TurnComponent).read().ending).toBe(true);
+			expect(turn()).toBe(1);
+			expect(dardan.getComponent(UnitComponent).read().hasMoved).toBe(true);
+			expect(stateManager.peek()).toBeInstanceOf(OverlayStub);
+
+			// The bar is seen off - the map is on top again, and the turn turns over.
+			stateManager.pop();
+			tick();
+
+			expect(turn()).toBe(2);
+			expect(turnEntity().getComponent(TurnComponent).read().ending).toBe(false);
+			expect(dardan.getComponent(UnitComponent).read().hasMoved).toBe(false);
 		});
 
 		test("map:closed clears the counter", () => {

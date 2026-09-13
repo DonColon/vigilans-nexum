@@ -85,7 +85,7 @@
 	"status.unarmed": "Unbewaffnet",
 	"status.page": "{index} / {count}",
 	"turn.label": "Zug",
-	"turn.banner": "Zug {turn} - {faction}",
+	"turn.banner": "Zug {turn}",
 	"turn.playerPhase": "Spielerphase",
 	"turn.enemyPhase": "Gegnerphase",
 	"terrain.plain": "Ebene",
