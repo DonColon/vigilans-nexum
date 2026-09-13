@@ -16,16 +16,15 @@ import { MapRenderSystem } from "@/game/map/systems/MapRenderSystem";
 import { MovementComponent } from "@/game/movement/components/MovementComponent";
 import { PendingMoveComponent } from "@/game/movement/components/PendingMoveComponent";
 import { WalkComponent } from "@/game/movement/components/WalkComponent";
-import { UnitCard, UnitCardBar, unitCardLines, unitCardPlacement } from "@/game/status/model/UnitCard";
+import { UnitCard, UnitCardBar, unitCardHeight, unitCardLines, unitCardPlacement, unitCardRows } from "@/game/status/model/UnitCard";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { UnitTheme } from "@/game/units/model/UnitTheme";
 import { drawUnitToken } from "@/game/units/model/UnitToken";
 import { UnitSystem } from "@/game/units/systems/UnitSystem";
 
 /**
  * Draws the hover card over whichever unit the map cursor is resting on - a
  * speech bubble above its head, an arrow down to the token: its name, class
- * and level, HP / MP / EXP bars with their numbers, and the weapon it has readied. It
+ * and level, HP / MP / EXP bars with their numbers (an enemy, who never levels, gets no EXP bar), and the weapon it has readied. It
  * follows the cursor, so it changes as the player moves over
  * the map, and it is up only while the player is browsing the map with
  * nothing in hand: never over a menu, a forecast or a screen pushed on top -
@@ -92,7 +91,7 @@ export class UnitCardRenderSystem extends MapRenderSystem {
 
 		const { origin, cellSize } = view;
 		const tileRect = new Rectangle(origin.x + tile.column * cellSize, origin.y + tile.row * cellSize, cellSize, cellSize);
-		const { box: card, below, anchorX } = unitCardPlacement(tileRect, this.display.getViewportDimension());
+		const { box: card, below, anchorX } = unitCardPlacement(tileRect, this.display.getViewportDimension(), unitCardHeight(unitCardRows(lines)));
 
 		const graphics = this.display.getLayer("ui");
 		const { x, y } = card.getPosition();
@@ -119,13 +118,19 @@ export class UnitCardRenderSystem extends MapRenderSystem {
 		this.text(graphics, lines.level, right, rowTop, UnitCard.label, TextAlign.RIGHT);
 		rowTop += UnitCard.lineHeight;
 
-		// The three bars, each labelled on the left and numbered on the right: the
-		// wound in the faction's colour, then magic, then the way to the next level.
-		for (const [bar, fill] of [
-			[lines.hp, UnitTheme.faction[sheet.faction].body],
-			[lines.mp, UnitCard.mp],
-			[lines.experience, UnitCard.experience]
-		] as const) {
+		// The bars, each labelled on the left and numbered on the right: the wound
+		// in green, magic in blue, then - for a unit that levels - the way to the
+		// next level in gold.
+		const bars: (readonly [UnitCardBar, Color])[] = [
+			[lines.hp, UnitCard.hp],
+			[lines.mp, UnitCard.mp]
+		];
+
+		if (lines.experience !== null) {
+			bars.push([lines.experience, UnitCard.experience]);
+		}
+
+		for (const [bar, fill] of bars) {
 			this.renderBarRow(graphics, bar, x + UnitCard.padding, right, rowTop, fill);
 			rowTop += UnitCard.lineHeight;
 		}

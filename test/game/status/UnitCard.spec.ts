@@ -1,10 +1,11 @@
 import { test, expect, suite } from "vitest";
 import { i18n } from "@/core/i18n/I18n";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
-import { UnitCard, UNIT_CARD_HEIGHT, UNIT_CARD_ROWS, unitCardLines, unitCardPlacement } from "@/game/status/model/UnitCard";
+import { UnitCard, UNIT_CARD_HEIGHT, UNIT_CARD_ROWS, ENEMY_CARD_ROWS, unitCardHeight, unitCardLines, unitCardPlacement, unitCardRows } from "@/game/status/model/UnitCard";
 import { unequipInventoryItem } from "@/game/units/model/Inventory";
 import { buildUnit, UnitDocument } from "@/game/units/model/UnitData";
 import dardanDocument from "@/assets/data/units/dardan.unit.json";
+import besnikDocument from "@/assets/data/units/besnik.unit.json";
 
 /**
  * The card over the unit under the cursor: what it says, and where it goes so
@@ -13,6 +14,7 @@ import dardanDocument from "@/assets/data/units/dardan.unit.json";
  */
 suite("Unit Card Test Suite", () => {
 	const dardan = () => buildUnit(dardanDocument as UnitDocument);
+	const besnik = () => buildUnit(besnikDocument as UnitDocument);
 
 	const viewport = { width: 1536, height: 768 };
 	const cell = 32;
@@ -50,9 +52,22 @@ suite("Unit Card Test Suite", () => {
 			expect(unitCardLines({ ...unit, stats: { ...unit.stats, mp: 12 } }).mp).toStrictEqual({ label: i18n("roster.mp"), value: "12/12", ratio: 1 });
 		});
 
-		test("The card has room for six rows - name, class, three bars, weapon - and the rule before the weapon", () => {
+		test("An enemy never levels, so its card has no EXP bar", () => {
+			const lines = unitCardLines(besnik());
+
+			expect(lines.experience).toBeNull();
+			expect(lines.hp.label).toBe(i18n("roster.hp"));
+			expect(lines.mp.label).toBe(i18n("roster.mp"));
+		});
+
+		test("A player's card has room for six rows - name, class, three bars, weapon - and the rule before the weapon; an enemy's is one row shorter", () => {
 			expect(UNIT_CARD_ROWS).toBe(6);
+			expect(ENEMY_CARD_ROWS).toBe(5);
 			expect(UNIT_CARD_HEIGHT).toBe(UnitCard.padding * 2 + 6 * UnitCard.lineHeight + UnitCard.dividerGap);
+			expect(unitCardHeight(ENEMY_CARD_ROWS)).toBe(UNIT_CARD_HEIGHT - UnitCard.lineHeight);
+
+			expect(unitCardRows(unitCardLines(dardan()))).toBe(UNIT_CARD_ROWS);
+			expect(unitCardRows(unitCardLines(besnik()))).toBe(ENEMY_CARD_ROWS);
 		});
 	});
 
@@ -68,6 +83,14 @@ suite("Unit Card Test Suite", () => {
 			expect(anchorX).toBe(10 * cell + cell / 2);
 			expect(box.getWidth()).toBe(UnitCard.width);
 			expect(box.getHeight()).toBe(UNIT_CARD_HEIGHT);
+		});
+
+		test("A shorter card - an enemy's - still ends the same reach above the tile", () => {
+			const height = unitCardHeight(ENEMY_CARD_ROWS);
+			const { box } = unitCardPlacement(tile(10, 10), viewport, height);
+
+			expect(box.getHeight()).toBe(height);
+			expect(box.getPosition().y + box.getHeight() + reach).toBe(10 * cell);
 		});
 
 		test("A unit at the top edge gets its card underneath, the arrow pointing up", () => {

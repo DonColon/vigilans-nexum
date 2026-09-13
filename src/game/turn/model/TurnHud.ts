@@ -1,5 +1,6 @@
 import { Color } from "@/core/graphics/color/Color";
 import { FontStyleSettings } from "@/core/graphics/styles/text/FontStyle";
+import { TileInfoHud } from "@/game/map/model/TileInfoHud";
 
 /** The `kenney-1bit` tilesheet the turn counter is drawn from. */
 export const TURN_SHEET = "kenney-1bit";
@@ -29,10 +30,16 @@ export const TurnHud = {
 	scale: 1.5,
 	/** Gap between the plate and the map's top-left corner. */
 	inset: 6,
-	/** Inner padding of the plate around the digits. */
+	/** Inner padding of the plate above and below the digits. */
 	padding: 4,
+	/** Inner padding of the plate left and right - roomier, so the label clears the rounded corner. */
+	paddingX: 10,
 	/** Extra pixels trimmed between digits - the glyphs carry their own side margin. */
 	kerning: 4,
+	/** Corner radius of the plate - the unit card's and the terrain readout's. */
+	radius: 8,
+	/** Narrowest the plate gets - the terrain readout's, so the two line up down their right edge. */
+	minWidth: TileInfoHud.minWidth,
 	/** Gap between the label and the first digit. */
 	labelGap: 6,
 	labelKey: TURN_LABEL_KEY,
@@ -40,7 +47,8 @@ export const TurnHud = {
 	labelCapRatio: 0.625,
 	/** Matches the baked colour of the `kenney-1bit` digit glyphs so label and count read as one. */
 	label: Color.hex("#cfc6b8"),
-	plate: Color.hex("#141a26cc")
+	/** The same plate as the terrain readout above, so the two read as one corner. */
+	plate: Color.hex("#141a26f0")
 } as const;
 
 /**

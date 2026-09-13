@@ -19,8 +19,8 @@ export const EXPERIENCE_HOLD = 600;
 
 /** The empty track behind the fill. */
 export const EXPERIENCE_TRACK = Color.hex("#2b3345");
-/** The fill - the same blue the map paints a unit's reach in. */
-export const EXPERIENCE_FILL = Color.hex("#7fb2ff");
+/** The fill - the UI's gold, the same the hover card's EXP bar fills in. */
+export const EXPERIENCE_FILL = Color.hex("#c8a86e");
 export const EXPERIENCE_BAR_HEIGHT = 10;
 
 /** Gap the bar keeps from the bottom of the screen. */

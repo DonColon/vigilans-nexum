@@ -59,7 +59,7 @@ export class TileInfoRenderSystem extends MapRenderSystem {
 		const plateX = view.origin.x + TileInfoHud.inset;
 		const plateY = view.origin.y + TileInfoHud.inset;
 
-		graphics.fillColor(TileInfoHud.plate).fillRoundRectangle(new Rectangle(plateX, plateY, width, TILE_INFO_HEIGHT), 4);
+		graphics.fillColor(TileInfoHud.plate).fillRoundRectangle(new Rectangle(plateX, plateY, width, TILE_INFO_HEIGHT), TileInfoHud.radius);
 
 		const left = plateX + TileInfoHud.padding;
 		const right = plateX + width - TileInfoHud.padding;

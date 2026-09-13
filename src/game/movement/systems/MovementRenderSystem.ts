@@ -90,8 +90,13 @@ export class MovementRenderSystem extends MapRenderSystem {
 			const x = origin.x + tile.column * cellSize;
 			const y = origin.y + tile.row * cellSize;
 
+			// On the head tile the band stops where the arrow head begins: run past
+			// the centre as on every other tile, its square end would poke out of
+			// the head's narrowing sides.
+			const length = tile.kind === "head" ? cellSize / 2 - band / 2 : cellSize / 2 + band / 2;
+
 			for (const edge of tile.edges) {
-				graphics.fillRectangle(this.arm(x, y, cellSize, band, edge));
+				graphics.fillRectangle(this.arm(x, y, cellSize, band, edge, length));
 			}
 
 			if (tile.kind === "head") {
@@ -102,10 +107,9 @@ export class MovementRenderSystem extends MapRenderSystem {
 		}
 	}
 
-	/** A band from the tile's `edge` side through its centre, `band` wide and centred on the cross axis. */
-	private arm(x: number, y: number, cellSize: number, band: number, edge: Direction): Rectangle {
+	/** A band from the tile's `edge` side reaching `past` pixels in, `band` wide and centred on the cross axis. */
+	private arm(x: number, y: number, cellSize: number, band: number, edge: Direction, past: number): Rectangle {
 		const near = (cellSize - band) / 2;
-		const past = cellSize / 2 + band / 2;
 
 		switch (edge) {
 			case "up":
@@ -119,7 +123,7 @@ export class MovementRenderSystem extends MapRenderSystem {
 		}
 	}
 
-	/** A solid arrow head pointing `facing`, its base overlapping the band at the centre. */
+	/** A solid arrow head pointing `facing`, its base `band / 2` short of the centre - where the head tile's band ends. */
 	private head(graphics: Graphics, x: number, y: number, cellSize: number, band: number, facing: Direction): void {
 		const cx = x + cellSize / 2;
 		const cy = y + cellSize / 2;

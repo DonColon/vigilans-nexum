@@ -24,13 +24,15 @@ export const TileInfoHud = {
 	/** Gap between the plate and the map's top-left corner - the turn counter's own inset. */
 	inset: 6,
 	/** Inner padding of the plate around its rows. */
-	padding: 6,
+	padding: 10,
 	/** Gap between this plate and the turn counter tucked under it. */
 	gap: 4,
 	/** Baseline-to-baseline distance of the rows. */
 	lineHeight: 20,
-	/** Narrowest the plate gets; it grows to fit a long terrain name. */
-	minWidth: 168,
+	/** Corner radius of the plate - the unit card's, so the three plates read as one family. */
+	radius: 8,
+	/** Narrowest the plate gets; it grows to fit a long terrain name. The turn counter under it is at least as wide. */
+	minWidth: 200,
 	/** Gap between the widest label and the value column. */
 	labelGap: 12,
 
@@ -39,9 +41,8 @@ export const TileInfoHud = {
 	capRatio: 0.625,
 
 	/**
-	 * A touch more solid than the turn counter's plate: that one carries chunky
-	 * sprite digits that survive anything showing through, while four rows of a
-	 * 16px font need the map behind them held back.
+	 * Near-solid: four rows of a 16px font need the map behind them held back.
+	 * The turn counter and the unit card share it, so the HUD plates read as one.
 	 */
 	plate: Color.hex("#141a26f0"),
 	/** The terrain's name, in the gold the UI uses for a heading. */

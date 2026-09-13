@@ -3,14 +3,15 @@ import { Dimension } from "@/core/math/geometry/Dimension";
 import { FontStyleSettings } from "@/core/graphics/styles/text/FontStyle";
 import { i18n } from "@/core/i18n/I18n";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
-import { LEVEL_UP_EXPERIENCE, UnitData } from "@/game/units/model/UnitData";
+import { LEVEL_UP_EXPERIENCE, UnitData, UnitFaction } from "@/game/units/model/UnitData";
 
 /**
  * The card that pops up over a unit while the cursor rests on it - Fire
  * Emblem's hover window, drawn as a bubble above the token with an arrow down
  * to it: who it is, what it is and how far along its level, how hurt and
  * how much magic it has left, how close its next level is, and what it is
- * holding - at a glance and without opening anything. Drawn on the same dark
+ * holding - at a glance and without opening anything. An enemy never gains
+ * experience, so its card has no EXP bar and is one row shorter. Drawn on the same dark
  * plate, in the same small pixel font, as the terrain readout in the corner,
  * so the two read as one HUD.
  *
@@ -25,8 +26,8 @@ const LABEL_FAMILY = "'kenney-mini', 'Trebuchet MS', sans-serif";
 export const UnitCard = {
 	/** Gap between the tip of the arrow and the tile it points at. */
 	gap: 2,
-	/** Corner radius of the plate. */
-	radius: 4,
+	/** Corner radius of the plate - well rounded, a speech bubble rather than the squared-off corner readouts. */
+	radius: 8,
 	/** The arrow from the plate to the tile: how wide its base is, how far it reaches. */
 	arrow: { width: 18, height: 10 },
 	/** Gap the card keeps from the edges of the screen when it has to be pushed in. */
@@ -72,17 +73,27 @@ export const UnitCard = {
 	barOutline: Color.hex("#0d121b"),
 	/** The rule between the bars and the weapon line - the same faint gold the unit sheet rules its columns with. */
 	divider: Color.hex("#c8a86e66"),
-	/** The MP bar's fill - a violet, so it never reads as a second HP bar. */
-	mp: Color.hex("#b389f5"),
-	/** The experience bar's fill - the same blue the bar after a fight fills in. */
-	experience: Color.hex("#7fb2ff")
+	/** The HP bar's fill - the same green the unit sheet fills its HP bar with, and a heal pops up in. */
+	hp: Color.hex("#7fe3a0"),
+	/** The MP bar's fill - a blue, lighter than the player token's so it never reads as a faction colour. */
+	mp: Color.hex("#5fa8f5"),
+	/** The experience bar's fill - the UI's gold, the same the bar after a fight fills in. */
+	experience: Color.hex("#c8a86e")
 } as const;
 
-/** Name, class and level, the HP / MP / EXP bars, the weapon: the card is always this tall. */
+/** Name, class and level, the HP / MP / EXP bars, the weapon: a player unit's card has this many rows. */
 export const UNIT_CARD_ROWS = 6;
 
-/** Height of the plate - fixed, whatever the unit, for the same reason the width is. The rule before the weapon line takes its own gap. */
-export const UNIT_CARD_HEIGHT = UnitCard.padding * 2 + UNIT_CARD_ROWS * UnitCard.lineHeight + UnitCard.dividerGap;
+/** Rows of a card without an EXP bar - an enemy's. */
+export const ENEMY_CARD_ROWS = UNIT_CARD_ROWS - 1;
+
+/** Height of a plate with this many rows - fixed per faction, so it never jitters as the cursor moves between allies. The rule before the weapon line takes its own gap. */
+export function unitCardHeight(rows: number): number {
+	return UnitCard.padding * 2 + rows * UnitCard.lineHeight + UnitCard.dividerGap;
+}
+
+/** Height of a player unit's card. */
+export const UNIT_CARD_HEIGHT = unitCardHeight(UNIT_CARD_ROWS);
 
 /** One bar of the card: what it measures, the numbers beside it and how full it is. */
 export interface UnitCardBar {
@@ -105,8 +116,8 @@ export interface UnitCardLines {
 	hp: UnitCardBar;
 	/** Magic left over the maximum - a unit without magic has an empty bar over "0/0". */
 	mp: UnitCardBar;
-	/** Points towards the next level, over a hundred. */
-	experience: UnitCardBar;
+	/** Points towards the next level, over a hundred - `null` for an enemy, who never levels and gets no bar. */
+	experience: UnitCardBar | null;
 	/** The readied weapon, or the "unarmed" label. */
 	weapon: string;
 	/** Nothing is readied - the weapon line is drawn muted. */
@@ -127,10 +138,15 @@ export function unitCardLines(unit: UnitData): UnitCardLines {
 		hp: { label: i18n("roster.hp"), value: `${unit.currentHP}/${unit.stats.hp}`, ratio: ratio(unit.currentHP, unit.stats.hp) },
 		// No MP is spent by anything yet, so the pool is always full.
 		mp: { label: i18n("roster.mp"), value: `${unit.stats.mp}/${unit.stats.mp}`, ratio: ratio(unit.stats.mp, unit.stats.mp) },
-		experience: { label: i18n("experience.label"), value: String(unit.experience), ratio: ratio(unit.experience, LEVEL_UP_EXPERIENCE) },
+		experience: unit.faction === UnitFaction.PLAYER ? { label: i18n("experience.label"), value: String(unit.experience), ratio: ratio(unit.experience, LEVEL_UP_EXPERIENCE) } : null,
 		weapon: unit.weapon === null ? i18n("status.unarmed") : unit.weapon.name,
 		unarmed: unit.weapon === null
 	};
+}
+
+/** The rows a card with these lines needs - one fewer without an EXP bar. */
+export function unitCardRows(lines: UnitCardLines): number {
+	return lines.experience === null ? ENEMY_CARD_ROWS : UNIT_CARD_ROWS;
 }
 
 /** Where the card goes: its plate, and the arrow that ties it to the tile it describes. */
@@ -143,17 +159,16 @@ export interface UnitCardPlacement {
 }
 
 /**
- * Where the card sits: above `tile` (the unit's tile, in screen pixels) and
+ * Where a card `height` pixels tall sits: above `tile` (the unit's tile, in screen pixels) and
  * centred on it, with a small arrow reaching down from the plate to the token
  * it describes - a speech bubble over the unit's head. A unit too close to the
  * top of the screen gets it under the tile instead, the arrow pointing up. A
  * unit near either side edge keeps the plate on the screen and lets the arrow
  * slide along it, so the tip still lands on the tile.
  */
-export function unitCardPlacement(tile: Rectangle, viewport: Dimension): UnitCardPlacement {
+export function unitCardPlacement(tile: Rectangle, viewport: Dimension, height: number = UNIT_CARD_HEIGHT): UnitCardPlacement {
 	const { x: tileX, y: tileY } = tile.getPosition();
 	const width = UnitCard.width;
-	const height = UNIT_CARD_HEIGHT;
 	const reach = UnitCard.gap + UnitCard.arrow.height;
 
 	const centreX = tileX + tile.getWidth() / 2;

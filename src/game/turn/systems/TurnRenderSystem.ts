@@ -50,7 +50,8 @@ export class TurnRenderSystem extends MapRenderSystem {
 		graphics.fontStyle(TurnHud.labelFont);
 		const labelWidth = Math.ceil(graphics.measureText(label).width);
 
-		const width = TurnHud.padding * 2 + labelWidth + TurnHud.labelGap + digitsWidth;
+		// At least as wide as the terrain readout above, so the two plates share a right edge.
+		const width = Math.max(TurnHud.minWidth, TurnHud.paddingX * 2 + labelWidth + TurnHud.labelGap + digitsWidth);
 		const height = TurnHud.padding * 2 + size;
 
 		const plateX = origin.x + TurnHud.inset;
@@ -58,7 +59,7 @@ export class TurnRenderSystem extends MapRenderSystem {
 		// height is fixed, so this never shifts as the cursor moves.
 		const plateY = origin.y + TILE_INFO_BOTTOM;
 
-		graphics.fillColor(TurnHud.plate).fillRoundRectangle(new Rectangle(plateX, plateY, width, height), 4);
+		graphics.fillColor(TurnHud.plate).fillRoundRectangle(new Rectangle(plateX, plateY, width, height), TurnHud.radius);
 
 		const y = plateY + TurnHud.padding;
 
@@ -68,9 +69,10 @@ export class TurnRenderSystem extends MapRenderSystem {
 		const labelBaseline = Math.round(y + size / 2 + (labelSize * TurnHud.labelCapRatio) / 2);
 
 		graphics.textStyle({ align: TextAlign.LEFT, baseline: TextBaseline.ALPHABETIC }).fillColor(TurnHud.label);
-		graphics.fillText(label, plateX + TurnHud.padding, labelBaseline);
+		graphics.fillText(label, plateX + TurnHud.paddingX, labelBaseline);
 
-		const x = plateX + TurnHud.padding + labelWidth + TurnHud.labelGap;
+		// The digits keep to the right edge, so the count sits where the readout's values do.
+		const x = plateX + width - TurnHud.paddingX - digitsWidth;
 
 		for (const [index, frame] of digits.entries()) {
 			graphics.drawTile(TurnHud.sheet, frame, x + index * step, y, TurnHud.scale);
