@@ -11,14 +11,13 @@ export type { TileMapData } from "@/game/map/components/TileMapComponent";
 
 export { MapState } from "@/game/map/states/MapState";
 
-export { GridSystem } from "@/game/map/systems/GridSystem";
 export { MapRenderSystem } from "@/game/map/systems/MapRenderSystem";
 export type { MapView } from "@/game/map/systems/MapRenderSystem";
 export { CursorSystem } from "@/game/map/systems/CursorSystem";
 export { CursorRenderSystem } from "@/game/map/systems/CursorRenderSystem";
 export { TileInfoRenderSystem } from "@/game/map/systems/TileInfoRenderSystem";
-export { TileInfoHud, terrainName, tileInfoRows, movementCostText, TILE_INFO_HEIGHT, TILE_INFO_BOTTOM, TILE_INFO_ROWS, IMPASSABLE_COST } from "@/game/map/model/TileInfoHud";
-export type { TileInfoRow } from "@/game/map/model/TileInfoHud";
+export { TileInfoHud, terrainName, tileInfoRows, movementCostText, TILE_INFO_HEIGHT, TILE_INFO_BOTTOM, TILE_INFO_ROWS, IMPASSABLE_COST } from "@/game/map/view/TileInfoHud";
+export type { TileInfoRow } from "@/game/map/view/TileInfoHud";
 export { GridRenderSystem } from "@/game/map/systems/GridRenderSystem";
 export { TileMapRenderSystem } from "@/game/map/systems/TileMapRenderSystem";
 
@@ -30,6 +29,6 @@ export { infoCommands } from "@/game/map/commands/InfoCommand";
 export { MapCommand } from "@/game/map/commands/MapCommand";
 export type { MapCommandContext } from "@/game/map/commands/MapCommand";
 
-export { Terrain, terrainProperties, getTerrainProperties, isPassable, IMPASSABLE } from "@/game/map/model/Terrain";
-export type { TerrainType, TerrainProperties } from "@/game/map/model/Terrain";
-export { MapTheme } from "@/game/map/model/MapTheme";
+export { Terrain, terrainProperties, getTerrainProperties, isPassable, IMPASSABLE } from "@/game/map/content/Terrain";
+export type { TerrainType, TerrainProperties } from "@/game/map/content/Terrain";
+export { MapTheme } from "@/game/map/view/MapTheme";

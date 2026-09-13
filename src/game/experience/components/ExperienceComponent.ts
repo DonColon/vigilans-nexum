@@ -1,6 +1,6 @@
 import { Component } from "@/core/ecs/Component";
 import { JsonSchema } from "@/core/ecs/JsonSchema";
-import { StatBoost } from "@/game/units/model/UnitData";
+import { StatBoost } from "@/game/units/content/UnitCatalog";
 
 /** Where the experience display is: the bar filling, or the level-up panel playing out. */
 export type ExperiencePhase = (typeof ExperiencePhase)[keyof typeof ExperiencePhase];

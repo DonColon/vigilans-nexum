@@ -2,7 +2,7 @@ import { AssetStorage } from "@/core/assets/AssetStorage";
 import { Entity } from "@/core/ecs/Entity";
 import { World } from "@/core/ecs/World";
 import { identityTransform, TransformComponent } from "@/core/ecs/components/TransformComponent";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { GameState } from "@/core/GameState";
 import { Display } from "@/core/graphics/Display";
 import { GameCoreService } from "@/core/service/GameCoreService";
@@ -15,9 +15,8 @@ import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
 import { TileMapComponent } from "@/game/map/components/TileMapComponent";
-import { TileMapDocument, parseTileMapDocument } from "@/game/map/model/TileMapFormat";
-import { MapTheme } from "@/game/map/model/MapTheme";
-import { GridSystem } from "@/game/map/systems/GridSystem";
+import { TileMapDocument, parseTileMapDocument } from "@/game/map/content/TileMapFormat";
+import { MapTheme } from "@/game/map/view/MapTheme";
 
 /**
  * Asset id of the battle map this state builds. The map is content, so it ships
@@ -57,8 +56,8 @@ export class MapState extends GameState {
 	@GameCoreService(AssetStorage)
 	private assetStorage!: AssetStorage;
 
-	@GameCoreService(EventSystem)
-	private eventSystem!: EventSystem;
+	@GameCoreService(EventBus)
+	private eventBus!: EventBus;
 
 	private map: Entity | null = null;
 	private cursor: Entity | null = null;
@@ -66,8 +65,8 @@ export class MapState extends GameState {
 	public onEnter(): void {
 		const tilemap = parseTileMapDocument(this.assetStorage.getJson<TileMapDocument>(MAP_ASSET));
 
-		const grid = GridSystem.fromTileMap(tilemap, CELL_SIZE);
-		const dimension = GridSystem.getGridDimension(grid);
+		const grid = GridComponent.fromTileMap(tilemap, CELL_SIZE);
+		const dimension = GridComponent.dimension(grid);
 		const viewport = this.display.getViewportDimension();
 
 		this.map = this.world.createEntity();
@@ -104,11 +103,11 @@ export class MapState extends GameState {
 		// Announced rather than acted on: a feature that puts things on the map -
 		// units today - listens for this and spawns them parented to `this.map`.
 		// With no such feature installed the event simply has no subscribers.
-		this.eventSystem.dispatch("map:ready", { mapId: this.map.getID(), columns: grid.columns, rows: grid.rows });
+		this.eventBus.dispatch("map:ready", { mapId: this.map.getID(), columns: grid.columns, rows: grid.rows });
 	}
 
 	public onExit(): void {
-		this.eventSystem.dispatch("map:closed", {});
+		this.eventBus.dispatch("map:closed", {});
 
 		if (this.cursor) {
 			this.world.unregisterEntity(this.cursor);

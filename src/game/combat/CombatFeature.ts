@@ -3,20 +3,19 @@ import { CombatConfirmedEvent, CombatRequestedEvent, UnitDiedEvent } from "@/gam
 import { BattleMapFeature } from "@/game/map/BattleMapFeature";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { equipInventoryItem, spendWeaponUses } from "@/game/units/model/Inventory";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { unitsInWorld, unitById, enemiesOf } from "@/game/units/rules/UnitLookup";
 import { forecastCommands } from "@/game/combat/commands/ForecastCommands";
 import { BattleAnimationComponent } from "@/game/combat/components/BattleAnimationComponent";
 import { CombatAnimationComponent } from "@/game/combat/components/CombatAnimationComponent";
 import { ForecastComponent } from "@/game/combat/components/ForecastComponent";
-import { battleAnimationDuration, battleAnimationSteps } from "@/game/combat/model/BattleAnimation";
-import { resolveCombat } from "@/game/combat/model/BattleForecast";
-import { CombatSystem } from "@/game/combat/systems/CombatSystem";
+import { battleAnimationDuration, battleAnimationSteps } from "@/game/combat/view/BattleAnimation";
+import { resolveCombat } from "@/game/combat/rules/BattleForecast";
+import { weaponsReaching, targetsInReach, forecastBattle } from "@/game/combat/rules/Targeting";
 import { BattleAnimationSystem } from "@/game/combat/systems/BattleAnimationSystem";
 import { ForecastRenderSystem } from "@/game/combat/systems/ForecastRenderSystem";
 import { ForecastSystem } from "@/game/combat/systems/ForecastSystem";
 import { BattleAnimationState } from "@/game/combat/states/BattleAnimationState";
-import { OptionId } from "@/game/options/model/GameOptions";
+import { OptionId } from "@/game/options/content/GameOptions";
 import { optionEnabled } from "@/game/options/GameSettings";
 import { ForecastState } from "@/game/combat/states/ForecastState";
 
@@ -61,8 +60,8 @@ export class CombatFeature extends BattleMapFeature {
 	}
 
 	private openForecast(event: CombatRequestedEvent): void {
-		const units = UnitSystem.inWorld(this.world);
-		const attacker = UnitSystem.byId(units, event.attackerId);
+		const units = unitsInWorld(this.world);
+		const attacker = unitById(units, event.attackerId);
 
 		if (attacker === null) {
 			return;
@@ -73,8 +72,8 @@ export class CombatFeature extends BattleMapFeature {
 
 		// Every enemy the attacker can hit from here, nearest first; the requested
 		// one leads when it is still in reach.
-		const enemies = UnitSystem.enemiesOf(units, attackerData.faction);
-		const targets = CombatSystem.targetsInReach(attackerData, attackerTile, enemies, (enemy) => enemy.getComponent(GridPositionComponent).read());
+		const enemies = enemiesOf(units, attackerData.faction);
+		const targets = targetsInReach(attackerData, attackerTile, enemies, (enemy) => enemy.getComponent(GridPositionComponent).read());
 
 		if (targets.length === 0) {
 			return;
@@ -84,8 +83,8 @@ export class CombatFeature extends BattleMapFeature {
 		const requestedIndex = defenderIds.indexOf(event.defenderId);
 		const defenderIndex = requestedIndex >= 0 ? requestedIndex : 0;
 
-		const distance = CombatSystem.distance(attackerTile, targets[defenderIndex].getComponent(GridPositionComponent).read());
-		const weaponIds = CombatSystem.weaponsReaching(attackerData, distance).map((entry) => entry.id);
+		const distance = GridPositionComponent.distance(attackerTile, targets[defenderIndex].getComponent(GridPositionComponent).read());
+		const weaponIds = weaponsReaching(attackerData, distance).map((entry) => entry.id);
 		const equippedIndex = weaponIds.indexOf(attackerData.weapon?.id ?? "");
 
 		this.stateManager.getState(ForecastState).request({
@@ -102,9 +101,9 @@ export class CombatFeature extends BattleMapFeature {
 
 	private resolve(event: CombatConfirmedEvent): void {
 		const grid = this.grid();
-		const units = UnitSystem.inWorld(this.world);
-		const attacker = UnitSystem.byId(units, event.attackerId);
-		const defender = UnitSystem.byId(units, event.defenderId);
+		const units = unitsInWorld(this.world);
+		const attacker = unitById(units, event.attackerId);
+		const defender = unitById(units, event.defenderId);
 
 		if (grid === null || attacker === null || defender === null) {
 			return;
@@ -112,7 +111,7 @@ export class CombatFeature extends BattleMapFeature {
 
 		const attackerComponent = attacker.getComponent(UnitComponent);
 		const weaponIndex = attackerComponent.read().inventory.findIndex((entry) => entry.id === event.weaponId);
-		const armed = weaponIndex >= 0 ? equipInventoryItem(attackerComponent.read(), weaponIndex) : attackerComponent.read();
+		const armed = weaponIndex >= 0 ? UnitComponent.equip(attackerComponent.read(), weaponIndex) : attackerComponent.read();
 		const weapon = armed.weapon;
 
 		if (weapon === null) {
@@ -124,13 +123,13 @@ export class CombatFeature extends BattleMapFeature {
 		const attackerTile = attacker.getComponent(GridPositionComponent).read();
 		const defenderTile = defender.getComponent(GridPositionComponent).read();
 
-		const forecast = CombatSystem.forecast(armed, attackerTile, weapon, defenderData, defenderTile, grid);
+		const forecast = forecastBattle(armed, attackerTile, weapon, defenderData, defenderTile, grid);
 		const outcome = resolveCombat(forecast);
 
 		// Data changes land now; the BattleAnimationState only delays the visual.
-		const attackerAfter = spendWeaponUses({ ...armed, currentHP: outcome.attackerHp }, event.weaponId, outcome.attackerSwings);
+		const attackerAfter = UnitComponent.spendWeaponUses({ ...armed, currentHP: outcome.attackerHp }, event.weaponId, outcome.attackerSwings);
 		const defenderHurt = { ...defenderData, currentHP: outcome.defenderHp };
-		const defenderAfter = defenderData.weapon === null ? defenderHurt : spendWeaponUses(defenderHurt, defenderData.weapon.id, outcome.defenderSwings);
+		const defenderAfter = defenderData.weapon === null ? defenderHurt : UnitComponent.spendWeaponUses(defenderHurt, defenderData.weapon.id, outcome.defenderSwings);
 
 		attackerComponent.update(attackerAfter);
 		defenderComponent.update(defenderAfter);
@@ -175,7 +174,7 @@ export class CombatFeature extends BattleMapFeature {
 
 	/** `unit:died` (from the animation landing) - take the unit off the map. */
 	private removeUnit(event: UnitDiedEvent): void {
-		const unit = UnitSystem.byId(UnitSystem.inWorld(this.world), event.unitId);
+		const unit = unitById(unitsInWorld(this.world), event.unitId);
 
 		if (unit !== null) {
 			this.world.unregisterEntity(unit);

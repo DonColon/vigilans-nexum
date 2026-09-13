@@ -10,7 +10,7 @@ const gameConfiguration: GameConfiguration = {
 		state: MapState,
 		bundle: "BattleMap"
 	},
-	eventSystem: {
+	eventBus: {
 		history: {
 			enabled: true,
 			maxSize: 100

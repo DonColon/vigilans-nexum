@@ -3,7 +3,7 @@ import { i18n } from "@/core/i18n/I18n";
 import { Entity } from "@/core/ecs/Entity";
 import { World } from "@/core/ecs/World";
 import { identityTransform, TransformComponent } from "@/core/ecs/components/TransformComponent";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { Display } from "@/core/graphics/Display";
 import { GameStateManager } from "@/core/GameStateManager";
 import { InputDevice } from "@/core/input/InputDevice";
@@ -12,24 +12,21 @@ import { TradeClosedEvent, TradeRequestedEvent } from "@/game.events";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
-import { parseTileMap } from "@/game/map/model/TileMaps";
-import { GridSystem } from "@/game/map/systems/GridSystem";
+import { parseTileMap } from "@/game/map/content/TileMaps";
 import { PendingMoveComponent } from "@/game/movement/components/PendingMoveComponent";
 import { MovementFeature } from "@/game/movement/MovementFeature";
-import { itemsRequest, UnitMenuRow } from "@/game/movement/model/UnitMenus";
+import { itemsRequest, UnitMenuRow } from "@/game/movement/view/UnitMenus";
 import { UnitWalkSystem } from "@/game/movement/systems/UnitWalkSystem";
 import { NOTHING_HELD, TradeComponent, TradeData, TradeSide } from "@/game/trade/components/TradeComponent";
-import { tradeSlots } from "@/game/trade/model/TradeScreen";
+import { tradeSlots } from "@/game/trade/view/TradeScreen";
 import { TradeState } from "@/game/trade/states/TradeState";
 import { TradeSystem } from "@/game/trade/systems/TradeSystem";
 import { TradeFeature } from "@/game/trade/TradeFeature";
 import { MenuComponent } from "@/game/ui/components/MenuComponent";
 import { MenuState } from "@/game/ui/states/MenuState";
 import { UIFeature } from "@/game/ui/UIFeature";
-import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { isUsableEntry } from "@/game/units/model/Inventory";
-import { INVENTORY_SIZE, UnitFaction } from "@/game/units/model/UnitData";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { UnitComponent, INVENTORY_SIZE, UnitFaction } from "@/game/units/components/UnitComponent";
+import { unitsInWorld, unitById } from "@/game/units/rules/UnitLookup";
 import { UnitsFeature } from "@/game/units/UnitsFeature";
 
 /**
@@ -41,7 +38,7 @@ import { UnitsFeature } from "@/game/units/UnitsFeature";
  */
 suite("Unit Trade Test Suite", () => {
 	const world = ServiceRegistry.get<World>(World.name);
-	const eventSystem = ServiceRegistry.get<EventSystem>(EventSystem.name);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
 
 	world.registerComponent(TransformComponent);
 	world.registerComponent(GridComponent);
@@ -62,7 +59,7 @@ suite("Unit Trade Test Suite", () => {
 	let map: Entity;
 	let cursor: Entity;
 
-	const unit = (id: string) => UnitSystem.byId(UnitSystem.inWorld(world), id) as Entity;
+	const unit = (id: string) => unitById(unitsInWorld(world), id) as Entity;
 	const sheet = (id: string) => unit(id).getComponent(UnitComponent).read();
 	const ids = (id: string) => sheet(id).inventory.map((entry) => entry.id);
 	const cursorTile = () => cursor.getComponent(GridPositionComponent).read();
@@ -75,8 +72,8 @@ suite("Unit Trade Test Suite", () => {
 	const pumpTrade = () => {
 		const system = new TradeSystem(10);
 		system.execute(16, 0);
-		eventSystem.processQueue(); // trade:closed -> MovementFeature
-		eventSystem.processQueue(); // unit:acted
+		eventBus.processQueue(); // trade:closed -> MovementFeature
+		eventBus.processQueue(); // unit:acted
 		system.dispose();
 	};
 
@@ -119,25 +116,25 @@ suite("Unit Trade Test Suite", () => {
 	const finishWalk = () => {
 		const walkSystem = new UnitWalkSystem(8);
 		walkSystem.execute(10_000);
-		eventSystem.processQueue();
+		eventBus.processQueue();
 		walkSystem.dispose();
 	};
 
 	/** Picks Dardan up and sets him back down where he stands, leaving his command menu open. */
 	const openCommandMenu = () => {
-		eventSystem.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
-		eventSystem.processQueue();
-		eventSystem.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
-		eventSystem.processQueue();
+		eventBus.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
+		eventBus.processQueue();
+		eventBus.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
+		eventBus.processQueue();
 		finishWalk();
 	};
 
 	/** Chooses "Trade", which opens the screen on its partner step. */
 	const chooseTrade = () => {
 		openCommandMenu();
-		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", row: UnitMenuRow.TRADE, index: 1, item: i18n("menu.trade") });
-		eventSystem.processQueue();
-		eventSystem.processQueue(); // deliver trade:requested
+		eventBus.dispatch("ui:menuConfirmed", { menu: "unit-command", row: UnitMenuRow.TRADE, index: 1, item: i18n("menu.trade") });
+		eventBus.processQueue();
+		eventBus.processQueue(); // deliver trade:requested
 	};
 
 	/** ... and locks the pointed-at ally in, which opens both packs. */
@@ -159,7 +156,7 @@ suite("Unit Trade Test Suite", () => {
 		stateManager.clear();
 
 		map = world.createEntity();
-		map.addComponent(GridComponent, GridSystem.of(parseTileMap(sketch), 24));
+		map.addComponent(GridComponent, GridComponent.of(parseTileMap(sketch), 24));
 		map.addComponent(TransformComponent, { ...identityTransform });
 
 		cursor = world.createEntity();
@@ -175,8 +172,8 @@ suite("Unit Trade Test Suite", () => {
 		movement = new MovementFeature({ dependencies: [units, ui] });
 		movement.install();
 
-		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
-		eventSystem.processQueue();
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
+		eventBus.processQueue();
 
 		// Dardan's sheet also carries the fort's keys; this suite is about the
 		// pack flow, so it works on his classic four slots and leaves them off.
@@ -195,7 +192,7 @@ suite("Unit Trade Test Suite", () => {
 			world.unregisterEntity(entity);
 		}
 
-		eventSystem.processQueue();
+		eventBus.processQueue();
 	});
 
 	test("The command menu offers Trade with an ally standing next to the unit", () => {
@@ -205,10 +202,10 @@ suite("Unit Trade Test Suite", () => {
 	});
 
 	test("Trade is left out once the unit has walked away from its ally", () => {
-		eventSystem.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
-		eventSystem.processQueue();
-		eventSystem.dispatch("map:tileConfirmed", { column: 4, row: 12, terrain: "plain" }); // two tiles from Elira
-		eventSystem.processQueue();
+		eventBus.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
+		eventBus.processQueue();
+		eventBus.dispatch("map:tileConfirmed", { column: 4, row: 12, terrain: "plain" }); // two tiles from Elira
+		eventBus.processQueue();
 		finishWalk();
 
 		expect(menu()?.items).toStrictEqual([i18n("menu.items"), i18n("menu.wait")]);
@@ -216,7 +213,7 @@ suite("Unit Trade Test Suite", () => {
 
 	test("Trade opens on the partner step, with no packs on screen yet", () => {
 		let requested: TradeRequestedEvent | null = null;
-		eventSystem.subscribe("trade:requested", (event) => (requested = event));
+		eventBus.subscribe("trade:requested", (event) => (requested = event));
 
 		chooseTrade();
 
@@ -309,7 +306,7 @@ suite("Unit Trade Test Suite", () => {
 
 		// What the trade panels colour a slot by - his own consumables stay live, and
 		// an empty slot is nobody's dead weight.
-		const greyed = (id: string) => tradeSlots(sheet(id)).map((entry) => entry !== null && !isUsableEntry(entry));
+		const greyed = (id: string) => tradeSlots(sheet(id)).map((entry) => entry !== null && !UnitComponent.isUsableEntry(entry));
 
 		expect(greyed("dardan")).toStrictEqual(slotFlags([false, false, false, false, true]));
 		expect(greyed("elira")).toStrictEqual(slotFlags([false, false, false, false]));
@@ -397,9 +394,9 @@ suite("Unit Trade Test Suite", () => {
 
 	test("Trading costs the unit nothing - it still has its turn afterwards", () => {
 		let closed: TradeClosedEvent | null = null;
-		eventSystem.subscribe("trade:closed", (event) => (closed = event));
+		eventBus.subscribe("trade:closed", (event) => (closed = event));
 		let acted: string | null = null;
-		eventSystem.subscribe("unit:acted", (event) => (acted = event.unitId));
+		eventBus.subscribe("unit:acted", (event) => (acted = event.unitId));
 
 		openPacks();
 		confirmSlot(TradeSide.UNIT, 3);
@@ -418,7 +415,7 @@ suite("Unit Trade Test Suite", () => {
 
 	test("... so he can still Wait after trading, and that does spend him", () => {
 		let acted: string | null = null;
-		eventSystem.subscribe("unit:acted", (event) => (acted = event.unitId));
+		eventBus.subscribe("unit:acted", (event) => (acted = event.unitId));
 
 		openPacks();
 		confirmSlot(TradeSide.UNIT, 3);
@@ -426,9 +423,9 @@ suite("Unit Trade Test Suite", () => {
 		cancel();
 		cancel();
 
-		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", row: UnitMenuRow.WAIT, index: 2, item: i18n("menu.wait") });
-		eventSystem.processQueue();
-		eventSystem.processQueue();
+		eventBus.dispatch("ui:menuConfirmed", { menu: "unit-command", row: UnitMenuRow.WAIT, index: 2, item: i18n("menu.wait") });
+		eventBus.processQueue();
+		eventBus.processQueue();
 
 		expect(acted).toBe("dardan");
 		expect(sheet("dardan").hasMoved).toBe(true);

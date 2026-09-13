@@ -2,7 +2,7 @@ import { Entity } from "@/core/ecs/Entity";
 import { GameCommand, GameCommandConstructor } from "@/core/input/commands/GameCommand";
 import { cancelBinding, confirmBinding } from "@/game/input/Controls";
 import { ExperienceComponent, ExperiencePhase } from "@/game/experience/components/ExperienceComponent";
-import { levelUpDuration, levelUpFrame } from "@/game/experience/model/LevelUpPanel";
+import { levelUpDuration, levelUpFrame } from "@/game/experience/view/LevelUpPanel";
 
 /** What an experience command is handed each tick. */
 export interface ExperienceCommandContext {

@@ -4,7 +4,7 @@ import { i18n } from "@/core/i18n/I18n";
 import { Entity } from "@/core/ecs/Entity";
 import { World } from "@/core/ecs/World";
 import { identityTransform, TransformComponent } from "@/core/ecs/components/TransformComponent";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { Display } from "@/core/graphics/Display";
 import { GameStateManager } from "@/core/GameStateManager";
 import { InputDevice } from "@/core/input/InputDevice";
@@ -14,12 +14,11 @@ import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
 import { TileMapComponent, TileMapData } from "@/game/map/components/TileMapComponent";
-import { parseTileMap } from "@/game/map/model/TileMaps";
-import { parseTileMapDocument, TileMapDocument } from "@/game/map/model/TileMapFormat";
-import { isPassable } from "@/game/map/model/Terrain";
-import { GridSystem } from "@/game/map/systems/GridSystem";
+import { parseTileMap } from "@/game/map/content/TileMaps";
+import { parseTileMapDocument, TileMapDocument } from "@/game/map/content/TileMapFormat";
+import { isPassable } from "@/game/map/content/Terrain";
 import { MovementFeature } from "@/game/movement/MovementFeature";
-import { UnitMenuRow } from "@/game/movement/model/UnitMenus";
+import { UnitMenuRow } from "@/game/movement/view/UnitMenus";
 import { UnitWalkSystem } from "@/game/movement/systems/UnitWalkSystem";
 import { DialogComponent } from "@/game/ui/components/DialogComponent";
 import { DialogState } from "@/game/ui/states/DialogState";
@@ -28,20 +27,18 @@ import { PopupComponent } from "@/game/ui/components/PopupComponent";
 import { PopupState } from "@/game/ui/states/PopupState";
 import { MenuState } from "@/game/ui/states/MenuState";
 import { UIFeature } from "@/game/ui/UIFeature";
-import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { INVENTORY_SIZE } from "@/game/units/model/UnitData";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { UnitComponent, INVENTORY_SIZE } from "@/game/units/components/UnitComponent";
+import { unitsInWorld, unitById } from "@/game/units/rules/UnitLookup";
 import { UnitsFeature } from "@/game/units/UnitsFeature";
 import { ConvoyComponent } from "@/game/convoy/components/ConvoyComponent";
 import { ConvoyFeature } from "@/game/convoy/ConvoyFeature";
-import { CONVOY_MENU } from "@/game/convoy/model/ConvoyMenus";
-import { ConvoySystem } from "@/game/convoy/systems/ConvoySystem";
+import { CONVOY_MENU } from "@/game/convoy/view/ConvoyMenus";
 import { VisitComponent } from "@/game/visit/components/VisitComponent";
-import { VisitSystem } from "@/game/visit/systems/VisitSystem";
+import { availableHouse } from "@/game/visit/rules/Visits";
 import { VisitFeature } from "@/game/visit/VisitFeature";
 import skirmishHouses from "@/assets/data/houses/skirmish.houses.json";
 import fantasyMap from "@/assets/data/maps/fantasy.tilemap.json";
-import { HousesDocument } from "@/game/visit/model/Houses";
+import { HousesDocument } from "@/game/visit/content/Houses";
 
 /** The closed door the test map draws, and the doorway it opens into. */
 const CLOSED_DOOR = 445;
@@ -110,7 +107,7 @@ suite("Scenario House Sheet Test Suite", () => {
  */
 suite("Visit Test Suite", () => {
 	const world = ServiceRegistry.get<World>(World.name);
-	const eventSystem = ServiceRegistry.get<EventSystem>(EventSystem.name);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
 	const assets = ServiceRegistry.get<AssetStorage>(AssetStorage.name);
 
 	world.registerComponent(TransformComponent);
@@ -158,13 +155,13 @@ suite("Visit Test Suite", () => {
 	let map: Entity;
 	let cursor: Entity;
 
-	const unit = (id: string) => UnitSystem.byId(UnitSystem.inWorld(world), id) as Entity;
+	const unit = (id: string) => unitById(unitsInWorld(world), id) as Entity;
 	const unitData = (id: string) => unit(id).getComponent(UnitComponent).read();
 	const pack = (id: string) => unitData(id).inventory.map((entry) => entry.id);
 
-	const state = () => (VisitSystem.inWorld(world) as Entity).getComponent(VisitComponent).read();
+	const state = () => (world.entityWith(VisitComponent) as Entity).getComponent(VisitComponent).read();
 	const convoyItems = () =>
-		(ConvoySystem.inWorld(world) as Entity)
+		(world.entityWith(ConvoyComponent) as Entity)
 			.getComponent(ConvoyComponent)
 			.read()
 			.items.map((entry) => entry.id);
@@ -199,53 +196,53 @@ suite("Visit Test Suite", () => {
 	const finishWalk = () => {
 		const walkSystem = new UnitWalkSystem(8);
 		walkSystem.execute(10_000);
-		eventSystem.processQueue();
+		eventBus.processQueue();
 		walkSystem.dispose();
 	};
 
 	/** Picks Dardan up and sets him down on a tile, leaving his command menu open. */
 	const moveTo = (column: number, row: number) => {
-		eventSystem.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
-		eventSystem.processQueue();
-		eventSystem.dispatch("map:tileConfirmed", { column, row, terrain: "plain" });
-		eventSystem.processQueue();
+		eventBus.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
+		eventBus.processQueue();
+		eventBus.dispatch("map:tileConfirmed", { column, row, terrain: "plain" });
+		eventBus.processQueue();
 		finishWalk();
 	};
 
 	/** Chooses "Visit" from the open command menu. */
 	const chooseVisit = () => {
-		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", row: UnitMenuRow.VISIT, index: 0, item: i18n("menu.visit") });
-		eventSystem.processQueue();
-		eventSystem.processQueue(); // deliver visit:requested
+		eventBus.dispatch("ui:menuConfirmed", { menu: "unit-command", row: UnitMenuRow.VISIT, index: 0, item: i18n("menu.visit") });
+		eventBus.processQueue();
+		eventBus.processQueue(); // deliver visit:requested
 	};
 
 	/** Reads to the end of the box and dismisses it, the way the advance command would. */
 	const closeDialog = () => {
 		dialog().update({ ...dialog().read(), closed: true });
-		eventSystem.dispatch("ui:dialogClosed", { dialog: dialog().read().id });
+		eventBus.dispatch("ui:dialogClosed", { dialog: dialog().read().id });
 		stateManager.pop();
-		eventSystem.processQueue();
-		eventSystem.processQueue(); // deliver convoy:requested
-		eventSystem.processQueue(); // deliver convoy:delivered - the notice, or the choice menu
-		eventSystem.processQueue();
+		eventBus.processQueue();
+		eventBus.processQueue(); // deliver convoy:requested
+		eventBus.processQueue(); // deliver convoy:delivered - the notice, or the choice menu
+		eventBus.processQueue();
 	};
 
 	/** Picks a row of the "what goes to the convoy?" menu, the way the menu system would. */
 	const chooseConvoyRow = (index: number, id: string) => {
 		stateManager.pop();
-		eventSystem.dispatch("ui:menuConfirmed", { menu: CONVOY_MENU, row: id, index, item: id });
-		eventSystem.processQueue();
-		eventSystem.processQueue(); // deliver convoy:delivered
-		eventSystem.processQueue();
+		eventBus.dispatch("ui:menuConfirmed", { menu: CONVOY_MENU, row: id, index, item: id });
+		eventBus.processQueue();
+		eventBus.processQueue(); // deliver convoy:delivered
+		eventBus.processQueue();
 	};
 
 	/** Backs out of that menu instead. */
 	const cancelConvoyChoice = () => {
 		stateManager.pop();
-		eventSystem.dispatch("ui:menuCancelled", { menu: CONVOY_MENU });
-		eventSystem.processQueue();
-		eventSystem.processQueue();
-		eventSystem.processQueue();
+		eventBus.dispatch("ui:menuCancelled", { menu: CONVOY_MENU });
+		eventBus.processQueue();
+		eventBus.processQueue();
+		eventBus.processQueue();
 	};
 
 	/** Acknowledges the gift notice, the way the dismiss command would. */
@@ -253,10 +250,10 @@ suite("Visit Test Suite", () => {
 		const component = popup() as PopupComponent;
 
 		component.update({ ...component.read(), closed: true });
-		eventSystem.dispatch("ui:popupClosed", { popup: component.read().id });
+		eventBus.dispatch("ui:popupClosed", { popup: component.read().id });
 		stateManager.pop();
-		eventSystem.processQueue();
-		eventSystem.processQueue(); // deliver visit:finished
+		eventBus.processQueue();
+		eventBus.processQueue(); // deliver visit:finished
 	};
 
 	/** The whole visit: knock, read the villager out, take whatever they hand over. */
@@ -279,7 +276,7 @@ suite("Visit Test Suite", () => {
 		assets.setJson("houses-skirmish", sheet);
 
 		map = world.createEntity();
-		map.addComponent(GridComponent, GridSystem.of(parseTileMap(sketch), 24));
+		map.addComponent(GridComponent, GridComponent.of(parseTileMap(sketch), 24));
 		map.addComponent(TileMapComponent, tileMapData());
 		map.addComponent(TransformComponent, { ...identityTransform });
 
@@ -298,8 +295,8 @@ suite("Visit Test Suite", () => {
 		movement = new MovementFeature({ dependencies: [units, ui] });
 		movement.install();
 
-		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: COLUMNS, rows: ROWS });
-		eventSystem.processQueue();
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: COLUMNS, rows: ROWS });
+		eventBus.processQueue();
 	};
 
 	beforeEach(() => {
@@ -319,7 +316,7 @@ suite("Visit Test Suite", () => {
 		}
 
 		assets.setJson("houses-skirmish", shipped);
-		eventSystem.processQueue();
+		eventBus.processQueue();
 	});
 
 	suite("The open door", () => {
@@ -393,7 +390,7 @@ suite("Visit Test Suite", () => {
 			start();
 
 			const finished: VisitFinishedEvent[] = [];
-			eventSystem.subscribe("visit:finished", (event) => finished.push(event));
+			eventBus.subscribe("visit:finished", (event) => finished.push(event));
 
 			const before = pack("dardan");
 
@@ -508,7 +505,7 @@ suite("Visit Test Suite", () => {
 			fillPack();
 
 			const finished: VisitFinishedEvent[] = [];
-			eventSystem.subscribe("visit:finished", (event) => finished.push(event));
+			eventBus.subscribe("visit:finished", (event) => finished.push(event));
 
 			moveTo(DOORSTEP.column, DOORSTEP.row);
 			chooseVisit();
@@ -600,8 +597,8 @@ suite("Visit Test Suite", () => {
 				.getComponent(GridPositionComponent)
 				.update({ ...DOORSTEP });
 
-			expect(VisitSystem.available(state(), unit("hasan"))).toBeNull();
-			expect(VisitSystem.available(state(), unit("dardan"))).toBeNull(); // he is still on 4,10
+			expect(availableHouse(state(), unit("hasan"))).toBeNull();
+			expect(availableHouse(state(), unit("dardan"))).toBeNull(); // he is still on 4,10
 		});
 
 		test("Asking for a house the unit is not beside is refused and puts the command menu back", () => {
@@ -609,9 +606,9 @@ suite("Visit Test Suite", () => {
 
 			moveTo(HOUSE.column, HOUSE.row - 2);
 
-			eventSystem.dispatch("visit:requested", { unitId: "dardan", houseId: "cottage" });
-			eventSystem.processQueue();
-			eventSystem.processQueue(); // deliver visit:cancelled
+			eventBus.dispatch("visit:requested", { unitId: "dardan", houseId: "cottage" });
+			eventBus.processQueue();
+			eventBus.processQueue(); // deliver visit:cancelled
 
 			expect(stateManager.peek()).toBeInstanceOf(MenuState);
 			expect(state().visited).toStrictEqual([]);

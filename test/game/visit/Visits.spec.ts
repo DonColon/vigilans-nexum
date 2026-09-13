@@ -3,13 +3,14 @@ import { Entity } from "@/core/ecs/Entity";
 import { World } from "@/core/ecs/World";
 import { ServiceRegistry } from "@/core/service/ServiceRegistry";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
-import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { buildUnit, UnitDocument, UnitFaction } from "@/game/units/model/UnitData";
+import { buildUnit, UnitDocument } from "@/game/units/content/UnitSheets";
+import { UnitComponent, UnitFaction } from "@/game/units/components/UnitComponent";
 import dardanDocument from "@/assets/data/units/dardan.unit.json";
-import { TileMapData } from "@/game/map/components/TileMapComponent";
-import { EMPTY_TILE } from "@/game/map/model/TileMapFormat";
-import { House } from "@/game/visit/model/Houses";
-import { VisitSystem } from "@/game/visit/systems/VisitSystem";
+import { TileMapData, TileMapComponent } from "@/game/map/components/TileMapComponent";
+import { EMPTY_TILE } from "@/game/map/content/TileMapFormat";
+import { House } from "@/game/visit/content/Houses";
+import { VisitComponent } from "@/game/visit/components/VisitComponent";
+import { availableHouses, availableHouse, findDoor } from "@/game/visit/rules/Visits";
 
 /**
  * Finding a house's door in the tile map and swinging it, which is the whole of
@@ -70,22 +71,22 @@ suite("Visit System Test Suite", () => {
 		test("The door is the frame the map draws on the house tile", () => {
 			const map = tilemap(layer("terrain", 0, { 6: 445 }));
 
-			expect(VisitSystem.findDoor(map, house(2, 1))).toStrictEqual({ houseId: "cottage", layer: 0, cell: 6, closedDoor: 445 });
+			expect(findDoor(map, house(2, 1))).toStrictEqual({ houseId: "cottage", layer: 0, cell: 6, closedDoor: 445 });
 		});
 
 		test("With layers stacked, the topmost one that draws anything wins", () => {
 			const map = tilemap(layer("ground", 0), layer("buildings", EMPTY_TILE, { 6: 445 }), layer("roofs", EMPTY_TILE));
 
-			expect(VisitSystem.findDoor(map, house(2, 1))).toStrictEqual({ houseId: "cottage", layer: 1, cell: 6, closedDoor: 445 });
+			expect(findDoor(map, house(2, 1))).toStrictEqual({ houseId: "cottage", layer: 1, cell: 6, closedDoor: 445 });
 		});
 
 		test("A tile off the map, or one every layer leaves empty, has no door", () => {
 			const map = tilemap(layer("terrain", EMPTY_TILE, { 6: 445 }));
 
-			expect(VisitSystem.findDoor(map, house(2, 0))).toBeNull();
-			expect(VisitSystem.findDoor(map, house(-1, 1))).toBeNull();
-			expect(VisitSystem.findDoor(map, house(COLUMNS, 1))).toBeNull();
-			expect(VisitSystem.findDoor(map, house(2, ROWS))).toBeNull();
+			expect(findDoor(map, house(2, 0))).toBeNull();
+			expect(findDoor(map, house(-1, 1))).toBeNull();
+			expect(findDoor(map, house(COLUMNS, 1))).toBeNull();
+			expect(findDoor(map, house(2, ROWS))).toBeNull();
 		});
 	});
 
@@ -94,7 +95,7 @@ suite("Visit System Test Suite", () => {
 		const door = { houseId: "cottage", layer: 1, cell: 6, closedDoor: 445 };
 
 		test("Only the door's own cell changes, on its own layer", () => {
-			const opened = VisitSystem.withDoor(map, door, 447);
+			const opened = TileMapComponent.withFrame(map, door, 447);
 
 			expect(opened.layers[1].tiles[6]).toBe(447);
 			expect(opened.layers[1].tiles.filter((frame) => frame !== EMPTY_TILE)).toStrictEqual([447]);
@@ -102,20 +103,20 @@ suite("Visit System Test Suite", () => {
 		});
 
 		test("The map handed in is left alone - the component takes the new one through update", () => {
-			VisitSystem.withDoor(map, door, 447);
+			TileMapComponent.withFrame(map, door, 447);
 
 			expect(map.layers[1].tiles[6]).toBe(445);
 		});
 
 		test("Untouched layers are handed straight back, and so is a door already showing that frame", () => {
-			const opened = VisitSystem.withDoor(map, door, 447);
+			const opened = TileMapComponent.withFrame(map, door, 447);
 
 			expect(opened.layers[0]).toBe(map.layers[0]);
-			expect(VisitSystem.withDoor(opened, door, 447).layers[1]).toBe(opened.layers[1]);
+			expect(TileMapComponent.withFrame(opened, door, 447).layers[1]).toBe(opened.layers[1]);
 		});
 
 		test("Shutting it puts the authored frame back, exactly", () => {
-			const shut = VisitSystem.withDoor(VisitSystem.withDoor(map, door, 447), door, door.closedDoor);
+			const shut = TileMapComponent.withFrame(TileMapComponent.withFrame(map, door, 447), door, door.closedDoor);
 
 			expect(shut.layers[1].tiles).toStrictEqual(map.layers[1].tiles);
 		});
@@ -134,33 +135,33 @@ suite("Visit System Test Suite", () => {
 				[2, 0],
 				[2, 2]
 			]) {
-				expect(VisitSystem.available(data, player(column, row))?.id, `${column},${row}`).toBe("cottage");
+				expect(availableHouse(data, player(column, row))?.id, `${column},${row}`).toBe("cottage");
 			}
 		});
 
 		test("Standing in the doorway itself is not knocking", () => {
-			expect(VisitSystem.available(data, player(2, 1))).toBeNull();
+			expect(availableHouse(data, player(2, 1))).toBeNull();
 		});
 
 		test("Nor is standing diagonally, or a tile further off", () => {
-			expect(VisitSystem.available(data, player(1, 0))).toBeNull();
-			expect(VisitSystem.available(data, player(0, 1))).toBeNull();
+			expect(availableHouse(data, player(1, 0))).toBeNull();
+			expect(availableHouse(data, player(0, 1))).toBeNull();
 		});
 
 		test("A house already called on is nobody's doorstep any more", () => {
-			expect(VisitSystem.available({ ...data, visited: ["cottage"] }, player(2, 0))).toBeNull();
+			expect(availableHouse({ ...data, visited: ["cottage"] }, player(2, 0))).toBeNull();
 		});
 
 		test("An enemy on the doorstep is just standing there", () => {
-			expect(VisitSystem.available(data, enemy(2, 0))).toBeNull();
-			expect(VisitSystem.availableAll(data, enemy(2, 0))).toStrictEqual([]);
+			expect(availableHouse(data, enemy(2, 0))).toBeNull();
+			expect(availableHouses(data, enemy(2, 0))).toStrictEqual([]);
 		});
 
 		test("Two doors on the same corner both come back, in the order the scenario listed them", () => {
 			const pair = { houses: [house(2, 1), { ...house(1, 0), id: "hut" }], visited: [], doors: [] };
 
-			expect(VisitSystem.availableAll(pair, player(1, 1)).map((entry) => entry.id)).toStrictEqual(["cottage", "hut"]);
-			expect(VisitSystem.available(pair, player(1, 1))?.id).toBe("cottage");
+			expect(availableHouses(pair, player(1, 1)).map((entry) => entry.id)).toStrictEqual(["cottage", "hut"]);
+			expect(availableHouse(pair, player(1, 1))?.id).toBe("cottage");
 		});
 	});
 
@@ -168,9 +169,9 @@ suite("Visit System Test Suite", () => {
 		const houses = [house(2, 1), { ...house(0, 0), id: "hut" }];
 
 		test("A visited house drops out of the remaining ones", () => {
-			expect(VisitSystem.remaining({ houses, visited: [], doors: [] }).map((entry) => entry.id)).toStrictEqual(["cottage", "hut"]);
-			expect(VisitSystem.remaining({ houses, visited: ["cottage"], doors: [] }).map((entry) => entry.id)).toStrictEqual(["hut"]);
-			expect(VisitSystem.isVisited({ houses, visited: ["cottage"], doors: [] }, "cottage")).toBe(true);
+			expect(VisitComponent.remaining({ houses, visited: [], doors: [] }).map((entry) => entry.id)).toStrictEqual(["cottage", "hut"]);
+			expect(VisitComponent.remaining({ houses, visited: ["cottage"], doors: [] }).map((entry) => entry.id)).toStrictEqual(["hut"]);
+			expect(VisitComponent.isVisited({ houses, visited: ["cottage"], doors: [] }, "cottage")).toBe(true);
 		});
 	});
 });

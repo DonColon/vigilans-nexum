@@ -6,7 +6,7 @@ import { Display } from "@/core/graphics/Display";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { DialogComponent } from "@/game/ui/components/DialogComponent";
 import { dialogCommands } from "@/game/ui/commands/DialogCommands";
-import { dialogBox, DialogSide } from "@/game/ui/model/UILayout";
+import { dialogBox, DialogSide } from "@/game/ui/view/UILayout";
 
 export interface DialogRequest {
 	id?: string;

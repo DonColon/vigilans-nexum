@@ -1,6 +1,7 @@
 import { test, expect, suite } from "vitest";
-import { battleAnimationDuration, battleAnimationFrame, battleAnimationSteps, BattleAnimationStep } from "@/game/combat/model/BattleAnimation";
-import { ResolvedStrike } from "@/game/combat/model/BattleForecast";
+import { battleAnimationDuration, battleAnimationFrame, battleAnimationSteps } from "@/game/combat/view/BattleAnimation";
+import { BattleAnimationStep } from "@/game/combat/components/BattleAnimationComponent";
+import { ResolvedStrike } from "@/game/combat/rules/BattleForecast";
 
 suite("Battle Animation Test Suite", () => {
 	const attackerTile = { column: 4, row: 10 };

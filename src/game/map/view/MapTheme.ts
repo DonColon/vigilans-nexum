@@ -1,5 +1,5 @@
 import { Color } from "@/core/graphics/color/Color";
-import { Terrain, TerrainType } from "@/game/map/model/Terrain";
+import { Terrain, TerrainType } from "@/game/map/content/Terrain";
 
 /**
  * Flat, high contrast palette modelled on the battle map minimaps of Fire

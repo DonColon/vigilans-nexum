@@ -2,7 +2,7 @@ import { UpdateSystem } from "@/core/ecs/UpdateSystem";
 import { GameStateManager } from "@/core/GameStateManager";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { PhaseBannerComponent } from "@/game/turn/components/PhaseBannerComponent";
-import { phaseBannerFrame } from "@/game/turn/model/PhaseBanner";
+import { phaseBannerFrame } from "@/game/turn/view/PhaseBanner";
 import { PhaseBannerState } from "@/game/turn/states/PhaseBannerState";
 
 /**

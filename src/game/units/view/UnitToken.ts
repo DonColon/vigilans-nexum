@@ -3,8 +3,9 @@ import { Graphics } from "@/core/graphics/rendering/Graphics";
 import { Circle } from "@/core/math/geometry/Circle";
 import { Line } from "@/core/math/geometry/Line";
 import { Vector2D } from "@/core/math/geometry/Vector2D";
-import { UnitFaction, WeaponType } from "@/game/units/model/UnitData";
-import { UnitTheme } from "@/game/units/model/UnitTheme";
+import { UnitFaction } from "@/game/units/components/UnitComponent";
+import { WeaponType } from "@/game/units/content/UnitCatalog";
+import { UnitTheme } from "@/game/units/view/UnitTheme";
 
 /**
  * The unit token itself - the faction-coloured disc, its dark-then-light ring

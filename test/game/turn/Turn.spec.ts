@@ -1,7 +1,7 @@
 import { test, expect, suite, beforeEach, afterEach } from "vitest";
 import { Entity } from "@/core/ecs/Entity";
 import { World } from "@/core/ecs/World";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { GameState } from "@/core/GameState";
 import { GameStateManager } from "@/core/GameStateManager";
 import { Display } from "@/core/graphics/Display";
@@ -9,12 +9,12 @@ import { InputDevice } from "@/core/input/InputDevice";
 import { ServiceRegistry } from "@/core/service/ServiceRegistry";
 import { TurnChangedEvent } from "@/game.events";
 import { MapState } from "@/game/map/states/MapState";
-import { DIGIT_ZERO, turnDigits } from "@/game/turn/model/TurnHud";
+import { DIGIT_ZERO, turnDigits } from "@/game/turn/view/TurnHud";
 import { TurnComponent } from "@/game/turn/components/TurnComponent";
 import { TurnSystem } from "@/game/turn/systems/TurnSystem";
 import { TurnFeature } from "@/game/turn/TurnFeature";
-import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { buildUnit, UnitData } from "@/game/units/model/UnitData";
+import { buildUnit } from "@/game/units/content/UnitSheets";
+import { UnitComponent, UnitData } from "@/game/units/components/UnitComponent";
 import dardanDocument from "@/assets/data/units/dardan.unit.json";
 import hasanDocument from "@/assets/data/units/hasan.unit.json";
 
@@ -46,7 +46,7 @@ suite("Turn Test Suite", () => {
 		}
 
 		const world = ServiceRegistry.get<World>(World.name);
-		const eventSystem = ServiceRegistry.get<EventSystem>(EventSystem.name);
+		const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
 
 		world.registerComponent(UnitComponent);
 
@@ -68,9 +68,9 @@ suite("Turn Test Suite", () => {
 
 		/** One frame: the queued events land, then the turn system runs. */
 		const tick = () => {
-			eventSystem.processQueue();
+			eventBus.processQueue();
 			turnSystem().execute();
-			eventSystem.processQueue();
+			eventBus.processQueue();
 		};
 
 		/** Takes the phase banner down again, so the map is back on top. */
@@ -104,7 +104,7 @@ suite("Turn Test Suite", () => {
 
 			feature = new TurnFeature();
 			feature.install();
-			eventSystem.dispatch("map:ready", { mapId: "map", columns: 8, rows: 8 });
+			eventBus.dispatch("map:ready", { mapId: "map", columns: 8, rows: 8 });
 			tick();
 			dismissBanner();
 		});
@@ -119,16 +119,16 @@ suite("Turn Test Suite", () => {
 			for (const entity of world.getEntities()) {
 				world.unregisterEntity(entity);
 			}
-			eventSystem.processQueue();
+			eventBus.processQueue();
 		});
 
 		test("map:ready starts the counter at 1 and announces it", () => {
 			let changed: TurnChangedEvent | null = null;
 			feature.uninstall();
-			eventSystem.subscribe("turn:changed", (event) => (changed = event));
+			eventBus.subscribe("turn:changed", (event) => (changed = event));
 			feature.install();
 
-			eventSystem.dispatch("map:ready", { mapId: "map", columns: 8, rows: 8 });
+			eventBus.dispatch("map:ready", { mapId: "map", columns: 8, rows: 8 });
 			tick();
 
 			expect(turn()).toBe(1);
@@ -139,7 +139,7 @@ suite("Turn Test Suite", () => {
 			const dardan = spawn(dardanDocument, true);
 			const hasan = spawn(hasanDocument, true); // enemy - left as-is
 
-			eventSystem.dispatch("turn:end", {});
+			eventBus.dispatch("turn:end", {});
 			tick();
 
 			expect(turn()).toBe(2);
@@ -153,12 +153,12 @@ suite("Turn Test Suite", () => {
 			spawn(hasanDocument); // enemy does not count
 
 			moved(dardan, true);
-			eventSystem.dispatch("unit:acted", { unitId: "dardan" });
+			eventBus.dispatch("unit:acted", { unitId: "dardan" });
 			tick();
 			expect(turn()).toBe(1); // `other` still has to move
 
 			moved(other, true);
-			eventSystem.dispatch("unit:acted", { unitId: "dardan" });
+			eventBus.dispatch("unit:acted", { unitId: "dardan" });
 			tick();
 			expect(turn()).toBe(2);
 			expect(dardan.getComponent(UnitComponent).read().hasMoved).toBe(false);
@@ -170,7 +170,7 @@ suite("Turn Test Suite", () => {
 
 			// The bar goes up in the same breath as the unit is spent.
 			stateManager.push(OverlayStub);
-			eventSystem.dispatch("unit:acted", { unitId: "dardan" });
+			eventBus.dispatch("unit:acted", { unitId: "dardan" });
 			tick();
 
 			expect(turnEntity().getComponent(TurnComponent).read().ending).toBe(true);
@@ -190,8 +190,8 @@ suite("Turn Test Suite", () => {
 		test("map:closed clears the counter", () => {
 			expect(world.getEntities().some((entity) => entity.hasComponent(TurnComponent))).toBe(true);
 
-			eventSystem.dispatch("map:closed", {});
-			eventSystem.processQueue();
+			eventBus.dispatch("map:closed", {});
+			eventBus.processQueue();
 
 			expect(world.getEntities().some((entity) => entity.hasComponent(TurnComponent))).toBe(false);
 		});

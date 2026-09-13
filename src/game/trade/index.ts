@@ -9,4 +9,4 @@ export { tradeCommands } from "@/game/trade/commands/TradeCommands";
 export { TradeSystem } from "@/game/trade/systems/TradeSystem";
 export { TradeRenderSystem } from "@/game/trade/systems/TradeRenderSystem";
 
-export { tradeSlots, tradePanels, TRADE_PANEL_WIDTH, TRADE_PANEL_GAP, EMPTY_SLOT } from "@/game/trade/model/TradeScreen";
+export { tradeSlots, tradePanels, TRADE_PANEL_WIDTH, TRADE_PANEL_GAP, EMPTY_SLOT } from "@/game/trade/view/TradeScreen";

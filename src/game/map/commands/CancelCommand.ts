@@ -1,5 +1,5 @@
 import { GameCommandConstructor } from "@/core/input/commands/GameCommand";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { cancelBinding } from "@/game/input/Controls";
 import { MapCommand, MapCommandContext } from "@/game/map/commands/MapCommand";
@@ -11,15 +11,15 @@ import { MapCommand, MapCommandContext } from "@/game/map/commands/MapCommand";
  * listening the press is a no-op.
  */
 export class CancelCommand extends MapCommand {
-	@GameCoreService(EventSystem)
-	private eventSystem!: EventSystem;
+	@GameCoreService(EventBus)
+	private eventBus!: EventBus;
 
 	constructor() {
 		super(cancelBinding());
 	}
 
 	protected action(_elapsed: number, _frame: number, _context: MapCommandContext): void {
-		this.eventSystem.dispatch("map:cancelled", {});
+		this.eventBus.dispatch("map:cancelled", {});
 	}
 }
 

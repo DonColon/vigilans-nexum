@@ -1,5 +1,5 @@
 import { GameCommandConstructor } from "@/core/input/commands/GameCommand";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { infoBinding } from "@/game/input/Controls";
 import { MapCommand, MapCommandContext } from "@/game/map/commands/MapCommand";
@@ -13,8 +13,8 @@ import { GridPositionComponent } from "@/game/map/components/GridPositionCompone
  * nothing listening, or nothing on the tile, the press is a no-op.
  */
 export class InfoCommand extends MapCommand {
-	@GameCoreService(EventSystem)
-	private eventSystem!: EventSystem;
+	@GameCoreService(EventBus)
+	private eventBus!: EventBus;
 
 	constructor() {
 		super(infoBinding());
@@ -23,7 +23,7 @@ export class InfoCommand extends MapCommand {
 	protected action(_elapsed: number, _frame: number, { cursor }: MapCommandContext): void {
 		const { column, row } = cursor.getComponent(GridPositionComponent).read();
 
-		this.eventSystem.dispatch("map:infoRequested", { column, row });
+		this.eventBus.dispatch("map:infoRequested", { column, row });
 	}
 }
 

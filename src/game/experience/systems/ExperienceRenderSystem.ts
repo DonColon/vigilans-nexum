@@ -9,10 +9,10 @@ import { i18n } from "@/core/i18n/I18n";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { ExperienceComponent, ExperienceData, ExperiencePhase } from "@/game/experience/components/ExperienceComponent";
-import { EXPERIENCE_BAR_HEIGHT, EXPERIENCE_FILL, EXPERIENCE_LABEL_WIDTH, EXPERIENCE_TRACK, EXPERIENCE_VALUE_WIDTH, experienceBox, experienceFrame } from "@/game/experience/model/ExperienceBar";
-import { LEVEL_UP_COLUMNS, LEVEL_UP_GAIN, LEVEL_UP_ROWS, levelUpBox, levelUpFrame, LevelUpStat } from "@/game/experience/model/LevelUpPanel";
-import { drawPanel, drawText, uiAssetsReady } from "@/game/ui/model/UIPanel";
-import { UITheme } from "@/game/ui/model/UITheme";
+import { EXPERIENCE_BAR_HEIGHT, EXPERIENCE_FILL, EXPERIENCE_LABEL_WIDTH, EXPERIENCE_TRACK, EXPERIENCE_VALUE_WIDTH, experienceBox, experienceFrame } from "@/game/experience/view/ExperienceBar";
+import { LEVEL_UP_COLUMNS, LEVEL_UP_GAIN, LEVEL_UP_ROWS, levelUpBox, levelUpFrame, LevelUpStat } from "@/game/experience/view/LevelUpPanel";
+import { drawPanel, drawText, uiAssetsReady } from "@/game/ui/view/UIPanel";
+import { UITheme } from "@/game/ui/view/UITheme";
 
 /** Room a stat column keeps on its right for the gain, so the number never shifts when it lights up. */
 const STAT_GAIN_WIDTH = 64;

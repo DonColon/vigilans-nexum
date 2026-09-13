@@ -1,7 +1,7 @@
 import { Color } from "@/core/graphics/color/Color";
 import { FontStyleSettings } from "@/core/graphics/styles/text/FontStyle";
 import { i18n } from "@/core/i18n/I18n";
-import { getTerrainProperties, IMPASSABLE, TerrainType } from "@/game/map/model/Terrain";
+import { getTerrainProperties, IMPASSABLE, TerrainType } from "@/game/map/content/Terrain";
 
 /**
  * The terrain readout in the map's top-left corner, above the turn counter: what

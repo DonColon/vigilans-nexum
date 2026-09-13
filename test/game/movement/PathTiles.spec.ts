@@ -1,5 +1,5 @@
 import { test, expect, suite } from "vitest";
-import { pathTiles } from "@/game/movement/model/PathTiles";
+import { pathTiles } from "@/game/movement/view/PathTiles";
 
 /**
  * The route turns into path tiles: a start stub on the unit's own tile, a

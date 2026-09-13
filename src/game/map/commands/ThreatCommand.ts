@@ -1,5 +1,5 @@
 import { GameCommandConstructor } from "@/core/input/commands/GameCommand";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { threatBinding } from "@/game/input/Controls";
 import { MapCommand, MapCommandContext } from "@/game/map/commands/MapCommand";
@@ -12,15 +12,15 @@ import { MapCommand, MapCommandContext } from "@/game/map/commands/MapCommand";
  * press is a no-op.
  */
 export class ThreatCommand extends MapCommand {
-	@GameCoreService(EventSystem)
-	private eventSystem!: EventSystem;
+	@GameCoreService(EventBus)
+	private eventBus!: EventBus;
 
 	constructor() {
 		super(threatBinding());
 	}
 
 	protected action(_elapsed: number, _frame: number, _context: MapCommandContext): void {
-		this.eventSystem.dispatch("map:threatToggled", {});
+		this.eventBus.dispatch("map:threatToggled", {});
 	}
 }
 

@@ -1,4 +1,4 @@
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { EventHandler, EventNames, UnsubscribeFunction } from "@/core/events/GameEvents";
 import { ComponentConstructor } from "@/core/ecs/Component";
 import { Entity, EntityType } from "@/core/ecs/Entity";
@@ -39,8 +39,8 @@ export abstract class GameFeature {
 	@GameCoreService(InputDevice)
 	protected inputDevice!: InputDevice;
 
-	@GameCoreService(EventSystem)
-	protected events!: EventSystem;
+	@GameCoreService(EventBus)
+	protected events!: EventBus;
 
 	/** Handed back by `subscribe`, dropped again when the feature is uninstalled. */
 	private subscriptions: UnsubscribeFunction[] = [];

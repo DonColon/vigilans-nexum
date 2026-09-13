@@ -2,7 +2,7 @@ import { test, expect, suite, beforeEach, afterEach } from "vitest";
 import { Entity } from "@/core/ecs/Entity";
 import { World } from "@/core/ecs/World";
 import { identityTransform, TransformComponent } from "@/core/ecs/components/TransformComponent";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { Display } from "@/core/graphics/Display";
 import { GameStateManager } from "@/core/GameStateManager";
 import { InputDevice } from "@/core/input/InputDevice";
@@ -10,22 +10,21 @@ import { ServiceRegistry } from "@/core/service/ServiceRegistry";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
-import { parseTileMap } from "@/game/map/model/TileMaps";
-import { GridSystem } from "@/game/map/systems/GridSystem";
+import { parseTileMap } from "@/game/map/content/TileMaps";
 import { CommanderComponent } from "@/game/units/components/CommanderComponent";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { unitById } from "@/game/units/rules/UnitLookup";
 import { UnitPopComponent } from "@/game/units/components/UnitPopComponent";
-import { POP_LIFETIME_MS, PopKind } from "@/game/units/model/UnitPop";
-import { NO_BOOST } from "@/game/units/model/UnitData";
-import { UnitTheme } from "@/game/units/model/UnitTheme";
+import { POP_LIFETIME_MS, PopKind } from "@/game/units/components/UnitPopComponent";
+import { NO_BOOST } from "@/game/units/content/UnitCatalog";
+import { UnitTheme } from "@/game/units/view/UnitTheme";
 import { UnitPopSystem } from "@/game/units/systems/UnitPopSystem";
 import { UnitsFeature } from "@/game/units/UnitsFeature";
 
 /** The units feature just puts the deployment sheet on the map and takes it off again. */
 suite("Unit Deployment Test Suite", () => {
 	const world = ServiceRegistry.get<World>(World.name);
-	const eventSystem = ServiceRegistry.get<EventSystem>(EventSystem.name);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
 
 	world.registerComponent(TransformComponent);
 	world.registerComponent(GridComponent);
@@ -44,7 +43,7 @@ suite("Unit Deployment Test Suite", () => {
 
 	beforeEach(() => {
 		map = world.createEntity();
-		map.addComponent(GridComponent, GridSystem.of(parseTileMap(new Array(16).fill(".".repeat(8))), 24));
+		map.addComponent(GridComponent, GridComponent.of(parseTileMap(new Array(16).fill(".".repeat(8))), 24));
 		map.addComponent(TransformComponent, { ...identityTransform });
 
 		cursor = world.createEntity();
@@ -62,34 +61,34 @@ suite("Unit Deployment Test Suite", () => {
 			world.unregisterEntity(entity);
 		}
 
-		eventSystem.processQueue();
+		eventBus.processQueue();
 	});
 
 	test("map:ready deploys the units from the deployment sheet", () => {
-		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
-		eventSystem.processQueue();
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
+		eventBus.processQueue();
 
 		expect(units()).toHaveLength(5);
 
-		const dardan = UnitSystem.byId(units(), "dardan") as Entity;
+		const dardan = unitById(units(), "dardan") as Entity;
 		expect(dardan.getComponent(GridPositionComponent).read()).toStrictEqual({ column: 4, row: 10 });
 		expect(dardan.getComponent(UnitComponent).read().classLabel).toBe("Swordsman");
-		expect(UnitSystem.byId(units(), "hasan")?.getComponent(UnitComponent).read().faction).toBe("enemy");
-		expect(UnitSystem.byId(units(), "besnik")?.getComponent(GridPositionComponent).read()).toStrictEqual({ column: 2, row: 14 });
+		expect(unitById(units(), "hasan")?.getComponent(UnitComponent).read().faction).toBe("enemy");
+		expect(unitById(units(), "besnik")?.getComponent(GridPositionComponent).read()).toStrictEqual({ column: 2, row: 14 });
 
 		// The second player unit, deployed right beside the commander so the two can trade.
-		const elira = UnitSystem.byId(units(), "elira") as Entity;
+		const elira = unitById(units(), "elira") as Entity;
 		expect(elira.getComponent(GridPositionComponent).read()).toStrictEqual({ column: 5, row: 10 });
 		expect(elira.getComponent(UnitComponent).read().faction).toBe("player");
 		expect(elira.getComponent(UnitComponent).read().classLabel).toBe("Axe Fighter");
 	});
 
 	test("The commander is tagged and the cursor starts on him", () => {
-		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
-		eventSystem.processQueue();
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
+		eventBus.processQueue();
 
-		const dardan = UnitSystem.byId(units(), "dardan") as Entity;
-		const hasan = UnitSystem.byId(units(), "hasan") as Entity;
+		const dardan = unitById(units(), "dardan") as Entity;
+		const hasan = unitById(units(), "hasan") as Entity;
 
 		expect(dardan.hasComponent(CommanderComponent)).toBe(true);
 		expect(hasan.hasComponent(CommanderComponent)).toBe(false);
@@ -97,34 +96,34 @@ suite("Unit Deployment Test Suite", () => {
 	});
 
 	test("map:closed clears the units", () => {
-		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
-		eventSystem.processQueue();
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
+		eventBus.processQueue();
 		expect(units()).toHaveLength(5);
 
-		eventSystem.dispatch("map:closed", {});
-		eventSystem.processQueue();
+		eventBus.dispatch("map:closed", {});
+		eventBus.processQueue();
 
 		expect(units()).toHaveLength(0);
 	});
 
 	test("A fresh map:ready redeploys without leaving stale units", () => {
-		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
-		eventSystem.processQueue();
-		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
-		eventSystem.processQueue();
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
+		eventBus.processQueue();
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
+		eventBus.processQueue();
 
 		expect(units()).toHaveLength(5);
 	});
 
 	test("Using a healing item floats the restored HP over the unit in green", () => {
-		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
-		eventSystem.processQueue();
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
+		eventBus.processQueue();
 
-		const dardan = UnitSystem.byId(units(), "dardan") as Entity;
+		const dardan = unitById(units(), "dardan") as Entity;
 		expect(dardan.hasComponent(UnitPopComponent)).toBe(false);
 
-		eventSystem.dispatch("unit:usedItem", { unitId: "dardan", itemId: "vulnerary", healed: 10, gains: NO_BOOST });
-		eventSystem.processQueue();
+		eventBus.dispatch("unit:usedItem", { unitId: "dardan", itemId: "vulnerary", healed: 10, gains: NO_BOOST });
+		eventBus.processQueue();
 
 		expect(dardan.getComponent(UnitPopComponent).read()).toStrictEqual({ text: "+10", kind: PopKind.HEAL, elapsed: 0, duration: POP_LIFETIME_MS });
 
@@ -136,23 +135,23 @@ suite("Unit Deployment Test Suite", () => {
 	});
 
 	test("An item that healed nothing floats nothing", () => {
-		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
-		eventSystem.processQueue();
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
+		eventBus.processQueue();
 
-		eventSystem.dispatch("unit:usedItem", { unitId: "dardan", itemId: "vulnerary", healed: 0, gains: NO_BOOST });
-		eventSystem.processQueue();
+		eventBus.dispatch("unit:usedItem", { unitId: "dardan", itemId: "vulnerary", healed: 0, gains: NO_BOOST });
+		eventBus.processQueue();
 
-		expect((UnitSystem.byId(units(), "dardan") as Entity).hasComponent(UnitPopComponent)).toBe(false);
+		expect((unitById(units(), "dardan") as Entity).hasComponent(UnitPopComponent)).toBe(false);
 	});
 
 	test("The label ages away and is taken off the unit again", () => {
-		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
-		eventSystem.processQueue();
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
+		eventBus.processQueue();
 
-		eventSystem.dispatch("unit:usedItem", { unitId: "dardan", itemId: "vulnerary", healed: 4, gains: NO_BOOST });
-		eventSystem.processQueue();
+		eventBus.dispatch("unit:usedItem", { unitId: "dardan", itemId: "vulnerary", healed: 4, gains: NO_BOOST });
+		eventBus.processQueue();
 
-		const dardan = UnitSystem.byId(units(), "dardan") as Entity;
+		const dardan = unitById(units(), "dardan") as Entity;
 
 		// Built once the pop exists, so the query snapshots it - the game loop is
 		// what would otherwise deliver the entityChanged event.

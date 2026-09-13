@@ -2,10 +2,11 @@ import { Color } from "@/core/graphics/color/Color";
 import { Dimension } from "@/core/math/geometry/Dimension";
 import { i18n } from "@/core/i18n/I18n";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
-import { attackPower, attackSpeed, avoidRate, critRate, hitRate } from "@/game/combat/model/CombatMath";
-import { TerrainType } from "@/game/map/model/Terrain";
-import { UITheme } from "@/game/ui/model/UITheme";
-import { InventoryEntry, INVENTORY_SIZE, isStaff, StatName, UnitData, UnitFaction, WeaponData } from "@/game/units/model/UnitData";
+import { attackPower, attackSpeed, avoidRate, critRate, hitRate } from "@/game/combat/rules/CombatMath";
+import { TerrainType } from "@/game/map/content/Terrain";
+import { UITheme } from "@/game/ui/view/UITheme";
+import { InventoryEntry, INVENTORY_SIZE, UnitData, UnitFaction } from "@/game/units/components/UnitComponent";
+import { isStaff, StatName, WeaponData } from "@/game/units/content/UnitCatalog";
 
 /**
  * The unit sheet - Fire Emblem's status screen: everything about one unit on

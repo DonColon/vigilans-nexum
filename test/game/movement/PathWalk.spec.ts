@@ -1,5 +1,5 @@
 import { test, expect, suite } from "vitest";
-import { walkPoint } from "@/game/movement/model/PathWalk";
+import { walkPoint } from "@/game/movement/view/PathWalk";
 
 /**
  * `walkPoint` reads off the fractional tile a unit has reached along its move

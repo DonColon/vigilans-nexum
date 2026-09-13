@@ -4,7 +4,7 @@ import { CombatFoughtEvent } from "@/game.events";
 import { Entity } from "@/core/ecs/Entity";
 import { World } from "@/core/ecs/World";
 import { identityTransform, TransformComponent } from "@/core/ecs/components/TransformComponent";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { Display } from "@/core/graphics/Display";
 import { GameStateManager } from "@/core/GameStateManager";
 import { InputDevice } from "@/core/input/InputDevice";
@@ -13,17 +13,16 @@ import { ServiceRegistry } from "@/core/service/ServiceRegistry";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
-import { parseTileMap } from "@/game/map/model/TileMaps";
-import { GridSystem } from "@/game/map/systems/GridSystem";
+import { parseTileMap } from "@/game/map/content/TileMaps";
 import { UnitWalkSystem } from "@/game/movement/systems/UnitWalkSystem";
 import { MovementFeature } from "@/game/movement/MovementFeature";
-import { UnitMenuRow } from "@/game/movement/model/UnitMenus";
+import { UnitMenuRow } from "@/game/movement/view/UnitMenus";
 import { MenuComponent } from "@/game/ui/components/MenuComponent";
 import { MenuState } from "@/game/ui/states/MenuState";
 import { UIFeature } from "@/game/ui/UIFeature";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
 import { PendingMoveComponent } from "@/game/movement/components/PendingMoveComponent";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { unitById } from "@/game/units/rules/UnitLookup";
 import { UnitsFeature } from "@/game/units/UnitsFeature";
 import { CombatFeature } from "@/game/combat/CombatFeature";
 import { CombatAnimationComponent } from "@/game/combat/components/CombatAnimationComponent";
@@ -40,7 +39,7 @@ import { ForecastState } from "@/game/combat/states/ForecastState";
  */
 suite("Combat Flow Test Suite", () => {
 	const world = ServiceRegistry.get<World>(World.name);
-	const eventSystem = ServiceRegistry.get<EventSystem>(EventSystem.name);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
 
 	world.registerComponent(TransformComponent);
 	world.registerComponent(GridComponent);
@@ -61,7 +60,7 @@ suite("Combat Flow Test Suite", () => {
 	let cursor: Entity;
 
 	const unit = (id: string) =>
-		UnitSystem.byId(
+		unitById(
 			world.getEntities().filter((entity) => entity.hasComponent(UnitComponent)),
 			id
 		);
@@ -72,9 +71,9 @@ suite("Combat Flow Test Suite", () => {
 
 	/** "Attack" from the command menu - opens the target-picking phase (cursor on the nearest enemy, no panel yet). */
 	const beginAttack = () => {
-		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", row: UnitMenuRow.ATTACK, index: 0, item: i18n("menu.attack") });
-		eventSystem.processQueue();
-		eventSystem.processQueue(); // deliver combat:requested
+		eventBus.dispatch("ui:menuConfirmed", { menu: "unit-command", row: UnitMenuRow.ATTACK, index: 0, item: i18n("menu.attack") });
+		eventBus.processQueue();
+		eventBus.processQueue(); // deliver combat:requested
 	};
 
 	/** Confirm the current target - the same step `ForecastConfirmCommand` runs in the `target` phase. */
@@ -89,16 +88,16 @@ suite("Combat Flow Test Suite", () => {
 	const finishWalk = () => {
 		const walkSystem = new UnitWalkSystem(8);
 		walkSystem.execute(10_000);
-		eventSystem.processQueue();
+		eventBus.processQueue();
 		walkSystem.dispose();
 	};
 
 	/** Pick Dardan up and commit a move to (column,row). */
 	const moveTo = (column: number, row: number) => {
-		eventSystem.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
-		eventSystem.processQueue();
-		eventSystem.dispatch("map:tileConfirmed", { column, row, terrain: "plain" });
-		eventSystem.processQueue();
+		eventBus.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
+		eventBus.processQueue();
+		eventBus.dispatch("map:tileConfirmed", { column, row, terrain: "plain" });
+		eventBus.processQueue();
 		finishWalk();
 	};
 
@@ -106,8 +105,8 @@ suite("Combat Flow Test Suite", () => {
 	const pumpForecast = () => {
 		const system = new ForecastSystem(10);
 		system.execute(16, 0);
-		eventSystem.processQueue(); // combat:confirmed -> resolve (pushes BattleAnimationState)
-		eventSystem.processQueue();
+		eventBus.processQueue(); // combat:confirmed -> resolve (pushes BattleAnimationState)
+		eventBus.processQueue();
 		system.dispose();
 	};
 
@@ -115,8 +114,8 @@ suite("Combat Flow Test Suite", () => {
 	const finishBattleAnimation = () => {
 		const system = new BattleAnimationSystem(8);
 		system.execute(10_000);
-		eventSystem.processQueue(); // unit:died -> remove, combat:resolved -> MovementFeature
-		eventSystem.processQueue(); // unit:acted
+		eventBus.processQueue(); // unit:died -> remove, combat:resolved -> MovementFeature
+		eventBus.processQueue(); // unit:acted
 		system.dispose();
 	};
 
@@ -125,7 +124,7 @@ suite("Combat Flow Test Suite", () => {
 		stateManager.clear();
 
 		map = world.createEntity();
-		map.addComponent(GridComponent, GridSystem.of(parseTileMap(sketch), 24));
+		map.addComponent(GridComponent, GridComponent.of(parseTileMap(sketch), 24));
 		map.addComponent(TransformComponent, { ...identityTransform });
 
 		cursor = world.createEntity();
@@ -141,8 +140,8 @@ suite("Combat Flow Test Suite", () => {
 		movement = new MovementFeature({ dependencies: [units, ui] });
 		movement.install();
 
-		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
-		eventSystem.processQueue();
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
+		eventBus.processQueue();
 	});
 
 	afterEach(() => {
@@ -156,7 +155,7 @@ suite("Combat Flow Test Suite", () => {
 			world.unregisterEntity(entity);
 		}
 
-		eventSystem.processQueue();
+		eventBus.processQueue();
 	});
 
 	test('The command menu offers "Attack" with an enemy in reach', () => {
@@ -276,8 +275,8 @@ suite("Combat Flow Test Suite", () => {
 	test("Confirming the forecast readies the chosen weapon, fights, and spends the attacker", () => {
 		let resolved = false;
 		let acted: string | null = null;
-		eventSystem.subscribe("combat:resolved", () => (resolved = true));
-		eventSystem.subscribe("unit:acted", (event) => (acted = event.unitId));
+		eventBus.subscribe("combat:resolved", () => (resolved = true));
+		eventBus.subscribe("unit:acted", (event) => (acted = event.unitId));
 
 		moveTo(4, 13);
 		openForecast();
@@ -323,8 +322,8 @@ suite("Combat Flow Test Suite", () => {
 	test("A defeated unit is taken off the map and reported", () => {
 		let died: string | null = null;
 		let fought: CombatFoughtEvent | null = null;
-		eventSystem.subscribe("unit:died", (event) => (died = event.unitId));
-		eventSystem.subscribe("combat:fought", (event) => (fought = event));
+		eventBus.subscribe("unit:died", (event) => (died = event.unitId));
+		eventBus.subscribe("combat:fought", (event) => (fought = event));
 
 		// Hand Hasan a sliver of HP so any connecting hit finishes him.
 		moveTo(4, 13);

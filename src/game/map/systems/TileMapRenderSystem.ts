@@ -8,7 +8,7 @@ import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { TileMapComponent, TileMapData } from "@/game/map/components/TileMapComponent";
-import { EMPTY_TILE } from "@/game/map/model/TileMapFormat";
+import { EMPTY_TILE } from "@/game/map/content/TileMapFormat";
 import { MapRenderSystem } from "@/game/map/systems/MapRenderSystem";
 
 /**

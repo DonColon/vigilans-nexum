@@ -1,6 +1,6 @@
 import { Component } from "@/core/ecs/Component";
 import { JsonSchema } from "@/core/ecs/JsonSchema";
-import { PopKind } from "@/game/units/model/UnitPop";
+import { PopKind } from "@/game/units/components/UnitPopComponent";
 
 export interface CombatAnimationData extends JsonSchema {
 	/** Fractional tile offset added to the token position while it swings / recoils. */

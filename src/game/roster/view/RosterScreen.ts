@@ -3,8 +3,8 @@ import { Dimension } from "@/core/math/geometry/Dimension";
 import { i18n } from "@/core/i18n/I18n";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { TextAlign, TextAlignType } from "@/core/graphics/styles/text/TextAlign";
-import { UITheme } from "@/game/ui/model/UITheme";
-import { UnitData } from "@/game/units/model/UnitData";
+import { UITheme } from "@/game/ui/view/UITheme";
+import { UnitData } from "@/game/units/components/UnitComponent";
 
 /**
  * The army list - Fire Emblem's "Units" screen: one row per unit of your own,

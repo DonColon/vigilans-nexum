@@ -8,8 +8,8 @@ import { GridComponent } from "@/game/map/components/GridComponent";
 import { MapRenderSystem } from "@/game/map/systems/MapRenderSystem";
 import { GridPositionData } from "@/game/map/components/GridPositionComponent";
 import { MovementComponent } from "@/game/movement/components/MovementComponent";
-import { MovementTheme } from "@/game/movement/model/MovementTheme";
-import { Direction, OPPOSITE, pathTiles } from "@/game/movement/model/PathTiles";
+import { MovementTheme } from "@/game/movement/view/MovementTheme";
+import { Direction, OPPOSITE, pathTiles } from "@/game/movement/view/PathTiles";
 
 /**
  * Draws the move overlay under the units: the blue movement wash, the red

@@ -1,8 +1,8 @@
 import { test, expect, suite } from "vitest";
-import { Terrain } from "@/game/map/model/Terrain";
-import { buildUnit, UnitDocument } from "@/game/units/model/UnitData";
-import { unequipInventoryItem } from "@/game/units/model/Inventory";
-import { buildForecast, CombatRolls, resolveCombat } from "@/game/combat/model/BattleForecast";
+import { Terrain } from "@/game/map/content/Terrain";
+import { buildUnit, UnitDocument } from "@/game/units/content/UnitSheets";
+import { UnitComponent } from "@/game/units/components/UnitComponent";
+import { buildForecast, CombatRolls, resolveCombat } from "@/game/combat/rules/BattleForecast";
 import dardanDocument from "@/assets/data/units/dardan.unit.json";
 import hasanDocument from "@/assets/data/units/hasan.unit.json";
 
@@ -40,7 +40,7 @@ suite("Battle Forecast Test Suite", () => {
 			attacker: hasan(),
 			attackerWeapon: hasan().weapon!,
 			attackerTerrain: Terrain.PLAIN,
-			defender: unequipInventoryItem(dardan()),
+			defender: UnitComponent.unequip(dardan()),
 			defenderTerrain: Terrain.PLAIN,
 			distance: 1
 		});

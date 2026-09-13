@@ -2,9 +2,9 @@ import { test, expect, suite } from "vitest";
 import { i18n } from "@/core/i18n/I18n";
 import { MAX_BRIGHTNESS, MIN_BRIGHTNESS } from "@/core/graphics/Display";
 import { choiceOf, cycleChoice, OptionDefinition, SwitchValue } from "@/core/options/Option";
-import { channelVolumeId, DEFAULT_VOLUME, gameOptions, localeName, OptionId, OptionSection, TEXT_SPEED_DELAYS, volumeChannelOf } from "@/game/options/model/GameOptions";
-import { optionsHeight, optionsPanel, OPTIONS_WIDTH } from "@/game/options/model/OptionsScreen";
-import { UITheme } from "@/game/ui/model/UITheme";
+import { channelVolumeId, DEFAULT_VOLUME, gameOptions, localeName, OptionId, OptionSection, TEXT_SPEED_DELAYS, volumeChannelOf } from "@/game/options/content/GameOptions";
+import { optionsHeight, optionsPanel, OPTIONS_WIDTH } from "@/game/options/view/OptionsScreen";
+import { UITheme } from "@/game/ui/view/UITheme";
 
 /** The vocabulary of the settings screen: what is settable, to what, and how the panel is sized around it. */
 suite("Game Options Test Suite", () => {

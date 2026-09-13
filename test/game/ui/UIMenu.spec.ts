@@ -2,7 +2,7 @@ import { test, expect, suite, beforeEach, afterEach } from "vitest";
 import { Entity } from "@/core/ecs/Entity";
 import { World } from "@/core/ecs/World";
 import { TransformComponent } from "@/core/ecs/components/TransformComponent";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { GameState } from "@/core/GameState";
 import { GameStateManager } from "@/core/GameStateManager";
 import { Display } from "@/core/graphics/Display";
@@ -46,7 +46,7 @@ suite("UI Menu Test Suite", () => {
 	}
 
 	const world = ServiceRegistry.get<World>(World.name);
-	const eventSystem = ServiceRegistry.get<EventSystem>(EventSystem.name);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
 
 	world.registerComponent(TransformComponent);
 	world.registerComponent(MenuComponent);
@@ -99,7 +99,7 @@ suite("UI Menu Test Suite", () => {
 		for (const entity of world.getEntities()) {
 			world.unregisterEntity(entity);
 		}
-		eventSystem.processQueue();
+		eventBus.processQueue();
 	});
 
 	test("State lists exactly the menu commands", () => {
@@ -131,7 +131,7 @@ suite("UI Menu Test Suite", () => {
 
 	test("Confirm reports the highlighted row and pops the menu", () => {
 		let received: MenuConfirmedEvent | null = null;
-		eventSystem.subscribe("ui:menuConfirmed", (event) => (received = event));
+		eventBus.subscribe("ui:menuConfirmed", (event) => (received = event));
 
 		release();
 		press(MenuDownCommand);
@@ -143,7 +143,7 @@ suite("UI Menu Test Suite", () => {
 
 		// The confirm is picked up on the next tick, which reports it and pops.
 		system.execute(16, 2);
-		eventSystem.processQueue();
+		eventBus.processQueue();
 
 		expect(received).toMatchObject({ menu: "actions", index: 1, item: "Gegenstand" });
 		expect(stateManager.peek()).toBeInstanceOf(MapStub);
@@ -151,7 +151,7 @@ suite("UI Menu Test Suite", () => {
 
 	test("Confirm reports the row id the menu was built with", () => {
 		let received: MenuConfirmedEvent | null = null;
-		eventSystem.subscribe("ui:menuConfirmed", (event) => (received = event));
+		eventBus.subscribe("ui:menuConfirmed", (event) => (received = event));
 
 		// A named menu: the ids travel with the rows and come back on the event, so
 		// the opener never has to match on the label it happens to be showing.
@@ -167,32 +167,32 @@ suite("UI Menu Test Suite", () => {
 		system.execute(16, 1);
 
 		system.execute(16, 2);
-		eventSystem.processQueue();
+		eventBus.processQueue();
 
 		expect(received).toMatchObject({ menu: "actions", row: "wait", index: 1, item: "Warten" });
 	});
 
 	test("A menu that does not name its rows reports an empty id", () => {
 		let received: MenuConfirmedEvent | null = null;
-		eventSystem.subscribe("ui:menuConfirmed", (event) => (received = event));
+		eventBus.subscribe("ui:menuConfirmed", (event) => (received = event));
 
 		press(MenuConfirmCommand);
 		system.execute(16, 0);
 
 		system.execute(16, 1);
-		eventSystem.processQueue();
+		eventBus.processQueue();
 
 		expect(received).toMatchObject({ menu: "actions", row: "", index: 0, item: "Angriff" });
 	});
 
 	test("Cancel closes the menu with a cancelled event", () => {
 		let received: MenuCancelledEvent | null = null;
-		eventSystem.subscribe("ui:menuCancelled", (event) => (received = event));
+		eventBus.subscribe("ui:menuCancelled", (event) => (received = event));
 
 		press(MenuCancelCommand);
 		system.execute(16, 0);
 		system.execute(16, 1);
-		eventSystem.processQueue();
+		eventBus.processQueue();
 
 		expect(received).toMatchObject({ menu: "actions" });
 		expect(stateManager.peek()).toBeInstanceOf(MapStub);

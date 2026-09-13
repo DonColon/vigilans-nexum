@@ -1,6 +1,6 @@
 import { Query } from "@/core/ecs/Query";
 import { UpdateSystem } from "@/core/ecs/UpdateSystem";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { GameStateManager } from "@/core/GameStateManager";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { OptionsCommand } from "@/game/options/commands/OptionsCommands";
@@ -17,8 +17,8 @@ export class OptionsSystem extends UpdateSystem {
 	@GameCoreService(GameStateManager)
 	private stateManager!: GameStateManager;
 
-	@GameCoreService(EventSystem)
-	private eventSystem!: EventSystem;
+	@GameCoreService(EventBus)
+	private eventBus!: EventBus;
 
 	public initialize(): void {
 		this.queries = {
@@ -39,7 +39,7 @@ export class OptionsSystem extends UpdateSystem {
 			// Reported before the pop takes the entity with it, and carrying the row,
 			// because the event is delivered a tick later - by then there is no
 			// screen left to ask.
-			this.eventSystem.dispatch("options:closed", { selectedIndex: data.selectedIndex });
+			this.eventBus.dispatch("options:closed", { selectedIndex: data.selectedIndex });
 			this.stateManager.pop();
 			return;
 		}

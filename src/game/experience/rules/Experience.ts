@@ -1,5 +1,6 @@
 import { rollChance } from "@/core/math/generation/Randomizer";
-import { ClassTier, LEVEL_UP_EXPERIENCE, MAX_LEVEL, NO_BOOST, STAT_NAMES, StatBoost, UnitData, UnitStats, WeaponData } from "@/game/units/model/UnitData";
+import { ClassTier, NO_BOOST, STAT_NAMES, StatBoost, WeaponData } from "@/game/units/content/UnitCatalog";
+import { LEVEL_UP_EXPERIENCE, MAX_LEVEL, UnitData, UnitStats } from "@/game/units/components/UnitComponent";
 
 /**
  * The Fire Emblem: Radiant Dawn experience formulas, Normal mode, as pure

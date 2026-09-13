@@ -1,7 +1,7 @@
 import { Color } from "@/core/graphics/color/Color";
 import { Dimension } from "@/core/math/geometry/Dimension";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
-import { UITheme } from "@/game/ui/model/UITheme";
+import { UITheme } from "@/game/ui/view/UITheme";
 
 /**
  * Where the options screen sits and how wide its two columns are: the setting's

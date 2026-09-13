@@ -1,8 +1,9 @@
 import { JsonSchema } from "@/core/ecs/JsonSchema";
 import { clamp01 } from "@/core/math/utils/Clamp";
 import { GridPositionData } from "@/game/map/components/GridPositionComponent";
-import { ResolvedStrike, StrikeSide } from "@/game/combat/model/BattleForecast";
-import { POP_LIFETIME_MS, PopKind } from "@/game/units/model/UnitPop";
+import { ResolvedStrike } from "@/game/combat/rules/BattleForecast";
+import { BattleAnimationStep } from "@/game/combat/components/BattleAnimationComponent";
+import { POP_LIFETIME_MS, PopKind } from "@/game/units/components/UnitPopComponent";
 
 /**
  * The map-animation for a fight: each swing is a quick lunge toward the target,
@@ -33,18 +34,6 @@ const END_HOLD_MS = 420;
 const LUNGE_TILES = 0.42;
 /** How far a struck unit is knocked back, in tiles. */
 const RECOIL_TILES = 0.12;
-
-export interface BattleAnimationStep extends JsonSchema {
-	/** Which of the two combatants swings. */
-	role: StrikeSide;
-	connected: boolean;
-	critical: boolean;
-	/** HP this swing takes off the target (0 on a miss) - shown as the floating number. */
-	damage: number;
-	/** Both units' HP the instant this swing resolves. */
-	attackerHp: number;
-	defenderHp: number;
-}
 
 /** One token's visual state for a single frame of the animation. */
 export interface TokenAnimationState extends JsonSchema {

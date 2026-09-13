@@ -1,8 +1,8 @@
 import "vitest-canvas-mock";
-import { EventSystem } from "./src/core/events/EventSystem";
+import { EventBus } from "./src/core/events/EventBus";
 import { World } from "./src/core/ecs/World";
 import { AssetStorage } from "./src/core/assets/AssetStorage";
-import { loadUnitCatalogs } from "./src/game/units/model/UnitCatalog";
+import { loadUnitCatalogs } from "./src/game/units/content/UnitCatalog";
 import classesDocument from "./src/assets/data/catalog/classes.json";
 import weaponsDocument from "./src/assets/data/catalog/weapons.json";
 import itemsDocument from "./src/assets/data/catalog/items.json";
@@ -17,7 +17,7 @@ import skirmishConversations from "./src/assets/data/conversations/skirmish.conv
 import skirmishHouses from "./src/assets/data/houses/skirmish.houses.json";
 import skirmishLocks from "./src/assets/data/locks/skirmish.locks.json";
 
-new EventSystem({
+new EventBus({
 	history: {
 		enabled: true,
 		maxSize: 100

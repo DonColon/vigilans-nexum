@@ -1,5 +1,5 @@
 import { GameEvent } from "@/core/events/GameEvent";
-import type { StatBoost } from "@/game/units/model/UnitCatalog";
+import type { StatBoost } from "@/game/units/content/UnitCatalog";
 
 /** The player pressed confirm on a battle map tile. */
 export interface TileConfirmedEvent extends GameEvent {

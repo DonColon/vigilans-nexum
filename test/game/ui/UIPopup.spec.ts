@@ -2,7 +2,7 @@ import { test, expect, suite, beforeEach, afterEach } from "vitest";
 import { Entity } from "@/core/ecs/Entity";
 import { World } from "@/core/ecs/World";
 import { TransformComponent } from "@/core/ecs/components/TransformComponent";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { GameState } from "@/core/GameState";
 import { GameStateManager } from "@/core/GameStateManager";
 import { Display } from "@/core/graphics/Display";
@@ -15,8 +15,8 @@ import { ServiceRegistry } from "@/core/service/ServiceRegistry";
 import { PopupClosedEvent } from "@/game.events";
 import { CancelPopupCommand, ConfirmPopupCommand, popupCommands } from "@/game/ui/commands/PopupCommands";
 import { PopupComponent } from "@/game/ui/components/PopupComponent";
-import { popupBox, popupHeight, POPUP_WIDTH } from "@/game/ui/model/UILayout";
-import { UITheme } from "@/game/ui/model/UITheme";
+import { popupBox, popupHeight, POPUP_WIDTH } from "@/game/ui/view/UILayout";
+import { UITheme } from "@/game/ui/view/UITheme";
 import { PopupState } from "@/game/ui/states/PopupState";
 import { PopupSystem } from "@/game/ui/systems/PopupSystem";
 
@@ -47,7 +47,7 @@ suite("UI Popup Test Suite", () => {
 	}
 
 	const world = ServiceRegistry.get<World>(World.name);
-	const eventSystem = ServiceRegistry.get<EventSystem>(EventSystem.name);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
 
 	world.registerComponent(TransformComponent);
 	world.registerComponent(PopupComponent);
@@ -91,7 +91,7 @@ suite("UI Popup Test Suite", () => {
 		system.execute(16, 0);
 		// A second pass, so the tick that sees `closed` pops the state.
 		system.execute(16, 1);
-		eventSystem.processQueue();
+		eventBus.processQueue();
 	};
 
 	beforeEach(() => {
@@ -115,7 +115,7 @@ suite("UI Popup Test Suite", () => {
 			world.unregisterEntity(entity);
 		}
 
-		eventSystem.processQueue();
+		eventBus.processQueue();
 	});
 
 	suite("Opening", () => {
@@ -169,7 +169,7 @@ suite("UI Popup Test Suite", () => {
 	suite("Dismissing", () => {
 		test("Confirm acknowledges it: the state is popped and the closure reported", () => {
 			const closed: PopupClosedEvent[] = [];
-			eventSystem.subscribe("ui:popupClosed", (event) => closed.push(event));
+			eventBus.subscribe("ui:popupClosed", (event) => closed.push(event));
 
 			open(["a gift"]);
 			press(confirmBinding);
@@ -181,7 +181,7 @@ suite("UI Popup Test Suite", () => {
 
 		test("Cancel does the same - there is nothing to back out of", () => {
 			const closed: PopupClosedEvent[] = [];
-			eventSystem.subscribe("ui:popupClosed", (event) => closed.push(event));
+			eventBus.subscribe("ui:popupClosed", (event) => closed.push(event));
 
 			open(["a gift"]);
 			press(cancelBinding);
@@ -194,7 +194,7 @@ suite("UI Popup Test Suite", () => {
 			const popup = open(["a gift"]);
 
 			popupSystem().execute(16, 0);
-			eventSystem.processQueue();
+			eventBus.processQueue();
 
 			expect(popup.getComponent(PopupComponent).read().closed).toBe(false);
 			expect(stateManager.peek()).toBeInstanceOf(PopupState);

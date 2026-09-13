@@ -1,7 +1,7 @@
 import { Entity } from "@/core/ecs/Entity";
 import { Query } from "@/core/ecs/Query";
 import { UpdateSystem } from "@/core/ecs/UpdateSystem";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { GameStateManager } from "@/core/GameStateManager";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { StaffCommand } from "@/game/staff/commands/StaffCommands";
@@ -9,10 +9,10 @@ import { StaffChoiceComponent, StaffChoiceData } from "@/game/staff/components/S
 import { StaffState } from "@/game/staff/states/StaffState";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
-import { moveCursorTo } from "@/game/map/model/MapCursor";
+import { moveCursorTo } from "@/game/map/rules/MapCursor";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { isPartnerResolved, reconcilePartner } from "@/game/units/model/PartnerChoice";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { isPartnerResolved, reconcilePartner } from "@/game/units/rules/PartnerChoice";
+import { unitById, tileOf } from "@/game/units/rules/UnitLookup";
 
 /**
  * Drives the "who am I healing?" step: it runs the cycling commands and parks
@@ -25,8 +25,8 @@ export class StaffChoiceSystem extends UpdateSystem {
 	@GameCoreService(GameStateManager)
 	private stateManager!: GameStateManager;
 
-	@GameCoreService(EventSystem)
-	private eventSystem!: EventSystem;
+	@GameCoreService(EventBus)
+	private eventBus!: EventBus;
 
 	public initialize(): void {
 		this.queries = {
@@ -56,7 +56,7 @@ export class StaffChoiceSystem extends UpdateSystem {
 		if (data.cancelled) {
 			this.restoreCursor(data);
 			this.stateManager.pop();
-			this.eventSystem.dispatch("staff:cancelled", { unitId: data.unitId });
+			this.eventBus.dispatch("staff:cancelled", { unitId: data.unitId });
 			return;
 		}
 
@@ -66,7 +66,7 @@ export class StaffChoiceSystem extends UpdateSystem {
 			// where it stands.
 			this.restoreCursor(data);
 			this.stateManager.pop();
-			this.eventSystem.dispatch("staff:confirmed", { unitId: data.unitId, targetId: data.partnerId, staffId: data.staffId });
+			this.eventBus.dispatch("staff:confirmed", { unitId: data.unitId, targetId: data.partnerId, staffId: data.staffId });
 			return;
 		}
 
@@ -85,10 +85,10 @@ export class StaffChoiceSystem extends UpdateSystem {
 
 	/** Keeps the map cursor on whoever is about to be healed. */
 	private parkCursor(data: StaffChoiceData): void {
-		const target = UnitSystem.byId(this.queries.units.getResult(), data.partnerId);
+		const target = unitById(this.queries.units.getResult(), data.partnerId);
 
 		if (target !== null) {
-			moveCursorTo(this.queries.cursors.getSingleResult(), UnitSystem.tileOf(target));
+			moveCursorTo(this.queries.cursors.getSingleResult(), tileOf(target));
 		}
 	}
 

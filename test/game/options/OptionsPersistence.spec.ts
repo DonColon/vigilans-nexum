@@ -6,7 +6,7 @@ import { GameStateManager } from "@/core/GameStateManager";
 import { InputDevice } from "@/core/input/InputDevice";
 import { World } from "@/core/ecs/World";
 import { SwitchValue } from "@/core/options/Option";
-import { gameOptions, OptionId } from "@/game/options/model/GameOptions";
+import { gameOptions, OptionId } from "@/game/options/content/GameOptions";
 import { clearOptions, loadOptions, saveOptions } from "@/core/options/OptionsStore";
 import { OptionsFeature } from "@/game/options/OptionsFeature";
 import { OptionsService } from "@/core/options/OptionsService";

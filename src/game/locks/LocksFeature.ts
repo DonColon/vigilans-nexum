@@ -4,17 +4,17 @@ import { GameFeatureConfig } from "@/core/GameFeature";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { ChestRequestedEvent, ConvoyDeliveredEvent, DoorRequestedEvent, PopupClosedEvent } from "@/game.events";
 import { LocksComponent, LocksData, LockTileData } from "@/game/locks/components/LocksComponent";
-import { Chest, chestPopup, Door, LocksDocument, parseLocks } from "@/game/locks/model/Locks";
-import { LockSystem } from "@/game/locks/systems/LockSystem";
+import { Chest, Door, LocksDocument, parseLocks } from "@/game/locks/content/Locks";
+import { chestPopup } from "@/game/locks/view/LockPopups";
+import { doorBeside, chestAt, findLockTile } from "@/game/locks/rules/Locking";
 import { BattleMapFeature } from "@/game/map/BattleMapFeature";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { TileMapComponent } from "@/game/map/components/TileMapComponent";
-import { Terrain } from "@/game/map/model/Terrain";
+import { Terrain } from "@/game/map/content/Terrain";
 import { PopupState } from "@/game/ui/states/PopupState";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { keyIndex, spendInventoryUse } from "@/game/units/model/Inventory";
-import { LockKind } from "@/game/units/model/UnitData";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { LockKind } from "@/game/units/content/UnitCatalog";
+import { unitsInWorld, unitById } from "@/game/units/rules/UnitLookup";
 
 /** Asset id of the lock sheet this battle is scripted with. */
 const LOCKS_ASSET = "locks-skirmish";
@@ -29,7 +29,7 @@ const LOCKS_ASSET = "locks-skirmish";
  *    turned.
  *  - A door is opened from beside it, the way a house is visited: a shut door
  *    is a wall, so nobody can stand on it. The [[MovementFeature]] asks
- *    [[LockSystem]] whether the unit stands beside one and carries a door key,
+ *    the locking rules whether the unit stands beside one and carries a door key,
  *    and only then offers the command. `door:requested` swaps the tile for its
  *    open frame, makes the tile plain ground in the grid so units can walk
  *    through, spends the key and reports `door:opened` - which is the unit's
@@ -102,7 +102,7 @@ export class LocksFeature extends BattleMapFeature {
 		const tiles: LockTileData[] = [];
 
 		for (const lock of [...doors, ...chests]) {
-			const tile = LockSystem.findTile(map, lock);
+			const tile = findLockTile(map, lock);
 
 			if (tile === null) {
 				console.warn(`Lock "${lock.id}" sits on tile ${lock.column},${lock.row}, where the map draws nothing`);
@@ -141,8 +141,8 @@ export class LocksFeature extends BattleMapFeature {
 	 * unit could not pass is now a doorway it can.
 	 */
 	private onDoorRequested(event: DoorRequestedEvent): void {
-		const unit = UnitSystem.byId(this.units(), event.unitId);
-		const door = unit === null ? null : LockSystem.doorBeside(this.read(), unit);
+		const unit = unitById(this.units(), event.unitId);
+		const door = unit === null ? null : doorBeside(this.read(), unit);
 
 		// The command menu is already gone; without a door to open, say so, so the
 		// unit is not left standing there with nothing on screen.
@@ -165,8 +165,8 @@ export class LocksFeature extends BattleMapFeature {
 	 * say where it ended up.
 	 */
 	private onChestRequested(event: ChestRequestedEvent): void {
-		const unit = UnitSystem.byId(this.units(), event.unitId);
-		const chest = unit === null ? null : LockSystem.chestAt(this.read(), unit);
+		const unit = unitById(this.units(), event.unitId);
+		const chest = unit === null ? null : chestAt(this.read(), unit);
 
 		if (unit === null || chest === null || chest.id !== event.chestId) {
 			this.events.dispatch("lock:cancelled", { unitId: event.unitId });
@@ -203,10 +203,10 @@ export class LocksFeature extends BattleMapFeature {
 
 		const unitComponent = unit.getComponent(UnitComponent);
 		const unitData = unitComponent.read();
-		const slot = keyIndex(unitData, kind);
+		const slot = UnitComponent.keyIndex(unitData, kind);
 
 		if (slot >= 0) {
-			unitComponent.update(spendInventoryUse(unitData, slot));
+			unitComponent.update(UnitComponent.spendUse(unitData, slot));
 		}
 	}
 
@@ -253,7 +253,7 @@ export class LocksFeature extends BattleMapFeature {
 
 	/** The name on a unit's sheet, for the notice that says what it found. */
 	private nameOf(unitId: string): string {
-		return UnitSystem.byId(this.units(), unitId)?.getComponent(UnitComponent).read().name ?? unitId;
+		return unitById(this.units(), unitId)?.getComponent(UnitComponent).read().name ?? unitId;
 	}
 
 	/** Writes a frame into the tile map - what the player sees change. */
@@ -264,7 +264,7 @@ export class LocksFeature extends BattleMapFeature {
 			return;
 		}
 
-		tilemap.update(LockSystem.withFrame(tilemap.read(), tile, frame));
+		tilemap.update(TileMapComponent.withFrame(tilemap.read(), tile, frame));
 	}
 
 	/** Makes an opened door's tile plain ground in the grid, so the pathfinding walks through it. */
@@ -309,6 +309,6 @@ export class LocksFeature extends BattleMapFeature {
 	}
 
 	private units(): Entity[] {
-		return UnitSystem.inWorld(this.world);
+		return unitsInWorld(this.world);
 	}
 }

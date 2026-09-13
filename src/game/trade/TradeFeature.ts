@@ -6,7 +6,7 @@ import { TradeState } from "@/game/trade/states/TradeState";
 import { TradeRenderSystem } from "@/game/trade/systems/TradeRenderSystem";
 import { TradeSystem } from "@/game/trade/systems/TradeSystem";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { unitsInWorld, unitById, alliesBeside, tileOf } from "@/game/units/rules/UnitLookup";
 
 /**
  * Fire Emblem's trade, layered on top of the [[MovementFeature]]: two allied
@@ -51,14 +51,14 @@ export class TradeFeature extends GameFeature {
 	 * here, so the player can move the cursor between them before the packs open.
 	 */
 	private open(event: TradeRequestedEvent): void {
-		const units = UnitSystem.inWorld(this.world);
-		const unit = UnitSystem.byId(units, event.unitId);
+		const units = unitsInWorld(this.world);
+		const unit = unitById(units, event.unitId);
 
 		if (unit === null) {
 			return;
 		}
 
-		const partners = UnitSystem.alliesBeside(units, unit);
+		const partners = alliesBeside(units, unit);
 
 		if (partners.length === 0) {
 			return;
@@ -66,7 +66,7 @@ export class TradeFeature extends GameFeature {
 
 		const partnerIds = partners.map((partner) => partner.getComponent(UnitComponent).read().id);
 		const requestedIndex = partnerIds.indexOf(event.partnerId);
-		const tile = UnitSystem.tileOf(unit);
+		const tile = tileOf(unit);
 
 		this.stateManager.getState(TradeState).request({
 			unitId: event.unitId,

@@ -1,4 +1,4 @@
-import { EventSystem, EventSystemConfig } from "@/core/events/EventSystem";
+import { EventBus, EventBusConfig } from "@/core/events/EventBus";
 import { LocalDatabase, DatabaseConfiguration } from "@/core/database/LocalDatabase";
 import { AssetStorage } from "@/core/assets/AssetStorage";
 import { AssetLoader, LoaderConfiguration } from "@/core/assets/AssetLoader";
@@ -36,7 +36,7 @@ export interface GameConfiguration {
 		state: GameStateConstructor | string;
 		bundle: string;
 	};
-	eventSystem: EventSystemConfig;
+	eventBus: EventBusConfig;
 	inputDevice: InputDeviceConfig;
 	assetLoader: LoaderConfiguration;
 	localDatabase: DatabaseConfiguration;
@@ -64,7 +64,7 @@ export class Game {
 	private features: Map<string, GameFeature>;
 
 	private i18n: I18nService;
-	private eventSystem: EventSystem;
+	private eventBus: EventBus;
 	private poolManager: PoolManager;
 	private localDatabase: LocalDatabase;
 	private assetStorage: AssetStorage;
@@ -96,7 +96,7 @@ export class Game {
 		// so i18n() works from the first frame - before any feature is installed.
 		this.i18n = new I18nService(config.i18n);
 
-		this.eventSystem = new EventSystem(config.eventSystem);
+		this.eventBus = new EventBus(config.eventBus);
 		this.poolManager = new PoolManager();
 		this.localDatabase = new LocalDatabase(config.id, config.localDatabase);
 		this.assetStorage = new AssetStorage();
@@ -303,7 +303,7 @@ export class Game {
 		this.timerManager.update(elapsed);
 		this.cooldownManager.update(elapsed);
 		this.inputDevice.update();
-		this.eventSystem.processQueue();
+		this.eventBus.processQueue();
 		this.world.update(elapsed, frame);
 	}
 

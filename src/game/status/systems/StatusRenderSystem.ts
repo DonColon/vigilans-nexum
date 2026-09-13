@@ -14,8 +14,7 @@ import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
-import { Terrain, TerrainType } from "@/game/map/model/Terrain";
-import { GridSystem } from "@/game/map/systems/GridSystem";
+import { Terrain, TerrainType } from "@/game/map/content/Terrain";
 import { StatusComponent } from "@/game/status/components/StatusComponent";
 import {
 	classLine,
@@ -39,16 +38,14 @@ import {
 	STATUS_PLATE,
 	STATUS_RULE,
 	STATUS_TOKEN_RADIUS
-} from "@/game/status/model/StatusScreen";
+} from "@/game/status/view/StatusScreen";
 import { StatusSystem } from "@/game/status/systems/StatusSystem";
-import { BADGE_DIAMETER, drawBadge, drawPanel, drawText, uiAssetsReady } from "@/game/ui/model/UIPanel";
-import { UITheme } from "@/game/ui/model/UITheme";
+import { BADGE_DIAMETER, drawBadge, drawPanel, drawText, uiAssetsReady } from "@/game/ui/view/UIPanel";
+import { UITheme } from "@/game/ui/view/UITheme";
 import { menuRowColor } from "@/game/ui/systems/UIRenderSystem";
-import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { isUsableEntry } from "@/game/units/model/Inventory";
-import { InventoryEntry, UnitData } from "@/game/units/model/UnitData";
-import { drawUnitToken } from "@/game/units/model/UnitToken";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { UnitComponent, InventoryEntry, UnitData } from "@/game/units/components/UnitComponent";
+import { drawUnitToken } from "@/game/units/view/UnitToken";
+import { unitById, tileOf } from "@/game/units/rules/UnitLookup";
 
 /** Room the stat column keeps for a label before its bar starts, and for the number after it. */
 const STAT_LABEL_WIDTH = 64;
@@ -87,7 +84,7 @@ export class StatusRenderSystem extends RenderSystem {
 		}
 
 		const data = entity.getComponent(StatusComponent).read();
-		const unit = UnitSystem.byId(this.queries.units.getResult(), StatusSystem.shownUnit(data));
+		const unit = unitById(this.queries.units.getResult(), StatusSystem.shownUnit(data));
 
 		// The unit has left the map since the sheet went up - nothing to show.
 		if (unit === null) {
@@ -199,7 +196,7 @@ export class StatusRenderSystem extends RenderSystem {
 				drawBadge(graphics, i18n("menu.equipped"), x + BADGE_DIAMETER / 2, centreY);
 			}
 
-			const color = menuRowColor(false, !isUsableEntry(entry));
+			const color = menuRowColor(false, !UnitComponent.isUsableEntry(entry));
 
 			this.label(graphics, entry.name, textX, centreY, color, TextAlign.LEFT, UITheme.subheading);
 			this.label(graphics, `${entry.uses}/${entry.maxUses}`, x + width, centreY, color, TextAlign.RIGHT, UITheme.subheading);
@@ -226,9 +223,9 @@ export class StatusRenderSystem extends RenderSystem {
 			return Terrain.PLAIN;
 		}
 
-		const tile = UnitSystem.tileOf(unit);
+		const tile = tileOf(unit);
 
-		return GridSystem.getTerrain(map.getComponent(GridComponent).read(), tile.column, tile.row) ?? Terrain.PLAIN;
+		return GridComponent.terrainAt(map.getComponent(GridComponent).read(), tile.column, tile.row) ?? Terrain.PLAIN;
 	}
 
 	/** A line of text on its optical centre - see `drawText` in UIPanel. */

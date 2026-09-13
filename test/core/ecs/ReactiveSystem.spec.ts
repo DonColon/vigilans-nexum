@@ -2,7 +2,7 @@ import { test, expect, suite, vi } from "vitest";
 import { ReactiveUpdateSystem } from "@/core/ecs/ReactiveUpdateSystem";
 import { Query } from "@/core/ecs/Query";
 import { ServiceRegistry } from "@/core/service/ServiceRegistry";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { UpdateSystem } from "@/core/ecs/UpdateSystem";
 import { Entity } from "@/core/ecs/Entity";
 
@@ -18,14 +18,14 @@ suite("ReactiveSystem Test Suite", () => {
 		};
 
 		public initialize(): void {
-			this.eventSystem.subscribeOnce("entityChanged", () => {
+			this.eventBus.subscribeOnce("entityChanged", () => {
 				entityChanged = true;
 			});
 		}
 	}
 
-	test("ReactiveSystem extends UpdateSystem and has eventSystem", () => {
-		const eventSystem = ServiceRegistry.get<EventSystem>(EventSystem);
+	test("ReactiveSystem extends UpdateSystem and has eventBus", () => {
+		const eventBus = ServiceRegistry.get<EventBus>(EventBus);
 		const system = new TestReactiveSystem(0);
 
 		expect(system).toBeDefined();
@@ -33,10 +33,10 @@ suite("ReactiveSystem Test Suite", () => {
 		expect(system.isEnabled()).toBeTruthy();
 		expect(system).toBeInstanceOf(UpdateSystem);
 
-		eventSystem.dispatch("entityChanged", {
+		eventBus.dispatch("entityChanged", {
 			entity: new Entity("1337")
 		});
-		eventSystem.processQueue();
+		eventBus.processQueue();
 
 		expect(entityChanged).toBeTruthy();
 	});

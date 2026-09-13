@@ -2,17 +2,17 @@ import { GameFeatureConfig } from "@/core/GameFeature";
 import { experienceCommands } from "@/game/experience/commands/ExperienceCommands";
 import { CombatFoughtEvent, CombatResolvedEvent, StaffResolvedEvent } from "@/game.events";
 import { ExperienceComponent, ExperienceData, ExperiencePhase } from "@/game/experience/components/ExperienceComponent";
-import { combatExperience, ExperienceGain, gainExperience, staffExperience } from "@/game/experience/model/Experience";
-import { experienceFillDuration } from "@/game/experience/model/ExperienceBar";
+import { combatExperience, ExperienceGain, gainExperience, staffExperience } from "@/game/experience/rules/Experience";
+import { experienceFillDuration } from "@/game/experience/view/ExperienceBar";
 import { ExperienceState } from "@/game/experience/states/ExperienceState";
 import { ExperienceRenderSystem } from "@/game/experience/systems/ExperienceRenderSystem";
 import { ExperienceSystem } from "@/game/experience/systems/ExperienceSystem";
 import { BattleMapFeature } from "@/game/map/BattleMapFeature";
 import { optionEnabled } from "@/game/options/GameSettings";
-import { OptionId } from "@/game/options/model/GameOptions";
-import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { NO_BOOST, STAT_NAMES, StatBoost, UnitData, UnitFaction } from "@/game/units/model/UnitData";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { OptionId } from "@/game/options/content/GameOptions";
+import { NO_BOOST, STAT_NAMES, StatBoost } from "@/game/units/content/UnitCatalog";
+import { UnitComponent, UnitData, UnitFaction } from "@/game/units/components/UnitComponent";
+import { unitsInWorld, unitById } from "@/game/units/rules/UnitLookup";
 
 /** A gain that has landed on a unit and is waiting to be shown: where the unit was, and what it got. */
 interface PendingGain {
@@ -27,7 +27,7 @@ interface PendingGain {
  *  - A fight is scored on `combat:fought`, while both sides are still on the
  *    map to read a level and a class off: a kill is worth the most, a hit that
  *    hurt less, a swing that never landed a single point - see
- *    `model/Experience` for the formulas. The points go on the unit right away
+ *    `rules/Experience` for the formulas. The points go on the unit right away
  *    (the way the fight's HP already did) but the *showing* waits for
  *    `combat:resolved`, once the animation has landed, so the bar follows the
  *    fight rather than interrupting it. Both sides are scored - a player unit
@@ -92,8 +92,8 @@ export class ExperienceFeature extends BattleMapFeature {
 	/** Both sides scored while both are still standing; the points land now, the showing waits for the animation. */
 	private scoreFight(event: CombatFoughtEvent): void {
 		const units = this.units();
-		const attacker = UnitSystem.byId(units, event.attackerId);
-		const defender = UnitSystem.byId(units, event.defenderId);
+		const attacker = unitById(units, event.attackerId);
+		const defender = unitById(units, event.defenderId);
 
 		if (attacker === null || defender === null) {
 			return;
@@ -118,7 +118,7 @@ export class ExperienceFeature extends BattleMapFeature {
 	}
 
 	private scoreStaff(event: StaffResolvedEvent): void {
-		const healer = UnitSystem.byId(this.units(), event.unitId);
+		const healer = unitById(this.units(), event.unitId);
 
 		if (healer === null) {
 			return;
@@ -145,7 +145,7 @@ export class ExperienceFeature extends BattleMapFeature {
 		}
 
 		const gain = gainExperience(unit, amount);
-		const entity = UnitSystem.byId(this.units(), unit.id);
+		const entity = unitById(this.units(), unit.id);
 
 		if (gain.gained <= 0 || entity === null) {
 			return false;
@@ -198,6 +198,6 @@ export class ExperienceFeature extends BattleMapFeature {
 	}
 
 	private units() {
-		return UnitSystem.inWorld(this.world);
+		return unitsInWorld(this.world);
 	}
 }

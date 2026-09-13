@@ -11,11 +11,11 @@ import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { OptionsComponent } from "@/game/options/components/OptionsComponent";
 import { choiceOf, OptionDefinition } from "@/core/options/Option";
-import { OptionId } from "@/game/options/model/GameOptions";
-import { OPTIONS_ARROW_GAP, OPTIONS_PLATE, OPTIONS_VALUE_WIDTH, optionsPanel } from "@/game/options/model/OptionsScreen";
+import { OptionId } from "@/game/options/content/GameOptions";
+import { OPTIONS_ARROW_GAP, OPTIONS_PLATE, OPTIONS_VALUE_WIDTH, optionsPanel } from "@/game/options/view/OptionsScreen";
 import { OptionsService } from "@/core/options/OptionsService";
-import { drawMenuHighlight, drawPanel, drawText, uiAssetsReady } from "@/game/ui/model/UIPanel";
-import { UITheme } from "@/game/ui/model/UITheme";
+import { drawMenuHighlight, drawPanel, drawText, uiAssetsReady } from "@/game/ui/view/UIPanel";
+import { UITheme } from "@/game/ui/view/UITheme";
 import { menuRowColor } from "@/game/ui/systems/UIRenderSystem";
 
 /**

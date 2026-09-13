@@ -1,19 +1,19 @@
 import { Entity } from "@/core/ecs/Entity";
 import { Query } from "@/core/ecs/Query";
 import { UpdateSystem } from "@/core/ecs/UpdateSystem";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { GameStateManager } from "@/core/GameStateManager";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
-import { moveCursorTo } from "@/game/map/model/MapCursor";
+import { moveCursorTo } from "@/game/map/rules/MapCursor";
 import { TradeCommand } from "@/game/trade/commands/TradeCommands";
 import { NOTHING_HELD, TradeComponent, TradeData, TradeSide } from "@/game/trade/components/TradeComponent";
 import { TradeState } from "@/game/trade/states/TradeState";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { swapInventorySlots, tradeInventoryItems } from "@/game/units/model/Inventory";
-import { isPartnerResolved, reconcilePartner } from "@/game/units/model/PartnerChoice";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { tradeInventoryItems } from "@/game/trade/rules/Trading";
+import { isPartnerResolved, reconcilePartner } from "@/game/units/rules/PartnerChoice";
+import { unitById, tileOf } from "@/game/units/rules/UnitLookup";
 
 /**
  * Drives the open trade. In the `partner` phase it keeps the map cursor parked
@@ -28,15 +28,15 @@ import { UnitSystem } from "@/game/units/systems/UnitSystem";
  * reports `trade:closed` and pops the state. Trading costs the unit nothing, so
  * it is still free to move on to a real action afterwards.
  *
- * The pack edits themselves are the pure functions in `units/model/Inventory` -
- * this system only decides which two slots they act on.
+ * The pack edits themselves are `UnitComponent.swapSlots` and the trade rules'
+ * `tradeInventoryItems` - this system only decides which two slots they act on.
  */
 export class TradeSystem extends UpdateSystem {
 	@GameCoreService(GameStateManager)
 	private stateManager!: GameStateManager;
 
-	@GameCoreService(EventSystem)
-	private eventSystem!: EventSystem;
+	@GameCoreService(EventBus)
+	private eventBus!: EventBus;
 
 	public initialize(): void {
 		this.queries = {
@@ -65,7 +65,7 @@ export class TradeSystem extends UpdateSystem {
 
 		if (data.cancelled) {
 			this.restoreCursor(data);
-			this.eventSystem.dispatch("trade:closed", { unitId: data.unitId, partnerId: data.partnerId });
+			this.eventBus.dispatch("trade:closed", { unitId: data.unitId, partnerId: data.partnerId });
 			this.stateManager.pop();
 			return;
 		}
@@ -128,7 +128,7 @@ export class TradeSystem extends UpdateSystem {
 		if (data.heldSide === cursorSide) {
 			const component = holder.getComponent(UnitComponent);
 			const before = component.read();
-			const after = swapInventorySlots(before, data.heldSlot, cursorSlot);
+			const after = UnitComponent.swapSlots(before, data.heldSlot, cursorSlot);
 
 			if (after !== before) {
 				component.update(after);
@@ -157,7 +157,7 @@ export class TradeSystem extends UpdateSystem {
 			unitComponent.update(after.left);
 			partnerComponent.update(after.right);
 
-			this.eventSystem.dispatch("trade:swapped", { unitId: data.unitId, partnerId: data.partnerId });
+			this.eventBus.dispatch("trade:swapped", { unitId: data.unitId, partnerId: data.partnerId });
 		}
 
 		return dropped;
@@ -168,7 +168,7 @@ export class TradeSystem extends UpdateSystem {
 		const partner = this.unit(data.partnerId);
 
 		if (partner !== null) {
-			moveCursorTo(this.queries.cursors.getSingleResult(), UnitSystem.tileOf(partner));
+			moveCursorTo(this.queries.cursors.getSingleResult(), tileOf(partner));
 		}
 	}
 
@@ -178,7 +178,7 @@ export class TradeSystem extends UpdateSystem {
 
 	/** The unit with this id, out of the ones on the map right now. */
 	private unit(id: string): Entity | null {
-		return UnitSystem.byId(this.queries.units.getResult(), id);
+		return unitById(this.queries.units.getResult(), id);
 	}
 
 	private runCommands(elapsed: number, frame: number, state: TradeState, trade: Entity): void {

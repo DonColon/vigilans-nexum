@@ -16,10 +16,10 @@ import { MapRenderSystem } from "@/game/map/systems/MapRenderSystem";
 import { MovementComponent } from "@/game/movement/components/MovementComponent";
 import { PendingMoveComponent } from "@/game/movement/components/PendingMoveComponent";
 import { WalkComponent } from "@/game/movement/components/WalkComponent";
-import { UnitCard, UnitCardBar, unitCardHeight, unitCardLines, unitCardPlacement, unitCardRows } from "@/game/status/model/UnitCard";
+import { UnitCard, UnitCardBar, unitCardHeight, unitCardLines, unitCardPlacement, unitCardRows } from "@/game/status/view/UnitCard";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { drawUnitToken } from "@/game/units/model/UnitToken";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { drawUnitToken } from "@/game/units/view/UnitToken";
+import { unitAt } from "@/game/units/rules/UnitLookup";
 
 /**
  * Draws the hover card over whichever unit the map cursor is resting on - a
@@ -80,7 +80,7 @@ export class UnitCardRenderSystem extends MapRenderSystem {
 		}
 
 		const tile = cursor.getComponent(GridPositionComponent).read();
-		const unit = UnitSystem.unitAt(this.queries.units.getResult(), tile.column, tile.row);
+		const unit = unitAt(this.queries.units.getResult(), tile.column, tile.row);
 
 		if (unit === null) {
 			return;

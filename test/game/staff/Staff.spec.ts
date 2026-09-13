@@ -3,38 +3,38 @@ import { i18n } from "@/core/i18n/I18n";
 import { Entity } from "@/core/ecs/Entity";
 import { World } from "@/core/ecs/World";
 import { identityTransform, TransformComponent } from "@/core/ecs/components/TransformComponent";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { Display } from "@/core/graphics/Display";
 import { GameStateManager } from "@/core/GameStateManager";
 import { InputDevice } from "@/core/input/InputDevice";
 import { ServiceRegistry } from "@/core/service/ServiceRegistry";
 import { StaffCancelledEvent, StaffConfirmedEvent, StaffResolvedEvent } from "@/game.events";
-import { buildForecast } from "@/game/combat/model/BattleForecast";
-import { CombatSystem } from "@/game/combat/systems/CombatSystem";
+import { buildForecast } from "@/game/combat/rules/BattleForecast";
+import { weaponsReaching } from "@/game/combat/rules/Targeting";
 import { StaffChoiceComponent } from "@/game/staff/components/StaffChoiceComponent";
 import { StaffFeature } from "@/game/staff/StaffFeature";
-import { STAFF_MENU } from "@/game/staff/model/StaffMenus";
+import { STAFF_MENU } from "@/game/staff/view/StaffMenus";
 import { StaffState } from "@/game/staff/states/StaffState";
 import { StaffChoiceSystem } from "@/game/staff/systems/StaffChoiceSystem";
-import { StaffSystem } from "@/game/staff/systems/StaffSystem";
+import { healingBy } from "@/game/staff/rules/Staves";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
-import { Terrain } from "@/game/map/model/Terrain";
-import { parseTileMap } from "@/game/map/model/TileMaps";
-import { GridSystem } from "@/game/map/systems/GridSystem";
+import { Terrain } from "@/game/map/content/Terrain";
+import { parseTileMap } from "@/game/map/content/TileMaps";
 import { PendingMoveComponent } from "@/game/movement/components/PendingMoveComponent";
 import { MovementFeature } from "@/game/movement/MovementFeature";
-import { UnitMenuRow } from "@/game/movement/model/UnitMenus";
+import { UnitMenuRow } from "@/game/movement/view/UnitMenus";
 import { UnitWalkSystem } from "@/game/movement/systems/UnitWalkSystem";
-import { ThreatSystem } from "@/game/threat/systems/ThreatSystem";
+import { weaponReach } from "@/game/threat/rules/ThreatRange";
 import { MenuComponent } from "@/game/ui/components/MenuComponent";
 import { MenuState } from "@/game/ui/states/MenuState";
 import { UIFeature } from "@/game/ui/UIFeature";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
 import { UnitPopComponent } from "@/game/units/components/UnitPopComponent";
-import { buildUnit, getWeapon, UnitDocument } from "@/game/units/model/UnitData";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { buildUnit, UnitDocument } from "@/game/units/content/UnitSheets";
+import { getWeapon } from "@/game/units/content/UnitCatalog";
+import { unitsInWorld, unitById, tileOf } from "@/game/units/rules/UnitLookup";
 import { UnitsFeature } from "@/game/units/UnitsFeature";
 import teutaDocument from "@/assets/data/units/teuta.unit.json";
 import dardanDocument from "@/assets/data/units/dardan.unit.json";
@@ -45,28 +45,28 @@ suite("Staff System Test Suite", () => {
 	const dardan = () => buildUnit(dardanDocument as UnitDocument);
 
 	test("A cleric's staves are the staff entries it can wield - a sword is not one, nor a staff in a swordsman's pack", () => {
-		expect(StaffSystem.staves(teuta()).map((entry) => entry.id)).toStrictEqual(["heal"]);
-		expect(StaffSystem.staves(dardan())).toStrictEqual([]);
+		expect(UnitComponent.staves(teuta()).map((entry) => entry.id)).toStrictEqual(["heal"]);
+		expect(UnitComponent.staves(dardan())).toStrictEqual([]);
 
 		const carrying = buildUnit({ ...(dardanDocument as UnitDocument), inventory: ["bronze-sword", "heal"] });
-		expect(StaffSystem.staves(carrying)).toStrictEqual([]);
+		expect(UnitComponent.staves(carrying)).toStrictEqual([]);
 	});
 
 	test("A staff restores its might plus the healer's magic, never past the wound", () => {
 		const healer = teuta(); // magic 6
 		const staff = getWeapon("heal"); // might 10
 
-		expect(StaffSystem.healingBy(healer, staff, { ...dardan(), currentHP: 1 })).toBe(16);
-		expect(StaffSystem.healingBy(healer, staff, { ...dardan(), currentHP: 10 })).toBe(10); // 20 max
-		expect(StaffSystem.healingBy(healer, staff, dardan())).toBe(0);
-		expect(StaffSystem.healingBy(healer, getWeapon("mend"), { ...dardan(), currentHP: 1 })).toBe(19);
+		expect(healingBy(healer, staff, { ...dardan(), currentHP: 1 })).toBe(16);
+		expect(healingBy(healer, staff, { ...dardan(), currentHP: 10 })).toBe(10); // 20 max
+		expect(healingBy(healer, staff, dardan())).toBe(0);
+		expect(healingBy(healer, getWeapon("mend"), { ...dardan(), currentHP: 1 })).toBe(19);
 	});
 
 	test("A staff is never something to attack, counter or threaten with", () => {
 		const cleric = teuta();
 
-		expect(CombatSystem.weaponsReaching(cleric, 1)).toStrictEqual([]);
-		expect(ThreatSystem.weaponReach(cleric)).toBeNull();
+		expect(weaponsReaching(cleric, 1)).toStrictEqual([]);
+		expect(weaponReach(cleric)).toBeNull();
 
 		// Struck at range one with a readied staff, the cleric just takes it.
 		const forecast = buildForecast({
@@ -92,7 +92,7 @@ suite("Staff System Test Suite", () => {
  */
 suite("Unit Staff Test Suite", () => {
 	const world = ServiceRegistry.get<World>(World.name);
-	const eventSystem = ServiceRegistry.get<EventSystem>(EventSystem.name);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
 
 	world.registerComponent(TransformComponent);
 	world.registerComponent(GridComponent);
@@ -112,7 +112,7 @@ suite("Unit Staff Test Suite", () => {
 	let map: Entity;
 	let cursor: Entity;
 
-	const unit = (id: string) => UnitSystem.byId(UnitSystem.inWorld(world), id) as Entity;
+	const unit = (id: string) => unitById(unitsInWorld(world), id) as Entity;
 	const sheet = (id: string) => unit(id).getComponent(UnitComponent).read();
 	const menu = () => (stateManager.peek() as MenuState).getMenu()?.getComponent(MenuComponent).read();
 	const cursorTile = () => cursor.getComponent(GridPositionComponent).read();
@@ -128,39 +128,39 @@ suite("Unit Staff Test Suite", () => {
 	const pumpChoice = () => {
 		const system = new StaffChoiceSystem(10);
 		system.execute(16, 0);
-		eventSystem.processQueue(); // staff:confirmed / staff:cancelled
-		eventSystem.processQueue(); // staff:resolved / the menu coming back
-		eventSystem.processQueue(); // unit:acted
+		eventBus.processQueue(); // staff:confirmed / staff:cancelled
+		eventBus.processQueue(); // staff:resolved / the menu coming back
+		eventBus.processQueue(); // unit:acted
 		system.dispose();
 	};
 
 	const finishWalk = () => {
 		const walkSystem = new UnitWalkSystem(8);
 		walkSystem.execute(10_000);
-		eventSystem.processQueue();
+		eventBus.processQueue();
 		walkSystem.dispose();
 	};
 
 	/** Picks a unit up and sets it back down where it stands, leaving its command menu open. */
 	const openCommandMenu = (column: number, row: number) => {
-		eventSystem.dispatch("map:tileConfirmed", { column, row, terrain: "plain" });
-		eventSystem.processQueue();
-		eventSystem.dispatch("map:tileConfirmed", { column, row, terrain: "plain" });
-		eventSystem.processQueue();
+		eventBus.dispatch("map:tileConfirmed", { column, row, terrain: "plain" });
+		eventBus.processQueue();
+		eventBus.dispatch("map:tileConfirmed", { column, row, terrain: "plain" });
+		eventBus.processQueue();
 		finishWalk();
 	};
 
 	/** Chooses "Staff", which opens the staff list. */
 	const chooseStaffCommand = () => {
-		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", row: UnitMenuRow.STAFF, index: 0, item: i18n("menu.staff") });
-		eventSystem.processQueue();
-		eventSystem.processQueue(); // deliver staff:requested
+		eventBus.dispatch("ui:menuConfirmed", { menu: "unit-command", row: UnitMenuRow.STAFF, index: 0, item: i18n("menu.staff") });
+		eventBus.processQueue();
+		eventBus.processQueue(); // deliver staff:requested
 	};
 
 	/** Picks a staff off the list, which opens the "who am I healing?" choice. */
 	const chooseStaff = (staffId: string, index = 0) => {
-		eventSystem.dispatch("ui:menuConfirmed", { menu: STAFF_MENU, row: staffId, index, item: staffId });
-		eventSystem.processQueue();
+		eventBus.dispatch("ui:menuConfirmed", { menu: STAFF_MENU, row: staffId, index, item: staffId });
+		eventBus.processQueue();
 	};
 
 	/** Settles on whoever the cursor is pointing at, which raises the staff. */
@@ -173,7 +173,7 @@ suite("Unit Staff Test Suite", () => {
 		stateManager.clear();
 
 		map = world.createEntity();
-		map.addComponent(GridComponent, GridSystem.of(parseTileMap(sketch), 24));
+		map.addComponent(GridComponent, GridComponent.of(parseTileMap(sketch), 24));
 		map.addComponent(TransformComponent, { ...identityTransform });
 
 		cursor = world.createEntity();
@@ -189,8 +189,8 @@ suite("Unit Staff Test Suite", () => {
 		movement = new MovementFeature({ dependencies: [units, ui] });
 		movement.install();
 
-		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
-		eventSystem.processQueue();
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
+		eventBus.processQueue();
 	});
 
 	afterEach(() => {
@@ -204,7 +204,7 @@ suite("Unit Staff Test Suite", () => {
 			world.unregisterEntity(entity);
 		}
 
-		eventSystem.processQueue();
+		eventBus.processQueue();
 	});
 
 	test("Staff is left out while nobody beside the cleric is wounded", () => {
@@ -263,9 +263,9 @@ suite("Unit Staff Test Suite", () => {
 		const confirmed: StaffConfirmedEvent[] = [];
 		const resolved: StaffResolvedEvent[] = [];
 		let acted: string | null = null;
-		eventSystem.subscribe("staff:confirmed", (event) => confirmed.push(event));
-		eventSystem.subscribe("staff:resolved", (event) => resolved.push(event));
-		eventSystem.subscribe("unit:acted", (event) => (acted = event.unitId));
+		eventBus.subscribe("staff:confirmed", (event) => confirmed.push(event));
+		eventBus.subscribe("staff:resolved", (event) => resolved.push(event));
+		eventBus.subscribe("unit:acted", (event) => (acted = event.unitId));
 
 		wound("elira", 3);
 		openCommandMenu(5, 11);
@@ -304,15 +304,15 @@ suite("Unit Staff Test Suite", () => {
 
 	test("Backing out of the staff list puts the command menu back, with the turn intact", () => {
 		const cancelled: StaffCancelledEvent[] = [];
-		eventSystem.subscribe("staff:cancelled", (event) => cancelled.push(event));
+		eventBus.subscribe("staff:cancelled", (event) => cancelled.push(event));
 
 		wound("elira", 5);
 		openCommandMenu(5, 11);
 		chooseStaffCommand();
 
-		eventSystem.dispatch("ui:menuCancelled", { menu: STAFF_MENU });
-		eventSystem.processQueue();
-		eventSystem.processQueue();
+		eventBus.dispatch("ui:menuCancelled", { menu: STAFF_MENU });
+		eventBus.processQueue();
+		eventBus.processQueue();
 
 		expect(cancelled).toMatchObject([{ unitId: "teuta" }]);
 		expect(menu()?.id).toBe("unit-command");
@@ -351,7 +351,7 @@ suite("Unit Staff Test Suite", () => {
 		choice().update({ ...choice().read(), partnerIndex: 1 });
 		new StaffChoiceSystem(10).execute(16, 0);
 		const second = choice().read().partnerId;
-		expect(cursorTile()).toStrictEqual(UnitSystem.tileOf(unit(second)));
+		expect(cursorTile()).toStrictEqual(tileOf(unit(second)));
 
 		confirmTarget();
 

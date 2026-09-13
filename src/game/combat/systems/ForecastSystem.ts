@@ -2,17 +2,17 @@ import { Entity } from "@/core/ecs/Entity";
 import { Query } from "@/core/ecs/Query";
 import { clamp } from "@/core/math/utils/Clamp";
 import { UpdateSystem } from "@/core/ecs/UpdateSystem";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { GameStateManager } from "@/core/GameStateManager";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { unitById } from "@/game/units/rules/UnitLookup";
 import { ForecastCommand } from "@/game/combat/commands/ForecastCommands";
 import { ForecastComponent, ForecastData } from "@/game/combat/components/ForecastComponent";
 import { ForecastState } from "@/game/combat/states/ForecastState";
-import { CombatSystem } from "@/game/combat/systems/CombatSystem";
+import { weaponsReaching } from "@/game/combat/rules/Targeting";
 
 /**
  * Drives the open forecast: it keeps the previewed target / weapon consistent as
@@ -25,8 +25,8 @@ export class ForecastSystem extends UpdateSystem {
 	@GameCoreService(GameStateManager)
 	private stateManager!: GameStateManager;
 
-	@GameCoreService(EventSystem)
-	private eventSystem!: EventSystem;
+	@GameCoreService(EventBus)
+	private eventBus!: EventBus;
 
 	public initialize(): void {
 		this.queries = {
@@ -55,13 +55,13 @@ export class ForecastSystem extends UpdateSystem {
 
 		if (data.cancelled) {
 			this.restoreCursor(data);
-			this.eventSystem.dispatch("combat:cancelled", { attackerId: data.attackerId });
+			this.eventBus.dispatch("combat:cancelled", { attackerId: data.attackerId });
 			this.stateManager.pop();
 			return;
 		}
 
 		if (data.confirmed) {
-			this.eventSystem.dispatch("combat:confirmed", {
+			this.eventBus.dispatch("combat:confirmed", {
 				attackerId: data.attackerId,
 				defenderId: data.defenderId,
 				weaponId: data.weaponIds[data.weaponIndex] ?? ""
@@ -91,8 +91,8 @@ export class ForecastSystem extends UpdateSystem {
 			return;
 		}
 
-		const distance = CombatSystem.distance(attacker.getComponent(GridPositionComponent).read(), defender.getComponent(GridPositionComponent).read());
-		const weaponIds = CombatSystem.weaponsReaching(attacker.getComponent(UnitComponent).read(), distance).map((entry) => entry.id);
+		const distance = GridPositionComponent.distance(attacker.getComponent(GridPositionComponent).read(), defender.getComponent(GridPositionComponent).read());
+		const weaponIds = weaponsReaching(attacker.getComponent(UnitComponent).read(), distance).map((entry) => entry.id);
 		const weaponIndex = clamp(data.weaponIndex, 0, Math.max(1, weaponIds.length) - 1);
 
 		if (defenderIndex === data.defenderIndex && defenderId === data.defenderId && weaponIndex === data.weaponIndex && sameList(weaponIds, data.weaponIds)) {
@@ -132,7 +132,7 @@ export class ForecastSystem extends UpdateSystem {
 
 	/** The unit with this id, out of the ones on the map right now. */
 	private unit(id: string): Entity | null {
-		return UnitSystem.byId(this.queries.units.getResult(), id);
+		return unitById(this.queries.units.getResult(), id);
 	}
 
 	private runCommands(elapsed: number, frame: number, state: ForecastState, forecast: Entity): void {

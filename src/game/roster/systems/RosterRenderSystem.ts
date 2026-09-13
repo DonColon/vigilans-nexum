@@ -10,13 +10,12 @@ import { i18n } from "@/core/i18n/I18n";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { RosterComponent, RosterData } from "@/game/roster/components/RosterComponent";
-import { ROSTER_PLATE, ROSTER_RULE, rosterCellX, rosterColumnLayout, rosterHeading, rosterPanel } from "@/game/roster/model/RosterScreen";
-import { drawMenuHighlight, drawPanel, drawText, uiAssetsReady } from "@/game/ui/model/UIPanel";
-import { UITheme } from "@/game/ui/model/UITheme";
+import { ROSTER_PLATE, ROSTER_RULE, rosterCellX, rosterColumnLayout, rosterHeading, rosterPanel } from "@/game/roster/view/RosterScreen";
+import { drawMenuHighlight, drawPanel, drawText, uiAssetsReady } from "@/game/ui/view/UIPanel";
+import { UITheme } from "@/game/ui/view/UITheme";
 import { menuRowColor } from "@/game/ui/systems/UIRenderSystem";
-import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { UnitData } from "@/game/units/model/UnitData";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { UnitComponent, UnitData } from "@/game/units/components/UnitComponent";
+import { unitById } from "@/game/units/rules/UnitLookup";
 
 /**
  * Draws the army list: a heading row over one row per unit, every column of
@@ -118,7 +117,7 @@ export class RosterRenderSystem extends RenderSystem {
 		const onMap = this.queries.units.getResult();
 
 		return data.unitIds
-			.map((id) => UnitSystem.byId(onMap, id))
+			.map((id) => unitById(onMap, id))
 			.filter((unit): unit is NonNullable<typeof unit> => unit !== null)
 			.map((unit) => unit.getComponent(UnitComponent).read());
 	}

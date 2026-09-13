@@ -7,15 +7,15 @@ import { ServiceRegistry } from "@/core/service/ServiceRegistry";
  *
  * Usage 1: Class Decorator (marks service for auto-registration)
  * @GameCoreService()
- * export class EventSystem { }
+ * export class EventBus { }
  *
  * Usage 2: Property Decorator with string name
- * @GameCoreService('EventSystem')
- * private eventSystem! : EventSystem;
+ * @GameCoreService('EventBus')
+ * private eventBus! : EventBus;
  *
  * Usage 3: Property Decorator with constructor (type-safe!)
- * @GameCoreService(EventSystem)
- * private eventSystem! : EventSystem;
+ * @GameCoreService(EventBus)
+ * private eventBus! : EventBus;
  */
 export function GameCoreService(): <T extends Constructor>(constructor: T) => T;
 export function GameCoreService<T>(service: Constructor<T> | string): PropertyDecorator;

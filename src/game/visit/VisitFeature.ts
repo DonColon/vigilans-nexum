@@ -9,10 +9,11 @@ import { TileMapComponent } from "@/game/map/components/TileMapComponent";
 import { DialogState } from "@/game/ui/states/DialogState";
 import { PopupState } from "@/game/ui/states/PopupState";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { unitsInWorld, unitById } from "@/game/units/rules/UnitLookup";
 import { HouseDoorData, VisitComponent, VisitData } from "@/game/visit/components/VisitComponent";
-import { giftPopup, House, HousesDocument, houseDialog, parseHouses } from "@/game/visit/model/Houses";
-import { VisitSystem } from "@/game/visit/systems/VisitSystem";
+import { House, HousesDocument, parseHouses } from "@/game/visit/content/Houses";
+import { giftPopup, houseDialog } from "@/game/visit/view/VisitPopups";
+import { availableHouse, findDoor } from "@/game/visit/rules/Visits";
 
 /** Asset id of the house sheet this battle is scripted with. */
 const HOUSES_ASSET = "houses-skirmish";
@@ -29,7 +30,7 @@ const HOUSES_ASSET = "houses-skirmish";
  *    a pulse or a legend.
  *  - A unit knocks from the doorstep: it ends its move on a tile *next to* the
  *    door, not on it, the way it walks up to an ally to trade. The
- *    [[MovementFeature]] asks [[VisitSystem]] whether there is a house beside the
+ *    [[MovementFeature]] asks the visit rules whether there is a house beside the
  *    unit, and only then offers the command.
  *  - `visit:requested` plays the villager's script in the ordinary textbox, one
  *    page per page, labelled with their own name. A villager has no unit sheet,
@@ -107,7 +108,7 @@ export class VisitFeature extends BattleMapFeature {
 		const doors: HouseDoorData[] = [];
 
 		for (const house of houses) {
-			const door = VisitSystem.findDoor(map, house);
+			const door = findDoor(map, house);
 
 			if (door === null) {
 				console.warn(`House "${house.id}" sits on tile ${house.column},${house.row}, where the map draws no door`);
@@ -152,8 +153,8 @@ export class VisitFeature extends BattleMapFeature {
 	 */
 	private onRequested(event: VisitRequestedEvent): void {
 		const data = this.read();
-		const unit = UnitSystem.byId(this.units(), event.unitId);
-		const house = unit === null ? null : VisitSystem.available(data, unit);
+		const unit = unitById(this.units(), event.unitId);
+		const house = unit === null ? null : availableHouse(data, unit);
 
 		// The command menu is already gone; without a house to show, say so, so the
 		// unit is not left standing there with nothing on screen.
@@ -254,7 +255,7 @@ export class VisitFeature extends BattleMapFeature {
 
 	/** The name on a unit's sheet, for the notice that says what it was given. */
 	private nameOf(unitId: string): string {
-		return UnitSystem.byId(this.units(), unitId)?.getComponent(UnitComponent).read().name ?? unitId;
+		return unitById(this.units(), unitId)?.getComponent(UnitComponent).read().name ?? unitId;
 	}
 
 	/** The frame a house's door shows while it is still worth a knock. */
@@ -270,7 +271,7 @@ export class VisitFeature extends BattleMapFeature {
 			return;
 		}
 
-		tilemap.update(VisitSystem.withDoor(tilemap.read(), door, frame));
+		tilemap.update(TileMapComponent.withFrame(tilemap.read(), door, frame));
 	}
 
 	/** The tile map of the active battle map, or null when there is none on screen. */
@@ -293,6 +294,6 @@ export class VisitFeature extends BattleMapFeature {
 	}
 
 	private units(): Entity[] {
-		return UnitSystem.inWorld(this.world);
+		return unitsInWorld(this.world);
 	}
 }

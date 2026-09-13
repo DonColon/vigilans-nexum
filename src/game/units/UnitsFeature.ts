@@ -8,12 +8,11 @@ import { GridPositionComponent } from "@/game/map/components/GridPositionCompone
 import { CommanderComponent } from "@/game/units/components/CommanderComponent";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
 import { UnitPopComponent } from "@/game/units/components/UnitPopComponent";
-import { loadUnitCatalogs } from "@/game/units/model/UnitCatalog";
-import { buildUnit, UnitDocument } from "@/game/units/model/UnitData";
-import { healPopText, PopKind, POP_LIFETIME_MS } from "@/game/units/model/UnitPop";
+import { loadUnitCatalogs } from "@/game/units/content/UnitCatalog";
+import { buildUnit, UnitDocument } from "@/game/units/content/UnitSheets";
 import { UnitPopSystem } from "@/game/units/systems/UnitPopSystem";
 import { UnitRenderSystem } from "@/game/units/systems/UnitRenderSystem";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { unitsInWorld, unitById } from "@/game/units/rules/UnitLookup";
 
 /** Asset id of the deployment sheet this battle puts on the map. */
 const DEPLOYMENT_ASSET = "deployment-skirmish";
@@ -138,13 +137,13 @@ export class UnitsFeature extends BattleMapFeature {
 			return;
 		}
 
-		const unit = UnitSystem.byId(UnitSystem.inWorld(this.world), unitId);
+		const unit = unitById(unitsInWorld(this.world), unitId);
 
 		if (unit === null) {
 			return;
 		}
 
-		const pop = { text: healPopText(healed), kind: PopKind.HEAL, elapsed: 0, duration: POP_LIFETIME_MS };
+		const pop = UnitPopComponent.heal(healed);
 
 		if (unit.hasComponent(UnitPopComponent)) {
 			unit.getComponent(UnitPopComponent).update(pop);

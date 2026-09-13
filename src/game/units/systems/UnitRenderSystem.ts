@@ -9,19 +9,18 @@ import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { TextAlign } from "@/core/graphics/styles/text/TextAlign";
 import { WalkComponent } from "@/game/movement/components/WalkComponent";
-import { walkPoint } from "@/game/movement/model/PathWalk";
+import { walkPoint } from "@/game/movement/view/PathWalk";
 import { CombatAnimationComponent, CombatAnimationData } from "@/game/combat/components/CombatAnimationComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
 import { MapRenderSystem } from "@/game/map/systems/MapRenderSystem";
-import { drawText } from "@/game/ui/model/UIPanel";
-import { UITheme } from "@/game/ui/model/UITheme";
-import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { UnitData } from "@/game/units/model/UnitData";
-import { PopKind } from "@/game/units/model/UnitPop";
+import { drawText } from "@/game/ui/view/UIPanel";
+import { UITheme } from "@/game/ui/view/UITheme";
+import { UnitComponent, UnitData } from "@/game/units/components/UnitComponent";
+import { PopKind } from "@/game/units/components/UnitPopComponent";
 import { UnitPopComponent } from "@/game/units/components/UnitPopComponent";
-import { UnitTheme } from "@/game/units/model/UnitTheme";
-import { drawUnitToken } from "@/game/units/model/UnitToken";
+import { UnitTheme } from "@/game/units/view/UnitTheme";
+import { drawUnitToken } from "@/game/units/view/UnitToken";
 
 /** No fight animation running on this token - the neutral values. */
 const RESTING: CombatAnimationData = { offsetColumn: 0, offsetRow: 0, flash: 0, critFlash: 0, hp: 0, alpha: 1, popText: "", popKind: PopKind.DAMAGE, popAge: 0 };

@@ -6,7 +6,7 @@ import { GamepadInput } from "@/core/input/gamepad/GamepadInput";
 import { KeyboardInput } from "@/core/input/keyboard/KeyboardInput";
 import { cancelBinding, confirmBinding } from "@/game/input/Controls";
 import { TalkChoiceComponent } from "@/game/talk/components/TalkChoiceComponent";
-import { cyclePartner } from "@/game/units/model/PartnerChoice";
+import { cyclePartner } from "@/game/units/rules/PartnerChoice";
 
 /**
  * Cycling takes any direction but stays on the d-pad rather than the shared

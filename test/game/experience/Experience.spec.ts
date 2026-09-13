@@ -11,11 +11,13 @@ import {
 	NO_DAMAGE_EXPERIENCE,
 	rollGrowths,
 	staffExperience
-} from "@/game/experience/model/Experience";
-import { experienceBox, experienceDuration, experienceFillDuration, experienceFrame, EXPERIENCE_POINT_DURATION } from "@/game/experience/model/ExperienceBar";
-import { LEVEL_UP_BANNER, LEVEL_UP_POP, LEVEL_UP_SETTLE, LEVEL_UP_STAT_STEP, levelUpBox, levelUpDuration, levelUpFrame, raisedStats } from "@/game/experience/model/LevelUpPanel";
+} from "@/game/experience/rules/Experience";
+import { experienceBox, experienceDuration, experienceFillDuration, experienceFrame, EXPERIENCE_POINT_DURATION } from "@/game/experience/view/ExperienceBar";
+import { LEVEL_UP_BANNER, LEVEL_UP_POP, LEVEL_UP_SETTLE, LEVEL_UP_STAT_STEP, levelUpBox, levelUpDuration, levelUpFrame, raisedStats } from "@/game/experience/view/LevelUpPanel";
 import { ExperienceData, ExperiencePhase } from "@/game/experience/components/ExperienceComponent";
-import { buildUnit, ClassTier, getWeapon, LEVEL_UP_EXPERIENCE, MAX_LEVEL, NO_BOOST, STAT_NAMES, StatBoost, UnitData, UnitDocument } from "@/game/units/model/UnitData";
+import { buildUnit, UnitDocument } from "@/game/units/content/UnitSheets";
+import { ClassTier, getWeapon, NO_BOOST, STAT_NAMES, StatBoost } from "@/game/units/content/UnitCatalog";
+import { LEVEL_UP_EXPERIENCE, MAX_LEVEL, UnitData } from "@/game/units/components/UnitComponent";
 import dardanDocument from "@/assets/data/units/dardan.unit.json";
 import hasanDocument from "@/assets/data/units/hasan.unit.json";
 

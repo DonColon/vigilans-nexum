@@ -6,7 +6,7 @@ import { Display } from "@/core/graphics/Display";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { popupCommands } from "@/game/ui/commands/PopupCommands";
 import { PopupComponent } from "@/game/ui/components/PopupComponent";
-import { popupBox } from "@/game/ui/model/UILayout";
+import { popupBox } from "@/game/ui/view/UILayout";
 
 export interface PopupRequest {
 	id?: string;

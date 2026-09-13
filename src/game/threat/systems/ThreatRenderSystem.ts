@@ -8,7 +8,7 @@ import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionData } from "@/game/map/components/GridPositionComponent";
 import { MapRenderSystem } from "@/game/map/systems/MapRenderSystem";
 import { ThreatComponent } from "@/game/threat/components/ThreatComponent";
-import { ThreatTheme } from "@/game/threat/model/ThreatTheme";
+import { ThreatTheme } from "@/game/threat/view/ThreatTheme";
 
 /**
  * Draws the enemy-range overlay: the crimson wash over the tiles the other side

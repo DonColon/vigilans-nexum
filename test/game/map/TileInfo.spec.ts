@@ -1,7 +1,7 @@
 import { test, expect, suite } from "vitest";
 import { i18n } from "@/core/i18n/I18n";
-import { Terrain } from "@/game/map/model/Terrain";
-import { IMPASSABLE_COST, movementCostText, terrainName, tileInfoRows, TILE_INFO_HEIGHT, TILE_INFO_ROWS, TileInfoHud } from "@/game/map/model/TileInfoHud";
+import { Terrain } from "@/game/map/content/Terrain";
+import { IMPASSABLE_COST, movementCostText, terrainName, tileInfoRows, TILE_INFO_HEIGHT, TILE_INFO_ROWS, TileInfoHud } from "@/game/map/view/TileInfoHud";
 
 /**
  * The terrain readout in the map's corner: what the tile under the cursor is

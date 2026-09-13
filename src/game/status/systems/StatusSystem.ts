@@ -1,6 +1,6 @@
 import { Query } from "@/core/ecs/Query";
 import { UpdateSystem } from "@/core/ecs/UpdateSystem";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { GameStateManager } from "@/core/GameStateManager";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
@@ -9,7 +9,7 @@ import { StatusCommand } from "@/game/status/commands/StatusCommands";
 import { StatusComponent, StatusData } from "@/game/status/components/StatusComponent";
 import { StatusState } from "@/game/status/states/StatusState";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { unitById, tileOf } from "@/game/units/rules/UnitLookup";
 
 /**
  * Drives the open unit sheet: it runs the commands the StatusState allows and,
@@ -25,8 +25,8 @@ export class StatusSystem extends UpdateSystem {
 	@GameCoreService(GameStateManager)
 	private stateManager!: GameStateManager;
 
-	@GameCoreService(EventSystem)
-	private eventSystem!: EventSystem;
+	@GameCoreService(EventBus)
+	private eventBus!: EventBus;
 
 	public initialize(): void {
 		this.queries = {
@@ -50,7 +50,7 @@ export class StatusSystem extends UpdateSystem {
 			// Reported before the pop takes the entity with it, and carrying the
 			// unit, because the event is delivered a tick later - by then there is
 			// no sheet left to ask.
-			this.eventSystem.dispatch("status:closed", { unitId: StatusSystem.shownUnit(before) });
+			this.eventBus.dispatch("status:closed", { unitId: StatusSystem.shownUnit(before) });
 			this.stateManager.pop();
 			return;
 		}
@@ -82,12 +82,12 @@ export class StatusSystem extends UpdateSystem {
 	/** Puts the map cursor on the unit's tile - the one the player has just paged to. */
 	private followUnit(unitId: string): void {
 		const cursor = this.queries.cursors.getSingleResult();
-		const unit = UnitSystem.byId(this.queries.units.getResult(), unitId);
+		const unit = unitById(this.queries.units.getResult(), unitId);
 
 		if (cursor === null || unit === null) {
 			return;
 		}
 
-		cursor.getComponent(GridPositionComponent).update({ ...UnitSystem.tileOf(unit) });
+		cursor.getComponent(GridPositionComponent).update({ ...tileOf(unit) });
 	}
 }

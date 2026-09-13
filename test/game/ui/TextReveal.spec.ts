@@ -1,5 +1,5 @@
 import { test, expect, suite } from "vitest";
-import { countWords, revealedWordCount, splitWords, wrapText } from "@/game/ui/model/TextReveal";
+import { countWords, revealedWordCount, splitWords, wrapText } from "@/game/ui/view/TextReveal";
 
 /** Stand-in for canvas text measurement: every glyph is 10px wide. */
 const measure = (text: string) => text.length * 10;

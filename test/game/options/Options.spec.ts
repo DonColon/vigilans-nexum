@@ -3,7 +3,7 @@ import { getI18n, i18n } from "@/core/i18n/I18n";
 import { Entity } from "@/core/ecs/Entity";
 import { World } from "@/core/ecs/World";
 import { identityTransform, TransformComponent } from "@/core/ecs/components/TransformComponent";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { Display } from "@/core/graphics/Display";
 import { GameStateManager } from "@/core/GameStateManager";
 import { InputBinding } from "@/core/input/commands/InputBinding";
@@ -16,10 +16,9 @@ import { OptionsClosedEvent, OptionsRequestedEvent } from "@/game.events";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
-import { parseTileMap } from "@/game/map/model/TileMaps";
-import { GridSystem } from "@/game/map/systems/GridSystem";
+import { parseTileMap } from "@/game/map/content/TileMaps";
 import { MovementFeature } from "@/game/movement/MovementFeature";
-import { GLOBAL_MENU, UnitMenuRow } from "@/game/movement/model/UnitMenus";
+import { GLOBAL_MENU, UnitMenuRow } from "@/game/movement/view/UnitMenus";
 import {
 	OptionsCancelCommand,
 	OptionsConfirmCommand,
@@ -31,7 +30,7 @@ import {
 } from "@/game/options/commands/OptionsCommands";
 import { OptionsComponent } from "@/game/options/components/OptionsComponent";
 import { SwitchValue } from "@/core/options/Option";
-import { channelVolumeId, DEFAULT_VOLUME, OptionId, TEXT_SPEED_DELAYS } from "@/game/options/model/GameOptions";
+import { channelVolumeId, DEFAULT_VOLUME, OptionId, TEXT_SPEED_DELAYS } from "@/game/options/content/GameOptions";
 import { gameSettings, syncGameOptions, textRevealDelay } from "@/game/options/GameSettings";
 import { OptionsFeature } from "@/game/options/OptionsFeature";
 import { OptionsState } from "@/game/options/states/OptionsState";
@@ -79,7 +78,7 @@ suite("Options Test Suite", () => {
 	}
 
 	const world = ServiceRegistry.get<World>(World.name);
-	const eventSystem = ServiceRegistry.get<EventSystem>(EventSystem.name);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
 
 	// Registered before anything asks for the settings, so the options are built
 	// with a channel row each - the way they are in the running game.
@@ -131,13 +130,13 @@ suite("Options Test Suite", () => {
 		// A command stays "held" until it sees a frame without its input.
 		inputDevice.getCommand(commandType).reset();
 
-		eventSystem.processQueue();
+		eventBus.processQueue();
 	};
 
 	const openFromMenu = () => {
-		eventSystem.dispatch("ui:menuConfirmed", { menu: GLOBAL_MENU, row: UnitMenuRow.OPTIONS, index: 1, item: i18n("menu.options") });
-		eventSystem.processQueue();
-		eventSystem.processQueue(); // deliver options:requested
+		eventBus.dispatch("ui:menuConfirmed", { menu: GLOBAL_MENU, row: UnitMenuRow.OPTIONS, index: 1, item: i18n("menu.options") });
+		eventBus.processQueue();
+		eventBus.processQueue(); // deliver options:requested
 	};
 
 	/** Puts the highlight on a setting by id. */
@@ -152,7 +151,7 @@ suite("Options Test Suite", () => {
 		stateManager.clear();
 
 		map = world.createEntity();
-		map.addComponent(GridComponent, GridSystem.of(parseTileMap(sketch), 24));
+		map.addComponent(GridComponent, GridComponent.of(parseTileMap(sketch), 24));
 		map.addComponent(TransformComponent, { ...identityTransform });
 
 		units = new UnitsFeature();
@@ -186,8 +185,8 @@ suite("Options Test Suite", () => {
 			.set(channelVolumeId("sound"), DEFAULT_VOLUME)
 			.set(channelVolumeId("music"), DEFAULT_VOLUME);
 
-		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
-		eventSystem.processQueue();
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
+		eventBus.processQueue();
 	});
 
 	afterEach(() => {
@@ -205,17 +204,17 @@ suite("Options Test Suite", () => {
 			world.unregisterEntity(entity);
 		}
 
-		eventSystem.processQueue();
+		eventBus.processQueue();
 	});
 
 	suite("Opening", () => {
 		test("The global menu's Options row asks for the screen", () => {
 			const requested: OptionsRequestedEvent[] = [];
-			eventSystem.subscribe("options:requested", (event) => requested.push(event));
+			eventBus.subscribe("options:requested", (event) => requested.push(event));
 
-			eventSystem.dispatch("ui:menuConfirmed", { menu: GLOBAL_MENU, row: UnitMenuRow.OPTIONS, index: 1, item: i18n("menu.options") });
-			eventSystem.processQueue();
-			eventSystem.processQueue();
+			eventBus.dispatch("ui:menuConfirmed", { menu: GLOBAL_MENU, row: UnitMenuRow.OPTIONS, index: 1, item: i18n("menu.options") });
+			eventBus.processQueue();
+			eventBus.processQueue();
 
 			expect(requested).toHaveLength(1);
 		});
@@ -378,7 +377,7 @@ suite("Options Test Suite", () => {
 	suite("Closing", () => {
 		test("Cancel closes it and reports the row it was left on", () => {
 			const closed: OptionsClosedEvent[] = [];
-			eventSystem.subscribe("options:closed", (event) => closed.push(event));
+			eventBus.subscribe("options:closed", (event) => closed.push(event));
 
 			openFromMenu();
 			press(OptionsDownCommand);

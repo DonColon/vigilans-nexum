@@ -7,13 +7,14 @@ import { DialogClosedEvent, TalkRequestedEvent } from "@/game.events";
 import { talkCommands } from "@/game/talk/commands/TalkCommands";
 import { TalkChoiceComponent } from "@/game/talk/components/TalkChoiceComponent";
 import { TalkComponent } from "@/game/talk/components/TalkComponent";
-import { Conversation, ConversationsDocument, conversationBetween, conversationDialog, parseConversations } from "@/game/talk/model/Conversations";
+import { Conversation, ConversationsDocument, conversationBetween, parseConversations } from "@/game/talk/content/Conversations";
+import { conversationDialog } from "@/game/talk/view/TalkDialog";
 import { TalkState } from "@/game/talk/states/TalkState";
 import { TalkChoiceSystem } from "@/game/talk/systems/TalkChoiceSystem";
-import { TalkSystem } from "@/game/talk/systems/TalkSystem";
+import { availableTalks } from "@/game/talk/rules/Talks";
 import { DialogState } from "@/game/ui/states/DialogState";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { unitsInWorld, unitById, tileOf } from "@/game/units/rules/UnitLookup";
 
 /** Asset id of the conversation sheet this battle is scripted with. */
 const CONVERSATIONS_ASSET = "conversations-skirmish";
@@ -24,7 +25,7 @@ const CONVERSATIONS_ASSET = "conversations-skirmish";
  *
  *  - On `map:ready` the scenario's conversation sheet is read out of the asset
  *    bundle onto a [[TalkComponent]], which also tracks which ones have already
- *    happened. The [[MovementFeature]] asks [[TalkSystem]] whether there is
+ *    happened. The [[MovementFeature]] asks the talk rules whether there is
  *    anyone to talk to, and only then offers the command.
  *  - `talk:requested` opens [[TalkState]]: the map cursor moves onto the unit
  *    that would be spoken to and any direction steps between the others in
@@ -114,14 +115,14 @@ export class TalkFeature extends GameFeature {
 			return;
 		}
 
-		const units = UnitSystem.inWorld(this.world);
-		const unit = UnitSystem.byId(units, event.unitId);
+		const units = unitsInWorld(this.world);
+		const unit = unitById(units, event.unitId);
 
 		if (unit === null) {
 			return;
 		}
 
-		const available = TalkSystem.availableAll(this.talk.getComponent(TalkComponent).read(), units, unit);
+		const available = availableTalks(this.talk.getComponent(TalkComponent).read(), units, unit);
 
 		if (available.length === 0) {
 			return;
@@ -129,7 +130,7 @@ export class TalkFeature extends GameFeature {
 
 		const partnerIds = available.map((entry) => entry.partner.getComponent(UnitComponent).read().id);
 		const requestedIndex = partnerIds.indexOf(event.partnerId);
-		const tile = UnitSystem.tileOf(unit);
+		const tile = tileOf(unit);
 
 		this.stateManager.getState(TalkState).request({
 			unitId: event.unitId,
@@ -148,7 +149,7 @@ export class TalkFeature extends GameFeature {
 		}
 
 		const component = this.talk.getComponent(TalkComponent);
-		const conversation = conversationBetween(TalkSystem.remaining(component.read()), unitId, partnerId);
+		const conversation = conversationBetween(TalkComponent.remaining(component.read()), unitId, partnerId);
 
 		if (conversation === null) {
 			return;
@@ -183,7 +184,7 @@ export class TalkFeature extends GameFeature {
 
 	/** The name on a unit's sheet, for the label above the textbox. */
 	private nameOf(unitId: string): string | null {
-		const unit = UnitSystem.byId(UnitSystem.inWorld(this.world), unitId);
+		const unit = unitById(unitsInWorld(this.world), unitId);
 
 		return unit === null ? null : unit.getComponent(UnitComponent).read().name;
 	}

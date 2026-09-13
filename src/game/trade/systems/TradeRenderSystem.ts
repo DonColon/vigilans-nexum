@@ -10,14 +10,12 @@ import { i18n } from "@/core/i18n/I18n";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { NOTHING_HELD, TradeComponent, TradeData, TradeSide } from "@/game/trade/components/TradeComponent";
-import { EMPTY_SLOT, tradePanels, tradeSlots } from "@/game/trade/model/TradeScreen";
+import { EMPTY_SLOT, tradePanels, tradeSlots } from "@/game/trade/view/TradeScreen";
 import { menuRowColor } from "@/game/ui/systems/UIRenderSystem";
-import { BADGE_DIAMETER, drawBadge, drawDivider, drawMenuHighlight, drawPanel, drawText, uiAssetsReady } from "@/game/ui/model/UIPanel";
-import { UITheme } from "@/game/ui/model/UITheme";
-import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { isUsableEntry } from "@/game/units/model/Inventory";
-import { InventoryEntry, UnitData } from "@/game/units/model/UnitData";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { BADGE_DIAMETER, drawBadge, drawDivider, drawMenuHighlight, drawPanel, drawText, uiAssetsReady } from "@/game/ui/view/UIPanel";
+import { UITheme } from "@/game/ui/view/UITheme";
+import { UnitComponent, InventoryEntry, UnitData } from "@/game/units/components/UnitComponent";
+import { unitById } from "@/game/units/rules/UnitLookup";
 
 /**
  * Draws the trade screen: the two packs side by side, the unit's own on the
@@ -136,12 +134,12 @@ export class TradeRenderSystem extends RenderSystem {
 			return UITheme.menuTitle;
 		}
 
-		return menuRowColor(selected, entry !== null && !isUsableEntry(entry));
+		return menuRowColor(selected, entry !== null && !UnitComponent.isUsableEntry(entry));
 	}
 
 	/** The unit with this id, out of the ones on the map right now. */
 	private unit(id: string): Entity | null {
-		return UnitSystem.byId(this.queries.units.getResult(), id);
+		return unitById(this.queries.units.getResult(), id);
 	}
 
 	/** A line of text on its optical centre - see `drawText` in UIPanel. */

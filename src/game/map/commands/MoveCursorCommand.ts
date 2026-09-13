@@ -5,7 +5,6 @@ import { DOWN, LEFT, RIGHT, UP } from "@/game/input/Controls";
 import { MapCommand, MapCommandContext } from "@/game/map/commands/MapCommand";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
-import { GridSystem } from "@/game/map/systems/GridSystem";
 
 /** Milliseconds a direction has to be held before the cursor starts repeating. */
 const REPEAT_DELAY = 250;
@@ -34,7 +33,7 @@ export abstract class MoveCursorCommand extends MapCommand {
 
 		const next = new Vector2D(column, row).add(this.direction);
 
-		if (GridSystem.containsTile(grid, next.x, next.y)) {
+		if (GridComponent.containsTile(grid, next.x, next.y)) {
 			component.update({ column: next.x, row: next.y });
 		}
 	}

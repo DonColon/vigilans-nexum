@@ -1,14 +1,14 @@
 import { Entity } from "@/core/ecs/Entity";
 import { Query } from "@/core/ecs/Query";
 import { UpdateSystem } from "@/core/ecs/UpdateSystem";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { GameStateManager } from "@/core/GameStateManager";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { unitById } from "@/game/units/rules/UnitLookup";
 import { BattleAnimationComponent } from "@/game/combat/components/BattleAnimationComponent";
 import { CombatAnimationComponent } from "@/game/combat/components/CombatAnimationComponent";
-import { battleAnimationFrame, BattleAnimationFrame } from "@/game/combat/model/BattleAnimation";
+import { battleAnimationFrame, BattleAnimationFrame } from "@/game/combat/view/BattleAnimation";
 import { BattleAnimationState } from "@/game/combat/states/BattleAnimationState";
 
 /**
@@ -24,8 +24,8 @@ export class BattleAnimationSystem extends UpdateSystem {
 	@GameCoreService(GameStateManager)
 	private stateManager!: GameStateManager;
 
-	@GameCoreService(EventSystem)
-	private eventSystem!: EventSystem;
+	@GameCoreService(EventBus)
+	private eventBus!: EventBus;
 
 	public initialize(): void {
 		this.queries = {
@@ -50,8 +50,8 @@ export class BattleAnimationSystem extends UpdateSystem {
 		const data = component.read();
 
 		const units = this.queries.units.getResult();
-		const attacker = UnitSystem.byId(units, data.attackerId);
-		const defender = UnitSystem.byId(units, data.defenderId);
+		const attacker = unitById(units, data.attackerId);
+		const defender = unitById(units, data.defenderId);
 
 		const now = data.elapsed + elapsed;
 		component.update({ ...data, elapsed: now });
@@ -93,15 +93,15 @@ export class BattleAnimationSystem extends UpdateSystem {
 		}
 
 		if (defenderDefeated) {
-			this.eventSystem.dispatch("unit:died", { unitId: defenderId });
+			this.eventBus.dispatch("unit:died", { unitId: defenderId });
 		}
 
 		if (attackerDefeated) {
-			this.eventSystem.dispatch("unit:died", { unitId: attackerId });
+			this.eventBus.dispatch("unit:died", { unitId: attackerId });
 		}
 
 		this.stateManager.pop();
 
-		this.eventSystem.dispatch("combat:resolved", { attackerId, defenderId, attackerDefeated, defenderDefeated });
+		this.eventBus.dispatch("combat:resolved", { attackerId, defenderId, attackerDefeated, defenderDefeated });
 	}
 }

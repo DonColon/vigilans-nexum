@@ -4,17 +4,17 @@ import { EventQueue } from "@/core/events/EventQueue";
 import { GameEvent } from "@/core/events/GameEvent";
 import { EventHandler, EventNames, EventSubscriber, GameEvents, UnsubscribeFunction } from "@/core/events/GameEvents";
 
-export interface EventSystemConfig {
+export interface EventBusConfig {
 	history: EventHistoryConfig;
 }
 
 @GameCoreService()
-export class EventSystem {
+export class EventBus {
 	private readonly subscribers: Map<EventNames, EventSubscriber<any>[]>;
 	private readonly queue: EventQueue;
 	private readonly history: EventHistory;
 
-	constructor(config: EventSystemConfig) {
+	constructor(config: EventBusConfig) {
 		this.subscribers = new Map<EventNames, EventSubscriber<any>[]>();
 		this.queue = new EventQueue();
 		this.history = new EventHistory(config.history);

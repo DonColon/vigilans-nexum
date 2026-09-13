@@ -1,5 +1,5 @@
 import { GameError } from "@/core/GameError";
-import { Terrain, TerrainType } from "@/game/map/model/Terrain";
+import { Terrain, TerrainType } from "@/game/map/content/Terrain";
 
 export interface TileMapDefinition {
 	columns: number;

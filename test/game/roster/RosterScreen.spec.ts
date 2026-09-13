@@ -1,8 +1,8 @@
 import { test, expect, suite } from "vitest";
 import { TextAlign } from "@/core/graphics/styles/text/TextAlign";
-import { ROSTER_COLUMNS, rosterCellX, rosterColumnLayout, rosterHeading, rosterHeight, rosterPanel, rosterWidth } from "@/game/roster/model/RosterScreen";
-import { UITheme } from "@/game/ui/model/UITheme";
-import { buildUnit, UnitDocument } from "@/game/units/model/UnitData";
+import { ROSTER_COLUMNS, rosterCellX, rosterColumnLayout, rosterHeading, rosterHeight, rosterPanel, rosterWidth } from "@/game/roster/view/RosterScreen";
+import { UITheme } from "@/game/ui/view/UITheme";
+import { buildUnit, UnitDocument } from "@/game/units/content/UnitSheets";
 import dardanDocument from "@/assets/data/units/dardan.unit.json";
 
 /** The army list's table: what each column reads off a sheet, and how the panel is sized around them. */

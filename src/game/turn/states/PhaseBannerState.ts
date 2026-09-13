@@ -3,7 +3,7 @@ import { World } from "@/core/ecs/World";
 import { GameState } from "@/core/GameState";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { PhaseBannerComponent } from "@/game/turn/components/PhaseBannerComponent";
-import { UnitFaction } from "@/game/units/model/UnitData";
+import { UnitFaction } from "@/game/units/components/UnitComponent";
 
 export interface PhaseBannerRequest {
 	turn: number;

@@ -3,7 +3,7 @@ import { i18n } from "@/core/i18n/I18n";
 import { Entity } from "@/core/ecs/Entity";
 import { World } from "@/core/ecs/World";
 import { identityTransform, TransformComponent } from "@/core/ecs/components/TransformComponent";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { Display } from "@/core/graphics/Display";
 import { GameStateManager } from "@/core/GameStateManager";
 import { InputDevice } from "@/core/input/InputDevice";
@@ -12,27 +12,27 @@ import { TalkConfirmedEvent, TalkFinishedEvent, TalkRequestedEvent } from "@/gam
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
-import { parseTileMap } from "@/game/map/model/TileMaps";
-import { GridSystem } from "@/game/map/systems/GridSystem";
+import { parseTileMap } from "@/game/map/content/TileMaps";
 import { PendingMoveComponent } from "@/game/movement/components/PendingMoveComponent";
 import { MovementFeature } from "@/game/movement/MovementFeature";
-import { UnitMenuRow } from "@/game/movement/model/UnitMenus";
+import { UnitMenuRow } from "@/game/movement/view/UnitMenus";
 import { UnitWalkSystem } from "@/game/movement/systems/UnitWalkSystem";
 import { TalkChoiceComponent } from "@/game/talk/components/TalkChoiceComponent";
 import { TalkComponent } from "@/game/talk/components/TalkComponent";
 import { TalkState } from "@/game/talk/states/TalkState";
 import { TalkChoiceSystem } from "@/game/talk/systems/TalkChoiceSystem";
-import { conversationBetween, conversationDialog, conversationSides, pageText, parseConversations, partnersOf, ConversationsDocument } from "@/game/talk/model/Conversations";
-import { TalkSystem } from "@/game/talk/systems/TalkSystem";
+import { conversationBetween, parseConversations, partnersOf, ConversationsDocument } from "@/game/talk/content/Conversations";
+import { conversationDialog, conversationSides, pageText } from "@/game/talk/view/TalkDialog";
+import { availableTalk, canTalk } from "@/game/talk/rules/Talks";
 import { TalkFeature } from "@/game/talk/TalkFeature";
 import { DialogComponent } from "@/game/ui/components/DialogComponent";
 import { DialogState } from "@/game/ui/states/DialogState";
-import { DialogSide } from "@/game/ui/model/UILayout";
+import { DialogSide } from "@/game/ui/view/UILayout";
 import { MenuComponent } from "@/game/ui/components/MenuComponent";
 import { MenuState } from "@/game/ui/states/MenuState";
 import { UIFeature } from "@/game/ui/UIFeature";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { unitsInWorld, unitById } from "@/game/units/rules/UnitLookup";
 import { UnitsFeature } from "@/game/units/UnitsFeature";
 import skirmishConversations from "@/assets/data/conversations/skirmish.conversations.json";
 
@@ -137,7 +137,7 @@ suite("Conversation Sheet Test Suite", () => {
  */
 suite("Unit Talk Test Suite", () => {
 	const world = ServiceRegistry.get<World>(World.name);
-	const eventSystem = ServiceRegistry.get<EventSystem>(EventSystem.name);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
 
 	world.registerComponent(TransformComponent);
 	world.registerComponent(GridComponent);
@@ -157,11 +157,11 @@ suite("Unit Talk Test Suite", () => {
 	let map: Entity;
 	let cursor: Entity;
 
-	const unit = (id: string) => UnitSystem.byId(UnitSystem.inWorld(world), id) as Entity;
+	const unit = (id: string) => unitById(unitsInWorld(world), id) as Entity;
 	const unitData = (id: string) => unit(id).getComponent(UnitComponent).read();
 
 	const menu = () => (stateManager.peek() as MenuState).getMenu()?.getComponent(MenuComponent).read();
-	const talkState = () => (TalkSystem.inWorld(world) as Entity).getComponent(TalkComponent);
+	const talkState = () => (world.entityWith(TalkComponent) as Entity).getComponent(TalkComponent);
 	const dialog = () => (stateManager.getState(DialogState).getDialog() as Entity).getComponent(DialogComponent);
 
 	const cursorTile = () => cursor.getComponent(GridPositionComponent).read();
@@ -171,8 +171,8 @@ suite("Unit Talk Test Suite", () => {
 	const pumpChoice = () => {
 		const system = new TalkChoiceSystem(10);
 		system.execute(16, 0);
-		eventSystem.processQueue(); // talk:confirmed / talk:cancelled
-		eventSystem.processQueue();
+		eventBus.processQueue(); // talk:confirmed / talk:cancelled
+		eventBus.processQueue();
 		system.dispose();
 	};
 
@@ -188,24 +188,24 @@ suite("Unit Talk Test Suite", () => {
 	const finishWalk = () => {
 		const walkSystem = new UnitWalkSystem(8);
 		walkSystem.execute(10_000);
-		eventSystem.processQueue();
+		eventBus.processQueue();
 		walkSystem.dispose();
 	};
 
 	/** Picks a unit up and sets it back down where it stands, leaving its command menu open. */
 	const openCommandMenu = (column: number, row: number) => {
-		eventSystem.dispatch("map:tileConfirmed", { column, row, terrain: "plain" });
-		eventSystem.processQueue();
-		eventSystem.dispatch("map:tileConfirmed", { column, row, terrain: "plain" });
-		eventSystem.processQueue();
+		eventBus.dispatch("map:tileConfirmed", { column, row, terrain: "plain" });
+		eventBus.processQueue();
+		eventBus.dispatch("map:tileConfirmed", { column, row, terrain: "plain" });
+		eventBus.processQueue();
 		finishWalk();
 	};
 
 	/** Chooses "Talk", which opens the "who am I talking to?" choice. */
 	const chooseTalk = () => {
-		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", row: UnitMenuRow.TALK, index: 0, item: i18n("menu.talk") });
-		eventSystem.processQueue();
-		eventSystem.processQueue(); // deliver talk:requested
+		eventBus.dispatch("ui:menuConfirmed", { menu: "unit-command", row: UnitMenuRow.TALK, index: 0, item: i18n("menu.talk") });
+		eventBus.processQueue();
+		eventBus.processQueue(); // deliver talk:requested
 	};
 
 	/** Settles on whoever the cursor is pointing at, which plays the conversation. */
@@ -223,17 +223,17 @@ suite("Unit Talk Test Suite", () => {
 	/** Reads to the end of the box and dismisses it, the way the advance command would. */
 	const closeDialog = () => {
 		dialog().update({ ...dialog().read(), closed: true });
-		eventSystem.dispatch("ui:dialogClosed", { dialog: dialog().read().id });
+		eventBus.dispatch("ui:dialogClosed", { dialog: dialog().read().id });
 		stateManager.pop();
-		eventSystem.processQueue();
-		eventSystem.processQueue(); // deliver talk:finished
+		eventBus.processQueue();
+		eventBus.processQueue(); // deliver talk:finished
 	};
 
 	beforeEach(() => {
 		stateManager.clear();
 
 		map = world.createEntity();
-		map.addComponent(GridComponent, GridSystem.of(parseTileMap(sketch), 24));
+		map.addComponent(GridComponent, GridComponent.of(parseTileMap(sketch), 24));
 		map.addComponent(TransformComponent, { ...identityTransform });
 
 		cursor = world.createEntity();
@@ -249,8 +249,8 @@ suite("Unit Talk Test Suite", () => {
 		movement = new MovementFeature({ dependencies: [units, ui] });
 		movement.install();
 
-		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
-		eventSystem.processQueue();
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
+		eventBus.processQueue();
 	});
 
 	afterEach(() => {
@@ -264,7 +264,7 @@ suite("Unit Talk Test Suite", () => {
 			world.unregisterEntity(entity);
 		}
 
-		eventSystem.processQueue();
+		eventBus.processQueue();
 	});
 
 	test("map:ready reads the scenario's conversations onto the map", () => {
@@ -288,18 +288,18 @@ suite("Unit Talk Test Suite", () => {
 		openCommandMenu(5, 10);
 		expect(menu()?.items).toContain(i18n("menu.talk"));
 
-		eventSystem.dispatch("ui:menuCancelled", { menu: "unit-command" });
-		eventSystem.processQueue();
+		eventBus.dispatch("ui:menuCancelled", { menu: "unit-command" });
+		eventBus.processQueue();
 
 		openCommandMenu(4, 14); // Hasan - and he is an enemy, so he is not picked up at all
 		expect(menu()?.items).not.toContain(i18n("menu.talk"));
 	});
 
 	test("Talk is left out once the unit walks away from its partner", () => {
-		eventSystem.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
-		eventSystem.processQueue();
-		eventSystem.dispatch("map:tileConfirmed", { column: 4, row: 12, terrain: "plain" }); // two tiles from Elira
-		eventSystem.processQueue();
+		eventBus.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
+		eventBus.processQueue();
+		eventBus.dispatch("map:tileConfirmed", { column: 4, row: 12, terrain: "plain" }); // two tiles from Elira
+		eventBus.processQueue();
 		finishWalk();
 
 		expect(menu()?.items).not.toContain(i18n("menu.talk"));
@@ -307,7 +307,7 @@ suite("Unit Talk Test Suite", () => {
 
 	test("Choosing Talk plays the conversation, a page and a speaker at a time", () => {
 		let requested: TalkRequestedEvent | null = null;
-		eventSystem.subscribe("talk:requested", (event) => (requested = event));
+		eventBus.subscribe("talk:requested", (event) => (requested = event));
 
 		openCommandMenu(4, 10);
 		talkToFirst();
@@ -327,9 +327,9 @@ suite("Unit Talk Test Suite", () => {
 
 	test("Talking costs the unit nothing - it still has its turn afterwards", () => {
 		let finished: TalkFinishedEvent | null = null;
-		eventSystem.subscribe("talk:finished", (event) => (finished = event));
+		eventBus.subscribe("talk:finished", (event) => (finished = event));
 		let acted: string | null = null;
-		eventSystem.subscribe("unit:acted", (event) => (acted = event.unitId));
+		eventBus.subscribe("unit:acted", (event) => (acted = event.unitId));
 
 		openCommandMenu(4, 10);
 		talkToFirst();
@@ -344,15 +344,15 @@ suite("Unit Talk Test Suite", () => {
 
 	test("... so he can still Wait after talking, and that does spend him", () => {
 		let acted: string | null = null;
-		eventSystem.subscribe("unit:acted", (event) => (acted = event.unitId));
+		eventBus.subscribe("unit:acted", (event) => (acted = event.unitId));
 
 		openCommandMenu(4, 10);
 		talkToFirst();
 		closeDialog();
 
-		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", row: UnitMenuRow.WAIT, index: 3, item: i18n("menu.wait") });
-		eventSystem.processQueue();
-		eventSystem.processQueue();
+		eventBus.dispatch("ui:menuConfirmed", { menu: "unit-command", row: UnitMenuRow.WAIT, index: 3, item: i18n("menu.wait") });
+		eventBus.processQueue();
+		eventBus.processQueue();
 
 		expect(acted).toBe("dardan");
 		expect(unitData("dardan").hasMoved).toBe(true);
@@ -367,8 +367,8 @@ suite("Unit Talk Test Suite", () => {
 		expect(menu()?.items).not.toContain(i18n("menu.talk"));
 
 		// ... and not from the other side either.
-		eventSystem.dispatch("ui:menuCancelled", { menu: "unit-command" });
-		eventSystem.processQueue();
+		eventBus.dispatch("ui:menuCancelled", { menu: "unit-command" });
+		eventBus.processQueue();
 
 		openCommandMenu(5, 10);
 		expect(menu()?.items).not.toContain(i18n("menu.talk"));
@@ -379,8 +379,8 @@ suite("Unit Talk Test Suite", () => {
 		talkToFirst();
 		closeDialog();
 
-		eventSystem.dispatch("talk:requested", { unitId: "dardan", partnerId: "elira" });
-		eventSystem.processQueue();
+		eventBus.dispatch("talk:requested", { unitId: "dardan", partnerId: "elira" });
+		eventBus.processQueue();
 
 		expect(stateManager.peek()).not.toBeInstanceOf(TalkState);
 		expect(stateManager.peek()).not.toBeInstanceOf(DialogState);
@@ -388,7 +388,7 @@ suite("Unit Talk Test Suite", () => {
 
 	test("With several to talk to, the cursor picks between them first", () => {
 		let confirmed: TalkConfirmedEvent | null = null;
-		eventSystem.subscribe("talk:confirmed", (event) => (confirmed = event));
+		eventBus.subscribe("talk:confirmed", (event) => (confirmed = event));
 
 		// Elira is written into a conversation with each of them; stand her between.
 		placeUnit("hasan", 6, 10);
@@ -474,16 +474,16 @@ suite("Unit Talk Test Suite", () => {
 	test("A pair with nothing written for them is never offered a talk", () => {
 		const talkData = talkState().read();
 
-		expect(TalkSystem.available(talkData, UnitSystem.inWorld(world), unit("hasan"))).toBeNull();
-		expect(TalkSystem.canTalk(talkData, UnitSystem.inWorld(world), unit("dardan"))).toBe(true);
+		expect(availableTalk(talkData, unitsInWorld(world), unit("hasan"))).toBeNull();
+		expect(canTalk(talkData, unitsInWorld(world), unit("dardan"))).toBe(true);
 	});
 
 	test("map:closed clears the conversations", () => {
-		expect(TalkSystem.inWorld(world)).not.toBeNull();
+		expect(world.entityWith(TalkComponent)).not.toBeNull();
 
-		eventSystem.dispatch("map:closed", {});
-		eventSystem.processQueue();
+		eventBus.dispatch("map:closed", {});
+		eventBus.processQueue();
 
-		expect(TalkSystem.inWorld(world)).toBeNull();
+		expect(world.entityWith(TalkComponent)).toBeNull();
 	});
 });

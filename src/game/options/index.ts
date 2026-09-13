@@ -11,6 +11,6 @@ export { OptionsRenderSystem } from "@/game/options/systems/OptionsRenderSystem"
 
 export { gameSettings, option, optionEnabled, textRevealDelay, syncGameOptions, adoptFullscreen, wantsFullscreen, OPTIONS_STORAGE_KEY } from "@/game/options/GameSettings";
 
-export { OptionId, OptionSection, gameOptions, channelVolumeId, volumeChannelOf, localeName, TEXT_SPEED_DELAYS, DEFAULT_VOLUME, DEFAULT_TEXT_SPEED } from "@/game/options/model/GameOptions";
+export { OptionId, OptionSection, gameOptions, channelVolumeId, volumeChannelOf, localeName, TEXT_SPEED_DELAYS, DEFAULT_VOLUME, DEFAULT_TEXT_SPEED } from "@/game/options/content/GameOptions";
 
-export { optionsPanel, optionsHeight, OPTIONS_WIDTH, OPTIONS_VALUE_WIDTH } from "@/game/options/model/OptionsScreen";
+export { optionsPanel, optionsHeight, OPTIONS_WIDTH, OPTIONS_VALUE_WIDTH } from "@/game/options/view/OptionsScreen";

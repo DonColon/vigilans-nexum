@@ -5,7 +5,7 @@ import { Line } from "@/core/math/geometry/Line";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
-import { MapTheme } from "@/game/map/model/MapTheme";
+import { MapTheme } from "@/game/map/view/MapTheme";
 import { MapRenderSystem } from "@/game/map/systems/MapRenderSystem";
 
 /** Pixels the cursor breathes in and out of the tile it sits on. */

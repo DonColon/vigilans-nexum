@@ -2,15 +2,15 @@ import { Entity } from "@/core/ecs/Entity";
 import { Query } from "@/core/ecs/Query";
 import { UpdateSystem } from "@/core/ecs/UpdateSystem";
 import { TransformComponent } from "@/core/ecs/components/TransformComponent";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { GameStateManager } from "@/core/GameStateManager";
 import { Display } from "@/core/graphics/Display";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { DialogCommand } from "@/game/ui/commands/UICommand";
 import { DialogComponent, DialogData } from "@/game/ui/components/DialogComponent";
-import { countWords, revealedWordCount, wrapText } from "@/game/ui/model/TextReveal";
-import { dialogBox, DialogSide } from "@/game/ui/model/UILayout";
-import { UITheme } from "@/game/ui/model/UITheme";
+import { countWords, revealedWordCount, wrapText } from "@/game/ui/view/TextReveal";
+import { dialogBox, DialogSide } from "@/game/ui/view/UILayout";
+import { UITheme } from "@/game/ui/view/UITheme";
 import { DialogState } from "@/game/ui/states/DialogState";
 import { textRevealDelay } from "@/game/options/GameSettings";
 
@@ -28,8 +28,8 @@ export class DialogSystem extends UpdateSystem {
 	@GameCoreService(Display)
 	private display!: Display;
 
-	@GameCoreService(EventSystem)
-	private eventSystem!: EventSystem;
+	@GameCoreService(EventBus)
+	private eventBus!: EventBus;
 
 	public initialize(): void {
 		this.queries = {
@@ -48,7 +48,7 @@ export class DialogSystem extends UpdateSystem {
 		const data = component.read();
 
 		if (data.closed) {
-			this.eventSystem.dispatch("ui:dialogClosed", { dialog: data.id });
+			this.eventBus.dispatch("ui:dialogClosed", { dialog: data.id });
 			this.stateManager.pop();
 			return;
 		}

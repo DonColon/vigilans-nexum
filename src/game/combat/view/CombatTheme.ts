@@ -1,5 +1,5 @@
 import { Color } from "@/core/graphics/color/Color";
-import { UnitFaction } from "@/game/units/model/UnitData";
+import { UnitFaction } from "@/game/units/components/UnitComponent";
 
 /**
  * Look of the battle forecast panel. It borrows the framed Kenney panel from

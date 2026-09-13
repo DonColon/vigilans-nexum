@@ -1,7 +1,7 @@
 import { i18n } from "@/core/i18n/I18n";
 import { MenuRequest } from "@/game/ui/states/MenuState";
-import { canUseItem, isUsableEntry } from "@/game/units/model/Inventory";
-import { InventoryEntry, InventoryKind, STAT_NAMES, StatBoost, UnitData } from "@/game/units/model/UnitData";
+import { UnitComponent, InventoryEntry, InventoryKind, UnitData } from "@/game/units/components/UnitComponent";
+import { STAT_NAMES, StatBoost } from "@/game/units/content/UnitCatalog";
 import { PopupRequest } from "@/game/ui/states/PopupState";
 
 /** Menu ids, echoed by the `ui:menu*` events. */
@@ -190,7 +190,7 @@ export function itemsRequest(unit: UnitData, anchor: { x: number; y: number }, s
 		ids: unit.inventory.map((entry) => entry.id),
 		badges: unit.inventory.map((entry) => (entry.equipped ? i18n("menu.equipped") : "")),
 		values: unit.inventory.map((entry) => `${entry.uses}/${entry.maxUses}`),
-		disabled: unit.inventory.map((entry) => !isUsableEntry(entry)),
+		disabled: unit.inventory.map((entry) => !UnitComponent.isUsableEntry(entry)),
 		width: ITEMS_MENU_WIDTH,
 		selectedIndex: cursor,
 		keepOpen: true,
@@ -208,7 +208,7 @@ export function itemsRequest(unit: UnitData, anchor: { x: number; y: number }, s
 export function itemActionRows(unit: UnitData, entry: InventoryEntry): UnitMenuRow[] {
 	const rows: UnitMenuRow[] = [];
 
-	if (canUseItem(unit, entry)) {
+	if (UnitComponent.canUseItem(unit, entry)) {
 		rows.push(UnitMenuRow.USE);
 	}
 

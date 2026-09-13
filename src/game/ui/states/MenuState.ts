@@ -7,7 +7,7 @@ import { clamp } from "@/core/math/utils/Clamp";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { MenuComponent } from "@/game/ui/components/MenuComponent";
 import { menuCommands } from "@/game/ui/commands/MenuCommands";
-import { DEFAULT_MENU_WIDTH, menuAt, menuBeside, menuBox, menuHeight } from "@/game/ui/model/UILayout";
+import { DEFAULT_MENU_WIDTH, menuAt, menuBeside, menuBox, menuHeight } from "@/game/ui/view/UILayout";
 
 export interface MenuRequest {
 	id?: string;

@@ -2,7 +2,7 @@ import { test, expect, suite, beforeEach, afterEach } from "vitest";
 import { Entity } from "@/core/ecs/Entity";
 import { World } from "@/core/ecs/World";
 import { identityTransform, TransformComponent } from "@/core/ecs/components/TransformComponent";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { Display } from "@/core/graphics/Display";
 import { GameStateManager } from "@/core/GameStateManager";
 import { InputDevice } from "@/core/input/InputDevice";
@@ -11,17 +11,16 @@ import { ThreatClearedEvent, ThreatShownEvent } from "@/game.events";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
-import { parseTileMap } from "@/game/map/model/TileMaps";
-import { GridSystem } from "@/game/map/systems/GridSystem";
+import { parseTileMap } from "@/game/map/content/TileMaps";
 import { MovementFeature } from "@/game/movement/MovementFeature";
-import { MovementSystem } from "@/game/movement/systems/MovementSystem";
+import { hasTile } from "@/game/movement/rules/Pathfinding";
 import { UnitWalkSystem } from "@/game/movement/systems/UnitWalkSystem";
 import { ThreatComponent } from "@/game/threat/components/ThreatComponent";
 import { ThreatFeature } from "@/game/threat/ThreatFeature";
 import { MenuComponent } from "@/game/ui/components/MenuComponent";
 import { UIFeature } from "@/game/ui/UIFeature";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { unitsInWorld, unitById } from "@/game/units/rules/UnitLookup";
 import { UnitsFeature } from "@/game/units/UnitsFeature";
 
 /**
@@ -34,7 +33,7 @@ import { UnitsFeature } from "@/game/units/UnitsFeature";
  */
 suite("Enemy Range Test Suite", () => {
 	const world = ServiceRegistry.get<World>(World.name);
-	const eventSystem = ServiceRegistry.get<EventSystem>(EventSystem.name);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
 
 	world.registerComponent(TransformComponent);
 	world.registerComponent(GridComponent);
@@ -56,26 +55,26 @@ suite("Enemy Range Test Suite", () => {
 	let cursor: Entity;
 
 	const state = () => (world.getEntities().find((entity) => entity.hasComponent(ThreatComponent)) as Entity).getComponent(ThreatComponent).read();
-	const unit = (id: string) => UnitSystem.byId(UnitSystem.inWorld(world), id) as Entity;
+	const unit = (id: string) => unitById(unitsInWorld(world), id) as Entity;
 	const menu = () => world.getEntities().find((entity) => entity.hasComponent(MenuComponent)) ?? null;
 
-	const covers = (tiles: { column: number; row: number }[], column: number, row: number) => MovementSystem.contains(tiles, column, row);
+	const covers = (tiles: { column: number; row: number }[], column: number, row: number) => hasTile(tiles, column, row);
 
 	// Twice: a handler's own dispatch is queued, so the second pass is what
 	// delivers what the first one set off - unit:selected off a confirm, and the
 	// threat:shown / threat:cleared this feature reports.
 	const settle = () => {
-		eventSystem.processQueue();
-		eventSystem.processQueue();
+		eventBus.processQueue();
+		eventBus.processQueue();
 	};
 
 	const confirm = (column: number, row: number) => {
-		eventSystem.dispatch("map:tileConfirmed", { column, row, terrain: "plain" });
+		eventBus.dispatch("map:tileConfirmed", { column, row, terrain: "plain" });
 		settle();
 	};
 
 	const press = (event: "map:cancelled" | "map:threatToggled") => {
-		eventSystem.dispatch(event, {});
+		eventBus.dispatch(event, {});
 		settle();
 	};
 
@@ -92,7 +91,7 @@ suite("Enemy Range Test Suite", () => {
 		stateManager.clear();
 
 		map = world.createEntity();
-		map.addComponent(GridComponent, GridSystem.of(parseTileMap(sketch), 24));
+		map.addComponent(GridComponent, GridComponent.of(parseTileMap(sketch), 24));
 		map.addComponent(TransformComponent, { ...identityTransform });
 
 		cursor = world.createEntity();
@@ -108,8 +107,8 @@ suite("Enemy Range Test Suite", () => {
 		threat = new ThreatFeature({ dependencies: [units] });
 		threat.install();
 
-		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
-		eventSystem.processQueue();
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
+		eventBus.processQueue();
 	});
 
 	afterEach(() => {
@@ -123,13 +122,13 @@ suite("Enemy Range Test Suite", () => {
 			world.unregisterEntity(entity);
 		}
 
-		eventSystem.processQueue();
+		eventBus.processQueue();
 	});
 
 	suite("Looking at one enemy", () => {
 		test("Confirm on an enemy shows its move and attack range without picking it up", () => {
 			const shown: ThreatShownEvent[] = [];
-			eventSystem.subscribe("threat:shown", (event) => shown.push(event));
+			eventBus.subscribe("threat:shown", (event) => shown.push(event));
 
 			confirm(4, 14); // Hasan
 
@@ -152,7 +151,7 @@ suite("Enemy Range Test Suite", () => {
 
 		test("Confirm on the same enemy again puts the overlay away", () => {
 			const cleared: ThreatClearedEvent[] = [];
-			eventSystem.subscribe("threat:cleared", (event) => cleared.push(event));
+			eventBus.subscribe("threat:cleared", (event) => cleared.push(event));
 
 			confirm(4, 14);
 			confirm(4, 14);
@@ -252,7 +251,7 @@ suite("Enemy Range Test Suite", () => {
 			const before = state().movement.length;
 
 			world.unregisterEntity(unit("besnik"));
-			eventSystem.dispatch("unit:died", { unitId: "besnik" });
+			eventBus.dispatch("unit:died", { unitId: "besnik" });
 			settle();
 
 			expect(state().unitIds).toStrictEqual(["hasan"]);
@@ -263,7 +262,7 @@ suite("Enemy Range Test Suite", () => {
 			confirm(4, 14);
 
 			world.unregisterEntity(unit("hasan"));
-			eventSystem.dispatch("unit:died", { unitId: "hasan" });
+			eventBus.dispatch("unit:died", { unitId: "hasan" });
 			settle();
 
 			expect(state().unitIds).toStrictEqual([]);

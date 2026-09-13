@@ -4,9 +4,9 @@ import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
 import { MovementComponent } from "@/game/movement/components/MovementComponent";
-import { MovementSystem } from "@/game/movement/systems/MovementSystem";
+import { tileKey, blockedTiles, movementPath, hasTile } from "@/game/movement/rules/Pathfinding";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { unitById, unitLocations } from "@/game/units/rules/UnitLookup";
 
 /**
  * While a unit is picked up, keeps `MovementComponent.path` in step with the
@@ -40,7 +40,7 @@ export class PathPreviewSystem extends UpdateSystem {
 		const component = movementEntity.getComponent(MovementComponent);
 		const movement = component.read();
 		const cursor = cursorEntity.getComponent(GridPositionComponent).read();
-		const cursorKey = MovementSystem.tileKey(cursor.column, cursor.row);
+		const cursorKey = tileKey(cursor.column, cursor.row);
 
 		if (movement.unitId.length === 0) {
 			this.lastKey = "";
@@ -60,12 +60,12 @@ export class PathPreviewSystem extends UpdateSystem {
 
 		const origin = { column: movement.originColumn, row: movement.originRow };
 		const units = this.queries.units.getResult();
-		const mover = UnitSystem.byId(units, movement.unitId);
+		const mover = unitById(units, movement.unitId);
 		const data = mover?.getComponent(UnitComponent).read();
-		const blocked = data ? MovementSystem.blockedTiles(UnitSystem.locations(units), data) : new Set<string>();
+		const blocked = data ? blockedTiles(unitLocations(units), data) : new Set<string>();
 		const budget = data?.stats.movement ?? 0;
 
-		const path = MovementSystem.contains(movement.movement, cursor.column, cursor.row) ? MovementSystem.path(gridEntity.getComponent(GridComponent).read(), origin, cursor, budget, blocked) : [];
+		const path = hasTile(movement.movement, cursor.column, cursor.row) ? movementPath(gridEntity.getComponent(GridComponent).read(), origin, cursor, budget, blocked) : [];
 
 		component.update({ ...movement, path });
 	}

@@ -4,7 +4,7 @@ import { AssetType, AudioAsset, StylesheetAsset, FontAsset, HtmlAsset, ImageAsse
 import { Sprite } from "@/core/graphics/components/Sprite";
 import { Spritesheet, TexturePackerHash } from "@/core/graphics/components/Spritesheet";
 import { GameCoreService } from "@/core/service/GameCoreService";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { AssetStorage } from "@/core/assets/AssetStorage";
 import { AudioDevice } from "@/core/audio/AudioDevice";
 
@@ -31,8 +31,8 @@ export class AssetLoader {
 	@GameCoreService(AssetStorage)
 	private assetStorage!: AssetStorage;
 
-	@GameCoreService(EventSystem)
-	private eventSystem!: EventSystem;
+	@GameCoreService(EventBus)
+	private eventBus!: EventBus;
 
 	// Decoding happens on the context that plays the samples - the device owns the
 	// page's one AudioContext. Resolved lazily, so it need not exist before the loader.
@@ -92,7 +92,7 @@ export class AssetLoader {
 			}
 		}
 
-		this.eventSystem.dispatch("bundleUnloaded", {
+		this.eventBus.dispatch("bundleUnloaded", {
 			bundle: bundleName,
 			removed: bundle.length
 		});
@@ -125,7 +125,7 @@ export class AssetLoader {
 		const loaded = results.filter((result) => result.status === "fulfilled");
 		const failed = results.filter((result) => result.status === "rejected");
 
-		this.eventSystem.dispatch("bundleLoaded", {
+		this.eventBus.dispatch("bundleLoaded", {
 			bundle: bundleName,
 			loaded: loaded.length,
 			failed: failed.length
@@ -227,7 +227,7 @@ export class AssetLoader {
 	}
 
 	private dispatchBundleProgress(bundleName: string, current: number, total: number) {
-		this.eventSystem.dispatch("bundleProgress", {
+		this.eventBus.dispatch("bundleProgress", {
 			bundle: bundleName,
 			current,
 			total,

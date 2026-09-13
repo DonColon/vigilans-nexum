@@ -6,10 +6,10 @@ export type { StaffChoiceData } from "@/game/staff/components/StaffChoiceCompone
 export { StaffState } from "@/game/staff/states/StaffState";
 export type { StaffRequest } from "@/game/staff/states/StaffState";
 
-export { StaffSystem } from "@/game/staff/systems/StaffSystem";
-export type { StaffTarget } from "@/game/staff/systems/StaffSystem";
+export { healingBy, staffTargetsOf, canUseStaff } from "@/game/staff/rules/Staves";
+export type { StaffTarget } from "@/game/staff/rules/Staves";
 export { StaffChoiceSystem } from "@/game/staff/systems/StaffChoiceSystem";
 
-export { STAFF_MENU, STAFF_MENU_WIDTH, staffRequest } from "@/game/staff/model/StaffMenus";
+export { STAFF_MENU, STAFF_MENU_WIDTH, staffRequest } from "@/game/staff/view/StaffMenus";
 export { staffCommands, StaffCommand, StaffNextTargetCommand, StaffPrevTargetCommand, StaffConfirmCommand, StaffCancelCommand } from "@/game/staff/commands/StaffCommands";
 export type { StaffCommandContext } from "@/game/staff/commands/StaffCommands";

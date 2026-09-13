@@ -1,5 +1,5 @@
 import { i18n } from "@/core/i18n/I18n";
-import { InventoryEntry } from "@/game/units/model/UnitData";
+import { InventoryEntry } from "@/game/units/components/UnitComponent";
 import { MenuRequest } from "@/game/ui/states/MenuState";
 
 /** Menu id, echoed by the `ui:menu*` events. */

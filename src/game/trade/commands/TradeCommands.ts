@@ -6,8 +6,8 @@ import { GamepadInput } from "@/core/input/gamepad/GamepadInput";
 import { KeyboardInput } from "@/core/input/keyboard/KeyboardInput";
 import { cancelBinding, confirmBinding, DOWN, LEFT, RIGHT, UP } from "@/game/input/Controls";
 import { NOTHING_HELD, TradeComponent, TradeSide } from "@/game/trade/components/TradeComponent";
-import { cyclePartner } from "@/game/units/model/PartnerChoice";
-import { INVENTORY_SIZE } from "@/game/units/model/UnitData";
+import { cyclePartner } from "@/game/units/rules/PartnerChoice";
+import { INVENTORY_SIZE } from "@/game/units/components/UnitComponent";
 
 /** Milliseconds a direction is held before the slot cursor starts repeating - the menu's own feel. */
 const REPEAT_DELAY = 300;

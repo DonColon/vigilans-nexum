@@ -1,6 +1,6 @@
 import { WorldEvent } from "@/core/ecs/WorldEvent";
 import { Entity } from "@/core/ecs/Entity";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { ComponentConstructor } from "@/core/ecs/Component";
 import { World } from "@/core/ecs/World";
@@ -28,8 +28,8 @@ export class Query {
 	private readonly onEntityChangedHandler: (event: WorldEvent) => void;
 	private readonly onEntityRemovedHandler: (event: WorldEvent) => void;
 
-	@GameCoreService(EventSystem)
-	private eventSystem!: EventSystem;
+	@GameCoreService(EventBus)
+	private eventBus!: EventBus;
 
 	@GameCoreService(World)
 	private world!: World;
@@ -48,8 +48,8 @@ export class Query {
 			}
 		}
 
-		this.eventSystem.subscribe("entityChanged", this.onEntityChangedHandler);
-		this.eventSystem.subscribe("entityRemoved", this.onEntityRemovedHandler);
+		this.eventBus.subscribe("entityChanged", this.onEntityChangedHandler);
+		this.eventBus.subscribe("entityRemoved", this.onEntityRemovedHandler);
 	}
 
 	private onEntityChanged(event: WorldEvent) {
@@ -87,7 +87,7 @@ export class Query {
 	}
 
 	public dispose(): void {
-		this.eventSystem.unsubscribe("entityChanged", this.onEntityChangedHandler);
-		this.eventSystem.unsubscribe("entityRemoved", this.onEntityRemovedHandler);
+		this.eventBus.unsubscribe("entityChanged", this.onEntityChangedHandler);
+		this.eventBus.unsubscribe("entityRemoved", this.onEntityRemovedHandler);
 	}
 }

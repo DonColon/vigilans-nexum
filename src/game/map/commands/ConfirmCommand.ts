@@ -1,12 +1,11 @@
 import { GameCommandConstructor } from "@/core/input/commands/GameCommand";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { confirmBinding } from "@/game/input/Controls";
 import { MapCommand, MapCommandContext } from "@/game/map/commands/MapCommand";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
-import { GridSystem } from "@/game/map/systems/GridSystem";
-import { Terrain } from "@/game/map/model/Terrain";
+import { Terrain } from "@/game/map/content/Terrain";
 
 /**
  * Confirm on the tile under the cursor. The map itself does nothing with it - it
@@ -15,8 +14,8 @@ import { Terrain } from "@/game/map/model/Terrain";
  * event simply has no subscribers.
  */
 export class ConfirmCommand extends MapCommand {
-	@GameCoreService(EventSystem)
-	private eventSystem!: EventSystem;
+	@GameCoreService(EventBus)
+	private eventBus!: EventBus;
 
 	constructor() {
 		super(confirmBinding());
@@ -26,10 +25,10 @@ export class ConfirmCommand extends MapCommand {
 		const grid = map.getComponent(GridComponent).read();
 		const { column, row } = cursor.getComponent(GridPositionComponent).read();
 
-		this.eventSystem.dispatch("map:tileConfirmed", {
+		this.eventBus.dispatch("map:tileConfirmed", {
 			column,
 			row,
-			terrain: GridSystem.getTerrain(grid, column, row) ?? Terrain.PLAIN
+			terrain: GridComponent.terrainAt(grid, column, row) ?? Terrain.PLAIN
 		});
 	}
 }

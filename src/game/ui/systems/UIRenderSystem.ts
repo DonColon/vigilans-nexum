@@ -12,10 +12,10 @@ import { GameCoreService } from "@/core/service/GameCoreService";
 import { DialogComponent, DialogData } from "@/game/ui/components/DialogComponent";
 import { MenuComponent, MenuData } from "@/game/ui/components/MenuComponent";
 import { PopupComponent, PopupData } from "@/game/ui/components/PopupComponent";
-import { BADGE_DIAMETER, drawBadge, drawDivider, drawMenuHighlight, drawPanel, drawText, uiAssetsReady } from "@/game/ui/model/UIPanel";
-import { countWords, revealedWordCount, splitWords, wrapText } from "@/game/ui/model/TextReveal";
-import { dialogBox, menuHeight, popupBox } from "@/game/ui/model/UILayout";
-import { UITheme } from "@/game/ui/model/UITheme";
+import { BADGE_DIAMETER, drawBadge, drawDivider, drawMenuHighlight, drawPanel, drawText, uiAssetsReady } from "@/game/ui/view/UIPanel";
+import { countWords, revealedWordCount, splitWords, wrapText } from "@/game/ui/view/TextReveal";
+import { dialogBox, menuHeight, popupBox } from "@/game/ui/view/UILayout";
+import { UITheme } from "@/game/ui/view/UITheme";
 import { textRevealDelay } from "@/game/options/GameSettings";
 
 /**

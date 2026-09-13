@@ -7,9 +7,8 @@ import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
-import { terrainName, tileInfoRows, TileInfoHud, TILE_INFO_HEIGHT } from "@/game/map/model/TileInfoHud";
+import { terrainName, tileInfoRows, TileInfoHud, TILE_INFO_HEIGHT } from "@/game/map/view/TileInfoHud";
 import { MapRenderSystem } from "@/game/map/systems/MapRenderSystem";
-import { GridSystem } from "@/game/map/systems/GridSystem";
 
 /**
  * Draws the terrain readout in the map's top-left corner: the name of the tile
@@ -37,7 +36,7 @@ export class TileInfoRenderSystem extends MapRenderSystem {
 		}
 
 		const tile = cursor.getComponent(GridPositionComponent).read();
-		const terrain = GridSystem.getTerrain(view.grid, tile.column, tile.row);
+		const terrain = GridComponent.terrainAt(view.grid, tile.column, tile.row);
 
 		// The cursor is off the map - there is nothing to say about the tile.
 		if (terrain === null) {

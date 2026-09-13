@@ -2,7 +2,7 @@ import { test, expect, suite, beforeEach, afterEach } from "vitest";
 import { Entity } from "@/core/ecs/Entity";
 import { World } from "@/core/ecs/World";
 import { identityTransform, TransformComponent } from "@/core/ecs/components/TransformComponent";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { Display } from "@/core/graphics/Display";
 import { GameStateManager } from "@/core/GameStateManager";
 import { InputBinding } from "@/core/input/commands/InputBinding";
@@ -15,8 +15,7 @@ import { StatusClosedEvent, StatusOpenedEvent } from "@/game.events";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
-import { parseTileMap } from "@/game/map/model/TileMaps";
-import { GridSystem } from "@/game/map/systems/GridSystem";
+import { parseTileMap } from "@/game/map/content/TileMaps";
 import { WalkComponent } from "@/game/movement/components/WalkComponent";
 import { MovementFeature } from "@/game/movement/MovementFeature";
 import { StatusCancelCommand, StatusConfirmCommand, StatusInfoCommand, StatusNextCommand, StatusPreviousCommand, statusCommands } from "@/game/status/commands/StatusCommands";
@@ -26,7 +25,7 @@ import { StatusState } from "@/game/status/states/StatusState";
 import { StatusSystem } from "@/game/status/systems/StatusSystem";
 import { UIFeature } from "@/game/ui/UIFeature";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { unitsInWorld, unitById, tileOf } from "@/game/units/rules/UnitLookup";
 import { UnitsFeature } from "@/game/units/UnitsFeature";
 
 /**
@@ -53,7 +52,7 @@ suite("Status Test Suite", () => {
 	type StatusCommandType = typeof StatusPreviousCommand | typeof StatusNextCommand | typeof StatusConfirmCommand | typeof StatusCancelCommand | typeof StatusInfoCommand;
 
 	const world = ServiceRegistry.get<World>(World.name);
-	const eventSystem = ServiceRegistry.get<EventSystem>(EventSystem.name);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
 
 	world.registerComponent(TransformComponent);
 	world.registerComponent(GridComponent);
@@ -76,7 +75,7 @@ suite("Status Test Suite", () => {
 	const bindings = new Map<StatusCommandType, TestBinding>();
 
 	const state = () => (stateManager.getState(StatusState).getStatus() as Entity).getComponent(StatusComponent);
-	const unit = (id: string) => UnitSystem.byId(UnitSystem.inWorld(world), id) as Entity;
+	const unit = (id: string) => unitById(unitsInWorld(world), id) as Entity;
 	const cursorTile = () => cursor.getComponent(GridPositionComponent).read();
 	const systems: StatusSystem[] = [];
 
@@ -102,21 +101,21 @@ suite("Status Test Suite", () => {
 		// releasing it by hand keeps the next press a fresh one rather than a repeat.
 		inputDevice.getCommand(commandType).reset();
 
-		eventSystem.processQueue();
+		eventBus.processQueue();
 	};
 
 	/** The info button over a tile. */
 	const info = (column: number, row: number) => {
-		eventSystem.dispatch("map:infoRequested", { column, row });
-		eventSystem.processQueue();
-		eventSystem.processQueue(); // deliver status:opened
+		eventBus.dispatch("map:infoRequested", { column, row });
+		eventBus.processQueue();
+		eventBus.processQueue(); // deliver status:opened
 	};
 
 	beforeEach(() => {
 		stateManager.clear();
 
 		map = world.createEntity();
-		map.addComponent(GridComponent, GridSystem.of(parseTileMap(sketch), 24));
+		map.addComponent(GridComponent, GridComponent.of(parseTileMap(sketch), 24));
 		map.addComponent(TransformComponent, { ...identityTransform });
 
 		cursor = world.createEntity();
@@ -139,8 +138,8 @@ suite("Status Test Suite", () => {
 			bindings.set(commandType as StatusCommandType, binding);
 		}
 
-		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
-		eventSystem.processQueue();
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
+		eventBus.processQueue();
 	});
 
 	afterEach(() => {
@@ -158,13 +157,13 @@ suite("Status Test Suite", () => {
 			world.unregisterEntity(entity);
 		}
 
-		eventSystem.processQueue();
+		eventBus.processQueue();
 	});
 
 	suite("Opening", () => {
 		test("The info button over one of your units opens its sheet and reports it", () => {
 			const opened: StatusOpenedEvent[] = [];
-			eventSystem.subscribe("status:opened", (event) => opened.push(event));
+			eventBus.subscribe("status:opened", (event) => opened.push(event));
 
 			info(4, 10);
 
@@ -198,7 +197,7 @@ suite("Status Test Suite", () => {
 		test("It lists every unit on the map, so the pages can walk the whole field", () => {
 			info(4, 10);
 
-			const everyone = UnitSystem.inWorld(world).map((entity) => entity.getComponent(UnitComponent).read().id);
+			const everyone = unitsInWorld(world).map((entity) => entity.getComponent(UnitComponent).read().id);
 
 			expect(state().read().unitIds).toStrictEqual(everyone);
 			expect(everyone).toContain("hasan");
@@ -243,7 +242,7 @@ suite("Status Test Suite", () => {
 			press(StatusNextCommand);
 
 			const shown = unit(StatusSystem.shownUnit(state().read()));
-			expect(cursorTile()).toStrictEqual(UnitSystem.tileOf(shown));
+			expect(cursorTile()).toStrictEqual(tileOf(shown));
 			expect(cursorTile()).not.toStrictEqual({ column: 4, row: 10 });
 		});
 	});
@@ -251,7 +250,7 @@ suite("Status Test Suite", () => {
 	suite("Closing", () => {
 		test("Cancel closes it and reports the unit it was left on", () => {
 			const closed: StatusClosedEvent[] = [];
-			eventSystem.subscribe("status:closed", (event) => closed.push(event));
+			eventBus.subscribe("status:closed", (event) => closed.push(event));
 
 			info(4, 10);
 			press(StatusCancelCommand);
@@ -277,7 +276,7 @@ suite("Status Test Suite", () => {
 
 		test("Closing after paging reports the unit paged to, and leaves the cursor on it", () => {
 			const closed: StatusClosedEvent[] = [];
-			eventSystem.subscribe("status:closed", (event) => closed.push(event));
+			eventBus.subscribe("status:closed", (event) => closed.push(event));
 
 			info(4, 10);
 			press(StatusNextCommand);
@@ -287,18 +286,18 @@ suite("Status Test Suite", () => {
 			press(StatusCancelCommand);
 
 			expect(closed).toStrictEqual([expect.objectContaining({ unitId: shown })]);
-			expect(cursorTile()).toStrictEqual(UnitSystem.tileOf(unit(shown)));
+			expect(cursorTile()).toStrictEqual(tileOf(unit(shown)));
 		});
 
 		test("Nothing about anyone changes - it is a readout", () => {
-			const before = UnitSystem.inWorld(world).map((entity) => JSON.stringify(entity.getComponent(UnitComponent).read()));
+			const before = unitsInWorld(world).map((entity) => JSON.stringify(entity.getComponent(UnitComponent).read()));
 
 			info(4, 14);
 			press(StatusNextCommand);
 			press(StatusPreviousCommand);
 			press(StatusConfirmCommand);
 
-			expect(UnitSystem.inWorld(world).map((entity) => JSON.stringify(entity.getComponent(UnitComponent).read()))).toStrictEqual(before);
+			expect(unitsInWorld(world).map((entity) => JSON.stringify(entity.getComponent(UnitComponent).read()))).toStrictEqual(before);
 		});
 	});
 });

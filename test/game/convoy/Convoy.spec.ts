@@ -3,7 +3,7 @@ import { i18n } from "@/core/i18n/I18n";
 import { Entity } from "@/core/ecs/Entity";
 import { World } from "@/core/ecs/World";
 import { identityTransform, TransformComponent } from "@/core/ecs/components/TransformComponent";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { Display } from "@/core/graphics/Display";
 import { GameStateManager } from "@/core/GameStateManager";
 import { InputDevice } from "@/core/input/InputDevice";
@@ -11,19 +11,17 @@ import { ServiceRegistry } from "@/core/service/ServiceRegistry";
 import { ConvoyDeliveredEvent } from "@/game.events";
 import { ConvoyComponent } from "@/game/convoy/components/ConvoyComponent";
 import { ConvoyFeature } from "@/game/convoy/ConvoyFeature";
-import { CONVOY_MENU, convoyChoiceRequest, convoyChoiceSlot } from "@/game/convoy/model/ConvoyMenus";
-import { ConvoySystem } from "@/game/convoy/systems/ConvoySystem";
+import { CONVOY_MENU, convoyChoiceRequest, convoyChoiceSlot } from "@/game/convoy/view/ConvoyMenus";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
-import { parseTileMap } from "@/game/map/model/TileMaps";
-import { GridSystem } from "@/game/map/systems/GridSystem";
+import { parseTileMap } from "@/game/map/content/TileMaps";
 import { MenuComponent } from "@/game/ui/components/MenuComponent";
 import { MenuState } from "@/game/ui/states/MenuState";
 import { UIFeature } from "@/game/ui/UIFeature";
-import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { buildUnit, INVENTORY_SIZE, UnitDocument } from "@/game/units/model/UnitData";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { buildUnit, UnitDocument } from "@/game/units/content/UnitSheets";
+import { UnitComponent, INVENTORY_SIZE } from "@/game/units/components/UnitComponent";
+import { unitsInWorld, unitById } from "@/game/units/rules/UnitLookup";
 import { UnitsFeature } from "@/game/units/UnitsFeature";
 import dardanDocument from "@/assets/data/units/dardan.unit.json";
 
@@ -66,7 +64,7 @@ suite("Convoy System Test Suite", () => {
 	const entry = (id: string) => ({ ...buildUnit(dardanDocument as UnitDocument).inventory[0], id, equipped: true });
 
 	test("A stored entry is never still readied - nothing in the baggage train is in anybody's hands", () => {
-		const stored = ConvoySystem.store({ items: [] }, entry("iron-sword"));
+		const stored = ConvoyComponent.store({ items: [] }, entry("iron-sword"));
 
 		expect(stored.items).toHaveLength(1);
 		expect(stored.items[0].equipped).toBe(false);
@@ -75,17 +73,17 @@ suite("Convoy System Test Suite", () => {
 
 	test("Storing does not touch the convoy it was handed, and keeps arrival order", () => {
 		const before = { items: [] };
-		const after = ConvoySystem.store(ConvoySystem.store(before, entry("iron-sword")), entry("elixir"));
+		const after = ConvoyComponent.store(ConvoyComponent.store(before, entry("iron-sword")), entry("elixir"));
 
 		expect(before.items).toStrictEqual([]);
 		expect(after.items.map((item) => item.id)).toStrictEqual(["iron-sword", "elixir"]);
 	});
 
 	test("It counts what it is holding, duplicates included", () => {
-		const data = ConvoySystem.store(ConvoySystem.store({ items: [] }, entry("elixir")), entry("elixir"));
+		const data = ConvoyComponent.store(ConvoyComponent.store({ items: [] }, entry("elixir")), entry("elixir"));
 
-		expect(ConvoySystem.countOf(data, "elixir")).toBe(2);
-		expect(ConvoySystem.countOf(data, "iron-sword")).toBe(0);
+		expect(ConvoyComponent.countOf(data, "elixir")).toBe(2);
+		expect(ConvoyComponent.countOf(data, "iron-sword")).toBe(0);
 	});
 });
 
@@ -95,7 +93,7 @@ suite("Convoy System Test Suite", () => {
  */
 suite("Convoy Test Suite", () => {
 	const world = ServiceRegistry.get<World>(World.name);
-	const eventSystem = ServiceRegistry.get<EventSystem>(EventSystem.name);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
 
 	world.registerComponent(TransformComponent);
 	world.registerComponent(GridComponent);
@@ -113,12 +111,12 @@ suite("Convoy Test Suite", () => {
 	let convoy: ConvoyFeature;
 	let map: Entity;
 
-	const unit = (id: string) => UnitSystem.byId(UnitSystem.inWorld(world), id) as Entity;
+	const unit = (id: string) => unitById(unitsInWorld(world), id) as Entity;
 	const unitData = (id: string) => unit(id).getComponent(UnitComponent).read();
 	const pack = (id: string) => unitData(id).inventory.map((entry) => entry.id);
 
 	const items = () =>
-		(ConvoySystem.inWorld(world) as Entity)
+		(world.entityWith(ConvoyComponent) as Entity)
 			.getComponent(ConvoyComponent)
 			.read()
 			.items.map((entry) => entry.id);
@@ -129,16 +127,16 @@ suite("Convoy Test Suite", () => {
 	};
 
 	const give = (unitId: string, itemId: string) => {
-		eventSystem.dispatch("convoy:requested", { unitId, itemId });
-		eventSystem.processQueue();
-		eventSystem.processQueue(); // deliver convoy:delivered
+		eventBus.dispatch("convoy:requested", { unitId, itemId });
+		eventBus.processQueue();
+		eventBus.processQueue(); // deliver convoy:delivered
 	};
 
 	const choose = (index: number, id: string) => {
 		stateManager.pop();
-		eventSystem.dispatch("ui:menuConfirmed", { menu: CONVOY_MENU, row: id, index, item: id });
-		eventSystem.processQueue();
-		eventSystem.processQueue();
+		eventBus.dispatch("ui:menuConfirmed", { menu: CONVOY_MENU, row: id, index, item: id });
+		eventBus.processQueue();
+		eventBus.processQueue();
 	};
 
 	/** Tops a unit's pack up to its every slot with copies of its first entry. */
@@ -154,7 +152,7 @@ suite("Convoy Test Suite", () => {
 		stateManager.clear();
 
 		map = world.createEntity();
-		map.addComponent(GridComponent, GridSystem.of(parseTileMap(sketch), 24));
+		map.addComponent(GridComponent, GridComponent.of(parseTileMap(sketch), 24));
 		map.addComponent(TransformComponent, { ...identityTransform });
 
 		units = new UnitsFeature();
@@ -164,8 +162,8 @@ suite("Convoy Test Suite", () => {
 		convoy = new ConvoyFeature({ dependencies: [units, ui] });
 		convoy.install();
 
-		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
-		eventSystem.processQueue();
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
+		eventBus.processQueue();
 	});
 
 	afterEach(() => {
@@ -178,13 +176,13 @@ suite("Convoy Test Suite", () => {
 			world.unregisterEntity(entity);
 		}
 
-		eventSystem.processQueue();
+		eventBus.processQueue();
 	});
 
 	suite("With room in the pack", () => {
 		test("The item simply goes in, and nothing is asked", () => {
 			const delivered: ConvoyDeliveredEvent[] = [];
-			eventSystem.subscribe("convoy:delivered", (event) => delivered.push(event));
+			eventBus.subscribe("convoy:delivered", (event) => delivered.push(event));
 
 			const before = pack("dardan");
 			give("dardan", "elixir");
@@ -208,7 +206,7 @@ suite("Convoy Test Suite", () => {
 
 		test("An id in neither catalog is delivered as nothing rather than stored", () => {
 			const delivered: ConvoyDeliveredEvent[] = [];
-			eventSystem.subscribe("convoy:delivered", (event) => delivered.push(event));
+			eventBus.subscribe("convoy:delivered", (event) => delivered.push(event));
 
 			const before = pack("dardan");
 			give("dardan", "moon-cheese");
@@ -234,7 +232,7 @@ suite("Convoy Test Suite", () => {
 			fillPack("dardan");
 
 			const delivered: ConvoyDeliveredEvent[] = [];
-			eventSystem.subscribe("convoy:delivered", (event) => delivered.push(event));
+			eventBus.subscribe("convoy:delivered", (event) => delivered.push(event));
 
 			give("dardan", "elixir");
 			choose(1, "iron-sword"); // his second slot
@@ -273,14 +271,14 @@ suite("Convoy Test Suite", () => {
 
 			const before = pack("dardan");
 			const delivered: ConvoyDeliveredEvent[] = [];
-			eventSystem.subscribe("convoy:delivered", (event) => delivered.push(event));
+			eventBus.subscribe("convoy:delivered", (event) => delivered.push(event));
 
 			give("dardan", "elixir");
 
 			stateManager.pop();
-			eventSystem.dispatch("ui:menuCancelled", { menu: CONVOY_MENU });
-			eventSystem.processQueue();
-			eventSystem.processQueue();
+			eventBus.dispatch("ui:menuCancelled", { menu: CONVOY_MENU });
+			eventBus.processQueue();
+			eventBus.processQueue();
 
 			expect(items()).toStrictEqual(["elixir"]);
 			expect(pack("dardan")).toStrictEqual(before);
@@ -306,9 +304,9 @@ suite("Convoy Test Suite", () => {
 		choose(INVENTORY_SIZE, "elixir");
 		expect(items()).toStrictEqual(["elixir"]);
 
-		eventSystem.dispatch("map:closed", {});
-		eventSystem.processQueue();
+		eventBus.dispatch("map:closed", {});
+		eventBus.processQueue();
 
-		expect(ConvoySystem.inWorld(world)).toBeNull();
+		expect(world.entityWith(ConvoyComponent)).toBeNull();
 	});
 });

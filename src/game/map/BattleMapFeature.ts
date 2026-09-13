@@ -52,7 +52,7 @@ export abstract class BattleMapFeature extends GameFeature {
 
 	/** The map cursor, or null while no map is on screen. */
 	protected cursor(): Entity | null {
-		return this.world.getEntities().find((entity) => entity.hasComponent(CursorComponent)) ?? null;
+		return this.world.entityWith(CursorComponent);
 	}
 
 	/** Top-left screen pixel of a map tile - the map transform plus the tile offset. */

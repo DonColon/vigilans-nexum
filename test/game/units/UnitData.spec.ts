@@ -2,8 +2,9 @@ import { test, expect, suite, afterEach } from "vitest";
 import { AssetStorage } from "@/core/assets/AssetStorage";
 import { GameError } from "@/core/GameError";
 import { ServiceRegistry } from "@/core/service/ServiceRegistry";
-import { clearUnitCatalogs, hasUnitCatalogs, loadUnitCatalogs } from "@/game/units/model/UnitCatalog";
-import { buildUnit, ClassTier, getItem, getUnitClass, getWeapon, InventoryKind, LEVEL_UP_EXPERIENCE, MOVEMENT_CAP, UnitDocument, UnitFaction, WeaponType } from "@/game/units/model/UnitData";
+import { buildUnit, UnitDocument } from "@/game/units/content/UnitSheets";
+import { InventoryKind, LEVEL_UP_EXPERIENCE, UnitFaction } from "@/game/units/components/UnitComponent";
+import { clearUnitCatalogs, hasUnitCatalogs, loadUnitCatalogs, ClassTier, getItem, getUnitClass, getWeapon, MOVEMENT_CAP, WeaponType } from "@/game/units/content/UnitCatalog";
 import dardanDocument from "@/assets/data/units/dardan.unit.json";
 import hasanDocument from "@/assets/data/units/hasan.unit.json";
 

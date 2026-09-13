@@ -4,9 +4,8 @@ import { RosterComponent } from "@/game/roster/components/RosterComponent";
 import { RosterState } from "@/game/roster/states/RosterState";
 import { RosterRenderSystem } from "@/game/roster/systems/RosterRenderSystem";
 import { RosterSystem } from "@/game/roster/systems/RosterSystem";
-import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { UnitFaction } from "@/game/units/model/UnitData";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { UnitComponent, UnitFaction } from "@/game/units/components/UnitComponent";
+import { unitsInWorld, unitsOfFaction } from "@/game/units/rules/UnitLookup";
 
 /**
  * Fire Emblem's "Units" screen: the army list, opened from the map's own
@@ -48,7 +47,7 @@ export class RosterFeature extends GameFeature {
 
 	/** Opens the list on every player unit currently on the map. */
 	private open(): void {
-		const unitIds = UnitSystem.ofFaction(UnitSystem.inWorld(this.world), UnitFaction.PLAYER).map((unit) => unit.getComponent(UnitComponent).read().id);
+		const unitIds = unitsOfFaction(unitsInWorld(this.world), UnitFaction.PLAYER).map((unit) => unit.getComponent(UnitComponent).read().id);
 
 		this.stateManager.getState(RosterState).request({ unitIds, selectedIndex: this.lastIndex });
 		this.stateManager.push(RosterState);

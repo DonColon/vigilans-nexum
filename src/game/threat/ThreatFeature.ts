@@ -5,10 +5,9 @@ import { BattleMapFeature } from "@/game/map/BattleMapFeature";
 import { GridData } from "@/game/map/components/GridComponent";
 import { hiddenThreat, ThreatComponent, ThreatData } from "@/game/threat/components/ThreatComponent";
 import { ThreatRenderSystem } from "@/game/threat/systems/ThreatRenderSystem";
-import { ThreatRange, ThreatSystem, ThreatUnit } from "@/game/threat/systems/ThreatSystem";
-import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { UnitFaction } from "@/game/units/model/UnitData";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { threatRangeOfAll, ThreatRange, ThreatUnit } from "@/game/threat/rules/ThreatRange";
+import { UnitComponent, UnitFaction } from "@/game/units/components/UnitComponent";
+import { unitsInWorld, unitAt, unitById, unitsOfFaction, unitLocations, tileOf } from "@/game/units/rules/UnitLookup";
 
 /**
  * Radiant Dawn's enemy range, in two shapes:
@@ -99,7 +98,7 @@ export class ThreatFeature extends BattleMapFeature {
 			return;
 		}
 
-		const enemy = UnitSystem.unitAt(this.units(), event.column, event.row);
+		const enemy = unitAt(this.units(), event.column, event.row);
 
 		if (enemy === null) {
 			return;
@@ -179,7 +178,7 @@ export class ThreatFeature extends BattleMapFeature {
 		}
 
 		const units = this.units();
-		const showing = state.unitIds.map((id) => UnitSystem.byId(units, id)).filter((unit): unit is Entity => unit !== null);
+		const showing = state.unitIds.map((id) => unitById(units, id)).filter((unit): unit is Entity => unit !== null);
 
 		this.show(showing, false);
 	}
@@ -215,9 +214,9 @@ export class ThreatFeature extends BattleMapFeature {
 
 	/** The merged range of the given units, with everyone on the map counting as a blocker. */
 	private rangeOf(grid: GridData, units: readonly Entity[]): ThreatRange {
-		const threats: ThreatUnit[] = units.map((unit) => ({ data: unit.getComponent(UnitComponent).read(), tile: UnitSystem.tileOf(unit) }));
+		const threats: ThreatUnit[] = units.map((unit) => ({ data: unit.getComponent(UnitComponent).read(), tile: tileOf(unit) }));
 
-		return ThreatSystem.rangeOfAll(grid, threats, UnitSystem.locations(this.units()));
+		return threatRangeOfAll(grid, threats, unitLocations(this.units()));
 	}
 
 	private read(): ThreatData {
@@ -229,11 +228,11 @@ export class ThreatFeature extends BattleMapFeature {
 	}
 
 	private units(): Entity[] {
-		return UnitSystem.inWorld(this.world);
+		return unitsInWorld(this.world);
 	}
 
 	/** Every enemy still on the map - who the army-wide overlay covers. */
 	private enemies(): Entity[] {
-		return UnitSystem.ofFaction(this.units(), UnitFaction.ENEMY);
+		return unitsOfFaction(this.units(), UnitFaction.ENEMY);
 	}
 }

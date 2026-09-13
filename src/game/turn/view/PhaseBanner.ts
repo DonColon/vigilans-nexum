@@ -2,8 +2,8 @@ import { Color } from "@/core/graphics/color/Color";
 import { FontStyleSettings } from "@/core/graphics/styles/text/FontStyle";
 import { Dimension } from "@/core/math/geometry/Dimension";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
-import { UITheme } from "@/game/ui/model/UITheme";
-import { UnitFaction } from "@/game/units/model/UnitData";
+import { UITheme } from "@/game/ui/view/UITheme";
+import { UnitFaction } from "@/game/units/components/UnitComponent";
 
 /**
  * The phase banner's clock, layout and look, as pure functions of the banner

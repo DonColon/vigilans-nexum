@@ -13,14 +13,14 @@ import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent, GridPositionData } from "@/game/map/components/GridPositionComponent";
 import { MapRenderSystem, MapView } from "@/game/map/systems/MapRenderSystem";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
-import { BattleForecast, CombatantForecast } from "@/game/combat/model/BattleForecast";
-import { CombatTheme } from "@/game/combat/model/CombatTheme";
-import { CombatSystem } from "@/game/combat/systems/CombatSystem";
+import { unitById } from "@/game/units/rules/UnitLookup";
+import { BattleForecast, CombatantForecast } from "@/game/combat/rules/BattleForecast";
+import { CombatTheme } from "@/game/combat/view/CombatTheme";
+import { forecastBattle } from "@/game/combat/rules/Targeting";
 import { ForecastComponent } from "@/game/combat/components/ForecastComponent";
-import { drawPanel, drawText, uiAssetsReady } from "@/game/ui/model/UIPanel";
-import { menuBeside } from "@/game/ui/model/UILayout";
-import { UITheme } from "@/game/ui/model/UITheme";
+import { drawPanel, drawText, uiAssetsReady } from "@/game/ui/view/UIPanel";
+import { menuBeside } from "@/game/ui/view/UILayout";
+import { UITheme } from "@/game/ui/view/UITheme";
 
 /**
  * Draws the battle forecast: two stat columns - the attacker's on the left, the
@@ -85,7 +85,7 @@ export class ForecastRenderSystem extends MapRenderSystem {
 
 		const defenderTile = defender.getComponent(GridPositionComponent).read();
 
-		const forecast = CombatSystem.forecast(attackerData, attacker.getComponent(GridPositionComponent).read(), weapon, defender.getComponent(UnitComponent).read(), defenderTile, view.grid);
+		const forecast = forecastBattle(attackerData, attacker.getComponent(GridPositionComponent).read(), weapon, defender.getComponent(UnitComponent).read(), defenderTile, view.grid);
 
 		this.render(this.display.getLayer("ui"), forecast, data.weaponIds.length > 1, view, defenderTile);
 	}
@@ -97,7 +97,7 @@ export class ForecastRenderSystem extends MapRenderSystem {
 
 	/** The unit with this id, out of the ones on the map right now. */
 	private unit(id: string): Entity | null {
-		return UnitSystem.byId(this.queries.units.getResult(), id);
+		return unitById(this.queries.units.getResult(), id);
 	}
 
 	private render(graphics: Graphics, forecast: BattleForecast, canCycle: boolean, view: MapView, defenderTile: GridPositionData): void {

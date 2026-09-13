@@ -1,9 +1,9 @@
 import { test, expect, suite } from "vitest";
 import { i18n } from "@/core/i18n/I18n";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
-import { UnitCard, UNIT_CARD_HEIGHT, UNIT_CARD_ROWS, ENEMY_CARD_ROWS, unitCardHeight, unitCardLines, unitCardPlacement, unitCardRows } from "@/game/status/model/UnitCard";
-import { unequipInventoryItem } from "@/game/units/model/Inventory";
-import { buildUnit, UnitDocument } from "@/game/units/model/UnitData";
+import { UnitCard, UNIT_CARD_HEIGHT, UNIT_CARD_ROWS, ENEMY_CARD_ROWS, unitCardHeight, unitCardLines, unitCardPlacement, unitCardRows } from "@/game/status/view/UnitCard";
+import { UnitComponent } from "@/game/units/components/UnitComponent";
+import { buildUnit, UnitDocument } from "@/game/units/content/UnitSheets";
 import dardanDocument from "@/assets/data/units/dardan.unit.json";
 import besnikDocument from "@/assets/data/units/besnik.unit.json";
 
@@ -37,7 +37,7 @@ suite("Unit Card Test Suite", () => {
 		});
 
 		test("A unit with nothing readied says so, muted", () => {
-			const lines = unitCardLines(unequipInventoryItem(dardan()));
+			const lines = unitCardLines(UnitComponent.unequip(dardan()));
 
 			expect(lines.weapon).toBe(i18n("status.unarmed"));
 			expect(lines.unarmed).toBe(true);

@@ -5,7 +5,7 @@ import { popupCommands } from "@/game/ui/commands/PopupCommands";
 import { DialogComponent } from "@/game/ui/components/DialogComponent";
 import { MenuComponent } from "@/game/ui/components/MenuComponent";
 import { PopupComponent } from "@/game/ui/components/PopupComponent";
-import { DEMO_MENU_ID, DemoMenuRow, LORE_DIALOG, terrainDialog, tileActionsMenu } from "@/game/ui/model/DemoContent";
+import { DEMO_MENU_ID, DemoMenuRow, LORE_DIALOG, terrainDialog, tileActionsMenu } from "@/game/ui/content/DemoContent";
 import { DialogState } from "@/game/ui/states/DialogState";
 import { MenuState } from "@/game/ui/states/MenuState";
 import { PopupState } from "@/game/ui/states/PopupState";

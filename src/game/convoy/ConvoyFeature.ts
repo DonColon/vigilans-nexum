@@ -2,15 +2,12 @@ import { Entity } from "@/core/ecs/Entity";
 import { GameFeatureConfig } from "@/core/GameFeature";
 import { ConvoyRequestedEvent, MenuCancelledEvent, MenuConfirmedEvent } from "@/game.events";
 import { ConvoyComponent, ConvoyData } from "@/game/convoy/components/ConvoyComponent";
-import { CONVOY_MENU, convoyChoiceRequest, convoyChoiceSlot } from "@/game/convoy/model/ConvoyMenus";
-import { ConvoySystem } from "@/game/convoy/systems/ConvoySystem";
+import { CONVOY_MENU, convoyChoiceRequest, convoyChoiceSlot } from "@/game/convoy/view/ConvoyMenus";
 import { BattleMapFeature } from "@/game/map/BattleMapFeature";
 import { MenuState } from "@/game/ui/states/MenuState";
-import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { dropInventoryItem, giveInventoryItem, hasPackRoom } from "@/game/units/model/Inventory";
-import { isCatalogItem, isCatalogWeapon } from "@/game/units/model/UnitCatalog";
-import { InventoryEntry, resolveInventoryEntry, UnitData } from "@/game/units/model/UnitData";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { UnitComponent, InventoryEntry, UnitData } from "@/game/units/components/UnitComponent";
+import { isCatalogItem, isCatalogWeapon } from "@/game/units/content/UnitCatalog";
+import { unitsInWorld, unitById } from "@/game/units/rules/UnitLookup";
 
 /**
  * The army's convoy, and the one rule that fills it: a unit handed something it
@@ -77,7 +74,7 @@ export class ConvoyFeature extends BattleMapFeature {
 
 	/** Someone is handing a unit an item: put it in the pack, or ask what to give up for it. */
 	private onRequested(event: ConvoyRequestedEvent): void {
-		const unit = UnitSystem.byId(this.units(), event.unitId);
+		const unit = unitById(this.units(), event.unitId);
 
 		if (this.convoy === null || unit === null || !this.isCatalogEntry(event.itemId)) {
 			this.deliver(event.unitId, "", "");
@@ -87,8 +84,8 @@ export class ConvoyFeature extends BattleMapFeature {
 		const component = unit.getComponent(UnitComponent);
 		const data = component.read();
 
-		if (hasPackRoom(data)) {
-			component.update(giveInventoryItem(data, event.itemId));
+		if (UnitComponent.hasPackRoom(data)) {
+			component.update(UnitComponent.give(data, event.itemId));
 			this.deliver(event.unitId, event.itemId, "");
 			return;
 		}
@@ -108,7 +105,7 @@ export class ConvoyFeature extends BattleMapFeature {
 		const pending = this.pending;
 		this.pending = null;
 
-		const unit = UnitSystem.byId(this.units(), pending.unitId);
+		const unit = unitById(this.units(), pending.unitId);
 
 		if (unit === null) {
 			this.deliver(pending.unitId, pending.itemId, "");
@@ -129,7 +126,7 @@ export class ConvoyFeature extends BattleMapFeature {
 		const given = data.inventory[slot];
 
 		this.store(given);
-		component.update(giveInventoryItem(dropInventoryItem(data, slot), pending.itemId));
+		component.update(UnitComponent.give(UnitComponent.drop(data, slot), pending.itemId));
 
 		this.deliver(pending.unitId, pending.itemId, given.id);
 	}
@@ -146,7 +143,7 @@ export class ConvoyFeature extends BattleMapFeature {
 		const pending = this.pending;
 		this.pending = null;
 
-		const unit = UnitSystem.byId(this.units(), pending.unitId);
+		const unit = unitById(this.units(), pending.unitId);
 
 		if (unit !== null) {
 			this.store(this.incoming(unit.getComponent(UnitComponent).read(), pending.itemId));
@@ -157,7 +154,7 @@ export class ConvoyFeature extends BattleMapFeature {
 
 	/** The incoming item as a pack entry would carry it - resolved against the receiving unit's class. */
 	private incoming(unit: UnitData, itemId: string): InventoryEntry {
-		return resolveInventoryEntry(itemId, unit.weaponTypes, "");
+		return UnitComponent.resolveEntry(itemId, unit.weaponTypes, "");
 	}
 
 	private store(entry: InventoryEntry): void {
@@ -166,7 +163,7 @@ export class ConvoyFeature extends BattleMapFeature {
 		}
 
 		const component = this.convoy.getComponent(ConvoyComponent);
-		component.update(ConvoySystem.store(component.read(), entry));
+		component.store(entry);
 	}
 
 	private deliver(unitId: string, itemId: string, storedId: string): void {
@@ -191,7 +188,7 @@ export class ConvoyFeature extends BattleMapFeature {
 	}
 
 	private units(): Entity[] {
-		return UnitSystem.inWorld(this.world);
+		return unitsInWorld(this.world);
 	}
 
 	private menuState(): MenuState {

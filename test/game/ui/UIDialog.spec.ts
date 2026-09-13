@@ -2,7 +2,7 @@ import { test, expect, suite, beforeEach, afterEach } from "vitest";
 import { Entity } from "@/core/ecs/Entity";
 import { World } from "@/core/ecs/World";
 import { TransformComponent } from "@/core/ecs/components/TransformComponent";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { GameState } from "@/core/GameState";
 import { GameStateManager } from "@/core/GameStateManager";
 import { Display } from "@/core/graphics/Display";
@@ -40,7 +40,7 @@ suite("UI Dialog Test Suite", () => {
 	}
 
 	const world = ServiceRegistry.get<World>(World.name);
-	const eventSystem = ServiceRegistry.get<EventSystem>(EventSystem.name);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
 
 	world.registerComponent(TransformComponent);
 	world.registerComponent(DialogComponent);
@@ -84,7 +84,7 @@ suite("UI Dialog Test Suite", () => {
 		for (const entity of world.getEntities()) {
 			world.unregisterEntity(entity);
 		}
-		eventSystem.processQueue();
+		eventBus.processQueue();
 	});
 
 	function makeDialog(pages: string[], overrides: Partial<DialogData> = {}): Entity {
@@ -161,10 +161,10 @@ suite("UI Dialog Test Suite", () => {
 		component.update({ ...component.read(), closed: true });
 
 		let received: DialogClosedEvent | null = null;
-		eventSystem.subscribe("ui:dialogClosed", (event) => (received = event));
+		eventBus.subscribe("ui:dialogClosed", (event) => (received = event));
 
 		dialogSystem().execute(16, 0);
-		eventSystem.processQueue();
+		eventBus.processQueue();
 
 		expect(received).toMatchObject({ dialog: "lore" });
 		expect(stateManager.peek()).toBeInstanceOf(MapStub);

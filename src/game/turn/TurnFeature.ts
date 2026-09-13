@@ -8,9 +8,8 @@ import { PhaseBannerRenderSystem } from "@/game/turn/systems/PhaseBannerRenderSy
 import { PhaseBannerSystem } from "@/game/turn/systems/PhaseBannerSystem";
 import { TurnRenderSystem } from "@/game/turn/systems/TurnRenderSystem";
 import { TurnSystem } from "@/game/turn/systems/TurnSystem";
-import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { UnitFaction } from "@/game/units/model/UnitData";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { UnitComponent, UnitFaction } from "@/game/units/components/UnitComponent";
+import { unitsInWorld, unitsOfFaction } from "@/game/units/rules/UnitLookup";
 
 /**
  * The battle turn counter. It owns the `TurnComponent`, shows it in the map's
@@ -87,7 +86,7 @@ export class TurnFeature extends BattleMapFeature {
 	}
 
 	private finishIfDone(): void {
-		const players = UnitSystem.ofFaction(UnitSystem.inWorld(this.world), UnitFaction.PLAYER);
+		const players = unitsOfFaction(unitsInWorld(this.world), UnitFaction.PLAYER);
 
 		if (players.length > 0 && players.every((unit) => unit.getComponent(UnitComponent).read().hasMoved)) {
 			this.finish();

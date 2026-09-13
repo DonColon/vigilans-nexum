@@ -7,18 +7,18 @@ export type { WalkData } from "@/game/movement/components/WalkComponent";
 export { PendingMoveComponent } from "@/game/movement/components/PendingMoveComponent";
 export type { PendingMoveData } from "@/game/movement/components/PendingMoveComponent";
 
-export { MovementSystem } from "@/game/movement/systems/MovementSystem";
-export type { ReachableTile } from "@/game/movement/systems/MovementSystem";
+export { tileKey, blockedTiles, occupiedTiles, reachableTiles, movementPath, attackableTiles, hasTile, entryCost } from "@/game/movement/rules/Pathfinding";
+export type { ReachableTile } from "@/game/movement/rules/Pathfinding";
 export { PathPreviewSystem } from "@/game/movement/systems/PathPreviewSystem";
 export { MovementRenderSystem } from "@/game/movement/systems/MovementRenderSystem";
 export { UnitWalkSystem } from "@/game/movement/systems/UnitWalkSystem";
 
-export { pathTiles, OPPOSITE } from "@/game/movement/model/PathTiles";
-export type { PathTileSprite, PathKind, Direction } from "@/game/movement/model/PathTiles";
-export { walkPoint, WALK_STEP_MS } from "@/game/movement/model/PathWalk";
-export { MovementTheme } from "@/game/movement/model/MovementTheme";
+export { pathTiles, OPPOSITE } from "@/game/movement/view/PathTiles";
+export type { PathTileSprite, PathKind, Direction } from "@/game/movement/view/PathTiles";
+export { walkPoint, WALK_STEP_MS } from "@/game/movement/view/PathWalk";
+export { MovementTheme } from "@/game/movement/view/MovementTheme";
 
-export type { UnitCommands } from "@/game/movement/model/UnitMenus";
+export type { UnitCommands } from "@/game/movement/view/UnitMenus";
 export {
 	UnitMenuRow,
 	rowLabel,
@@ -32,4 +32,4 @@ export {
 	GLOBAL_MENU,
 	ITEMS_MENU,
 	ITEM_ACTION_MENU
-} from "@/game/movement/model/UnitMenus";
+} from "@/game/movement/view/UnitMenus";

@@ -3,7 +3,7 @@ import { Component } from "@/core/ecs/Component";
 import { World } from "@/core/ecs/World";
 import { Query } from "@/core/ecs/Query";
 import { ServiceRegistry } from "@/core/service/ServiceRegistry";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 
 suite("Query Test Suite", () => {
 	class PointComponent extends Component<{
@@ -21,7 +21,7 @@ suite("Query Test Suite", () => {
 	}
 
 	const world = ServiceRegistry.get<World>(World.name);
-	const eventSystem = ServiceRegistry.get<EventSystem>(EventSystem.name);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
 	world.registerComponent(PointComponent);
 	world.registerComponent(MoveComponent);
 
@@ -38,7 +38,7 @@ suite("Query Test Suite", () => {
 		other.addComponent(PointComponent, { x: 10, y: 20 });
 		other.addComponent(MoveComponent, { dx: 1, dy: 2 });
 
-		eventSystem.processQueue();
+		eventBus.processQueue();
 
 		const results = query.getResult();
 		expect(results[0].getID()).toEqual("1337");
@@ -57,7 +57,7 @@ suite("Query Test Suite", () => {
 			blocklist: [MoveComponent]
 		});
 
-		eventSystem.processQueue();
+		eventBus.processQueue();
 
 		const results = otherQuery.getResult();
 		expect(results[0].getID()).toEqual("1337");
@@ -72,14 +72,14 @@ suite("Query Test Suite", () => {
 
 		const entity = world.createEntity("remove-test-1");
 		entity.addComponent(PointComponent, { x: 5, y: 5 });
-		eventSystem.processQueue();
+		eventBus.processQueue();
 
 		let results = query.getResult();
 		expect(results.some((e) => e.getID() === "remove-test-1")).toBeTruthy();
 
 		// Add a component from the blocklist - entity should be removed from query
 		entity.addComponent(MoveComponent, { dx: 1, dy: 1 });
-		eventSystem.processQueue();
+		eventBus.processQueue();
 
 		results = query.getResult();
 		expect(results.some((e) => e.getID() === "remove-test-1")).toBeFalsy();
@@ -94,14 +94,14 @@ suite("Query Test Suite", () => {
 
 		const entity = world.createEntity("remove-test-2");
 		entity.addComponent(PointComponent, { x: 3, y: 3 });
-		eventSystem.processQueue();
+		eventBus.processQueue();
 
 		let results = query.getResult();
 		expect(results.some((e) => e.getID() === "remove-test-2")).toBeTruthy();
 
 		// Remove entity from world - should trigger onEntityRemoved
 		world.unregisterEntity(entity);
-		eventSystem.processQueue();
+		eventBus.processQueue();
 
 		results = query.getResult();
 		expect(results.some((e) => e.getID() === "remove-test-2")).toBeFalsy();
@@ -115,7 +115,7 @@ suite("Query Test Suite", () => {
 			blocklist: [MoveComponent]
 		});
 
-		eventSystem.processQueue();
+		eventBus.processQueue();
 
 		// Should return first entity
 		const singleResult = query.getSingleResult();
@@ -143,7 +143,7 @@ suite("Query Test Suite", () => {
 		// Create an entity that DOESN'T match the query
 		const entity = world.createEntity("non-matching-entity");
 		entity.addComponent(MoveComponent, { dx: 5, dy: 5 });
-		eventSystem.processQueue();
+		eventBus.processQueue();
 
 		// Verify entity is NOT in the query
 		let results = query.getResult();
@@ -152,7 +152,7 @@ suite("Query Test Suite", () => {
 		// Now remove the entity - this triggers onEntityRemoved
 		// Since entity is not in query, exists will be false
 		world.unregisterEntity(entity);
-		eventSystem.processQueue();
+		eventBus.processQueue();
 
 		// Query should still not contain it (nothing should change)
 		results = query.getResult();

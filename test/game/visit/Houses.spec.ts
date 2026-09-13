@@ -1,6 +1,7 @@
 import { test, expect, suite } from "vitest";
-import { DialogSide } from "@/game/ui/model/UILayout";
-import { houseAt, houseDialog, HousesDocument, parseHouses } from "@/game/visit/model/Houses";
+import { DialogSide } from "@/game/ui/view/UILayout";
+import { houseAt, HousesDocument, parseHouses } from "@/game/visit/content/Houses";
+import { houseDialog } from "@/game/visit/view/VisitPopups";
 import skirmishHouses from "@/assets/data/houses/skirmish.houses.json";
 
 /**

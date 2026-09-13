@@ -2,7 +2,7 @@ import { test, expect, suite, beforeEach, afterEach } from "vitest";
 import { Entity } from "@/core/ecs/Entity";
 import { World } from "@/core/ecs/World";
 import { identityTransform, TransformComponent } from "@/core/ecs/components/TransformComponent";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { Display } from "@/core/graphics/Display";
 import { GameStateManager } from "@/core/GameStateManager";
 import { InputDevice } from "@/core/input/InputDevice";
@@ -18,24 +18,23 @@ import { BattleAnimationSystem } from "@/game/combat/systems/BattleAnimationSyst
 import { ForecastSystem } from "@/game/combat/systems/ForecastSystem";
 import { ExperienceComponent, ExperiencePhase } from "@/game/experience/components/ExperienceComponent";
 import { ExperienceFeature } from "@/game/experience/ExperienceFeature";
-import { experienceDuration, experienceFillDuration } from "@/game/experience/model/ExperienceBar";
-import { levelUpDuration, levelUpFrame } from "@/game/experience/model/LevelUpPanel";
+import { experienceDuration, experienceFillDuration } from "@/game/experience/view/ExperienceBar";
+import { levelUpDuration, levelUpFrame } from "@/game/experience/view/LevelUpPanel";
 import { ConfirmLevelUpCommand } from "@/game/experience/commands/ExperienceCommands";
-import { KILL_BONUS } from "@/game/experience/model/Experience";
+import { KILL_BONUS } from "@/game/experience/rules/Experience";
 import { ExperienceState } from "@/game/experience/states/ExperienceState";
 import { ExperienceSystem } from "@/game/experience/systems/ExperienceSystem";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
-import { parseTileMap } from "@/game/map/model/TileMaps";
-import { GridSystem } from "@/game/map/systems/GridSystem";
+import { parseTileMap } from "@/game/map/content/TileMaps";
 import { MovementFeature } from "@/game/movement/MovementFeature";
-import { UnitMenuRow } from "@/game/movement/model/UnitMenus";
+import { UnitMenuRow } from "@/game/movement/view/UnitMenus";
 import { UnitWalkSystem } from "@/game/movement/systems/UnitWalkSystem";
 import { UIFeature } from "@/game/ui/UIFeature";
-import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { getWeapon, UnitData } from "@/game/units/model/UnitData";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { getWeapon } from "@/game/units/content/UnitCatalog";
+import { UnitComponent, UnitData } from "@/game/units/components/UnitComponent";
+import { unitsInWorld, unitById } from "@/game/units/rules/UnitLookup";
 import { UnitsFeature } from "@/game/units/UnitsFeature";
 import { i18n } from "@/core/i18n/I18n";
 
@@ -47,7 +46,7 @@ import { i18n } from "@/core/i18n/I18n";
  */
 suite("Experience Flow Test Suite", () => {
 	const world = ServiceRegistry.get<World>(World.name);
-	const eventSystem = ServiceRegistry.get<EventSystem>(EventSystem.name);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
 
 	world.registerComponent(TransformComponent);
 	world.registerComponent(GridComponent);
@@ -71,7 +70,7 @@ suite("Experience Flow Test Suite", () => {
 	let shown: string[];
 	let unsubscribe: (() => void)[] = [];
 
-	const unit = (id: string) => UnitSystem.byId(UnitSystem.inWorld(world), id);
+	const unit = (id: string) => unitById(unitsInWorld(world), id);
 	const sheet = (id: string) => (unit(id) as Entity).getComponent(UnitComponent).read();
 	const patch = (id: string, changes: Partial<UnitData>) => {
 		const component = (unit(id) as Entity).getComponent(UnitComponent);
@@ -83,28 +82,28 @@ suite("Experience Flow Test Suite", () => {
 	const finishWalk = () => {
 		const walkSystem = new UnitWalkSystem(8);
 		walkSystem.execute(10_000);
-		eventSystem.processQueue();
+		eventBus.processQueue();
 		walkSystem.dispose();
 	};
 
 	/** Pick Dardan up, walk him to (column,row), then "Attack" the nearest enemy and confirm the forecast. */
 	const attackFrom = (column: number, row: number) => {
-		eventSystem.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
-		eventSystem.processQueue();
-		eventSystem.dispatch("map:tileConfirmed", { column, row, terrain: "plain" });
-		eventSystem.processQueue();
+		eventBus.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
+		eventBus.processQueue();
+		eventBus.dispatch("map:tileConfirmed", { column, row, terrain: "plain" });
+		eventBus.processQueue();
 		finishWalk();
 
-		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", row: UnitMenuRow.ATTACK, index: 0, item: i18n("menu.attack") });
-		eventSystem.processQueue();
-		eventSystem.processQueue(); // combat:requested
+		eventBus.dispatch("ui:menuConfirmed", { menu: "unit-command", row: UnitMenuRow.ATTACK, index: 0, item: i18n("menu.attack") });
+		eventBus.processQueue();
+		eventBus.processQueue(); // combat:requested
 		forecast()?.update({ ...forecast()!.read(), phase: "forecast", weaponIndex: 0, confirmed: true });
 
 		const system = new ForecastSystem(10);
 		system.execute(16, 0);
-		eventSystem.processQueue(); // combat:confirmed -> resolve, combat:fought
-		eventSystem.processQueue(); // combat:fought -> the scoring
-		eventSystem.processQueue(); // experience:gained
+		eventBus.processQueue(); // combat:confirmed -> resolve, combat:fought
+		eventBus.processQueue(); // combat:fought -> the scoring
+		eventBus.processQueue(); // experience:gained
 		system.dispose();
 	};
 
@@ -112,8 +111,8 @@ suite("Experience Flow Test Suite", () => {
 	const finishBattleAnimation = () => {
 		const system = new BattleAnimationSystem(8);
 		system.execute(10_000);
-		eventSystem.processQueue(); // unit:died, combat:resolved -> the bar / the spend
-		eventSystem.processQueue(); // unit:acted
+		eventBus.processQueue(); // unit:died, combat:resolved -> the bar / the spend
+		eventBus.processQueue(); // unit:acted
 		system.dispose();
 	};
 
@@ -121,7 +120,7 @@ suite("Experience Flow Test Suite", () => {
 	const pumpBar = (elapsed: number) => {
 		const system = new ExperienceSystem(8);
 		system.execute(elapsed, 0);
-		eventSystem.processQueue(); // experience:shown -> the next bar
+		eventBus.processQueue(); // experience:shown -> the next bar
 		system.dispose();
 	};
 
@@ -134,7 +133,7 @@ suite("Experience Flow Test Suite", () => {
 		shown = [];
 
 		map = world.createEntity();
-		map.addComponent(GridComponent, GridSystem.of(parseTileMap(sketch), 24));
+		map.addComponent(GridComponent, GridComponent.of(parseTileMap(sketch), 24));
 		map.addComponent(TransformComponent, { ...identityTransform });
 
 		cursor = world.createEntity();
@@ -152,10 +151,10 @@ suite("Experience Flow Test Suite", () => {
 		movement = new MovementFeature({ dependencies: [units, ui] });
 		movement.install();
 
-		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
-		eventSystem.processQueue();
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
+		eventBus.processQueue();
 
-		unsubscribe = [eventSystem.subscribe("experience:gained", (event) => gained.push(event)), eventSystem.subscribe("experience:shown", (event) => shown.push(event.unitId))];
+		unsubscribe = [eventBus.subscribe("experience:gained", (event) => gained.push(event)), eventBus.subscribe("experience:shown", (event) => shown.push(event.unitId))];
 
 		// A sure hit that never kills a healthy Hasan: the fight, not the dice, is under test.
 		patch("dardan", { stats: { ...sheet("dardan").stats, strength: 6, dexterity: 40 } });
@@ -178,7 +177,7 @@ suite("Experience Flow Test Suite", () => {
 			world.unregisterEntity(entity);
 		}
 
-		eventSystem.processQueue();
+		eventBus.processQueue();
 	});
 
 	test("A hit is scored the moment the fight is decided; the bar waits for the animation", () => {
@@ -284,9 +283,9 @@ suite("Experience Flow Test Suite", () => {
 	test("Raising a staff is worth the staff's own value", () => {
 		patch("teuta", { experience: 5 });
 
-		eventSystem.dispatch("staff:resolved", { unitId: "teuta", targetId: "dardan", staffId: "heal", healed: 8 });
-		eventSystem.processQueue(); // staff:resolved -> the scoring
-		eventSystem.processQueue(); // experience:gained
+		eventBus.dispatch("staff:resolved", { unitId: "teuta", targetId: "dardan", staffId: "heal", healed: 8 });
+		eventBus.processQueue(); // staff:resolved -> the scoring
+		eventBus.processQueue(); // experience:gained
 
 		expect(sheet("teuta").experience).toBe(5 + getWeapon("heal").experience);
 		expect(gained).toHaveLength(1);
@@ -297,7 +296,7 @@ suite("Experience Flow Test Suite", () => {
 
 	test("Both sides of a fight are scored, a player defender included, and their bars queue up", () => {
 		// Elira is attacked by Hasan: she counters and hurts him.
-		eventSystem.dispatch("combat:fought", {
+		eventBus.dispatch("combat:fought", {
 			attackerId: "hasan",
 			defenderId: "elira",
 			attackerSwung: true,
@@ -307,14 +306,14 @@ suite("Experience Flow Test Suite", () => {
 			attackerDefeated: false,
 			defenderDefeated: false
 		});
-		eventSystem.processQueue();
+		eventBus.processQueue();
 
 		expect(sheet("hasan").experience).toBe(0);
 		expect(sheet("elira").experience).toBe(10);
 
 		// And a fight where two player units... cannot happen; but the queue is exercised
 		// by a player-versus-player-scored resolve all the same.
-		eventSystem.dispatch("combat:fought", {
+		eventBus.dispatch("combat:fought", {
 			attackerId: "dardan",
 			defenderId: "elira",
 			attackerSwung: true,
@@ -324,13 +323,13 @@ suite("Experience Flow Test Suite", () => {
 			attackerDefeated: false,
 			defenderDefeated: false
 		});
-		eventSystem.processQueue();
+		eventBus.processQueue();
 		expect(sheet("dardan").experience).toBe(1); // a swing that never landed
 		expect(sheet("elira").experience).toBe(10); // no swing, nothing
 
-		eventSystem.dispatch("combat:resolved", { attackerId: "hasan", defenderId: "elira", attackerDefeated: false, defenderDefeated: false });
-		eventSystem.dispatch("combat:resolved", { attackerId: "dardan", defenderId: "elira", attackerDefeated: false, defenderDefeated: false });
-		eventSystem.processQueue();
+		eventBus.dispatch("combat:resolved", { attackerId: "hasan", defenderId: "elira", attackerDefeated: false, defenderDefeated: false });
+		eventBus.dispatch("combat:resolved", { attackerId: "dardan", defenderId: "elira", attackerDefeated: false, defenderDefeated: false });
+		eventBus.processQueue();
 
 		expect(display()?.unitId).toBe("elira");
 		pumpBar(experienceDuration(display()!));

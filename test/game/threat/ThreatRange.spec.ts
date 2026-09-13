@@ -1,9 +1,11 @@
 import { test, expect, suite } from "vitest";
-import { parseTileMap } from "@/game/map/model/TileMaps";
-import { GridSystem } from "@/game/map/systems/GridSystem";
-import { MovementSystem } from "@/game/movement/systems/MovementSystem";
-import { ThreatSystem, ThreatUnit } from "@/game/threat/systems/ThreatSystem";
-import { buildUnit, getWeapon, InventoryKind, UnitData, UnitDocument, UnitFaction } from "@/game/units/model/UnitData";
+import { parseTileMap } from "@/game/map/content/TileMaps";
+import { GridComponent } from "@/game/map/components/GridComponent";
+import { tileKey } from "@/game/movement/rules/Pathfinding";
+import { weaponReach, threatRangeOf, threatRangeOfAll, ThreatUnit } from "@/game/threat/rules/ThreatRange";
+import { buildUnit, UnitDocument } from "@/game/units/content/UnitSheets";
+import { getWeapon } from "@/game/units/content/UnitCatalog";
+import { InventoryKind, UnitData, UnitFaction } from "@/game/units/components/UnitComponent";
 import dardanDocument from "@/assets/data/units/dardan.unit.json";
 import hasanDocument from "@/assets/data/units/hasan.unit.json";
 
@@ -13,8 +15,8 @@ import hasanDocument from "@/assets/data/units/hasan.unit.json";
  * zone with no tile counted twice.
  */
 suite("Threat System Test Suite", () => {
-	const grid = (sketch: string[]) => GridSystem.of(parseTileMap(sketch), 1);
-	const keys = (tiles: { column: number; row: number }[]) => new Set(tiles.map((tile) => MovementSystem.tileKey(tile.column, tile.row)));
+	const grid = (sketch: string[]) => GridComponent.of(parseTileMap(sketch), 1);
+	const keys = (tiles: { column: number; row: number }[]) => new Set(tiles.map((tile) => tileKey(tile.column, tile.row)));
 
 	const sheet = (document: UnitDocument, overrides: Partial<UnitDocument> = {}) => buildUnit({ ...document, ...overrides });
 	const at = (data: UnitData, column: number, row: number): ThreatUnit => ({ data, tile: { column, row } });
@@ -29,7 +31,7 @@ suite("Threat System Test Suite", () => {
 	suite("Weapon reach", () => {
 		test("A pack of swords reaches exactly one tile", () => {
 			// Dardan is a swordsman: bronze-sword, iron-sword, iron-blade, vulnerary.
-			expect(ThreatSystem.weaponReach(sheet(dardanDocument as UnitDocument))).toStrictEqual({ minRange: 1, maxRange: 1 });
+			expect(weaponReach(sheet(dardanDocument as UnitDocument))).toStrictEqual({ minRange: 1, maxRange: 1 });
 		});
 
 		test("The window is the union of every weapon the unit could switch to, readied or not", () => {
@@ -39,7 +41,7 @@ suite("Threat System Test Suite", () => {
 			const bow = { ...unit.inventory[0], id: "iron-bow", name: "Iron Bow", kind: InventoryKind.WEAPON, equippable: true, equipped: false, weapon: getWeapon("iron-bow") };
 
 			expect(unit.weapon?.id).toBe("bronze-axe");
-			expect(ThreatSystem.weaponReach({ ...unit, inventory: [...unit.inventory, bow] })).toStrictEqual({ minRange: 1, maxRange: 2 });
+			expect(weaponReach({ ...unit, inventory: [...unit.inventory, bow] })).toStrictEqual({ minRange: 1, maxRange: 2 });
 		});
 
 		test("Weapons the class cannot wield add no reach", () => {
@@ -47,17 +49,17 @@ suite("Threat System Test Suite", () => {
 			const unit = sheet(dardanDocument as UnitDocument, { inventory: ["bronze-sword", "iron-bow"] });
 
 			expect(unit.inventory.map((entry) => entry.equippable)).toStrictEqual([true, false]);
-			expect(ThreatSystem.weaponReach(unit)).toStrictEqual({ minRange: 1, maxRange: 1 });
+			expect(weaponReach(unit)).toStrictEqual({ minRange: 1, maxRange: 1 });
 		});
 
 		test("Carrying nothing it can swing reaches nothing at all", () => {
-			expect(ThreatSystem.weaponReach({ ...enemy(), weapon: null, inventory: [] })).toBeNull();
+			expect(weaponReach({ ...enemy(), weapon: null, inventory: [] })).toBeNull();
 		});
 	});
 
 	suite("The range of one unit", () => {
 		test("Movement is the flood fill and attack is the ring the fill puts in reach", () => {
-			const range = ThreatSystem.rangeOf(grid([".....", ".....", ".....", ".....", "....."]), at(enemy(), 2, 2), []);
+			const range = threatRangeOf(grid([".....", ".....", ".....", ".....", "....."]), at(enemy(), 2, 2), []);
 
 			expect(keys(range.movement)).toStrictEqual(new Set(["2,2", "1,2", "3,2", "2,1", "2,3"]));
 			// One ring further out, and never a tile it could simply stand on.
@@ -71,7 +73,7 @@ suite("Threat System Test Suite", () => {
 				{ id: "dardan", faction: UnitFaction.PLAYER, column: 1, row: 1 }
 			];
 
-			const range = ThreatSystem.rangeOf(grid(["...", "...", "###"]), at(unit, 0, 1), others);
+			const range = threatRangeOf(grid(["...", "...", "###"]), at(unit, 0, 1), others);
 
 			// Dardan holds 1,1 - so nothing is walked through him - and the wall row
 			// is never entered, however much movement is left.
@@ -80,7 +82,7 @@ suite("Threat System Test Suite", () => {
 		});
 
 		test("A unit with nothing it can swing still shows where it walks", () => {
-			const range = ThreatSystem.rangeOf(grid(["...", "...", "..."]), at(enemy({ weapon: null, inventory: [] }), 1, 1), []);
+			const range = threatRangeOf(grid(["...", "...", "..."]), at(enemy({ weapon: null, inventory: [] }), 1, 1), []);
 
 			expect(range.movement).toHaveLength(5);
 			expect(range.attack).toStrictEqual([]);
@@ -93,7 +95,7 @@ suite("Threat System Test Suite", () => {
 				{ id: "besnik", faction: unit.faction, column: 1, row: 0 }
 			];
 
-			const range = ThreatSystem.rangeOf(grid(["...."]), at(unit, 0, 0), others);
+			const range = threatRangeOf(grid(["...."]), at(unit, 0, 0), others);
 
 			expect(keys(range.movement)).toStrictEqual(new Set(["0,0", "2,0"]));
 		});
@@ -103,14 +105,14 @@ suite("Threat System Test Suite", () => {
 		const pair = () => [at(enemy(), 1, 1), at(enemy({ id: "besnik" }), 3, 1)];
 
 		test("Overlapping ranges are merged, so a shared tile is listed once", () => {
-			const merged = ThreatSystem.rangeOfAll(grid([".....", ".....", "....."]), pair(), []);
+			const merged = threatRangeOfAll(grid([".....", ".....", "....."]), pair(), []);
 
 			expect(keys(merged.movement)).toStrictEqual(new Set(["1,1", "0,1", "2,1", "1,0", "1,2", "3,1", "4,1", "3,0", "3,2"]));
 			expect(merged.movement).toHaveLength(9);
 		});
 
 		test("A tile one of them can stand on is a step, even where another only strikes it", () => {
-			const merged = ThreatSystem.rangeOfAll(grid([".....", ".....", "....."]), pair(), []);
+			const merged = threatRangeOfAll(grid([".....", ".....", "....."]), pair(), []);
 
 			// 2,1 is a step for both and a strike for both. It belongs to the movement
 			// wash alone, so the two never paint over each other.
@@ -120,7 +122,7 @@ suite("Threat System Test Suite", () => {
 		});
 
 		test("Nobody to show is an empty overlay", () => {
-			expect(ThreatSystem.rangeOfAll(grid(["..."]), [], [])).toStrictEqual({ movement: [], attack: [] });
+			expect(threatRangeOfAll(grid(["..."]), [], [])).toStrictEqual({ movement: [], attack: [] });
 		});
 	});
 });

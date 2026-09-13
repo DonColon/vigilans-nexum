@@ -6,10 +6,10 @@ import { i18n } from "@/core/i18n/I18n";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { GridComponent } from "@/game/map/components/GridComponent";
-import { TILE_INFO_BOTTOM } from "@/game/map/model/TileInfoHud";
+import { TILE_INFO_BOTTOM } from "@/game/map/view/TileInfoHud";
 import { MapRenderSystem } from "@/game/map/systems/MapRenderSystem";
 import { TurnComponent } from "@/game/turn/components/TurnComponent";
-import { TurnHud, turnDigits } from "@/game/turn/model/TurnHud";
+import { TurnHud, turnDigits } from "@/game/turn/view/TurnHud";
 
 /**
  * Draws the turn counter from `kenney-1bit` digit tiles, in the map's top-left

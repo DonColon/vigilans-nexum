@@ -1,7 +1,7 @@
 import { test, expect, suite } from "vitest";
 import { i18n } from "@/core/i18n/I18n";
-import { attackPower, attackSpeed, avoidRate, critRate, hitRate } from "@/game/combat/model/CombatMath";
-import { Terrain } from "@/game/map/model/Terrain";
+import { attackPower, attackSpeed, avoidRate, critRate, hitRate } from "@/game/combat/rules/CombatMath";
+import { Terrain } from "@/game/map/content/Terrain";
 import {
 	classLine,
 	EMPTY_SLOT,
@@ -20,9 +20,10 @@ import {
 	statusPanel,
 	statusStatRows,
 	statusWidth
-} from "@/game/status/model/StatusScreen";
-import { unequipInventoryItem } from "@/game/units/model/Inventory";
-import { buildUnit, getWeapon, INVENTORY_SIZE, UnitData, UnitDocument, UnitFaction } from "@/game/units/model/UnitData";
+} from "@/game/status/view/StatusScreen";
+import { UnitComponent, INVENTORY_SIZE, UnitData, UnitFaction } from "@/game/units/components/UnitComponent";
+import { buildUnit, UnitDocument } from "@/game/units/content/UnitSheets";
+import { getWeapon } from "@/game/units/content/UnitCatalog";
 import dardanDocument from "@/assets/data/units/dardan.unit.json";
 import teutaDocument from "@/assets/data/units/teuta.unit.json";
 import hasanDocument from "@/assets/data/units/hasan.unit.json";
@@ -108,7 +109,7 @@ suite("Status Screen Test Suite", () => {
 		});
 
 		test("An unarmed unit has nothing to strike with - attack, hit, crit and reach read as a dash", () => {
-			const unit = unequipInventoryItem(dardan());
+			const unit = UnitComponent.unequip(dardan());
 			const rows = statusCombatRows(unit, Terrain.PLAIN);
 
 			expect(unit.weapon).toBeNull();

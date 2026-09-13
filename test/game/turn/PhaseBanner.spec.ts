@@ -1,6 +1,6 @@
 import { test, expect, suite, beforeEach, afterEach } from "vitest";
 import { World } from "@/core/ecs/World";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { GameState } from "@/core/GameState";
 import { GameStateManager } from "@/core/GameStateManager";
 import { Display } from "@/core/graphics/Display";
@@ -8,13 +8,12 @@ import { InputDevice } from "@/core/input/InputDevice";
 import { ServiceRegistry } from "@/core/service/ServiceRegistry";
 import { MapState } from "@/game/map/states/MapState";
 import { PhaseBannerComponent } from "@/game/turn/components/PhaseBannerComponent";
-import { PHASE_BANNER_FADE_IN, PHASE_BANNER_HOLD, PHASE_BANNER_SLIDE, phaseBannerBox, phaseBannerDuration, phaseBannerFrame, phaseBannerHeight } from "@/game/turn/model/PhaseBanner";
+import { PHASE_BANNER_FADE_IN, PHASE_BANNER_HOLD, PHASE_BANNER_SLIDE, phaseBannerBox, phaseBannerDuration, phaseBannerFrame, phaseBannerHeight } from "@/game/turn/view/PhaseBanner";
 import { PhaseBannerState } from "@/game/turn/states/PhaseBannerState";
 import { PhaseBannerSystem } from "@/game/turn/systems/PhaseBannerSystem";
 import { TurnSystem } from "@/game/turn/systems/TurnSystem";
 import { TurnFeature } from "@/game/turn/TurnFeature";
-import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { UnitFaction } from "@/game/units/model/UnitData";
+import { UnitComponent, UnitFaction } from "@/game/units/components/UnitComponent";
 
 /**
  * The "Player Phase" sweep at the start of a turn: it fades in, holds, fades
@@ -73,7 +72,7 @@ suite("Phase Banner Test Suite", () => {
 		}
 
 		const world = ServiceRegistry.get<World>(World.name);
-		const eventSystem = ServiceRegistry.get<EventSystem>(EventSystem.name);
+		const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
 
 		world.registerComponent(UnitComponent);
 
@@ -94,8 +93,8 @@ suite("Phase Banner Test Suite", () => {
 
 		/** Ends the turn the way the global menu does, and lets `TurnSystem` complete it on the next frame. */
 		const endTurn = () => {
-			eventSystem.dispatch("turn:end", {});
-			eventSystem.processQueue();
+			eventBus.dispatch("turn:end", {});
+			eventBus.processQueue();
 
 			const system = new TurnSystem(0);
 			systems.push(system);
@@ -105,8 +104,8 @@ suite("Phase Banner Test Suite", () => {
 
 		/** Drains the queue, and what the handlers queued in turn - `map:ready` announces the turn a hop later. */
 		const settle = () => {
-			eventSystem.processQueue();
-			eventSystem.processQueue();
+			eventBus.processQueue();
+			eventBus.processQueue();
 		};
 
 		const banner = () => (stateManager.getState(PhaseBannerState).getBanner() as NonNullable<ReturnType<PhaseBannerState["getBanner"]>>).getComponent(PhaseBannerComponent).read();
@@ -133,11 +132,11 @@ suite("Phase Banner Test Suite", () => {
 				world.unregisterEntity(entity);
 			}
 
-			eventSystem.processQueue();
+			eventBus.processQueue();
 		});
 
 		test("The first turn opens with the player phase banner over the map", () => {
-			eventSystem.dispatch("map:ready", { mapId: "map", columns: 8, rows: 8 });
+			eventBus.dispatch("map:ready", { mapId: "map", columns: 8, rows: 8 });
 			settle();
 
 			expect(stateManager.peek()).toBeInstanceOf(PhaseBannerState);
@@ -145,7 +144,7 @@ suite("Phase Banner Test Suite", () => {
 		});
 
 		test("Every later turn announces itself the same way", () => {
-			eventSystem.dispatch("map:ready", { mapId: "map", columns: 8, rows: 8 });
+			eventBus.dispatch("map:ready", { mapId: "map", columns: 8, rows: 8 });
 			settle();
 			stateManager.pop();
 
@@ -156,7 +155,7 @@ suite("Phase Banner Test Suite", () => {
 		});
 
 		test("The banner never lands on top of something else - the turn waits until the map is on top", () => {
-			eventSystem.dispatch("map:ready", { mapId: "map", columns: 8, rows: 8 });
+			eventBus.dispatch("map:ready", { mapId: "map", columns: 8, rows: 8 });
 			settle();
 			stateManager.pop();
 
@@ -176,7 +175,7 @@ suite("Phase Banner Test Suite", () => {
 		});
 
 		test("The banner runs its clock and takes itself down once it has faded", () => {
-			eventSystem.dispatch("map:ready", { mapId: "map", columns: 8, rows: 8 });
+			eventBus.dispatch("map:ready", { mapId: "map", columns: 8, rows: 8 });
 			settle();
 
 			const system = bannerSystem();
@@ -191,7 +190,7 @@ suite("Phase Banner Test Suite", () => {
 		});
 
 		test("The clock only runs while the banner is on top", () => {
-			eventSystem.dispatch("map:ready", { mapId: "map", columns: 8, rows: 8 });
+			eventBus.dispatch("map:ready", { mapId: "map", columns: 8, rows: 8 });
 			settle();
 
 			stateManager.push(MapStub);

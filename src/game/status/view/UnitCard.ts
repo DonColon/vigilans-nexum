@@ -3,7 +3,7 @@ import { Dimension } from "@/core/math/geometry/Dimension";
 import { FontStyleSettings } from "@/core/graphics/styles/text/FontStyle";
 import { i18n } from "@/core/i18n/I18n";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
-import { LEVEL_UP_EXPERIENCE, UnitData, UnitFaction } from "@/game/units/model/UnitData";
+import { LEVEL_UP_EXPERIENCE, UnitData, UnitFaction } from "@/game/units/components/UnitComponent";
 
 /**
  * The card that pops up over a unit while the cursor rests on it - Fire

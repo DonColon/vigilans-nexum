@@ -4,10 +4,9 @@ import { Line } from "@/core/math/geometry/Line";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { GridComponent, GridData } from "@/game/map/components/GridComponent";
-import { MapTheme } from "@/game/map/model/MapTheme";
-import { GridSystem } from "@/game/map/systems/GridSystem";
+import { MapTheme } from "@/game/map/view/MapTheme";
 import { MapRenderSystem } from "@/game/map/systems/MapRenderSystem";
-import { OptionId } from "@/game/options/model/GameOptions";
+import { OptionId } from "@/game/options/content/GameOptions";
 import { optionEnabled } from "@/game/options/GameSettings";
 
 /**
@@ -48,7 +47,7 @@ export class GridRenderSystem extends MapRenderSystem {
 
 		for (let row = 0; row < rows; row++) {
 			for (let column = 0; column < columns; column++) {
-				const terrain = GridSystem.getTerrain(grid, column, row);
+				const terrain = GridComponent.terrainAt(grid, column, row);
 
 				if (terrain === null) {
 					continue;
@@ -63,7 +62,7 @@ export class GridRenderSystem extends MapRenderSystem {
 
 	private renderGridLines(graphics: Graphics, grid: GridData, origin: Vector2D) {
 		const { columns, rows, cellSize } = grid;
-		const { width, height } = GridSystem.getGridDimension(grid);
+		const { width, height } = GridComponent.dimension(grid);
 
 		graphics.strokeColor(MapTheme.gridLine).lineStyle({ width: MapTheme.gridLineWidth });
 
@@ -79,7 +78,7 @@ export class GridRenderSystem extends MapRenderSystem {
 	}
 
 	private renderBorder(graphics: Graphics, grid: GridData, origin: Vector2D) {
-		const { width, height } = GridSystem.getGridDimension(grid);
+		const { width, height } = GridComponent.dimension(grid);
 		const offset = MapTheme.borderWidth / 2;
 
 		const border = new Rectangle(origin.x - offset, origin.y - offset, width + MapTheme.borderWidth, height + MapTheme.borderWidth);

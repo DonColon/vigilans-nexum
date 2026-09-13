@@ -2,8 +2,8 @@ import { Color } from "@/core/graphics/color/Color";
 import { Dimension } from "@/core/math/geometry/Dimension";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { ExperienceData } from "@/game/experience/components/ExperienceComponent";
-import { UITheme } from "@/game/ui/model/UITheme";
-import { STAT_NAMES, StatName } from "@/game/units/model/UnitData";
+import { UITheme } from "@/game/ui/view/UITheme";
+import { STAT_NAMES, StatName } from "@/game/units/content/UnitCatalog";
 
 /**
  * The level-up panel's clock and layout - Fire Emblem's: the banner comes up

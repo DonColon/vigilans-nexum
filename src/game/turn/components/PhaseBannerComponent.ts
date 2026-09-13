@@ -1,6 +1,6 @@
 import { Component } from "@/core/ecs/Component";
 import { JsonSchema } from "@/core/ecs/JsonSchema";
-import { UnitFaction } from "@/game/units/model/UnitData";
+import { UnitFaction } from "@/game/units/components/UnitComponent";
 
 export interface PhaseBannerData extends JsonSchema {
 	/** The turn the banner announces. */

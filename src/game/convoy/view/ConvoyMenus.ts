@@ -1,7 +1,6 @@
 import { i18n } from "@/core/i18n/I18n";
 import { MenuRequest } from "@/game/ui/states/MenuState";
-import { isUsableEntry } from "@/game/units/model/Inventory";
-import { InventoryEntry } from "@/game/units/model/UnitData";
+import { UnitComponent, InventoryEntry } from "@/game/units/components/UnitComponent";
 
 /** Menu id, echoed by the `ui:menu*` events. */
 export const CONVOY_MENU = "convoy-choice";
@@ -29,7 +28,7 @@ export function convoyChoiceRequest(carried: readonly InventoryEntry[], incoming
 		ids: rows.map((entry) => entry.id),
 		badges: rows.map((_, index) => (index === newest ? i18n("convoy.new") : "")),
 		values: rows.map((entry) => `${entry.uses}/${entry.maxUses}`),
-		disabled: rows.map((entry) => !isUsableEntry(entry)),
+		disabled: rows.map((entry) => !UnitComponent.isUsableEntry(entry)),
 		width: CONVOY_MENU_WIDTH,
 		selectedIndex: newest
 	};

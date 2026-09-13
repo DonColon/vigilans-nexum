@@ -15,5 +15,5 @@ export type { MenuRequest } from "@/game/ui/states/MenuState";
 export { PopupState } from "@/game/ui/states/PopupState";
 export type { PopupRequest } from "@/game/ui/states/PopupState";
 
-export { UITheme } from "@/game/ui/model/UITheme";
-export { wrapText, countWords, splitWords, revealedWordCount } from "@/game/ui/model/TextReveal";
+export { UITheme } from "@/game/ui/view/UITheme";
+export { wrapText, countWords, splitWords, revealedWordCount } from "@/game/ui/view/TextReveal";

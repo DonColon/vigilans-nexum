@@ -1,6 +1,6 @@
 import { Color } from "@/core/graphics/color/Color";
 import { FontStyleSettings } from "@/core/graphics/styles/text/FontStyle";
-import { TileInfoHud } from "@/game/map/model/TileInfoHud";
+import { TileInfoHud } from "@/game/map/view/TileInfoHud";
 
 /** The `kenney-1bit` tilesheet the turn counter is drawn from. */
 export const TURN_SHEET = "kenney-1bit";

@@ -1,6 +1,6 @@
 import { Component } from "@/core/ecs/Component";
 import { JsonSchema } from "@/core/ecs/JsonSchema";
-import { Chest, Door } from "@/game/locks/model/Locks";
+import { Chest, Door } from "@/game/locks/content/Locks";
 
 /** Where a lock's tile sits in the tile map, resolved once when the map opened. */
 export interface LockTileData extends JsonSchema {
@@ -31,4 +31,19 @@ export interface LocksData extends JsonSchema {
  */
 export class LocksComponent extends Component<LocksData> {
 	public static readonly type = "locks";
+
+	/** Whether this lock has already been opened. */
+	public static isOpened(data: LocksData, lockId: string): boolean {
+		return data.opened.includes(lockId);
+	}
+
+	/** The doors still shut. */
+	public static closedDoors(data: LocksData): Door[] {
+		return data.doors.filter((door) => !LocksComponent.isOpened(data, door.id));
+	}
+
+	/** The chests still shut. */
+	public static closedChests(data: LocksData): Chest[] {
+		return data.chests.filter((chest) => !LocksComponent.isOpened(data, chest.id));
+	}
 }

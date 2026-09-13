@@ -1,7 +1,7 @@
 import { test, expect, suite } from "vitest";
 import { GameError } from "@/core/GameError";
-import { Terrain } from "@/game/map/model/Terrain";
-import { TileMapDocument, parseTileMapDocument } from "@/game/map/model/TileMapFormat";
+import { Terrain } from "@/game/map/content/Terrain";
+import { TileMapDocument, parseTileMapDocument } from "@/game/map/content/TileMapFormat";
 import skirmishDocument from "@/assets/data/maps/skirmish.tilemap.json";
 import fantasyDocument from "@/assets/data/maps/fantasy.tilemap.json";
 

@@ -7,7 +7,7 @@ import { UpdateSystem } from "@/core/ecs/UpdateSystem";
 import { RenderSystem } from "@/core/ecs/RenderSystem";
 import { GameState, GameStateConstructor } from "@/core/GameState";
 import { GameCoreService } from "@/core/service/GameCoreService";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { binaryInsert } from "@/core/utils/Arrays";
 import { SyncSystem } from "./SyncSystem";
 
@@ -22,8 +22,8 @@ export class World {
 	private syncSchedule: System[];
 	private renderSchedule: System[];
 
-	@GameCoreService(EventSystem)
-	private eventSystem!: EventSystem;
+	@GameCoreService(EventBus)
+	private eventBus!: EventBus;
 
 	constructor() {
 		this.components = new Map<string, ComponentConstructor<any>>();
@@ -154,7 +154,7 @@ export class World {
 
 	public unregisterEntity(entity: Entity): this {
 		this.entities.delete(entity.getID());
-		this.eventSystem.dispatch("entityRemoved", { entity: entity });
+		this.eventBus.dispatch("entityRemoved", { entity: entity });
 		return this;
 	}
 
@@ -170,6 +170,19 @@ export class World {
 
 	public getEntities(): Entity[] {
 		return Array.from(this.entities.values());
+	}
+
+	/** Every entity carrying `componentType`, in registration order. */
+	public entitiesWith(componentType: ComponentConstructor<any> | string): Entity[] {
+		return this.getEntities().filter((entity) => entity.hasComponent(componentType));
+	}
+
+	/**
+	 * The one entity carrying `componentType`, or null when none does - for the
+	 * singletons a map creates once, like the cursor or the army's convoy.
+	 */
+	public entityWith(componentType: ComponentConstructor<any> | string): Entity | null {
+		return this.getEntities().find((entity) => entity.hasComponent(componentType)) ?? null;
 	}
 
 	public hasEntity(entity: Entity | EntityType | string): boolean {

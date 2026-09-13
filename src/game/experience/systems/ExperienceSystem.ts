@@ -1,13 +1,13 @@
 import { UpdateSystem } from "@/core/ecs/UpdateSystem";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { GameStateManager } from "@/core/GameStateManager";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { ExperienceCommand } from "@/game/experience/commands/ExperienceCommands";
 import { ExperienceComponent, ExperiencePhase } from "@/game/experience/components/ExperienceComponent";
-import { experienceFrame } from "@/game/experience/model/ExperienceBar";
-import { levelUpDuration } from "@/game/experience/model/LevelUpPanel";
+import { experienceFrame } from "@/game/experience/view/ExperienceBar";
+import { levelUpDuration } from "@/game/experience/view/LevelUpPanel";
 import { ExperienceState } from "@/game/experience/states/ExperienceState";
-import { OptionId } from "@/game/options/model/GameOptions";
+import { OptionId } from "@/game/options/content/GameOptions";
 import { optionEnabled } from "@/game/options/GameSettings";
 
 /**
@@ -25,8 +25,8 @@ export class ExperienceSystem extends UpdateSystem {
 	@GameCoreService(GameStateManager)
 	private stateManager!: GameStateManager;
 
-	@GameCoreService(EventSystem)
-	private eventSystem!: EventSystem;
+	@GameCoreService(EventBus)
+	private eventBus!: EventBus;
 
 	public initialize(): void {}
 
@@ -86,6 +86,6 @@ export class ExperienceSystem extends UpdateSystem {
 
 	private finish(unitId: string): void {
 		this.stateManager.pop();
-		this.eventSystem.dispatch("experience:shown", { unitId });
+		this.eventBus.dispatch("experience:shown", { unitId });
 	}
 }

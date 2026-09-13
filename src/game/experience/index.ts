@@ -21,14 +21,14 @@ export {
 	staffExperience,
 	rollGrowths,
 	gainExperience
-} from "@/game/experience/model/Experience";
-export type { CombatShare, GrowthRoll, LevelUp, ExperienceGain } from "@/game/experience/model/Experience";
+} from "@/game/experience/rules/Experience";
+export type { CombatShare, GrowthRoll, LevelUp, ExperienceGain } from "@/game/experience/rules/Experience";
 
-export { experienceFrame, experienceBox, experienceDuration, experienceFillDuration } from "@/game/experience/model/ExperienceBar";
-export type { ExperienceFrame } from "@/game/experience/model/ExperienceBar";
+export { experienceFrame, experienceBox, experienceDuration, experienceFillDuration } from "@/game/experience/view/ExperienceBar";
+export type { ExperienceFrame } from "@/game/experience/view/ExperienceBar";
 
-export { levelUpFrame, levelUpDuration, levelUpBox, levelUpHeight, raisedStats } from "@/game/experience/model/LevelUpPanel";
-export type { LevelUpFrame, LevelUpStat } from "@/game/experience/model/LevelUpPanel";
+export { levelUpFrame, levelUpDuration, levelUpBox, levelUpHeight, raisedStats } from "@/game/experience/view/LevelUpPanel";
+export type { LevelUpFrame, LevelUpStat } from "@/game/experience/view/LevelUpPanel";
 
 export { ExperienceCommand, ConfirmLevelUpCommand, CancelLevelUpCommand, experienceCommands } from "@/game/experience/commands/ExperienceCommands";
 export type { ExperienceCommandContext } from "@/game/experience/commands/ExperienceCommands";

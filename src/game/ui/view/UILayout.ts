@@ -1,7 +1,7 @@
 import { Dimension } from "@/core/math/geometry/Dimension";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
-import { MapTheme } from "@/game/map/model/MapTheme";
-import { UITheme } from "@/game/ui/model/UITheme";
+import { MapTheme } from "@/game/map/view/MapTheme";
+import { UITheme } from "@/game/ui/view/UITheme";
 
 /** Gap between a UI panel and the edge of the screen. */
 const SCREEN_MARGIN = 36;

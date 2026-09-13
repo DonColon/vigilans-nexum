@@ -1,6 +1,6 @@
 import { Component } from "@/core/ecs/Component";
 import { JsonSchema } from "@/core/ecs/JsonSchema";
-import { House } from "@/game/visit/model/Houses";
+import { House } from "@/game/visit/content/Houses";
 
 /** A house's door as it was found on the map, so it can be put back exactly as authored. */
 export interface HouseDoorData extends JsonSchema {
@@ -30,4 +30,14 @@ export interface VisitData extends JsonSchema {
  */
 export class VisitComponent extends Component<VisitData> {
 	public static readonly type = "visit";
+
+	/** Whether this house has already been called on. */
+	public static isVisited(data: VisitData, houseId: string): boolean {
+		return data.visited.includes(houseId);
+	}
+
+	/** The houses still worth a knock - the ones whose doors stand open. */
+	public static remaining(data: VisitData): House[] {
+		return data.houses.filter((house) => !VisitComponent.isVisited(data, house.id));
+	}
 }

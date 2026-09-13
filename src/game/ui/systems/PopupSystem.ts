@@ -1,7 +1,7 @@
 import { Query } from "@/core/ecs/Query";
 import { UpdateSystem } from "@/core/ecs/UpdateSystem";
 import { TransformComponent } from "@/core/ecs/components/TransformComponent";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { GameStateManager } from "@/core/GameStateManager";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { PopupCommand } from "@/game/ui/commands/UICommand";
@@ -21,8 +21,8 @@ export class PopupSystem extends UpdateSystem {
 	@GameCoreService(GameStateManager)
 	private stateManager!: GameStateManager;
 
-	@GameCoreService(EventSystem)
-	private eventSystem!: EventSystem;
+	@GameCoreService(EventBus)
+	private eventBus!: EventBus;
 
 	public initialize(): void {
 		this.queries = {
@@ -40,7 +40,7 @@ export class PopupSystem extends UpdateSystem {
 		const data = entity.getComponent(PopupComponent).read();
 
 		if (data.closed) {
-			this.eventSystem.dispatch("ui:popupClosed", { popup: data.id });
+			this.eventBus.dispatch("ui:popupClosed", { popup: data.id });
 			this.stateManager.pop();
 			return;
 		}

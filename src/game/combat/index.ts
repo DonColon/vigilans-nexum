@@ -14,7 +14,7 @@ export { forecastCommands } from "@/game/combat/commands/ForecastCommands";
 export { ForecastSystem } from "@/game/combat/systems/ForecastSystem";
 export { ForecastRenderSystem } from "@/game/combat/systems/ForecastRenderSystem";
 export { BattleAnimationSystem } from "@/game/combat/systems/BattleAnimationSystem";
-export { CombatSystem } from "@/game/combat/systems/CombatSystem";
+export { weaponsReaching, canReachAny, targetsInReach, forecastBattle } from "@/game/combat/rules/Targeting";
 
 export {
 	weaponTriangle,
@@ -33,13 +33,14 @@ export {
 	TRIANGLE_HIT,
 	DOUBLE_THRESHOLD,
 	CRIT_MULTIPLIER
-} from "@/game/combat/model/CombatMath";
-export type { Strike, StrikeInputs, TriangleRelation } from "@/game/combat/model/CombatMath";
+} from "@/game/combat/rules/CombatMath";
+export type { Strike, StrikeInputs, TriangleRelation } from "@/game/combat/rules/CombatMath";
 
-export { buildForecast, resolveCombat, DEFAULT_COMBAT_ROLLS } from "@/game/combat/model/BattleForecast";
-export type { BattleForecast, CombatantForecast, ForecastInputs, CombatOutcome, CombatRolls, ResolvedStrike, StrikeSide } from "@/game/combat/model/BattleForecast";
+export { buildForecast, resolveCombat, DEFAULT_COMBAT_ROLLS } from "@/game/combat/rules/BattleForecast";
+export type { BattleForecast, CombatantForecast, ForecastInputs, CombatOutcome, CombatRolls, ResolvedStrike, StrikeSide } from "@/game/combat/rules/BattleForecast";
 
-export { battleAnimationSteps, battleAnimationDuration, battleAnimationFrame } from "@/game/combat/model/BattleAnimation";
-export type { BattleAnimationStep, BattleAnimationFrame, TokenAnimationState } from "@/game/combat/model/BattleAnimation";
+export { battleAnimationSteps, battleAnimationDuration, battleAnimationFrame } from "@/game/combat/view/BattleAnimation";
+export type { BattleAnimationFrame, TokenAnimationState } from "@/game/combat/view/BattleAnimation";
+export type { BattleAnimationStep } from "@/game/combat/components/BattleAnimationComponent";
 
-export { CombatTheme } from "@/game/combat/model/CombatTheme";
+export { CombatTheme } from "@/game/combat/view/CombatTheme";

@@ -7,8 +7,8 @@ import { TextBaseline } from "@/core/graphics/styles/text/TextBaseline";
 import { Circle } from "@/core/math/geometry/Circle";
 import { Line } from "@/core/math/geometry/Line";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
-import { drawNineSlice, NineSlice } from "@/game/ui/model/NineSlice";
-import { UITheme } from "@/game/ui/model/UITheme";
+import { drawNineSlice, NineSlice } from "@/game/ui/view/NineSlice";
+import { UITheme } from "@/game/ui/view/UITheme";
 
 export interface PanelTextStyle {
 	font: FontStyleSettings;

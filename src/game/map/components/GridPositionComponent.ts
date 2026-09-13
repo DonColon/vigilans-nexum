@@ -14,6 +14,11 @@ export interface GridPositionData extends JsonSchema {
 export class GridPositionComponent extends Component<GridPositionData> {
 	public static readonly type = "gridPosition";
 
+	/** Manhattan tiles between two positions - the range every reach check is measured in. */
+	public static distance(a: GridPositionData, b: GridPositionData): number {
+		return Math.abs(a.column - b.column) + Math.abs(a.row - b.row);
+	}
+
 	constructor(data: Partial<GridPositionData> = {}) {
 		super({
 			column: data.column ?? 0,

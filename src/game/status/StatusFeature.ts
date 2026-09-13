@@ -8,7 +8,7 @@ import { StatusRenderSystem } from "@/game/status/systems/StatusRenderSystem";
 import { StatusSystem } from "@/game/status/systems/StatusSystem";
 import { UnitCardRenderSystem } from "@/game/status/systems/UnitCardRenderSystem";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { unitsInWorld, unitAt } from "@/game/units/rules/UnitLookup";
 
 /**
  * Looking at a unit, in two shapes:
@@ -63,8 +63,8 @@ export class StatusFeature extends GameFeature {
 			return;
 		}
 
-		const units = UnitSystem.inWorld(this.world);
-		const unit = UnitSystem.unitAt(units, event.column, event.row);
+		const units = unitsInWorld(this.world);
+		const unit = unitAt(units, event.column, event.row);
 
 		if (unit === null) {
 			return;

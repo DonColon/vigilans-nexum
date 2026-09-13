@@ -1,6 +1,6 @@
 import { Query } from "@/core/ecs/Query";
 import { UpdateSystem } from "@/core/ecs/UpdateSystem";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { GameStateManager } from "@/core/GameStateManager";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { RosterCommand } from "@/game/roster/commands/RosterCommands";
@@ -19,8 +19,8 @@ export class RosterSystem extends UpdateSystem {
 	@GameCoreService(GameStateManager)
 	private stateManager!: GameStateManager;
 
-	@GameCoreService(EventSystem)
-	private eventSystem!: EventSystem;
+	@GameCoreService(EventBus)
+	private eventBus!: EventBus;
 
 	public initialize(): void {
 		this.queries = {
@@ -41,7 +41,7 @@ export class RosterSystem extends UpdateSystem {
 			// Reported before the pop takes the entity with it, and carrying the row,
 			// because the event is delivered a tick later - by then there is no list
 			// left to ask.
-			this.eventSystem.dispatch("roster:closed", { selectedIndex: data.selectedIndex });
+			this.eventBus.dispatch("roster:closed", { selectedIndex: data.selectedIndex });
 			this.stateManager.pop();
 			return;
 		}

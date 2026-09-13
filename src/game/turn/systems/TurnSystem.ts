@@ -1,14 +1,13 @@
 import { Query } from "@/core/ecs/Query";
 import { UpdateSystem } from "@/core/ecs/UpdateSystem";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { GameState } from "@/core/GameState";
 import { GameStateManager } from "@/core/GameStateManager";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { MapState } from "@/game/map/states/MapState";
 import { TurnComponent } from "@/game/turn/components/TurnComponent";
-import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { UnitFaction } from "@/game/units/model/UnitData";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { UnitComponent, UnitFaction } from "@/game/units/components/UnitComponent";
+import { unitsOfFaction } from "@/game/units/rules/UnitLookup";
 
 /**
  * Completes a turn that `TurnFeature` has marked as ending: the moment the map
@@ -25,8 +24,8 @@ export class TurnSystem extends UpdateSystem {
 	@GameCoreService(GameStateManager)
 	private stateManager!: GameStateManager;
 
-	@GameCoreService(EventSystem)
-	private eventSystem!: EventSystem;
+	@GameCoreService(EventBus)
+	private eventBus!: EventBus;
 
 	public initialize(): void {
 		this.queries = {
@@ -52,12 +51,12 @@ export class TurnSystem extends UpdateSystem {
 		const number = data.number + 1;
 		component.update({ number, ending: false });
 
-		for (const unit of UnitSystem.ofFaction(this.queries.units.getResult(), UnitFaction.PLAYER)) {
+		for (const unit of unitsOfFaction(this.queries.units.getResult(), UnitFaction.PLAYER)) {
 			const unitData = unit.getComponent(UnitComponent);
 			unitData.update({ ...unitData.read(), hasMoved: false });
 		}
 
-		this.eventSystem.dispatch("turn:changed", { number });
+		this.eventBus.dispatch("turn:changed", { number });
 	}
 
 	/** Whether the battle map is the state on top - nothing pushed over it. Matched by type, so a spec can stand in a stub for the real map. */

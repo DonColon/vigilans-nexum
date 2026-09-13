@@ -1,7 +1,8 @@
 import { rollChance, rollChanceAveraged } from "@/core/math/generation/Randomizer";
-import { TerrainType } from "@/game/map/model/Terrain";
-import { isStaff, UnitData, UnitFaction, WeaponData } from "@/game/units/model/UnitData";
-import { attackSpeed, computeStrike, CRIT_MULTIPLIER, doublesAt, weaponReaches } from "@/game/combat/model/CombatMath";
+import { TerrainType } from "@/game/map/content/Terrain";
+import { isStaff, WeaponData } from "@/game/units/content/UnitCatalog";
+import { UnitData, UnitFaction } from "@/game/units/components/UnitComponent";
+import { attackSpeed, computeStrike, CRIT_MULTIPLIER, doublesAt, weaponReaches } from "@/game/combat/rules/CombatMath";
 
 /** One side of a battle forecast - the numbers Fire Emblem shows before you commit. */
 export interface CombatantForecast {

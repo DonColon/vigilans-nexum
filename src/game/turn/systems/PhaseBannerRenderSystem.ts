@@ -7,9 +7,9 @@ import { TextAlign } from "@/core/graphics/styles/text/TextAlign";
 import { i18n } from "@/core/i18n/I18n";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { PhaseBannerComponent } from "@/game/turn/components/PhaseBannerComponent";
-import { PHASE_TITLE_KEY, PHASE_TURN_KEY, phaseBannerBox, phaseBannerFrame, PhaseBannerTheme } from "@/game/turn/model/PhaseBanner";
-import { tint } from "@/game/ui/model/NineSlice";
-import { drawText } from "@/game/ui/model/UIPanel";
+import { PHASE_TITLE_KEY, PHASE_TURN_KEY, phaseBannerBox, phaseBannerFrame, PhaseBannerTheme } from "@/game/turn/view/PhaseBanner";
+import { tint } from "@/game/ui/view/NineSlice";
+import { drawText } from "@/game/ui/view/UIPanel";
 
 /**
  * Draws the phase banner: a band across the middle of the screen, fading out

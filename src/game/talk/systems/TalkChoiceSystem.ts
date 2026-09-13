@@ -1,18 +1,18 @@
 import { Entity } from "@/core/ecs/Entity";
 import { Query } from "@/core/ecs/Query";
 import { UpdateSystem } from "@/core/ecs/UpdateSystem";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { GameStateManager } from "@/core/GameStateManager";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
-import { moveCursorTo } from "@/game/map/model/MapCursor";
+import { moveCursorTo } from "@/game/map/rules/MapCursor";
 import { TalkCommand } from "@/game/talk/commands/TalkCommands";
 import { TalkChoiceComponent, TalkChoiceData } from "@/game/talk/components/TalkChoiceComponent";
 import { TalkState } from "@/game/talk/states/TalkState";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { isPartnerResolved, reconcilePartner } from "@/game/units/model/PartnerChoice";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { isPartnerResolved, reconcilePartner } from "@/game/units/rules/PartnerChoice";
+import { unitById, tileOf } from "@/game/units/rules/UnitLookup";
 
 /**
  * Drives the "who am I talking to?" step: it runs the cycling commands and parks
@@ -25,8 +25,8 @@ export class TalkChoiceSystem extends UpdateSystem {
 	@GameCoreService(GameStateManager)
 	private stateManager!: GameStateManager;
 
-	@GameCoreService(EventSystem)
-	private eventSystem!: EventSystem;
+	@GameCoreService(EventBus)
+	private eventBus!: EventBus;
 
 	public initialize(): void {
 		this.queries = {
@@ -56,7 +56,7 @@ export class TalkChoiceSystem extends UpdateSystem {
 		if (data.cancelled) {
 			this.restoreCursor(data);
 			this.stateManager.pop();
-			this.eventSystem.dispatch("talk:cancelled", { unitId: data.unitId });
+			this.eventBus.dispatch("talk:cancelled", { unitId: data.unitId });
 			return;
 		}
 
@@ -66,7 +66,7 @@ export class TalkChoiceSystem extends UpdateSystem {
 			// once the two are done.
 			this.restoreCursor(data);
 			this.stateManager.pop();
-			this.eventSystem.dispatch("talk:confirmed", { unitId: data.unitId, partnerId: data.partnerId });
+			this.eventBus.dispatch("talk:confirmed", { unitId: data.unitId, partnerId: data.partnerId });
 			return;
 		}
 
@@ -85,10 +85,10 @@ export class TalkChoiceSystem extends UpdateSystem {
 
 	/** Keeps the map cursor on whoever is about to be spoken to. */
 	private parkCursor(data: TalkChoiceData): void {
-		const partner = UnitSystem.byId(this.queries.units.getResult(), data.partnerId);
+		const partner = unitById(this.queries.units.getResult(), data.partnerId);
 
 		if (partner !== null) {
-			moveCursorTo(this.queries.cursors.getSingleResult(), UnitSystem.tileOf(partner));
+			moveCursorTo(this.queries.cursors.getSingleResult(), tileOf(partner));
 		}
 	}
 

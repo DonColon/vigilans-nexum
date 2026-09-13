@@ -1,7 +1,8 @@
 import { test, expect, suite } from "vitest";
-import { Terrain } from "@/game/map/model/Terrain";
-import { buildUnit, UnitDocument, WeaponType } from "@/game/units/model/UnitData";
-import { attackSpeed, avoidRate, computeStrike, critRate, damagePerHit, doublesAt, hitRate, TRIANGLE_HIT, TRIANGLE_MIGHT, weaponReaches, weaponTriangle } from "@/game/combat/model/CombatMath";
+import { Terrain } from "@/game/map/content/Terrain";
+import { buildUnit, UnitDocument } from "@/game/units/content/UnitSheets";
+import { WeaponType } from "@/game/units/content/UnitCatalog";
+import { attackSpeed, avoidRate, computeStrike, critRate, damagePerHit, doublesAt, hitRate, TRIANGLE_HIT, TRIANGLE_MIGHT, weaponReaches, weaponTriangle } from "@/game/combat/rules/CombatMath";
 import dardanDocument from "@/assets/data/units/dardan.unit.json";
 import hasanDocument from "@/assets/data/units/hasan.unit.json";
 

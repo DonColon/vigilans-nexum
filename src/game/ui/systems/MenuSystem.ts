@@ -1,6 +1,6 @@
 import { Entity } from "@/core/ecs/Entity";
 import { UpdateSystem } from "@/core/ecs/UpdateSystem";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { GameStateManager } from "@/core/GameStateManager";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { MenuCommand } from "@/game/ui/commands/UICommand";
@@ -22,8 +22,8 @@ export class MenuSystem extends UpdateSystem {
 	@GameCoreService(GameStateManager)
 	private stateManager!: GameStateManager;
 
-	@GameCoreService(EventSystem)
-	private eventSystem!: EventSystem;
+	@GameCoreService(EventBus)
+	private eventBus!: EventBus;
 
 	public initialize(): void {}
 
@@ -44,7 +44,7 @@ export class MenuSystem extends UpdateSystem {
 		const data = component.read();
 
 		if (data.cancelled) {
-			this.eventSystem.dispatch("ui:menuCancelled", { menu: data.id });
+			this.eventBus.dispatch("ui:menuCancelled", { menu: data.id });
 
 			if (state.hasSubmenu()) {
 				state.closeSubmenu();
@@ -56,7 +56,7 @@ export class MenuSystem extends UpdateSystem {
 		}
 
 		if (data.confirmedIndex >= 0) {
-			this.eventSystem.dispatch("ui:menuConfirmed", {
+			this.eventBus.dispatch("ui:menuConfirmed", {
 				menu: data.id,
 				row: data.ids[data.confirmedIndex] ?? "",
 				index: data.confirmedIndex,

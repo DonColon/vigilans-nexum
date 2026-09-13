@@ -20,7 +20,7 @@ const assetManifest: AssetManifest = {
 			},
 			// Kenney "Fantasy UI Borders", 1-bit alpha masks the UI feature tints and
 			// nine-slices. Loaded as single-frame spritesheets so the raw image stays
-			// reachable - a plain sprite hides it. See src/game/ui/model/NineSlice.ts.
+			// reachable - a plain sprite hides it. See src/game/ui/view/NineSlice.ts.
 			{
 				id: "ui-panel",
 				type: "image",
@@ -43,7 +43,7 @@ const assetManifest: AssetManifest = {
 				layout: { type: "grid", tileWidth: 96, tileHeight: 22, columns: 1, rows: 1 }
 			},
 			// The same flourish with its tail fading out - one on each side of the
-			// phase banner (see src/game/turn/model/PhaseBanner.ts). Not 1-bit: the
+			// phase banner (see src/game/turn/view/PhaseBanner.ts). Not 1-bit: the
 			// fade is a real alpha ramp, which the tint keeps.
 			{
 				id: "ui-divider-fade",
@@ -54,7 +54,7 @@ const assetManifest: AssetManifest = {
 			},
 			// The game's rulebook: the shared catalogs every unit sheet resolves
 			// against. Seeded into the catalog registry by the UnitsFeature - see
-			// src/game/units/model/UnitCatalog.ts.
+			// src/game/units/content/UnitCatalog.ts.
 			{
 				id: "catalog-classes",
 				type: "json",
@@ -133,7 +133,7 @@ const assetManifest: AssetManifest = {
 			},
 			// Pixel fonts for the UI text. AssetLoader registers each as
 			// `new FontFace("<id>", ...)`, so the CSS family name is the asset id.
-			// UITheme picks which one is active - see src/game/ui/model/UITheme.ts.
+			// UITheme picks which one is active - see src/game/ui/view/UITheme.ts.
 			{
 				id: "kenney-mini",
 				type: "font",

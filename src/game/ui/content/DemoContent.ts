@@ -1,4 +1,4 @@
-import { getTerrainProperties } from "@/game/map/model/Terrain";
+import { getTerrainProperties } from "@/game/map/content/Terrain";
 import { DialogRequest } from "@/game/ui/states/DialogState";
 import { MenuRequest } from "@/game/ui/states/MenuState";
 

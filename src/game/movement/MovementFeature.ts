@@ -26,7 +26,7 @@ import { GridPositionComponent } from "@/game/map/components/GridPositionCompone
 import { idleMovement, MovementComponent } from "@/game/movement/components/MovementComponent";
 import { PendingMoveComponent } from "@/game/movement/components/PendingMoveComponent";
 import { WalkComponent } from "@/game/movement/components/WalkComponent";
-import { WALK_STEP_MS } from "@/game/movement/model/PathWalk";
+import { WALK_STEP_MS } from "@/game/movement/view/PathWalk";
 import {
 	COMMAND_MENU,
 	GLOBAL_MENU,
@@ -40,27 +40,26 @@ import {
 	itemActionRequest,
 	itemsRequest,
 	unitCommandRequest
-} from "@/game/movement/model/UnitMenus";
+} from "@/game/movement/view/UnitMenus";
 import { MovementRenderSystem } from "@/game/movement/systems/MovementRenderSystem";
-import { MovementSystem } from "@/game/movement/systems/MovementSystem";
+import { blockedTiles, occupiedTiles, reachableTiles, movementPath, attackableTiles, hasTile } from "@/game/movement/rules/Pathfinding";
 import { PathPreviewSystem } from "@/game/movement/systems/PathPreviewSystem";
 import { UnitWalkSystem } from "@/game/movement/systems/UnitWalkSystem";
-import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { boostGains, dropInventoryItem, equipInventoryItem, isAnyBoost, unequipInventoryItem, useInventoryItem } from "@/game/units/model/Inventory";
-import { isStaff, NO_BOOST, UnitFaction } from "@/game/units/model/UnitData";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
-import { CombatSystem } from "@/game/combat/systems/CombatSystem";
-import { StaffSystem } from "@/game/staff/systems/StaffSystem";
+import { isStaff, NO_BOOST } from "@/game/units/content/UnitCatalog";
+import { UnitComponent, UnitFaction } from "@/game/units/components/UnitComponent";
+import { unitsInWorld, unitAt, unitById, enemiesOf, alliesBeside, unitLocations, tileOf } from "@/game/units/rules/UnitLookup";
+import { targetsInReach } from "@/game/combat/rules/Targeting";
+import { canUseStaff } from "@/game/staff/rules/Staves";
 import { LocksComponent } from "@/game/locks/components/LocksComponent";
-import { Chest, Door } from "@/game/locks/model/Locks";
-import { LockSystem } from "@/game/locks/systems/LockSystem";
+import { Chest, Door } from "@/game/locks/content/Locks";
+import { doorBeside, chestAt } from "@/game/locks/rules/Locking";
 import { PopupState } from "@/game/ui/states/PopupState";
 import { TalkComponent } from "@/game/talk/components/TalkComponent";
-import { TalkSystem } from "@/game/talk/systems/TalkSystem";
+import { availableTalk } from "@/game/talk/rules/Talks";
 import { MenuRequest, MenuState } from "@/game/ui/states/MenuState";
 import { VisitComponent } from "@/game/visit/components/VisitComponent";
-import { House } from "@/game/visit/model/Houses";
-import { VisitSystem } from "@/game/visit/systems/VisitSystem";
+import { House } from "@/game/visit/content/Houses";
+import { availableHouse } from "@/game/visit/rules/Visits";
 
 /**
  * The Fire Emblem move flow, wired to the map's `map:*` events on top of the
@@ -109,7 +108,7 @@ import { VisitSystem } from "@/game/visit/systems/VisitSystem";
  *    "Options" the settings screen (`options:requested`), "End Turn" ends the
  *    turn (`turn:end`).
  *
- * The menus themselves are built in `model/UnitMenus`; this feature only decides
+ * The menus themselves are built in `view/UnitMenus`; this feature only decides
  * when one opens and what a chosen row does.
  *
  * It handles `map:tileConfirmed` at priority 10 and stops the event once it has
@@ -208,7 +207,7 @@ export class MovementFeature extends BattleMapFeature {
 		const units = this.units();
 
 		if (state.unitId.length === 0) {
-			const unit = UnitSystem.unitAt(units, event.column, event.row);
+			const unit = unitAt(units, event.column, event.row);
 			const data = unit?.getComponent(UnitComponent).read();
 
 			// Confirm on nothing to pick up (empty tile, an enemy, a spent or
@@ -219,7 +218,7 @@ export class MovementFeature extends BattleMapFeature {
 				return;
 			}
 
-			const position = UnitSystem.tileOf(unit);
+			const position = tileOf(unit);
 			this.select(data.id, position.column, position.row, grid, units);
 			event.stopPropagation();
 			return;
@@ -228,15 +227,15 @@ export class MovementFeature extends BattleMapFeature {
 		// A unit is up; every confirm now belongs to the move flow.
 		event.stopPropagation();
 
-		const mover = UnitSystem.byId(units, state.unitId);
+		const mover = unitById(units, state.unitId);
 
 		if (mover === null) {
 			component.update(idleMovement());
 			return;
 		}
 
-		const occupant = UnitSystem.unitAt(units, event.column, event.row);
-		const canMove = MovementSystem.contains(state.movement, event.column, event.row) && (occupant === null || occupant === mover);
+		const occupant = unitAt(units, event.column, event.row);
+		const canMove = hasTile(state.movement, event.column, event.row) && (occupant === null || occupant === mover);
 
 		if (canMove) {
 			this.walk(mover, { column: state.originColumn, row: state.originRow }, { column: event.column, row: event.row }, grid, units);
@@ -255,8 +254,8 @@ export class MovementFeature extends BattleMapFeature {
 	 */
 	private walk(mover: Entity, origin: { column: number; row: number }, target: { column: number; row: number }, grid: GridData, units: Entity[]): void {
 		const data = mover.getComponent(UnitComponent).read();
-		const blocked = MovementSystem.blockedTiles(UnitSystem.locations(units), data);
-		const route = MovementSystem.path(grid, origin, target, data.stats.movement, blocked);
+		const blocked = blockedTiles(unitLocations(units), data);
+		const route = movementPath(grid, origin, target, data.stats.movement, blocked);
 
 		mover.getComponent(GridPositionComponent).update(target);
 		mover.addComponent(PendingMoveComponent, { originColumn: origin.column, originRow: origin.row });
@@ -283,7 +282,7 @@ export class MovementFeature extends BattleMapFeature {
 
 	/** The walk landed - open the command menu tucked against the unit. */
 	private onArrived(event: UnitMovedEvent): void {
-		const mover = UnitSystem.byId(this.units(), event.unitId);
+		const mover = unitById(this.units(), event.unitId);
 
 		if (mover === null || !mover.hasComponent(PendingMoveComponent)) {
 			return;
@@ -295,11 +294,11 @@ export class MovementFeature extends BattleMapFeature {
 	/** The unit command menu: every command the unit could take from where it stands, then "Wait" - see `unitCommandRows`. */
 	private openCommandMenu(mover: Entity): void {
 		const data = mover.getComponent(UnitComponent).read();
-		const position = UnitSystem.tileOf(mover);
+		const position = tileOf(mover);
 
 		const commands = {
 			canAttack: this.attackTargets(mover).length > 0,
-			canUseStaff: StaffSystem.canUseStaff(data, position, this.units()),
+			canUseStaff: canUseStaff(data, position, this.units()),
 			canVisit: this.house(mover) !== null,
 			canOpenChest: this.chest(mover) !== null,
 			canOpenDoor: this.door(mover) !== null,
@@ -313,62 +312,62 @@ export class MovementFeature extends BattleMapFeature {
 	/**
 	 * The unit beside this one it still has a conversation with, or null. The
 	 * conversations are the talk feature's, but the lookup over them is pure - the
-	 * same way "Attack" asks CombatSystem what is in reach.
+	 * same way "Attack" asks the targeting rules what is in reach.
 	 */
 	private talkPartner(mover: Entity): Entity | null {
-		const talk = TalkSystem.inWorld(this.world);
+		const talk = this.world.entityWith(TalkComponent);
 
 		if (talk === null) {
 			return null;
 		}
 
-		return TalkSystem.available(talk.getComponent(TalkComponent).read(), this.units(), mover)?.partner ?? null;
+		return availableTalk(talk.getComponent(TalkComponent).read(), this.units(), mover)?.partner ?? null;
 	}
 
 	/**
 	 * The house this unit is standing beside and could still knock at, or null. The
 	 * houses are the visit feature's, but the lookup over them is pure - the same
-	 * way "Attack" asks CombatSystem what is in reach.
+	 * way "Attack" asks the targeting rules what is in reach.
 	 */
 	private house(mover: Entity): House | null {
-		const visit = VisitSystem.inWorld(this.world);
+		const visit = this.world.entityWith(VisitComponent);
 
 		if (visit === null) {
 			return null;
 		}
 
-		return VisitSystem.available(visit.getComponent(VisitComponent).read(), mover);
+		return availableHouse(visit.getComponent(VisitComponent).read(), mover);
 	}
 
 	/**
 	 * The locked door this unit is standing beside and has a key for, or null. The
 	 * locks are the locks feature's, but the lookup over them is pure - the same
-	 * way "Visit" asks VisitSystem about the houses.
+	 * way "Visit" asks the visit rules about the houses.
 	 */
 	private door(mover: Entity): Door | null {
-		const locks = LockSystem.inWorld(this.world);
+		const locks = this.world.entityWith(LocksComponent);
 
 		if (locks === null) {
 			return null;
 		}
 
-		return LockSystem.doorBeside(locks.getComponent(LocksComponent).read(), mover);
+		return doorBeside(locks.getComponent(LocksComponent).read(), mover);
 	}
 
 	/** The locked chest this unit is standing on or beside and has a key for, or null. */
 	private chest(mover: Entity): Chest | null {
-		const locks = LockSystem.inWorld(this.world);
+		const locks = this.world.entityWith(LocksComponent);
 
 		if (locks === null) {
 			return null;
 		}
 
-		return LockSystem.chestAt(locks.getComponent(LocksComponent).read(), mover);
+		return chestAt(locks.getComponent(LocksComponent).read(), mover);
 	}
 
 	/** Every ally standing next to this unit - the ones it could trade packs with. */
 	private tradePartners(mover: Entity): Entity[] {
-		return UnitSystem.alliesBeside(this.units(), mover);
+		return alliesBeside(this.units(), mover);
 	}
 
 	/**
@@ -392,9 +391,9 @@ export class MovementFeature extends BattleMapFeature {
 	 */
 	private attackTargets(mover: Entity): Entity[] {
 		const data = mover.getComponent(UnitComponent).read();
-		const enemies = UnitSystem.enemiesOf(this.units(), data.faction);
+		const enemies = enemiesOf(this.units(), data.faction);
 
-		return CombatSystem.targetsInReach(data, UnitSystem.tileOf(mover), enemies, UnitSystem.tileOf);
+		return targetsInReach(data, tileOf(mover), enemies, tileOf);
 	}
 
 	/**
@@ -612,7 +611,7 @@ export class MovementFeature extends BattleMapFeature {
 
 	/** The forecast was backed out of - the unit is still standing there, so re-open its command menu. */
 	private onCombatCancelled(event: CombatCancelledEvent): void {
-		const mover = UnitSystem.byId(this.units(), event.attackerId);
+		const mover = unitById(this.units(), event.attackerId);
 
 		if (mover !== null && mover.hasComponent(PendingMoveComponent)) {
 			this.openCommandMenu(mover);
@@ -621,7 +620,7 @@ export class MovementFeature extends BattleMapFeature {
 
 	/** The fight happened - spend the attacker the same way "Wait" does (if it is still alive). */
 	private onCombatResolved(event: CombatResolvedEvent): void {
-		const mover = UnitSystem.byId(this.units(), event.attackerId);
+		const mover = unitById(this.units(), event.attackerId);
 
 		if (mover !== null && mover.hasComponent(PendingMoveComponent)) {
 			this.spendMover(mover);
@@ -647,7 +646,7 @@ export class MovementFeature extends BattleMapFeature {
 	 * done - so it is spent the same way "Wait" spends it.
 	 */
 	private onVisitFinished(event: VisitFinishedEvent): void {
-		const mover = UnitSystem.byId(this.units(), event.unitId);
+		const mover = unitById(this.units(), event.unitId);
 
 		if (mover !== null && mover.hasComponent(PendingMoveComponent)) {
 			this.spendMover(mover);
@@ -698,7 +697,7 @@ export class MovementFeature extends BattleMapFeature {
 
 	/** Spends a unit that is still mid-turn, by id - the shared tail of every command that finishes elsewhere. */
 	private spendPending(unitId: string): void {
-		const mover = UnitSystem.byId(this.units(), unitId);
+		const mover = unitById(this.units(), unitId);
 
 		if (mover !== null && mover.hasComponent(PendingMoveComponent)) {
 			this.spendMover(mover);
@@ -707,7 +706,7 @@ export class MovementFeature extends BattleMapFeature {
 
 	/** Puts a mid-turn unit's command menu back after a free action it did not finish. */
 	private reopenCommandMenu(unitId: string): void {
-		const mover = UnitSystem.byId(this.units(), unitId);
+		const mover = unitById(this.units(), unitId);
 
 		if (mover !== null && mover.hasComponent(PendingMoveComponent)) {
 			this.openCommandMenu(mover);
@@ -720,7 +719,7 @@ export class MovementFeature extends BattleMapFeature {
 	 * menu simply comes back.
 	 */
 	private onTradeClosed(event: TradeClosedEvent): void {
-		const mover = UnitSystem.byId(this.units(), event.unitId);
+		const mover = unitById(this.units(), event.unitId);
 
 		if (mover !== null && mover.hasComponent(PendingMoveComponent)) {
 			this.openCommandMenu(mover);
@@ -758,8 +757,8 @@ export class MovementFeature extends BattleMapFeature {
 		}
 
 		if (action === UnitMenuRow.USE) {
-			const gains = entry.item === null ? NO_BOOST : boostGains(before, entry.item);
-			const after = useInventoryItem(before, slot);
+			const gains = entry.item === null ? NO_BOOST : UnitComponent.boostGains(before, entry.item);
+			const after = UnitComponent.useItem(before, slot);
 
 			if (after === before) {
 				this.refreshItemsMenu(mover, slot);
@@ -775,7 +774,7 @@ export class MovementFeature extends BattleMapFeature {
 
 			// A booster's gains are listed before the unit is spent, the way Fire
 			// Emblem lights the stat screen up; a heal just floats its number.
-			if (isAnyBoost(gains)) {
+			if (UnitComponent.isAnyBoost(gains)) {
 				this.boosting = after.id;
 				this.stateManager.getState(PopupState).request(boostPopup(after.id, entry.name, gains));
 				this.stateManager.push(PopupState);
@@ -787,7 +786,7 @@ export class MovementFeature extends BattleMapFeature {
 		}
 
 		if (action === UnitMenuRow.EQUIP) {
-			const after = equipInventoryItem(before, slot);
+			const after = UnitComponent.equip(before, slot);
 
 			if (after !== before) {
 				component.update(after);
@@ -800,7 +799,7 @@ export class MovementFeature extends BattleMapFeature {
 		}
 
 		if (action === UnitMenuRow.UNEQUIP) {
-			const after = unequipInventoryItem(before);
+			const after = UnitComponent.unequip(before);
 
 			if (after !== before) {
 				component.update(after);
@@ -812,7 +811,7 @@ export class MovementFeature extends BattleMapFeature {
 		}
 
 		if (action === UnitMenuRow.DROP) {
-			const after = dropInventoryItem(before, slot);
+			const after = UnitComponent.drop(before, slot);
 
 			if (after !== before) {
 				component.update(after);
@@ -884,19 +883,19 @@ export class MovementFeature extends BattleMapFeature {
 			return;
 		}
 
-		const unit = UnitSystem.byId(units, unitId);
+		const unit = unitById(units, unitId);
 
 		if (unit === null) {
 			return;
 		}
 
 		const data = unit.getComponent(UnitComponent).read();
-		const locations = UnitSystem.locations(units);
-		const blocked = MovementSystem.blockedTiles(locations, data);
-		const occupied = MovementSystem.occupiedTiles(locations, unitId);
-		const reachable = MovementSystem.reachable(grid, { column, row }, data.stats.movement, blocked, occupied);
+		const locations = unitLocations(units);
+		const blocked = blockedTiles(locations, data);
+		const occupied = occupiedTiles(locations, unitId);
+		const reachable = reachableTiles(grid, { column, row }, data.stats.movement, blocked, occupied);
 		// A readied staff lights no red tiles - it reaches allies, not enemies.
-		const attack = data.weapon !== null && !isStaff(data.weapon) ? MovementSystem.attackable(grid, reachable, data.weapon.minRange, data.weapon.maxRange) : [];
+		const attack = data.weapon !== null && !isStaff(data.weapon) ? attackableTiles(grid, reachable, data.weapon.minRange, data.weapon.maxRange) : [];
 
 		this.movement.getComponent(MovementComponent).update({
 			unitId,
@@ -911,7 +910,7 @@ export class MovementFeature extends BattleMapFeature {
 	}
 
 	private units(): Entity[] {
-		return UnitSystem.inWorld(this.world);
+		return unitsInWorld(this.world);
 	}
 
 	/** The unit that has moved but not yet decided what to do - the one every open menu belongs to. */
@@ -942,7 +941,7 @@ export class MovementFeature extends BattleMapFeature {
 
 	/** Top-left screen pixel of the tile a unit stands on. */
 	private tileOnScreen(unit: Entity): { x: number; y: number } | null {
-		const position = UnitSystem.tileOf(unit);
+		const position = tileOf(unit);
 		return this.tileToScreen(position.column, position.row);
 	}
 }

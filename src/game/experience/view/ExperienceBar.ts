@@ -2,9 +2,9 @@ import { Color } from "@/core/graphics/color/Color";
 import { Dimension } from "@/core/math/geometry/Dimension";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { ExperienceData } from "@/game/experience/components/ExperienceComponent";
-import { POPUP_WIDTH } from "@/game/ui/model/UILayout";
-import { UITheme } from "@/game/ui/model/UITheme";
-import { LEVEL_UP_EXPERIENCE } from "@/game/units/model/UnitData";
+import { POPUP_WIDTH } from "@/game/ui/view/UILayout";
+import { UITheme } from "@/game/ui/view/UITheme";
+import { LEVEL_UP_EXPERIENCE } from "@/game/units/components/UnitComponent";
 
 /**
  * The experience bar's clock and layout, as pure functions of the display

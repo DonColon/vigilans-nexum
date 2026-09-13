@@ -31,8 +31,8 @@ export {
 	classLine,
 	pageLabel,
 	rangeText
-} from "@/game/status/model/StatusScreen";
-export type { StatusRow, StatRow, StatusColumn } from "@/game/status/model/StatusScreen";
+} from "@/game/status/view/StatusScreen";
+export type { StatusRow, StatRow, StatusColumn } from "@/game/status/view/StatusScreen";
 
-export { UnitCard, UNIT_CARD_HEIGHT, UNIT_CARD_ROWS, ENEMY_CARD_ROWS, unitCardHeight, unitCardLines, unitCardRows, unitCardPlacement } from "@/game/status/model/UnitCard";
-export type { UnitCardLines, UnitCardBar, UnitCardPlacement } from "@/game/status/model/UnitCard";
+export { UnitCard, UNIT_CARD_HEIGHT, UNIT_CARD_ROWS, ENEMY_CARD_ROWS, unitCardHeight, unitCardLines, unitCardRows, unitCardPlacement } from "@/game/status/view/UnitCard";
+export type { UnitCardLines, UnitCardBar, UnitCardPlacement } from "@/game/status/view/UnitCard";

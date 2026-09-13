@@ -1,7 +1,7 @@
 import { Dimension } from "@/core/math/geometry/Dimension";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
-import { menuHeight } from "@/game/ui/model/UILayout";
-import { InventoryEntry, INVENTORY_SIZE, UnitData } from "@/game/units/model/UnitData";
+import { menuHeight } from "@/game/ui/view/UILayout";
+import { InventoryEntry, INVENTORY_SIZE, UnitData } from "@/game/units/components/UnitComponent";
 
 /** Width of one pack panel - the same room the items menu gives a name and its uses. */
 export const TRADE_PANEL_WIDTH = 320;

@@ -4,7 +4,7 @@ import { getI18n } from "@/core/i18n/I18n";
 import { SwitchValue } from "@/core/options/Option";
 import { OptionsService } from "@/core/options/OptionsService";
 import { ServiceRegistry } from "@/core/service/ServiceRegistry";
-import { DEFAULT_TEXT_SPEED, gameOptions, OptionId, TEXT_SPEED_DELAYS } from "@/game/options/model/GameOptions";
+import { DEFAULT_TEXT_SPEED, gameOptions, OptionId, TEXT_SPEED_DELAYS } from "@/game/options/content/GameOptions";
 
 /**
  * This game's view of the engine's settings service: the handful of questions

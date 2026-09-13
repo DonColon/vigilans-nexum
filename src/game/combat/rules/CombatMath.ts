@@ -1,10 +1,11 @@
-import { getTerrainProperties, TerrainType } from "@/game/map/model/Terrain";
-import { UnitData, WeaponData, WeaponType } from "@/game/units/model/UnitData";
+import { getTerrainProperties, TerrainType } from "@/game/map/content/Terrain";
+import { UnitData } from "@/game/units/components/UnitComponent";
+import { WeaponData, WeaponType } from "@/game/units/content/UnitCatalog";
 
 /**
  * The Fire Emblem: Radiant Dawn combat formulas, as pure functions on resolved
  * `UnitData` / `WeaponData`. No RNG, no components - a system, a feature or a
- * test calls these directly, the same way `MovementSystem` is used.
+ * test calls these directly, the same way the pathfinding rules are used.
  *
  * Sources: the Tellius battle model (FE9/FE10). Terrain adds to Defence/Res and
  * Avoid; biorhythm, supports and skills are not modelled yet.

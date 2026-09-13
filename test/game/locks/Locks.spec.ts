@@ -4,7 +4,7 @@ import { i18n } from "@/core/i18n/I18n";
 import { Entity } from "@/core/ecs/Entity";
 import { World } from "@/core/ecs/World";
 import { identityTransform, TransformComponent } from "@/core/ecs/components/TransformComponent";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { Display } from "@/core/graphics/Display";
 import { GameStateManager } from "@/core/GameStateManager";
 import { InputDevice } from "@/core/input/InputDevice";
@@ -12,23 +12,21 @@ import { ServiceRegistry } from "@/core/service/ServiceRegistry";
 import { ChestOpenedEvent, DoorOpenedEvent, LockCancelledEvent } from "@/game.events";
 import { ConvoyComponent } from "@/game/convoy/components/ConvoyComponent";
 import { ConvoyFeature } from "@/game/convoy/ConvoyFeature";
-import { ConvoySystem } from "@/game/convoy/systems/ConvoySystem";
 import { LocksComponent } from "@/game/locks/components/LocksComponent";
 import { LocksFeature } from "@/game/locks/LocksFeature";
-import { chestPopup, LocksDocument, parseLocks } from "@/game/locks/model/Locks";
-import { LockSystem } from "@/game/locks/systems/LockSystem";
+import { LocksDocument, parseLocks } from "@/game/locks/content/Locks";
+import { chestPopup } from "@/game/locks/view/LockPopups";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
 import { TileMapComponent, TileMapData } from "@/game/map/components/TileMapComponent";
-import { Terrain, isPassable } from "@/game/map/model/Terrain";
-import { parseTileMap } from "@/game/map/model/TileMaps";
-import { parseTileMapDocument, TileMapDocument } from "@/game/map/model/TileMapFormat";
-import { GridSystem } from "@/game/map/systems/GridSystem";
+import { Terrain, isPassable } from "@/game/map/content/Terrain";
+import { parseTileMap } from "@/game/map/content/TileMaps";
+import { parseTileMapDocument, TileMapDocument } from "@/game/map/content/TileMapFormat";
 import { PendingMoveComponent } from "@/game/movement/components/PendingMoveComponent";
 import { MovementFeature } from "@/game/movement/MovementFeature";
-import { UnitMenuRow } from "@/game/movement/model/UnitMenus";
-import { MovementSystem } from "@/game/movement/systems/MovementSystem";
+import { UnitMenuRow } from "@/game/movement/view/UnitMenus";
+import { reachableTiles } from "@/game/movement/rules/Pathfinding";
 import { UnitWalkSystem } from "@/game/movement/systems/UnitWalkSystem";
 import { MenuComponent } from "@/game/ui/components/MenuComponent";
 import { PopupComponent } from "@/game/ui/components/PopupComponent";
@@ -36,7 +34,7 @@ import { MenuState } from "@/game/ui/states/MenuState";
 import { PopupState } from "@/game/ui/states/PopupState";
 import { UIFeature } from "@/game/ui/UIFeature";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { unitsInWorld, unitById } from "@/game/units/rules/UnitLookup";
 import { UnitsFeature } from "@/game/units/UnitsFeature";
 import skirmishLocks from "@/assets/data/locks/skirmish.locks.json";
 import fantasyMap from "@/assets/data/maps/fantasy.tilemap.json";
@@ -99,17 +97,17 @@ suite("Scenario Lock Sheet Test Suite", () => {
 	});
 
 	test("The fort is sealed until the gate opens - its chest is only reachable through the door", () => {
-		const grid = GridSystem.fromTileMap(parsed, 24);
+		const grid = GridComponent.fromTileMap(parsed, 24);
 		const [gate] = sheet.doors;
 		const [chest] = sheet.chests;
 		const outside = { column: gate.column, row: gate.row + 1 };
 
 		// Even with the run of the whole map, the shut gate keeps the chest out of reach.
-		const sealed = MovementSystem.reachable(grid, outside, 999);
+		const sealed = reachableTiles(grid, outside, 999);
 		expect(sealed.some((tile) => tile.column === chest.column && tile.row === chest.row)).toBe(false);
 
 		const opened = { ...grid, tiles: grid.tiles.map((terrain, cell) => (cell === gate.row * grid.columns + gate.column ? Terrain.PLAIN : terrain)) };
-		const unsealed = MovementSystem.reachable(opened, outside, 999);
+		const unsealed = reachableTiles(opened, outside, 999);
 		expect(unsealed.some((tile) => tile.column === chest.column && tile.row === chest.row)).toBe(true);
 	});
 
@@ -156,7 +154,7 @@ suite("Scenario Lock Sheet Test Suite", () => {
  */
 suite("Unit Locks Test Suite", () => {
 	const world = ServiceRegistry.get<World>(World.name);
-	const eventSystem = ServiceRegistry.get<EventSystem>(EventSystem.name);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
 	const assets = ServiceRegistry.get<AssetStorage>(AssetStorage.name);
 
 	world.registerComponent(TransformComponent);
@@ -196,13 +194,13 @@ suite("Unit Locks Test Suite", () => {
 	let map: Entity;
 	let cursor: Entity;
 
-	const unit = (id: string) => UnitSystem.byId(UnitSystem.inWorld(world), id) as Entity;
+	const unit = (id: string) => unitById(unitsInWorld(world), id) as Entity;
 	const sheet = (id: string) => unit(id).getComponent(UnitComponent).read();
 	const pack = (id: string) => sheet(id).inventory.map((entry) => entry.id);
 
-	const state = () => (LockSystem.inWorld(world) as Entity).getComponent(LocksComponent).read();
+	const state = () => (world.entityWith(LocksComponent) as Entity).getComponent(LocksComponent).read();
 	const convoyItems = () =>
-		(ConvoySystem.inWorld(world) as Entity)
+		(world.entityWith(ConvoyComponent) as Entity)
 			.getComponent(ConvoyComponent)
 			.read()
 			.items.map((entry) => entry.id);
@@ -243,26 +241,26 @@ suite("Unit Locks Test Suite", () => {
 	const finishWalk = () => {
 		const walkSystem = new UnitWalkSystem(8);
 		walkSystem.execute(10_000);
-		eventSystem.processQueue();
+		eventBus.processQueue();
 		walkSystem.dispose();
 	};
 
 	/** Picks Teuta up and sets her down on a tile, leaving her command menu open. */
 	const moveTo = (column: number, row: number) => {
-		eventSystem.dispatch("map:tileConfirmed", { column: 5, row: 11, terrain: "plain" });
-		eventSystem.processQueue();
-		eventSystem.dispatch("map:tileConfirmed", { column, row, terrain: "plain" });
-		eventSystem.processQueue();
+		eventBus.dispatch("map:tileConfirmed", { column: 5, row: 11, terrain: "plain" });
+		eventBus.processQueue();
+		eventBus.dispatch("map:tileConfirmed", { column, row, terrain: "plain" });
+		eventBus.processQueue();
 		finishWalk();
 	};
 
 	/** Chooses a row of the open command menu. */
 	const choose = (row: string) => {
-		eventSystem.dispatch("ui:menuConfirmed", { menu: "unit-command", row, index: 0, item: row });
-		eventSystem.processQueue();
-		eventSystem.processQueue(); // deliver door:requested / chest:requested
-		eventSystem.processQueue(); // deliver door:opened / convoy:requested
-		eventSystem.processQueue(); // deliver unit:acted / convoy:delivered
+		eventBus.dispatch("ui:menuConfirmed", { menu: "unit-command", row, index: 0, item: row });
+		eventBus.processQueue();
+		eventBus.processQueue(); // deliver door:requested / chest:requested
+		eventBus.processQueue(); // deliver door:opened / convoy:requested
+		eventBus.processQueue(); // deliver unit:acted / convoy:delivered
 	};
 
 	/** Acknowledges the notice, the way the dismiss command would. */
@@ -270,11 +268,11 @@ suite("Unit Locks Test Suite", () => {
 		const component = popup() as PopupComponent;
 
 		component.update({ ...component.read(), closed: true });
-		eventSystem.dispatch("ui:popupClosed", { popup: component.read().id });
+		eventBus.dispatch("ui:popupClosed", { popup: component.read().id });
 		stateManager.pop();
-		eventSystem.processQueue();
-		eventSystem.processQueue(); // deliver chest:opened
-		eventSystem.processQueue(); // deliver unit:acted
+		eventBus.processQueue();
+		eventBus.processQueue(); // deliver chest:opened
+		eventBus.processQueue(); // deliver unit:acted
 	};
 
 	/** Builds the map and installs the features, with `document` as the scenario's locks. */
@@ -282,7 +280,7 @@ suite("Unit Locks Test Suite", () => {
 		assets.setJson("locks-skirmish", document);
 
 		map = world.createEntity();
-		map.addComponent(GridComponent, GridSystem.of(parseTileMap(sketch), 24));
+		map.addComponent(GridComponent, GridComponent.of(parseTileMap(sketch), 24));
 		map.addComponent(TileMapComponent, tileMapData());
 		map.addComponent(TransformComponent, { ...identityTransform });
 
@@ -301,8 +299,8 @@ suite("Unit Locks Test Suite", () => {
 		movement = new MovementFeature({ dependencies: [units, ui] });
 		movement.install();
 
-		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: COLUMNS, rows: ROWS });
-		eventSystem.processQueue();
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: COLUMNS, rows: ROWS });
+		eventBus.processQueue();
 	};
 
 	/** Opens the gate the quick way - in the grid and on the lock sheet - so a chest test can start on the far side. */
@@ -311,7 +309,7 @@ suite("Unit Locks Test Suite", () => {
 		const data = component.read();
 		component.update({ ...data, tiles: data.tiles.map((terrain, cell) => (cell === DOOR.row * COLUMNS + DOOR.column ? Terrain.PLAIN : terrain)) });
 
-		const locksComponent = (LockSystem.inWorld(world) as Entity).getComponent(LocksComponent);
+		const locksComponent = (world.entityWith(LocksComponent) as Entity).getComponent(LocksComponent);
 		locksComponent.update({ ...locksComponent.read(), opened: ["gate"] });
 	};
 
@@ -332,7 +330,7 @@ suite("Unit Locks Test Suite", () => {
 		}
 
 		assets.setJson("locks-skirmish", shipped);
-		eventSystem.processQueue();
+		eventBus.processQueue();
 	});
 
 	suite("Doors", () => {
@@ -363,16 +361,16 @@ suite("Unit Locks Test Suite", () => {
 
 			expect(menu()?.items).not.toContain(i18n("menu.door"));
 
-			eventSystem.dispatch("ui:menuCancelled", { menu: "unit-command" });
-			eventSystem.processQueue();
-			eventSystem.dispatch("map:cancelled", {});
-			eventSystem.processQueue();
+			eventBus.dispatch("ui:menuCancelled", { menu: "unit-command" });
+			eventBus.processQueue();
+			eventBus.dispatch("map:cancelled", {});
+			eventBus.processQueue();
 
 			// Elira on the doorstep has no key.
-			eventSystem.dispatch("map:tileConfirmed", { column: 5, row: 10, terrain: "plain" });
-			eventSystem.processQueue();
-			eventSystem.dispatch("map:tileConfirmed", { column: DOORSTEP.column, row: DOORSTEP.row, terrain: "plain" });
-			eventSystem.processQueue();
+			eventBus.dispatch("map:tileConfirmed", { column: 5, row: 10, terrain: "plain" });
+			eventBus.processQueue();
+			eventBus.dispatch("map:tileConfirmed", { column: DOORSTEP.column, row: DOORSTEP.row, terrain: "plain" });
+			eventBus.processQueue();
 			finishWalk();
 
 			expect(menu()?.items).not.toContain(i18n("menu.door"));
@@ -381,8 +379,8 @@ suite("Unit Locks Test Suite", () => {
 		test("Choosing Door opens it on the map and in the grid, spends the key and the turn", () => {
 			const opened: DoorOpenedEvent[] = [];
 			let acted: string | null = null;
-			eventSystem.subscribe("door:opened", (event) => opened.push(event));
-			eventSystem.subscribe("unit:acted", (event) => (acted = event.unitId));
+			eventBus.subscribe("door:opened", (event) => opened.push(event));
+			eventBus.subscribe("unit:acted", (event) => (acted = event.unitId));
 
 			start();
 			moveTo(DOORSTEP.column, DOORSTEP.row);
@@ -402,7 +400,7 @@ suite("Unit Locks Test Suite", () => {
 			expect(stateManager.peek()).not.toBeInstanceOf(MenuState);
 
 			// And the way through is open: the far side is in reach from the doorstep now.
-			const reachable = MovementSystem.reachable(grid(), DOORSTEP, 5);
+			const reachable = reachableTiles(grid(), DOORSTEP, 5);
 			expect(reachable.some((tile) => tile.row > DOOR.row)).toBe(true);
 		});
 
@@ -415,10 +413,10 @@ suite("Unit Locks Test Suite", () => {
 			const component = unit("teuta").getComponent(UnitComponent);
 			component.update({ ...component.read(), hasMoved: false, inventory: [...component.read().inventory, sheet("dardan").inventory[0]] });
 
-			eventSystem.dispatch("map:tileConfirmed", { column: DOORSTEP.column, row: DOORSTEP.row, terrain: "plain" });
-			eventSystem.processQueue();
-			eventSystem.dispatch("map:tileConfirmed", { column: DOORSTEP.column, row: DOORSTEP.row, terrain: "plain" });
-			eventSystem.processQueue();
+			eventBus.dispatch("map:tileConfirmed", { column: DOORSTEP.column, row: DOORSTEP.row, terrain: "plain" });
+			eventBus.processQueue();
+			eventBus.dispatch("map:tileConfirmed", { column: DOORSTEP.column, row: DOORSTEP.row, terrain: "plain" });
+			eventBus.processQueue();
 			finishWalk();
 
 			expect(menu()?.items).not.toContain(i18n("menu.door"));
@@ -426,14 +424,14 @@ suite("Unit Locks Test Suite", () => {
 
 		test("A request for a door the unit is not beside is cancelled, and the menu comes back", () => {
 			const cancelled: LockCancelledEvent[] = [];
-			eventSystem.subscribe("lock:cancelled", (event) => cancelled.push(event));
+			eventBus.subscribe("lock:cancelled", (event) => cancelled.push(event));
 
 			start();
 			moveTo(5, 11);
 
-			eventSystem.dispatch("door:requested", { unitId: "teuta", doorId: "gate" });
-			eventSystem.processQueue();
-			eventSystem.processQueue();
+			eventBus.dispatch("door:requested", { unitId: "teuta", doorId: "gate" });
+			eventBus.processQueue();
+			eventBus.processQueue();
 
 			expect(cancelled).toMatchObject([{ unitId: "teuta" }]);
 			expect(frameAt(DOOR)).toBe(CLOSED_DOOR);
@@ -459,10 +457,10 @@ suite("Unit Locks Test Suite", () => {
 
 			expect(menu()?.items).toContain(i18n("menu.chest"));
 
-			eventSystem.dispatch("ui:menuCancelled", { menu: "unit-command" });
-			eventSystem.processQueue();
-			eventSystem.dispatch("map:cancelled", {});
-			eventSystem.processQueue();
+			eventBus.dispatch("ui:menuCancelled", { menu: "unit-command" });
+			eventBus.processQueue();
+			eventBus.dispatch("map:cancelled", {});
+			eventBus.processQueue();
 
 			moveTo(CHEST.column + 2, CHEST.row);
 
@@ -472,8 +470,8 @@ suite("Unit Locks Test Suite", () => {
 		test("Choosing Chest opens it, hands over the find, and spends the key and the turn once the notice is read", () => {
 			const opened: ChestOpenedEvent[] = [];
 			let acted: string | null = null;
-			eventSystem.subscribe("chest:opened", (event) => opened.push(event));
-			eventSystem.subscribe("unit:acted", (event) => (acted = event.unitId));
+			eventBus.subscribe("chest:opened", (event) => opened.push(event));
+			eventBus.subscribe("unit:acted", (event) => (acted = event.unitId));
 
 			start();
 			openGate();

@@ -3,16 +3,14 @@ import { GameFeatureConfig } from "@/core/GameFeature";
 import { StaffConfirmedEvent, StaffRequestedEvent, MenuCancelledEvent, MenuConfirmedEvent } from "@/game.events";
 import { staffCommands } from "@/game/staff/commands/StaffCommands";
 import { StaffChoiceComponent } from "@/game/staff/components/StaffChoiceComponent";
-import { STAFF_MENU, staffRequest } from "@/game/staff/model/StaffMenus";
+import { STAFF_MENU, staffRequest } from "@/game/staff/view/StaffMenus";
 import { StaffState } from "@/game/staff/states/StaffState";
 import { StaffChoiceSystem } from "@/game/staff/systems/StaffChoiceSystem";
-import { StaffSystem, StaffTarget } from "@/game/staff/systems/StaffSystem";
+import { healingBy, staffTargetsOf, StaffTarget } from "@/game/staff/rules/Staves";
 import { BattleMapFeature } from "@/game/map/BattleMapFeature";
 import { MenuState } from "@/game/ui/states/MenuState";
-import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { spendWeaponUses } from "@/game/units/model/Inventory";
-import { InventoryEntry } from "@/game/units/model/UnitData";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { UnitComponent, InventoryEntry } from "@/game/units/components/UnitComponent";
+import { unitsInWorld, unitById, tileOf } from "@/game/units/rules/UnitLookup";
 
 /**
  * Fire Emblem's "Staff": a unit whose class trains in staves can raise one over
@@ -20,7 +18,7 @@ import { UnitSystem } from "@/game/units/systems/UnitSystem";
  * tool rather than the effect, because the staff list is where every kind of
  * staff will go - today they all heal.
  *
- *  - The [[MovementFeature]] asks [[StaffSystem]] whether the unit carries a
+ *  - The [[MovementFeature]] asks the staff rules whether the unit carries a
  *    staff with somebody wounded in reach of it, and only then offers the
  *    command. `staff:requested` opens the staff list - one row per staff in the
  *    pack, a staff with nobody in reach greyed out - the way Fire Emblem asks
@@ -77,7 +75,7 @@ export class StaffFeature extends BattleMapFeature {
 	 * it on top, so it is dropped here too, the way the move flow does.
 	 */
 	private onRequested(event: StaffRequestedEvent): void {
-		const unit = UnitSystem.byId(this.units(), event.unitId);
+		const unit = unitById(this.units(), event.unitId);
 		const anchor = unit === null ? null : this.tileOnScreen(unit);
 
 		if (unit === null || anchor === null) {
@@ -98,7 +96,7 @@ export class StaffFeature extends BattleMapFeature {
 
 	/** The unit's staves, and whether each has a wounded ally in reach from where it stands. */
 	private staffList(unit: Entity): { staves: InventoryEntry[]; reachable: boolean[] } {
-		const staves = StaffSystem.staves(unit.getComponent(UnitComponent).read());
+		const staves = UnitComponent.staves(unit.getComponent(UnitComponent).read());
 
 		return { staves, reachable: staves.map((entry) => this.targetsWith(unit, entry).length > 0) };
 	}
@@ -109,7 +107,7 @@ export class StaffFeature extends BattleMapFeature {
 			return [];
 		}
 
-		return StaffSystem.targetsOf(unit.getComponent(UnitComponent).read(), UnitSystem.tileOf(unit), staff.weapon, this.units());
+		return staffTargetsOf(unit.getComponent(UnitComponent).read(), tileOf(unit), staff.weapon, this.units());
 	}
 
 	/** A staff was picked: open the choice with the map cursor on the nearest wounded ally it reaches. */
@@ -118,7 +116,7 @@ export class StaffFeature extends BattleMapFeature {
 			return;
 		}
 
-		const unit = UnitSystem.byId(this.units(), this.healing);
+		const unit = unitById(this.units(), this.healing);
 
 		if (unit === null) {
 			this.cancel();
@@ -149,7 +147,7 @@ export class StaffFeature extends BattleMapFeature {
 		// driving the events by hand still has it on top, so drop it.
 		this.closeOpenMenu();
 
-		const tile = UnitSystem.tileOf(unit);
+		const tile = tileOf(unit);
 
 		this.stateManager.getState(StaffState).request({
 			unitId: this.idOf(unit),
@@ -185,8 +183,8 @@ export class StaffFeature extends BattleMapFeature {
 	 */
 	private raise(event: StaffConfirmedEvent): void {
 		const units = this.units();
-		const healer = UnitSystem.byId(units, event.unitId);
-		const target = UnitSystem.byId(units, event.targetId);
+		const healer = unitById(units, event.unitId);
+		const target = unitById(units, event.targetId);
 
 		if (healer === null || target === null) {
 			this.events.dispatch("staff:cancelled", { unitId: event.unitId });
@@ -194,10 +192,10 @@ export class StaffFeature extends BattleMapFeature {
 		}
 
 		const healerData = healer.getComponent(UnitComponent).read();
-		const staff = StaffSystem.staves(healerData).find((entry) => entry.id === event.staffId);
+		const staff = UnitComponent.staves(healerData).find((entry) => entry.id === event.staffId);
 		const targetComponent = target.getComponent(UnitComponent);
 		const targetData = targetComponent.read();
-		const healed = staff === undefined || staff.weapon === null ? 0 : StaffSystem.healingBy(healerData, staff.weapon, targetData);
+		const healed = staff === undefined || staff.weapon === null ? 0 : healingBy(healerData, staff.weapon, targetData);
 
 		if (staff === undefined || healed <= 0) {
 			this.events.dispatch("staff:cancelled", { unitId: event.unitId });
@@ -205,7 +203,7 @@ export class StaffFeature extends BattleMapFeature {
 		}
 
 		targetComponent.update({ ...targetData, currentHP: targetData.currentHP + healed });
-		healer.getComponent(UnitComponent).update(spendWeaponUses(healerData, staff.id, 1));
+		healer.getComponent(UnitComponent).update(UnitComponent.spendWeaponUses(healerData, staff.id, 1));
 
 		this.events.dispatch("staff:resolved", { unitId: event.unitId, targetId: event.targetId, staffId: staff.id, healed });
 	}
@@ -228,7 +226,7 @@ export class StaffFeature extends BattleMapFeature {
 
 	/** Top-left screen pixel of the tile a unit stands on. */
 	private tileOnScreen(unit: Entity): { x: number; y: number } | null {
-		const position = UnitSystem.tileOf(unit);
+		const position = tileOf(unit);
 		return this.tileToScreen(position.column, position.row);
 	}
 
@@ -237,6 +235,6 @@ export class StaffFeature extends BattleMapFeature {
 	}
 
 	private units(): Entity[] {
-		return UnitSystem.inWorld(this.world);
+		return unitsInWorld(this.world);
 	}
 }

@@ -1,6 +1,7 @@
 import { test, expect, suite } from "vitest";
-import { boostGains, canUseItem, isAnyBoost, isBoostingItem, isHealingItem, keyIndex, spendInventoryUse, useBoostingItem, useInventoryItem } from "@/game/units/model/Inventory";
-import { buildUnit, getItem, getWeapon, isStaff, LockKind, NO_BOOST, UnitDocument } from "@/game/units/model/UnitData";
+import { UnitComponent } from "@/game/units/components/UnitComponent";
+import { buildUnit, UnitDocument } from "@/game/units/content/UnitSheets";
+import { getItem, getWeapon, isStaff, LockKind, NO_BOOST } from "@/game/units/content/UnitCatalog";
 import dardanDocument from "@/assets/data/units/dardan.unit.json";
 import teutaDocument from "@/assets/data/units/teuta.unit.json";
 
@@ -24,16 +25,16 @@ suite("Consumables Test Suite", () => {
 		const drop = holding("energy-drop").inventory[1];
 		const key = holding("door-key").inventory[1];
 
-		expect(isBoostingItem(drop)).toBe(true);
-		expect(isHealingItem(drop)).toBe(false);
-		expect(isBoostingItem(key)).toBe(false);
-		expect(isHealingItem(key)).toBe(false);
-		expect(isAnyBoost(NO_BOOST)).toBe(false);
+		expect(UnitComponent.isBoostingItem(drop)).toBe(true);
+		expect(UnitComponent.isHealingItem(drop)).toBe(false);
+		expect(UnitComponent.isBoostingItem(key)).toBe(false);
+		expect(UnitComponent.isHealingItem(key)).toBe(false);
+		expect(UnitComponent.isAnyBoost(NO_BOOST)).toBe(false);
 	});
 
 	test("Using a booster raises the stat for good and spends the item", () => {
 		const before = holding("speedwing");
-		const after = useBoostingItem(before, 1);
+		const after = UnitComponent.useBoostingItem(before, 1);
 
 		expect(after.stats.speed).toBe(before.stats.speed + 2);
 		expect(after.stats.strength).toBe(before.stats.strength);
@@ -48,32 +49,32 @@ suite("Consumables Test Suite", () => {
 		const before = { ...holding("boots"), stats: { ...holding("boots").stats, movement: 5 } };
 
 		expect(getItem("boots").boost).toStrictEqual({ ...NO_BOOST, movement: 2 });
-		expect(canUseItem(before, before.inventory[1])).toBe(true);
+		expect(UnitComponent.canUseItem(before, before.inventory[1])).toBe(true);
 
-		const after = useBoostingItem(before, 1);
+		const after = UnitComponent.useBoostingItem(before, 1);
 		expect(after.stats.movement).toBe(7);
 		expect(after.inventory.map((entry) => entry.id)).toStrictEqual(["bronze-sword"]);
 
 		// One tile short of the cap: only that one tile is gained, and after it there is nothing left to use.
 		const nearCap = { ...before, stats: { ...before.stats, movement: before.maxStats.movement - 1 } };
-		expect(boostGains(nearCap, nearCap.inventory[1].item!).movement).toBe(1);
-		expect(useBoostingItem(nearCap, 1).stats.movement).toBe(nearCap.maxStats.movement);
+		expect(UnitComponent.boostGains(nearCap, nearCap.inventory[1].item!).movement).toBe(1);
+		expect(UnitComponent.useBoostingItem(nearCap, 1).stats.movement).toBe(nearCap.maxStats.movement);
 
 		const capped = { ...before, stats: { ...before.stats, movement: before.maxStats.movement } };
-		expect(canUseItem(capped, capped.inventory[1])).toBe(false);
+		expect(UnitComponent.canUseItem(capped, capped.inventory[1])).toBe(false);
 	});
 
 	test("The gains stop at the sheet's caps, and Use is not offered once there is nothing left to gain", () => {
 		const capped = holding("dracoshield");
 		capped.stats = { ...capped.stats, defense: capped.maxStats.defense - 1 };
 
-		const gains = boostGains(capped, capped.inventory[1].item!);
+		const gains = UnitComponent.boostGains(capped, capped.inventory[1].item!);
 		expect(gains.defense).toBe(1); // 2 on offer, 1 of headroom
 
 		const atCap = { ...capped, stats: { ...capped.stats, defense: capped.maxStats.defense } };
-		expect(boostGains(atCap, atCap.inventory[1].item!)).toStrictEqual(NO_BOOST);
-		expect(canUseItem(atCap, atCap.inventory[1])).toBe(false);
-		expect(useBoostingItem(atCap, 1)).toBe(atCap);
+		expect(UnitComponent.boostGains(atCap, atCap.inventory[1].item!)).toStrictEqual(NO_BOOST);
+		expect(UnitComponent.canUseItem(atCap, atCap.inventory[1])).toBe(false);
+		expect(UnitComponent.useBoostingItem(atCap, 1)).toBe(atCap);
 	});
 
 	test("A raised HP maximum lifts the current HP with it", () => {
@@ -81,7 +82,7 @@ suite("Consumables Test Suite", () => {
 		unit.inventory[1] = { ...unit.inventory[1], item: { ...unit.inventory[1].item!, boost: { ...NO_BOOST, hp: 7 } } };
 		unit.currentHP = 12;
 
-		const after = useInventoryItem(unit, 1);
+		const after = UnitComponent.useItem(unit, 1);
 
 		expect(after.stats.hp).toBe(27);
 		expect(after.currentHP).toBe(19);
@@ -89,30 +90,30 @@ suite("Consumables Test Suite", () => {
 
 	test("Use picks the right effect for the slot - a heal, a boost, or nothing for a key", () => {
 		const wounded = { ...holding("vulnerary"), currentHP: 5 };
-		expect(useInventoryItem(wounded, 1).currentHP).toBe(15);
-		expect(canUseItem(wounded, wounded.inventory[1])).toBe(true);
+		expect(UnitComponent.useItem(wounded, 1).currentHP).toBe(15);
+		expect(UnitComponent.canUseItem(wounded, wounded.inventory[1])).toBe(true);
 
 		const drop = holding("energy-drop");
-		expect(useInventoryItem(drop, 1).stats.strength).toBe(drop.stats.strength + 2);
+		expect(UnitComponent.useItem(drop, 1).stats.strength).toBe(drop.stats.strength + 2);
 
 		const key = holding("door-key");
-		expect(canUseItem(key, key.inventory[1])).toBe(false);
-		expect(useInventoryItem(key, 1)).toBe(key);
-		expect(useInventoryItem(key, 0)).toBe(key); // a sword is swung, not used
+		expect(UnitComponent.canUseItem(key, key.inventory[1])).toBe(false);
+		expect(UnitComponent.useItem(key, 1)).toBe(key);
+		expect(UnitComponent.useItem(key, 0)).toBe(key); // a sword is swung, not used
 	});
 
 	test("A key is found by what it opens, and spent a charge at a time", () => {
 		const teuta = buildUnit(teutaDocument as UnitDocument); // heal, door-key, chest-key
 
-		expect(keyIndex(teuta, LockKind.DOOR)).toBe(1);
-		expect(keyIndex(teuta, LockKind.CHEST)).toBe(2);
-		expect(keyIndex(holding("vulnerary"), LockKind.DOOR)).toBe(-1);
+		expect(UnitComponent.keyIndex(teuta, LockKind.DOOR)).toBe(1);
+		expect(UnitComponent.keyIndex(teuta, LockKind.CHEST)).toBe(2);
+		expect(UnitComponent.keyIndex(holding("vulnerary"), LockKind.DOOR)).toBe(-1);
 
 		// A one-use key is gone after the door; the chest key is still there.
-		const after = spendInventoryUse(teuta, 1);
+		const after = UnitComponent.spendUse(teuta, 1);
 		expect(after.inventory.map((entry) => entry.id)).toStrictEqual(["heal", "chest-key"]);
-		expect(keyIndex(after, LockKind.DOOR)).toBe(-1);
-		expect(spendInventoryUse(teuta, 99)).toBe(teuta);
+		expect(UnitComponent.keyIndex(after, LockKind.DOOR)).toBe(-1);
+		expect(UnitComponent.spendUse(teuta, 99)).toBe(teuta);
 	});
 
 	test("A staff is a weapon the cleric readies, and it is the one weapon type that never strikes", () => {

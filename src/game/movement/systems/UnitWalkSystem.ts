@@ -1,6 +1,6 @@
 import { Query } from "@/core/ecs/Query";
 import { UpdateSystem } from "@/core/ecs/UpdateSystem";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { WalkComponent } from "@/game/movement/components/WalkComponent";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
@@ -13,8 +13,8 @@ import { UnitComponent } from "@/game/units/components/UnitComponent";
  * actually arrived.
  */
 export class UnitWalkSystem extends UpdateSystem {
-	@GameCoreService(EventSystem)
-	private events!: EventSystem;
+	@GameCoreService(EventBus)
+	private events!: EventBus;
 
 	public initialize(): void {
 		this.queries = {

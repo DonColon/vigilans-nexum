@@ -3,7 +3,7 @@ import { i18n } from "@/core/i18n/I18n";
 import { Entity } from "@/core/ecs/Entity";
 import { World } from "@/core/ecs/World";
 import { identityTransform, TransformComponent } from "@/core/ecs/components/TransformComponent";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { Display } from "@/core/graphics/Display";
 import { GameStateManager } from "@/core/GameStateManager";
 import { InputBinding } from "@/core/input/commands/InputBinding";
@@ -16,10 +16,9 @@ import { RosterClosedEvent, RosterRequestedEvent } from "@/game.events";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
-import { parseTileMap } from "@/game/map/model/TileMaps";
-import { GridSystem } from "@/game/map/systems/GridSystem";
+import { parseTileMap } from "@/game/map/content/TileMaps";
 import { MovementFeature } from "@/game/movement/MovementFeature";
-import { GLOBAL_MENU, UnitMenuRow, globalCommandRequest } from "@/game/movement/model/UnitMenus";
+import { GLOBAL_MENU, UnitMenuRow, globalCommandRequest } from "@/game/movement/view/UnitMenus";
 import { RosterCancelCommand, RosterConfirmCommand, RosterDownCommand, RosterUpCommand, rosterCommands } from "@/game/roster/commands/RosterCommands";
 import { RosterComponent } from "@/game/roster/components/RosterComponent";
 import { RosterFeature } from "@/game/roster/RosterFeature";
@@ -27,7 +26,7 @@ import { RosterState } from "@/game/roster/states/RosterState";
 import { RosterSystem } from "@/game/roster/systems/RosterSystem";
 import { UIFeature } from "@/game/ui/UIFeature";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { UnitSystem } from "@/game/units/systems/UnitSystem";
+import { unitsInWorld, unitById } from "@/game/units/rules/UnitLookup";
 import { UnitsFeature } from "@/game/units/UnitsFeature";
 
 suite("Global Menu Test Suite", () => {
@@ -61,7 +60,7 @@ suite("Roster Test Suite", () => {
 	}
 
 	const world = ServiceRegistry.get<World>(World.name);
-	const eventSystem = ServiceRegistry.get<EventSystem>(EventSystem.name);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
 
 	world.registerComponent(TransformComponent);
 	world.registerComponent(GridComponent);
@@ -107,20 +106,20 @@ suite("Roster Test Suite", () => {
 		// releasing it by hand keeps the next press a fresh one rather than a repeat.
 		inputDevice.getCommand(commandType).reset();
 
-		eventSystem.processQueue();
+		eventBus.processQueue();
 	};
 
 	const openFromMenu = () => {
-		eventSystem.dispatch("ui:menuConfirmed", { menu: GLOBAL_MENU, row: UnitMenuRow.UNITS, index: 0, item: i18n("menu.units") });
-		eventSystem.processQueue();
-		eventSystem.processQueue(); // deliver roster:requested
+		eventBus.dispatch("ui:menuConfirmed", { menu: GLOBAL_MENU, row: UnitMenuRow.UNITS, index: 0, item: i18n("menu.units") });
+		eventBus.processQueue();
+		eventBus.processQueue(); // deliver roster:requested
 	};
 
 	beforeEach(() => {
 		stateManager.clear();
 
 		map = world.createEntity();
-		map.addComponent(GridComponent, GridSystem.of(parseTileMap(sketch), 24));
+		map.addComponent(GridComponent, GridComponent.of(parseTileMap(sketch), 24));
 		map.addComponent(TransformComponent, { ...identityTransform });
 
 		units = new UnitsFeature();
@@ -139,8 +138,8 @@ suite("Roster Test Suite", () => {
 			bindings.set(commandType as Parameters<typeof bindings.get>[0], binding);
 		}
 
-		eventSystem.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
-		eventSystem.processQueue();
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
+		eventBus.processQueue();
 	});
 
 	afterEach(() => {
@@ -158,17 +157,17 @@ suite("Roster Test Suite", () => {
 			world.unregisterEntity(entity);
 		}
 
-		eventSystem.processQueue();
+		eventBus.processQueue();
 	});
 
 	suite("Opening", () => {
 		test("The global menu's Units row asks for the list", () => {
 			const requested: RosterRequestedEvent[] = [];
-			eventSystem.subscribe("roster:requested", (event) => requested.push(event));
+			eventBus.subscribe("roster:requested", (event) => requested.push(event));
 
-			eventSystem.dispatch("ui:menuConfirmed", { menu: GLOBAL_MENU, row: UnitMenuRow.UNITS, index: 0, item: i18n("menu.units") });
-			eventSystem.processQueue();
-			eventSystem.processQueue(); // the move flow's own dispatch lands a pass later
+			eventBus.dispatch("ui:menuConfirmed", { menu: GLOBAL_MENU, row: UnitMenuRow.UNITS, index: 0, item: i18n("menu.units") });
+			eventBus.processQueue();
+			eventBus.processQueue(); // the move flow's own dispatch lands a pass later
 
 			expect(requested).toHaveLength(1);
 		});
@@ -191,9 +190,9 @@ suite("Roster Test Suite", () => {
 		});
 
 		test("Ending the turn is still the other row, and does not open anything", () => {
-			eventSystem.dispatch("ui:menuConfirmed", { menu: GLOBAL_MENU, row: UnitMenuRow.END_TURN, index: 1, item: i18n("menu.endTurn") });
-			eventSystem.processQueue();
-			eventSystem.processQueue();
+			eventBus.dispatch("ui:menuConfirmed", { menu: GLOBAL_MENU, row: UnitMenuRow.END_TURN, index: 1, item: i18n("menu.endTurn") });
+			eventBus.processQueue();
+			eventBus.processQueue();
 
 			expect(stateManager.peek()).not.toBeInstanceOf(RosterState);
 		});
@@ -218,7 +217,7 @@ suite("Roster Test Suite", () => {
 	suite("Closing", () => {
 		test("Cancel closes it and reports the row it was left on", () => {
 			const closed: RosterClosedEvent[] = [];
-			eventSystem.subscribe("roster:closed", (event) => closed.push(event));
+			eventBus.subscribe("roster:closed", (event) => closed.push(event));
 
 			openFromMenu();
 			press(RosterDownCommand);
@@ -251,21 +250,21 @@ suite("Roster Test Suite", () => {
 			press(RosterDownCommand);
 			press(RosterCancelCommand);
 
-			eventSystem.dispatch("map:closed", {});
-			eventSystem.processQueue();
+			eventBus.dispatch("map:closed", {});
+			eventBus.processQueue();
 
 			openFromMenu();
 			expect(state().read().selectedIndex).toBe(0);
 		});
 
 		test("Nothing about the army changes - it is a readout", () => {
-			const before = UnitSystem.inWorld(world).map((unit) => JSON.stringify(unit.getComponent(UnitComponent).read()));
+			const before = unitsInWorld(world).map((unit) => JSON.stringify(unit.getComponent(UnitComponent).read()));
 
 			openFromMenu();
 			press(RosterDownCommand);
 			press(RosterConfirmCommand);
 
-			expect(UnitSystem.inWorld(world).map((unit) => JSON.stringify(unit.getComponent(UnitComponent).read()))).toStrictEqual(before);
+			expect(unitsInWorld(world).map((unit) => JSON.stringify(unit.getComponent(UnitComponent).read()))).toStrictEqual(before);
 		});
 	});
 
@@ -274,16 +273,16 @@ suite("Roster Test Suite", () => {
 			openFromMenu();
 			expect(state().read().unitIds).toStrictEqual(["dardan", "elira", "teuta"]);
 
-			world.unregisterEntity(UnitSystem.byId(UnitSystem.inWorld(world), "elira") as Entity);
+			world.unregisterEntity(unitById(unitsInWorld(world), "elira") as Entity);
 
 			// The list keeps the ids it was given; the renderer is what skips the ones
 			// that have left, so the row the cursor is on stays where the player put it.
 			expect(state().read().unitIds).toStrictEqual(["dardan", "elira", "teuta"]);
-			expect(UnitSystem.byId(UnitSystem.inWorld(world), "elira")).toBeNull();
+			expect(unitById(unitsInWorld(world), "elira")).toBeNull();
 		});
 
 		test("Opening it with no player units left still opens, with nothing in it", () => {
-			for (const unit of UnitSystem.inWorld(world)) {
+			for (const unit of unitsInWorld(world)) {
 				world.unregisterEntity(unit);
 			}
 
