@@ -35,4 +35,4 @@ export {
 export type { StatusRow, StatRow, StatusColumn } from "@/game/status/model/StatusScreen";
 
 export { UnitCard, UNIT_CARD_HEIGHT, UNIT_CARD_ROWS, unitCardLines, unitCardPlacement } from "@/game/status/model/UnitCard";
-export type { UnitCardLines, UnitCardPlacement } from "@/game/status/model/UnitCard";
+export type { UnitCardLines, UnitCardBar, UnitCardPlacement } from "@/game/status/model/UnitCard";

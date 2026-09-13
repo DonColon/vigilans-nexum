@@ -29,7 +29,7 @@ export interface StatusRow {
 export interface StatRow extends StatusRow {
 	/** Where the unit is now - its wound for HP, the stat itself for the rest. */
 	current: number;
-	/** The bar's full length - the stat cap, or the maximum HP. 0 for a row with no bar (movement has no cap). */
+	/** The bar's full length - the stat cap, or the maximum HP. 0 for a row with no bar. */
 	cap: number;
 }
 
@@ -140,9 +140,9 @@ export function factionLabel(faction: UnitFaction): string {
 	return i18n(faction === UnitFaction.PLAYER ? "status.faction.player" : "status.faction.enemy");
 }
 
-/** "Swordsman - Lv 3": the line under the name. */
+/** "Swordsman - Lv 3 - Exp 45": the line under the name. The points read the same as the army list's column. */
 export function classLine(unit: UnitData): string {
-	return `${unit.classLabel} - ${i18n("roster.level")} ${unit.level}`;
+	return `${unit.classLabel} - ${i18n("roster.level")} ${unit.level} - ${i18n("roster.experience")} ${unit.experience}`;
 }
 
 /** "2 / 5": which sheet of how many the player is looking at. */
@@ -152,9 +152,9 @@ export function pageLabel(index: number, count: number): string {
 
 /**
  * The stat column: HP as the wound over the maximum, then every stat on the
- * sheet against its cap, then movement. The labels are the army list's own
- * abbreviations, so the two screens read the same. Every row has a bar except
- * movement, which has no cap to measure against.
+ * sheet against its cap, movement last - it is a stat like the rest, with
+ * Boots to raise it and a cap to stop at. The labels are the army list's own
+ * abbreviations, so the two screens read the same.
  */
 export function statusStatRows(unit: UnitData): StatRow[] {
 	const stat = (key: StatName, labelKey: string): StatRow => ({
@@ -175,7 +175,7 @@ export function statusStatRows(unit: UnitData): StatRow[] {
 		stat("luck", "roster.luck"),
 		stat("defense", "roster.defense"),
 		stat("resistance", "roster.resistance"),
-		{ label: i18n("roster.movement"), value: String(unit.movement), muted: false, current: unit.movement, cap: 0 }
+		stat("movement", "roster.movement")
 	];
 }
 

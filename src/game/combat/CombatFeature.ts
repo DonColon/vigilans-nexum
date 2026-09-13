@@ -135,6 +135,19 @@ export class CombatFeature extends BattleMapFeature {
 		attackerComponent.update(attackerAfter);
 		defenderComponent.update(defenderAfter);
 
+		// The fight is decided and both sides are still on the map - what the
+		// experience feature needs to score it before the fallen are taken off.
+		this.events.dispatch("combat:fought", {
+			attackerId: event.attackerId,
+			defenderId: event.defenderId,
+			attackerSwung: outcome.attackerSwings > 0,
+			defenderSwung: outcome.defenderSwings > 0,
+			attackerDealtDamage: outcome.strikes.some((strike) => strike.side === "attacker" && strike.damage > 0),
+			defenderDealtDamage: outcome.strikes.some((strike) => strike.side === "defender" && strike.damage > 0),
+			attackerDefeated: outcome.attackerDefeated,
+			defenderDefeated: outcome.defenderDefeated
+		});
+
 		const steps = battleAnimationSteps(armed.currentHP, defenderData.currentHP, outcome.strikes);
 
 		// With animations turned off the fight still goes through the animation

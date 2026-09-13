@@ -44,6 +44,25 @@ suite("Consumables Test Suite", () => {
 		expect(before.inventory.length).toBe(2);
 	});
 
+	test("Boots raise movement like any other stat, up to the cap", () => {
+		const before = { ...holding("boots"), stats: { ...holding("boots").stats, movement: 5 } };
+
+		expect(getItem("boots").boost).toStrictEqual({ ...NO_BOOST, movement: 2 });
+		expect(canUseItem(before, before.inventory[1])).toBe(true);
+
+		const after = useBoostingItem(before, 1);
+		expect(after.stats.movement).toBe(7);
+		expect(after.inventory.map((entry) => entry.id)).toStrictEqual(["bronze-sword"]);
+
+		// One tile short of the cap: only that one tile is gained, and after it there is nothing left to use.
+		const nearCap = { ...before, stats: { ...before.stats, movement: before.maxStats.movement - 1 } };
+		expect(boostGains(nearCap, nearCap.inventory[1].item!).movement).toBe(1);
+		expect(useBoostingItem(nearCap, 1).stats.movement).toBe(nearCap.maxStats.movement);
+
+		const capped = { ...before, stats: { ...before.stats, movement: before.maxStats.movement } };
+		expect(canUseItem(capped, capped.inventory[1])).toBe(false);
+	});
+
 	test("The gains stop at the sheet's caps, and Use is not offered once there is nothing left to gain", () => {
 		const capped = holding("dracoshield");
 		capped.stats = { ...capped.stats, defense: capped.maxStats.defense - 1 };

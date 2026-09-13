@@ -1,8 +1,7 @@
 import { test, expect, suite } from "vitest";
 import { i18n } from "@/core/i18n/I18n";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
-import { classLine } from "@/game/status/model/StatusScreen";
-import { UnitCard, UNIT_CARD_HEIGHT, unitCardLines, unitCardPlacement } from "@/game/status/model/UnitCard";
+import { UnitCard, UNIT_CARD_HEIGHT, UNIT_CARD_ROWS, unitCardLines, unitCardPlacement } from "@/game/status/model/UnitCard";
 import { unequipInventoryItem } from "@/game/units/model/Inventory";
 import { buildUnit, UnitDocument } from "@/game/units/model/UnitData";
 import dardanDocument from "@/assets/data/units/dardan.unit.json";
@@ -20,14 +19,16 @@ suite("Unit Card Test Suite", () => {
 	const tile = (column: number, row: number) => new Rectangle(column * cell, row * cell, cell, cell);
 
 	suite("Lines", () => {
-		test("Name, class and level, the wound over the maximum, the readied weapon", () => {
-			const unit = { ...dardan(), currentHP: 13 };
+		test("Name, class with the level beside it, the HP / MP / EXP bars, the readied weapon", () => {
+			const unit = { ...dardan(), currentHP: 13, experience: 45 };
 
 			expect(unitCardLines(unit)).toStrictEqual({
 				name: unit.name,
-				classLine: classLine(unit),
-				hp: `13/${unit.stats.hp}`,
-				hpRatio: 13 / unit.stats.hp,
+				className: "Swordsman",
+				level: `${i18n("roster.level")} 1`,
+				hp: { label: i18n("roster.hp"), value: `13/${unit.stats.hp}`, ratio: 13 / unit.stats.hp },
+				mp: { label: i18n("roster.mp"), value: `${unit.stats.mp}/${unit.stats.mp}`, ratio: unit.stats.mp > 0 ? 1 : 0 },
+				experience: { label: i18n("experience.label"), value: "45", ratio: 0.45 },
 				weapon: unit.weapon!.name,
 				unarmed: false
 			});
@@ -40,9 +41,18 @@ suite("Unit Card Test Suite", () => {
 			expect(lines.unarmed).toBe(true);
 		});
 
-		test("The HP bar never overflows, whatever the numbers", () => {
-			expect(unitCardLines({ ...dardan(), currentHP: 999 }).hpRatio).toBe(1);
-			expect(unitCardLines({ ...dardan(), currentHP: -3 }).hpRatio).toBe(0);
+		test("No bar ever overflows, whatever the numbers - and a unit with no magic has an empty MP bar", () => {
+			expect(unitCardLines({ ...dardan(), currentHP: 999 }).hp.ratio).toBe(1);
+			expect(unitCardLines({ ...dardan(), currentHP: -3 }).hp.ratio).toBe(0);
+
+			const unit = dardan();
+			expect(unitCardLines({ ...unit, stats: { ...unit.stats, mp: 0 } }).mp).toStrictEqual({ label: i18n("roster.mp"), value: "0/0", ratio: 0 });
+			expect(unitCardLines({ ...unit, stats: { ...unit.stats, mp: 12 } }).mp).toStrictEqual({ label: i18n("roster.mp"), value: "12/12", ratio: 1 });
+		});
+
+		test("The card has room for six rows - name, class, three bars, weapon - and the rule before the weapon", () => {
+			expect(UNIT_CARD_ROWS).toBe(6);
+			expect(UNIT_CARD_HEIGHT).toBe(UnitCard.padding * 2 + 6 * UnitCard.lineHeight + UnitCard.dividerGap);
 		});
 	});
 

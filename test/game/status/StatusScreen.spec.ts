@@ -35,7 +35,7 @@ suite("Status Screen Test Suite", () => {
 
 	suite("Header", () => {
 		test("The class line names the class and the level", () => {
-			expect(classLine(dardan())).toBe(`Swordsman - ${i18n("roster.level")} 1`);
+			expect(classLine(dardan())).toBe(`Swordsman - ${i18n("roster.level")} 1 - ${i18n("roster.experience")} 0`);
 		});
 
 		test("Each side has a label of its own, translated", () => {
@@ -67,17 +67,17 @@ suite("Status Screen Test Suite", () => {
 			expect(rows.map((row) => row.label)).toStrictEqual(
 				["hp", "mp", "strength", "magic", "dexterity", "speed", "luck", "defense", "resistance", "movement"].map((stat) => i18n(`roster.${stat}`))
 			);
-			expect(rows[rows.length - 1].value).toBe(String(unit.movement));
+			expect(rows[rows.length - 1].value).toBe(String(unit.stats.movement));
 		});
 
-		test("A stat's bar runs to its cap; movement has no cap and so no bar", () => {
+		test("A stat's bar runs to its cap - movement's too, it is a stat with Boots to raise it", () => {
 			const unit = dardan();
 			const rows = statusStatRows(unit);
 			const strength = rows.find((row) => row.label === i18n("roster.strength"));
 
 			expect(strength?.current).toBe(unit.stats.strength);
 			expect(strength?.cap).toBe(unit.maxStats.strength);
-			expect(rows[rows.length - 1].cap).toBe(0);
+			expect(rows[rows.length - 1]).toMatchObject({ current: unit.stats.movement, cap: unit.maxStats.movement });
 		});
 	});
 

@@ -63,7 +63,7 @@ export class PathPreviewSystem extends UpdateSystem {
 		const mover = UnitSystem.byId(units, movement.unitId);
 		const data = mover?.getComponent(UnitComponent).read();
 		const blocked = data ? MovementSystem.blockedTiles(UnitSystem.locations(units), data) : new Set<string>();
-		const budget = data?.movement ?? 0;
+		const budget = data?.stats.movement ?? 0;
 
 		const path = MovementSystem.contains(movement.movement, cursor.column, cursor.row) ? MovementSystem.path(gridEntity.getComponent(GridComponent).read(), origin, cursor, budget, blocked) : [];
 

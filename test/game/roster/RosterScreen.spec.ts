@@ -28,17 +28,20 @@ suite("Roster Screen Test Suite", () => {
 			expect(values["roster.name"]).toBe(unit.name);
 			expect(values["roster.class"]).toBe("Swordsman");
 			expect(values["roster.level"]).toBe("1");
+			expect(values["roster.experience"]).toBe("0");
 			// The wound, not the maximum - which is the point of listing HP at all.
 			expect(values["roster.hp"]).toBe(`12/${unit.stats.hp}`);
 			expect(values["roster.strength"]).toBe(String(unit.stats.strength));
 			expect(values["roster.defense"]).toBe(String(unit.stats.defense));
-			expect(values["roster.movement"]).toBe(String(unit.movement));
+			expect(values["roster.movement"]).toBe(String(unit.stats.movement));
 		});
 
-		test("Movement is the unit's own, so a sheet that overrides its class shows the override", () => {
+		test("Movement is the unit's own stat, so a sheet that overrides its class shows the override", () => {
 			const column = ROSTER_COLUMNS.find((entry) => entry.labelKey === "roster.movement");
 
-			expect(column?.value({ ...dardan(), movement: 7 })).toBe("7");
+			const unit = dardan();
+
+			expect(column?.value({ ...unit, stats: { ...unit.stats, movement: 7 } })).toBe("7");
 		});
 	});
 

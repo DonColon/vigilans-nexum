@@ -124,6 +124,26 @@ export interface CombatCancelledEvent extends GameEvent {
 	attackerId: string;
 }
 
+/**
+ * The dice have been rolled and the HP written - the fight is decided, though
+ * its animation is still to play and nobody has been taken off the map yet.
+ * Anything that needs both combatants still standing to score the fight (the
+ * experience it was worth) reads them here; `combat:resolved` comes once the
+ * animation has landed and the fallen are gone.
+ */
+export interface CombatFoughtEvent extends GameEvent {
+	attackerId: string;
+	defenderId: string;
+	/** Each side swung at least once - a defender with nothing in reach never does. */
+	attackerSwung: boolean;
+	defenderSwung: boolean;
+	/** At least one of the side's strikes took HP off the other. */
+	attackerDealtDamage: boolean;
+	defenderDealtDamage: boolean;
+	attackerDefeated: boolean;
+	defenderDefeated: boolean;
+}
+
 /** A fight finished. The HP changes and any deaths have already been applied. */
 export interface CombatResolvedEvent extends GameEvent {
 	attackerId: string;
@@ -161,6 +181,23 @@ export interface StaffResolvedEvent extends GameEvent {
 	staffId: string;
 	/** HP the staff put back. */
 	healed: number;
+}
+
+/**
+ * A player unit was handed experience for what it just did. The points - and
+ * the level, when one was reached - are already on the unit; `levelUp` carries
+ * what the level rolled, or null when the gain fell short of one.
+ */
+export interface ExperienceGainedEvent extends GameEvent {
+	unitId: string;
+	/** Points actually added, after clipping at the top of the ladder. */
+	gained: number;
+	levelUp: { level: number; gains: StatBoost } | null;
+}
+
+/** The experience bar (and the level-up notice, if there was one) has been shown and dismissed. */
+export interface ExperienceShownEvent extends GameEvent {
+	unitId: string;
 }
 
 /** The player chose "Door" beside a locked door - it should be opened with the key the unit carries. */
@@ -364,7 +401,10 @@ declare module "@/core/events/GameEvents" {
 		"combat:requested": CombatRequestedEvent;
 		"combat:confirmed": CombatConfirmedEvent;
 		"combat:cancelled": CombatCancelledEvent;
+		"combat:fought": CombatFoughtEvent;
 		"combat:resolved": CombatResolvedEvent;
+		"experience:gained": ExperienceGainedEvent;
+		"experience:shown": ExperienceShownEvent;
 		"staff:requested": StaffRequestedEvent;
 		"staff:confirmed": StaffConfirmedEvent;
 		"staff:cancelled": StaffCancelledEvent;

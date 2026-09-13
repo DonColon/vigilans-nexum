@@ -20,7 +20,11 @@ suite("Threat System Test Suite", () => {
 	const at = (data: UnitData, column: number, row: number): ThreatUnit => ({ data, tile: { column, row } });
 
 	/** Hasan the axe fighter, slowed to one tile so the expected sets stay small. */
-	const enemy = (overrides: Partial<UnitData> = {}) => ({ ...sheet(hasanDocument as UnitDocument), movement: 1, ...overrides });
+	const enemy = (overrides: Partial<UnitData> = {}, movement = 1): UnitData => {
+		const hasan = sheet(hasanDocument as UnitDocument);
+
+		return { ...hasan, ...overrides, stats: { ...hasan.stats, movement } };
+	};
 
 	suite("Weapon reach", () => {
 		test("A pack of swords reaches exactly one tile", () => {
@@ -61,7 +65,7 @@ suite("Threat System Test Suite", () => {
 		});
 
 		test("Terrain and the units in the way shrink it, its own tile never does", () => {
-			const unit = enemy({ movement: 2 });
+			const unit = enemy({}, 2);
 			const others = [
 				{ id: unit.id, faction: unit.faction, column: 0, row: 1 },
 				{ id: "dardan", faction: UnitFaction.PLAYER, column: 1, row: 1 }
@@ -83,7 +87,7 @@ suite("Threat System Test Suite", () => {
 		});
 
 		test("Its own side is walked through, not around - but never stood on", () => {
-			const unit = enemy({ movement: 2 });
+			const unit = enemy({}, 2);
 			const others = [
 				{ id: unit.id, faction: unit.faction, column: 0, row: 0 },
 				{ id: "besnik", faction: unit.faction, column: 1, row: 0 }

@@ -16,7 +16,7 @@ import { MapRenderSystem } from "@/game/map/systems/MapRenderSystem";
 import { MovementComponent } from "@/game/movement/components/MovementComponent";
 import { PendingMoveComponent } from "@/game/movement/components/PendingMoveComponent";
 import { WalkComponent } from "@/game/movement/components/WalkComponent";
-import { UnitCard, unitCardLines, unitCardPlacement } from "@/game/status/model/UnitCard";
+import { UnitCard, UnitCardBar, unitCardLines, unitCardPlacement } from "@/game/status/model/UnitCard";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
 import { UnitTheme } from "@/game/units/model/UnitTheme";
 import { drawUnitToken } from "@/game/units/model/UnitToken";
@@ -25,7 +25,7 @@ import { UnitSystem } from "@/game/units/systems/UnitSystem";
 /**
  * Draws the hover card over whichever unit the map cursor is resting on - a
  * speech bubble above its head, an arrow down to the token: its name, class
- * and level, an HP bar with the numbers, and the weapon it has readied. It
+ * and level, HP / MP / EXP bars with their numbers, and the weapon it has readied. It
  * follows the cursor, so it changes as the player moves over
  * the map, and it is up only while the player is browsing the map with
  * nothing in hand: never over a menu, a forecast or a screen pushed on top -
@@ -114,19 +114,37 @@ export class UnitCardRenderSystem extends MapRenderSystem {
 		this.text(graphics, lines.name, left, rowTop, UnitCard.name, TextAlign.LEFT);
 		rowTop += UnitCard.lineHeight;
 
-		this.text(graphics, lines.classLine, left, rowTop, UnitCard.label, TextAlign.LEFT);
+		// The class on the left, the level on the right - the two never collide, however long the class name.
+		this.text(graphics, lines.className, left, rowTop, UnitCard.label, TextAlign.LEFT);
+		this.text(graphics, lines.level, right, rowTop, UnitCard.label, TextAlign.RIGHT);
 		rowTop += UnitCard.lineHeight;
 
-		// The HP row: the numbers on the right, the bar filling what is left of the line.
-		graphics.fontStyle(UnitCard.font);
-		const hpWidth = Math.ceil(graphics.measureText(lines.hp).width);
-		const barWidth = right - hpWidth - UnitCard.padding - (x + UnitCard.padding);
+		// The three bars, each labelled on the left and numbered on the right: the
+		// wound in the faction's colour, then magic, then the way to the next level.
+		for (const [bar, fill] of [
+			[lines.hp, UnitTheme.faction[sheet.faction].body],
+			[lines.mp, UnitCard.mp],
+			[lines.experience, UnitCard.experience]
+		] as const) {
+			this.renderBarRow(graphics, bar, x + UnitCard.padding, right, rowTop, fill);
+			rowTop += UnitCard.lineHeight;
+		}
 
-		this.renderBar(graphics, x + UnitCard.padding, Math.round(rowTop + UnitCard.lineHeight / 2 - UnitCard.barHeight / 2), barWidth, lines.hpRatio, UnitTheme.faction[sheet.faction].body);
-		this.text(graphics, lines.hp, right, rowTop, UnitCard.value, TextAlign.RIGHT);
-		rowTop += UnitCard.lineHeight;
+		// A rule sets the weapon apart from the numbers above it.
+		graphics.fillColor(UnitCard.divider).fillRectangle(new Rectangle(x + UnitCard.padding, Math.round(rowTop + UnitCard.dividerGap / 2), card.getWidth() - 2 * UnitCard.padding, 1));
+		rowTop += UnitCard.dividerGap;
 
 		this.text(graphics, lines.weapon, x + UnitCard.padding, rowTop, lines.unarmed ? UnitCard.muted : UnitCard.value, TextAlign.LEFT);
+	}
+
+	/** One bar row: its label, the bar filling the middle of the line, the numbers on the right. */
+	private renderBarRow(graphics: Graphics, bar: UnitCardBar, left: number, right: number, rowTop: number, fill: Color): void {
+		const barX = left + UnitCard.barLabelWidth;
+		const barWidth = right - UnitCard.barValueWidth - UnitCard.barValueGap - barX;
+
+		this.text(graphics, bar.label, left, rowTop, UnitCard.label, TextAlign.LEFT);
+		this.renderBar(graphics, barX, Math.round(rowTop + UnitCard.lineHeight / 2 - UnitCard.barHeight / 2), barWidth, bar.ratio, fill);
+		this.text(graphics, bar.value, right, rowTop, UnitCard.value, TextAlign.RIGHT);
 	}
 
 	/**
@@ -144,7 +162,7 @@ export class UnitCardRenderSystem extends MapRenderSystem {
 		graphics.fillColor(UnitCard.plate).fillPolygon(new Polygon([new Vector2D(anchorX - width / 2, base), new Vector2D(anchorX + width / 2, base), new Vector2D(anchorX, tip)]));
 	}
 
-	/** The HP bar: a dark border, the empty track, then the faction-coloured fill - the token's own bar, wider. */
+	/** A bar: a dark border, the empty track, then the fill - the token's own HP bar, wider. */
 	private renderBar(graphics: Graphics, x: number, y: number, width: number, ratio: number, fill: Color): void {
 		if (width <= 0) {
 			return;

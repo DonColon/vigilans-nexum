@@ -36,6 +36,14 @@
 			},
 			"description": "A feather that never settles. Permanently raises Speed by 2."
 		},
+		"boots": {
+			"name": "Boots",
+			"uses": 1,
+			"boost": {
+				"movement": 2
+			},
+			"description": "Light, well-made boots. Permanently raise Movement by 2."
+		},
 		"dracoshield": {
 			"name": "Dracoshield",
 			"uses": 1,

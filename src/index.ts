@@ -1,6 +1,7 @@
 import { Game } from "@/core/Game";
 import { gameConfiguration } from "@/game.config";
 import { CombatFeature } from "@/game/combat";
+import { ExperienceFeature } from "@/game/experience";
 import { ConvoyFeature } from "@/game/convoy";
 import { StaffFeature } from "@/game/staff";
 import { LocksFeature } from "@/game/locks";
@@ -36,6 +37,10 @@ game.install(new CombatFeature({ dependencies: [units] }));
 // The staff list and target choice the "Staff" command opens; needs the units
 // on the map and the UI feature for the list.
 game.install(new StaffFeature({ dependencies: [units, ui] }));
+// The experience a fight or a heal is worth, and the level it may reach: needs
+// the units to hand the points to and the UI feature for the level-up notice.
+// Installed after the combat and staff features it scores.
+game.install(new ExperienceFeature({ dependencies: [units, ui] }));
 // The conversations the "Talk" command plays; needs the units on the map and
 // the UI feature for the textbox they are shown in.
 game.install(new TalkFeature({ dependencies: [units, ui] }));

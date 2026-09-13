@@ -7,7 +7,7 @@ export { UnitSystem } from "@/game/units/systems/UnitSystem";
 export type { UnitLocation } from "@/game/units/systems/UnitSystem";
 export { UnitRenderSystem } from "@/game/units/systems/UnitRenderSystem";
 
-export { buildUnit, resolveInventoryEntry, UnitFaction, InventoryKind, INVENTORY_SIZE } from "@/game/units/model/UnitData";
+export { buildUnit, resolveInventoryEntry, UnitFaction, InventoryKind, INVENTORY_SIZE, LEVEL_UP_EXPERIENCE, MAX_LEVEL } from "@/game/units/model/UnitData";
 export type { UnitData, UnitDocument, UnitStats, InventoryEntry } from "@/game/units/model/UnitData";
 
 // The rulebook the sheets resolve against - loaded from the asset bundle, not
@@ -22,8 +22,10 @@ export {
 	hasUnitCatalogs,
 	WeaponType,
 	LockKind,
+	ClassTier,
 	isStaff,
 	STAT_NAMES,
+	MOVEMENT_CAP,
 	NO_BOOST,
 	CATALOG_ASSETS
 } from "@/game/units/model/UnitCatalog";

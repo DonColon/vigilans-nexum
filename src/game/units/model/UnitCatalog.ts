@@ -55,6 +55,12 @@ export interface WeaponData extends JsonSchema {
 	minRange: number;
 	maxRange: number;
 	uses: number;
+	/**
+	 * Experience one use of a staff earns its wielder - Radiant Dawn prints it on
+	 * the staff's description. 0 for anything that is swung rather than raised:
+	 * a fight is scored on the opponent, not the weapon.
+	 */
+	experience: number;
 }
 
 /**
@@ -80,16 +86,27 @@ export const LockKind = {
 
 const lockKindValues = new Set<string>(Object.values(LockKind));
 
-/** The stat names a booster may raise - the sheet's eight-plus-one. */
-export type StatName = "hp" | "mp" | "strength" | "magic" | "dexterity" | "speed" | "luck" | "defense" | "resistance";
+/**
+ * The stat names a booster may raise - the sheet's eight-plus-one, and
+ * movement. Movement is a stat like the others: it starts at what the class
+ * grants, but Boots raise it for good, so a unit's own tiles can drift away
+ * from its class's.
+ */
+export type StatName = "hp" | "mp" | "strength" | "magic" | "dexterity" | "speed" | "luck" | "defense" | "resistance" | "movement";
 
-export const STAT_NAMES: readonly StatName[] = ["hp", "mp", "strength", "magic", "dexterity", "speed", "luck", "defense", "resistance"];
+export const STAT_NAMES: readonly StatName[] = ["hp", "mp", "strength", "magic", "dexterity", "speed", "luck", "defense", "resistance", "movement"];
+
+/**
+ * The cap a sheet's movement stops at when it does not name its own - Fire
+ * Emblem's usual ceiling, however many pairs of Boots a unit is fed.
+ */
+export const MOVEMENT_CAP = 15;
 
 /** The permanent stat gains a consumable grants, one entry per stat, zero where it grants nothing. */
 export type StatBoost = Record<StatName, number>;
 
 /** A boost that raises nothing - what every item without a `boost` block resolves to. */
-export const NO_BOOST: StatBoost = { hp: 0, mp: 0, strength: 0, magic: 0, dexterity: 0, speed: 0, luck: 0, defense: 0, resistance: 0 };
+export const NO_BOOST: StatBoost = { hp: 0, mp: 0, strength: 0, magic: 0, dexterity: 0, speed: 0, luck: 0, defense: 0, resistance: 0, movement: 0 };
 
 /**
  * A consumable as authored in `catalog/items.json` - anything a unit carries
@@ -111,13 +128,37 @@ export interface ItemData extends JsonSchema {
 	description: string;
 }
 
+/**
+ * Where a class sits on its promotion ladder - Radiant Dawn's three tiers. A
+ * `base` class is the one a unit starts in; `second` is what it promotes to and
+ * `third` what that promotes to. The tier is what the experience formulas read
+ * to weigh a level: a level 1 unit in a second-tier class fights like a level 21.
+ */
+export type ClassTier = (typeof ClassTier)[keyof typeof ClassTier];
+
+export const ClassTier = {
+	BASE: "base",
+	SECOND: "second",
+	THIRD: "third"
+} as const;
+
+const classTierValues = new Set<string>(Object.values(ClassTier));
+
+export function assertClassTier(value: string, where: string): ClassTier {
+	if (!classTierValues.has(value)) {
+		throw new GameError(`${where} has unknown class tier "${value}"`);
+	}
+
+	return value as ClassTier;
+}
+
 /** A class as authored in `catalog/classes.json`. */
 export interface UnitClassData {
 	id: string;
 	name: string;
-	tier: string;
+	tier: ClassTier;
 	weaponTypes: WeaponType[];
-	/** Tiles of movement the class is granted before terrain cost. */
+	/** Tiles of movement the class grants - the `movement` stat of a sheet that does not set its own. */
 	movement: number;
 	ability: string;
 	promotesTo: string[];
@@ -125,7 +166,7 @@ export interface UnitClassData {
 
 /** The catalog entries as they sit on disk, before their weapon types are checked. */
 type RawClass = { name: string; tier: string; weaponTypes: string[]; movement: number; ability: string; promotesTo: string[] };
-type RawWeapon = { name: string; type: string; rank: string; might: number; hit: number; critical: number; weight: number; minRange: number; maxRange: number; uses: number };
+type RawWeapon = { name: string; type: string; rank: string; might: number; hit: number; critical: number; weight: number; minRange: number; maxRange: number; uses: number; experience?: number };
 type RawItem = { name: string; uses: number; heal?: HealAmount; boost?: Partial<StatBoost>; unlocks?: string; description: string };
 
 /** The three catalog documents: a `format` / `version` header over a keyed record. */
@@ -205,7 +246,7 @@ export function getWeapon(id: string): WeaponData {
 		throw new GameError(`Weapon "${id}" is not in the catalog`);
 	}
 
-	return { id, ...weapon, type: assertWeaponType(weapon.type, `Weapon "${id}"`) };
+	return { id, experience: 0, ...weapon, type: assertWeaponType(weapon.type, `Weapon "${id}"`) };
 }
 
 /** Resolves a consumable id against the item catalog. */
@@ -235,7 +276,7 @@ export function getUnitClass(id: string): UnitClassData {
 
 	const weaponTypes = unitClass.weaponTypes.map((type) => assertWeaponType(type, `Class "${id}"`));
 
-	return { id, ...unitClass, weaponTypes };
+	return { id, ...unitClass, tier: assertClassTier(unitClass.tier, `Class "${id}"`), weaponTypes };
 }
 
 /**

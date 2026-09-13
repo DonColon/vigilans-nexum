@@ -6,8 +6,8 @@
 	"faction": "player",
 	"class": "swordsman",
 	"level": 1,
+	"experience": 90,
 	"weapon": "bronze-sword",
-	"movement": 99,
 	"inventory": ["bronze-sword", "iron-sword", "iron-blade", "vulnerary", "door-key", "chest-key"],
 	"commander": true,
 	"stats": {
@@ -19,7 +19,8 @@
 		"speed": 9,
 		"luck": 7,
 		"defense": 6,
-		"resistance": 2
+		"resistance": 2,
+		"movement": 99
 	},
 	"growths": {
 		"hp": 80,

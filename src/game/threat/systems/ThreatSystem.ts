@@ -73,7 +73,7 @@ export class ThreatSystem {
 	public static rangeOf(grid: GridData, unit: ThreatUnit, others: readonly UnitLocation[]): ThreatRange {
 		const blocked = MovementSystem.blockedTiles(others, unit.data);
 		const occupied = MovementSystem.occupiedTiles(others, unit.data.id);
-		const reachable = MovementSystem.reachable(grid, unit.tile, unit.data.movement, blocked, occupied);
+		const reachable = MovementSystem.reachable(grid, unit.tile, unit.data.stats.movement, blocked, occupied);
 		const reach = ThreatSystem.weaponReach(unit.data);
 
 		return {

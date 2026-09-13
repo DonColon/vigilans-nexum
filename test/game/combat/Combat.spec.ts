@@ -1,5 +1,6 @@
 import { test, expect, suite, beforeEach, afterEach } from "vitest";
 import { i18n } from "@/core/i18n/I18n";
+import { CombatFoughtEvent } from "@/game.events";
 import { Entity } from "@/core/ecs/Entity";
 import { World } from "@/core/ecs/World";
 import { identityTransform, TransformComponent } from "@/core/ecs/components/TransformComponent";
@@ -321,7 +322,9 @@ suite("Combat Flow Test Suite", () => {
 
 	test("A defeated unit is taken off the map and reported", () => {
 		let died: string | null = null;
+		let fought: CombatFoughtEvent | null = null;
 		eventSystem.subscribe("unit:died", (event) => (died = event.unitId));
+		eventSystem.subscribe("combat:fought", (event) => (fought = event));
 
 		// Hand Hasan a sliver of HP so any connecting hit finishes him.
 		moveTo(4, 13);
@@ -336,6 +339,9 @@ suite("Combat Flow Test Suite", () => {
 		expect(died).toBeNull();
 		expect(sheet("hasan").currentHP).toBe(0);
 		expect(unit("hasan")).not.toBeNull();
+
+		// The decided fight was reported as soon as the dice fell, with both sides still standing to score it.
+		expect(fought).toMatchObject({ attackerId: "dardan", defenderId: "hasan", attackerSwung: true, attackerDealtDamage: true, defenderDefeated: true, attackerDefeated: false });
 
 		finishBattleAnimation();
 

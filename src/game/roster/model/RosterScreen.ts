@@ -45,9 +45,11 @@ const STAT_WIDTH = 74;
  * "18/26" is what the player actually wants to see, not a maximum.
  */
 export const ROSTER_COLUMNS: readonly RosterColumn[] = [
-	{ labelKey: "roster.name", width: 280, align: TextAlign.LEFT, value: (unit) => unit.name },
-	{ labelKey: "roster.class", width: 230, align: TextAlign.LEFT, value: (unit) => unit.classLabel },
+	{ labelKey: "roster.name", width: 250, align: TextAlign.LEFT, value: (unit) => unit.name },
+	{ labelKey: "roster.class", width: 210, align: TextAlign.LEFT, value: (unit) => unit.classLabel },
 	{ labelKey: "roster.level", width: 70, align: TextAlign.CENTER, value: (unit) => String(unit.level) },
+	// Where the unit stands towards its next level - the same points the unit sheet reads.
+	{ labelKey: "roster.experience", width: 70, align: TextAlign.CENTER, value: (unit) => String(unit.experience) },
 	{ labelKey: "roster.hp", width: 130, align: TextAlign.CENTER, value: (unit) => `${unit.currentHP}/${unit.stats.hp}` },
 	{ labelKey: "roster.mp", width: STAT_WIDTH, align: TextAlign.CENTER, value: (unit) => String(unit.stats.mp) },
 	{ labelKey: "roster.strength", width: STAT_WIDTH, align: TextAlign.CENTER, value: (unit) => String(unit.stats.strength) },
@@ -57,7 +59,7 @@ export const ROSTER_COLUMNS: readonly RosterColumn[] = [
 	{ labelKey: "roster.luck", width: STAT_WIDTH, align: TextAlign.CENTER, value: (unit) => String(unit.stats.luck) },
 	{ labelKey: "roster.defense", width: STAT_WIDTH, align: TextAlign.CENTER, value: (unit) => String(unit.stats.defense) },
 	{ labelKey: "roster.resistance", width: STAT_WIDTH, align: TextAlign.CENTER, value: (unit) => String(unit.stats.resistance) },
-	{ labelKey: "roster.movement", width: 80, align: TextAlign.CENTER, value: (unit) => String(unit.movement) }
+	{ labelKey: "roster.movement", width: 80, align: TextAlign.CENTER, value: (unit) => String(unit.stats.movement) }
 ];
 
 /** Width the table needs: its columns plus the panel's own padding. */

@@ -3,14 +3,14 @@ import { Dimension } from "@/core/math/geometry/Dimension";
 import { FontStyleSettings } from "@/core/graphics/styles/text/FontStyle";
 import { i18n } from "@/core/i18n/I18n";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
-import { classLine } from "@/game/status/model/StatusScreen";
-import { UnitData } from "@/game/units/model/UnitData";
+import { LEVEL_UP_EXPERIENCE, UnitData } from "@/game/units/model/UnitData";
 
 /**
  * The card that pops up over a unit while the cursor rests on it - Fire
  * Emblem's hover window, drawn as a bubble above the token with an arrow down
- * to it: who it is, what it is, how hurt it is and what it is
- * holding, at a glance and without opening anything. Drawn on the same dark
+ * to it: who it is, what it is and how far along its level, how hurt and
+ * how much magic it has left, how close its next level is, and what it is
+ * holding - at a glance and without opening anything. Drawn on the same dark
  * plate, in the same small pixel font, as the terrain readout in the corner,
  * so the two read as one HUD.
  *
@@ -36,12 +36,20 @@ export const UnitCard = {
 	/** Baseline-to-baseline distance of the rows. */
 	lineHeight: 20,
 	/** Width of the plate - fixed, so it never jitters as the cursor moves between units. */
-	width: 232,
+	width: 248,
+	/** Room a bar row keeps on its left for its label - "HP", "MP", "EXP". */
+	barLabelWidth: 36,
+	/** Room a bar row keeps on its right for its numbers - "20/20" at the widest. */
+	barValueWidth: 52,
+	/** Breathing room between the end of a bar and the numbers beside it. */
+	barValueGap: 10,
+	/** Extra height between the bars and the weapon line, for the rule drawn across it. */
+	dividerGap: 8,
 	/** Radius of the token drawn on the card's left. */
 	tokenRadius: 14,
 	/** Gap between the token and the text beside it. */
 	tokenGap: 8,
-	/** Thickness of the HP bar. */
+	/** Thickness of the bars. */
 	barHeight: 6,
 
 	font: { size: "16px", family: LABEL_FAMILY, weight: "normal" } as FontStyleSettings,
@@ -58,42 +66,68 @@ export const UnitCard = {
 	value: Color.hex("#f3ecd9"),
 	/** A unit with nothing readied. */
 	muted: Color.hex("#6f7683"),
-	/** The empty channel of the HP bar. */
+	/** The empty channel of a bar. */
 	track: Color.hex("#2b3345"),
-	/** A dark border around the HP bar, so it reads on the plate. */
-	barOutline: Color.hex("#0d121b")
+	/** A dark border around a bar, so it reads on the plate. */
+	barOutline: Color.hex("#0d121b"),
+	/** The rule between the bars and the weapon line - the same faint gold the unit sheet rules its columns with. */
+	divider: Color.hex("#c8a86e66"),
+	/** The MP bar's fill - a violet, so it never reads as a second HP bar. */
+	mp: Color.hex("#b389f5"),
+	/** The experience bar's fill - the same blue the bar after a fight fills in. */
+	experience: Color.hex("#7fb2ff")
 } as const;
 
-/** Name, class, the HP bar, the weapon: the card is always this tall. */
-export const UNIT_CARD_ROWS = 4;
+/** Name, class and level, the HP / MP / EXP bars, the weapon: the card is always this tall. */
+export const UNIT_CARD_ROWS = 6;
 
-/** Height of the plate - fixed, whatever the unit, for the same reason the width is. */
-export const UNIT_CARD_HEIGHT = UnitCard.padding * 2 + UNIT_CARD_ROWS * UnitCard.lineHeight;
+/** Height of the plate - fixed, whatever the unit, for the same reason the width is. The rule before the weapon line takes its own gap. */
+export const UNIT_CARD_HEIGHT = UnitCard.padding * 2 + UNIT_CARD_ROWS * UnitCard.lineHeight + UnitCard.dividerGap;
+
+/** One bar of the card: what it measures, the numbers beside it and how full it is. */
+export interface UnitCardBar {
+	/** "HP", "MP", "EXP" - the army list's own abbreviations. */
+	label: string;
+	/** "12/26" for a pool, "45" for experience. */
+	value: string;
+	/** 0-1, how full the bar is. */
+	ratio: number;
+}
 
 /** What the card says about a unit, line by line. */
 export interface UnitCardLines {
 	name: string;
-	/** "Swordsman - Lv 3" */
-	classLine: string;
-	/** "12/26" */
-	hp: string;
-	/** 0-1, how much of its HP the unit has left - the bar. */
-	hpRatio: number;
+	/** "Swordsman" */
+	className: string;
+	/** "Lv 3" - on the right of the class line. */
+	level: string;
+	/** The wound over the maximum. */
+	hp: UnitCardBar;
+	/** Magic left over the maximum - a unit without magic has an empty bar over "0/0". */
+	mp: UnitCardBar;
+	/** Points towards the next level, over a hundred. */
+	experience: UnitCardBar;
 	/** The readied weapon, or the "unarmed" label. */
 	weapon: string;
 	/** Nothing is readied - the weapon line is drawn muted. */
 	unarmed: boolean;
 }
 
+/** A bar's fill, clipped so it never overflows whatever the numbers say. */
+function ratio(current: number, maximum: number): number {
+	return maximum > 0 ? Math.max(0, Math.min(1, current / maximum)) : 0;
+}
+
 /** The lines of the card for this unit. */
 export function unitCardLines(unit: UnitData): UnitCardLines {
-	const maxHP = unit.stats.hp;
-
 	return {
 		name: unit.name,
-		classLine: classLine(unit),
-		hp: `${unit.currentHP}/${maxHP}`,
-		hpRatio: maxHP > 0 ? Math.max(0, Math.min(1, unit.currentHP / maxHP)) : 0,
+		className: unit.classLabel,
+		level: `${i18n("roster.level")} ${unit.level}`,
+		hp: { label: i18n("roster.hp"), value: `${unit.currentHP}/${unit.stats.hp}`, ratio: ratio(unit.currentHP, unit.stats.hp) },
+		// No MP is spent by anything yet, so the pool is always full.
+		mp: { label: i18n("roster.mp"), value: `${unit.stats.mp}/${unit.stats.mp}`, ratio: ratio(unit.stats.mp, unit.stats.mp) },
+		experience: { label: i18n("experience.label"), value: String(unit.experience), ratio: ratio(unit.experience, LEVEL_UP_EXPERIENCE) },
 		weapon: unit.weapon === null ? i18n("status.unarmed") : unit.weapon.name,
 		unarmed: unit.weapon === null
 	};

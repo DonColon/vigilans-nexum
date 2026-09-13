@@ -1,19 +1,24 @@
 import { GameError } from "@/core/GameError";
 import { JsonSchema } from "@/core/ecs/JsonSchema";
-import { getItem, getUnitClass, getWeapon, isCatalogItem, isCatalogWeapon, ItemData, WeaponData, WeaponType } from "@/game/units/model/UnitCatalog";
+import { ClassTier, getItem, getUnitClass, getWeapon, isCatalogItem, isCatalogWeapon, ItemData, MOVEMENT_CAP, WeaponData, WeaponType } from "@/game/units/model/UnitCatalog";
 
 /**
  * The catalog vocabulary lives in [[UnitCatalog]], which owns the rulebook the
  * sheets resolve against. It is re-exported here so nothing that already reads
  * a weapon or an item off this module has to learn a second import path.
  */
-export { getWeapon, getItem, getUnitClass, WeaponType, LockKind, isStaff, STAT_NAMES, NO_BOOST } from "@/game/units/model/UnitCatalog";
+export { getWeapon, getItem, getUnitClass, WeaponType, LockKind, ClassTier, isStaff, STAT_NAMES, NO_BOOST, MOVEMENT_CAP } from "@/game/units/model/UnitCatalog";
 export type { WeaponData, ItemData, UnitClassData, HealAmount, StatBoost, StatName } from "@/game/units/model/UnitCatalog";
 
 /**
  * The eight-plus-one attributes every unit carries, matching the character
- * sheets in the wiki (`design/catalog`). Growth rates and stat caps use the
- * same shape - a percentage per level for growths, a ceiling for caps.
+ * sheets in the wiki (`design/catalog`), plus movement. Growth rates and stat
+ * caps use the same shape - a percentage per level for growths, a ceiling for
+ * caps.
+ *
+ * Movement is the odd one out on disk: a sheet may leave it off, in which case
+ * the class decides (see {@link SheetStats}). Resolved, it is always there, so
+ * a booster can raise it like any other stat.
  */
 export interface UnitStats extends JsonSchema {
 	hp: number;
@@ -25,7 +30,18 @@ export interface UnitStats extends JsonSchema {
 	luck: number;
 	defense: number;
 	resistance: number;
+	/** Tiles of movement before per-tile terrain cost. */
+	movement: number;
 }
+
+/**
+ * A stat block as a sheet writes it: every stat but movement, which the class
+ * fills in when the sheet is silent. `stats.movement` is for the character who
+ * is meant to be quicker (or slower) than the rest of their class;
+ * `growths.movement` and `maxStats.movement` are all but never set - movement
+ * does not grow with a level, and {@link MOVEMENT_CAP} is the usual ceiling.
+ */
+export type SheetStats = Omit<UnitStats, "movement"> & { movement?: number };
 
 const STAT_KEYS: (keyof UnitStats)[] = ["hp", "mp", "strength", "magic", "dexterity", "speed", "luck", "defense", "resistance"];
 
@@ -52,6 +68,19 @@ export const InventoryKind = {
  * taken goes to the army convoy instead - see src/game/convoy.
  */
 export const INVENTORY_SIZE = 8;
+
+/**
+ * Experience a level is worth: the hundredth point levels the unit up and the
+ * count starts over, so a sheet never carries more than 99. How the points are
+ * earned is the experience feature's - see src/game/experience.
+ */
+export const LEVEL_UP_EXPERIENCE = 100;
+
+/**
+ * The level a class tops out at - Radiant Dawn's twenty per tier. A unit at
+ * the top holds at 99 points until it promotes (which is not modelled yet).
+ */
+export const MAX_LEVEL = 20;
 
 /**
  * One line of a unit's pack, resolved from the catalogs. Weapons carry a
@@ -98,17 +127,15 @@ export interface UnitDocument {
 	 * just the equipped weapon.
 	 */
 	inventory?: string[];
-	/**
-	 * Tiles of movement, overriding what the class grants. For the character who
-	 * is meant to be quicker (or slower) than the rest of their class; left out,
-	 * the class decides.
-	 */
-	movement?: number;
+	/** Experience towards the next level, 0-99. Left out, the unit starts its level fresh. */
+	experience?: number;
 	/** Marks the army's leader - the cursor starts on this unit at the top of a battle. */
 	commander?: boolean;
-	stats: UnitStats;
-	growths: UnitStats;
-	maxStats: UnitStats;
+	/** Marks a chapter's boss - felling one is worth a good deal more experience. */
+	boss?: boolean;
+	stats: SheetStats;
+	growths: SheetStats;
+	maxStats: SheetStats;
 }
 
 /**
@@ -123,11 +150,15 @@ export interface UnitData extends JsonSchema {
 	faction: UnitFaction;
 	className: string;
 	classLabel: string;
+	/** Which rung of the promotion ladder the class is on - what a level is worth in a fight. */
+	classTier: ClassTier;
 	level: number;
-	/** Tiles of movement before per-tile terrain cost - the sheet's own, or the class's. */
-	movement: number;
+	/** Experience towards the next level, 0-99; the hundredth point is the level - see src/game/experience. */
+	experience: number;
 	/** The army's leader - see `CommanderComponent`. */
 	commander: boolean;
+	/** The chapter's boss - worth extra experience to whoever fells it. */
+	boss: boolean;
 	weaponTypes: WeaponType[];
 	stats: UnitStats;
 	growths: UnitStats;
@@ -140,7 +171,13 @@ export interface UnitData extends JsonSchema {
 	hasMoved: boolean;
 }
 
-function assertStats(value: unknown, where: string): UnitStats {
+/**
+ * Checks a sheet's stat block and fills in its movement: the block's own when
+ * it names one, else `classMovement`. A movement that is named has to be a
+ * whole number of tiles at or above `minimumMovement` - one for the stats
+ * themselves (a unit that cannot move is a statue), zero for growths and caps.
+ */
+function assertStats(value: unknown, where: string, classMovement: number, minimumMovement: number): UnitStats {
 	if (typeof value !== "object" || value === null) {
 		throw new GameError(`${where} is missing its stat block`);
 	}
@@ -153,7 +190,13 @@ function assertStats(value: unknown, where: string): UnitStats {
 		}
 	}
 
-	return value as UnitStats;
+	const movement = stats.movement ?? classMovement;
+
+	if (!Number.isInteger(movement) || (movement as number) < minimumMovement) {
+		throw new GameError(`${where} needs a movement of at least ${minimumMovement} whole tiles, got ${movement}`);
+	}
+
+	return { ...(value as UnitStats), movement: movement as number };
 }
 
 /**
@@ -213,8 +256,8 @@ export function buildUnit(document: UnitDocument): UnitData {
 		throw new GameError(`Unit "${document.id}" needs a positive integer level, got ${document.level}`);
 	}
 
-	if (document.movement !== undefined && (!Number.isInteger(document.movement) || document.movement <= 0)) {
-		throw new GameError(`Unit "${document.id}" needs a positive integer movement, got ${document.movement}`);
+	if (document.experience !== undefined && (!Number.isInteger(document.experience) || document.experience < 0 || document.experience >= LEVEL_UP_EXPERIENCE)) {
+		throw new GameError(`Unit "${document.id}" needs an experience of 0 to ${LEVEL_UP_EXPERIENCE - 1}, got ${document.experience}`);
 	}
 
 	const unitClass = getUnitClass(document.class);
@@ -224,7 +267,11 @@ export function buildUnit(document: UnitDocument): UnitData {
 		throw new GameError(`Unit "${document.id}" is a ${unitClass.name} and cannot wield a ${weapon.type}`);
 	}
 
-	const stats = assertStats(document.stats, `Unit "${document.id}"`);
+	// Movement starts at what the class grants unless the sheet says otherwise;
+	// it never grows with a level, and it stops at the usual cap.
+	const stats = assertStats(document.stats, `Unit "${document.id}"`, unitClass.movement, 1);
+	const growths = assertStats(document.growths, `Unit "${document.id}" growths`, 0, 0);
+	const maxStats = assertStats(document.maxStats, `Unit "${document.id}" caps`, MOVEMENT_CAP, 0);
 
 	const packIds = [...(document.inventory ?? [document.weapon])];
 
@@ -245,13 +292,15 @@ export function buildUnit(document: UnitDocument): UnitData {
 		faction: document.faction,
 		className: unitClass.id,
 		classLabel: unitClass.name,
+		classTier: unitClass.tier,
 		level: document.level,
-		movement: document.movement ?? unitClass.movement,
+		experience: document.experience ?? 0,
 		commander: document.commander ?? false,
+		boss: document.boss ?? false,
 		weaponTypes: [...unitClass.weaponTypes],
 		stats,
-		growths: assertStats(document.growths, `Unit "${document.id}"`),
-		maxStats: assertStats(document.maxStats, `Unit "${document.id}"`),
+		growths,
+		maxStats,
 		currentHP: stats.hp,
 		weapon: equippedEntry?.weapon ?? weapon,
 		inventory,

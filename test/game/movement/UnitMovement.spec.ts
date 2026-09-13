@@ -116,7 +116,9 @@ suite("Unit Movement Test Suite", () => {
 		// sheet cannot quietly delete those cases by putting the whole map in reach.
 		for (const id of ["dardan", "elira"]) {
 			const component = unit(id).getComponent(UnitComponent);
-			component.update({ ...component.read(), movement: TEST_MOVEMENT });
+			const data = component.read();
+
+			component.update({ ...data, stats: { ...data.stats, movement: TEST_MOVEMENT } });
 		}
 
 		// Dardan's sheet also carries the fort's keys; this suite is about the
