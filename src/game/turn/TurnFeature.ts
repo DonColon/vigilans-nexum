@@ -9,17 +9,22 @@ import { TurnRenderSystem } from "@/game/turn/systems/TurnRenderSystem";
 import { TurnSystem } from "@/game/turn/systems/TurnSystem";
 
 /**
- * The battle turn counter. It owns the `TurnComponent`, shows it in the map's
- * top-left corner (`TurnRenderSystem`) and ends it - on `turn:end` from the
- * global command menu, or on its own once every player unit has acted
- * (`unit:acted`). The end is only marked ([[TurnFlowSystem]]); [[TurnSystem]]
- * completes it once nothing is left over the map - the last action's
- * experience bar or popup seen off - bumping the counter and waking every
- * player unit back up.
+ * The battle turn counter and its phases. It owns the `TurnComponent` - the
+ * turn number and whose phase it is - shows the number in the map's top-left
+ * corner (`TurnRenderSystem`) and ends a phase: on `turn:end` from the global
+ * command menu (or from the enemy phase, once it has nobody left to move), or
+ * on its own once every unit of the acting side has acted (`unit:acted`). The
+ * end is only marked ([[TurnFlowSystem]]); [[TurnSystem]] completes it once
+ * nothing is left over the map - the last action's experience bar or popup
+ * seen off - turning the counter over to the next side and waking every unit
+ * back up. The player's phase and the enemy's alternate; the number bumps when
+ * the player's comes round again. What the enemy does with its phase is the AI
+ * feature's - see src/game/ai.
  *
- * Every new turn - the first one included - opens with the phase banner
- * ("Player Phase") sweeping across the screen: a [[PhaseBannerState]] pushed
- * over the map, which freezes it until the banner has faded on its own.
+ * Every new phase - the first one included - opens with the phase banner
+ * ("Player Phase" / "Enemy Phase") sweeping across the screen: a
+ * [[PhaseBannerState]] pushed over the map, which freezes it until the banner
+ * has faded on its own.
  */
 export class TurnFeature extends GameFeature {
 	constructor(config: GameFeatureConfig = {}) {

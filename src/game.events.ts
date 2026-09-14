@@ -1,5 +1,6 @@
 import { GameEvent } from "@/core/events/GameEvent";
 import type { StatBoost } from "@/game/units/content/UnitCatalog";
+import type { UnitFaction } from "@/game/units/components/UnitComponent";
 
 /** The player pressed confirm on a battle map tile. */
 export interface TileConfirmedEvent extends GameEvent {
@@ -379,12 +380,17 @@ export interface RosterClosedEvent extends GameEvent {
 	selectedIndex: number;
 }
 
-/** A request to end the current player turn (from the global command menu). */
+/**
+ * A request to end the current phase: the player's from the global command
+ * menu's "End Turn", the enemy's from the enemy phase once it has nobody left
+ * to move.
+ */
 export type TurnEndEvent = GameEvent;
 
-/** The turn advanced - `number` is the new count. */
+/** A new phase began - `number` is the turn it belongs to, `phase` the side whose units now act. */
 export interface TurnChangedEvent extends GameEvent {
 	number: number;
+	phase: UnitFaction;
 }
 
 declare module "@/core/events/GameEvents" {

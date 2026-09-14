@@ -1,7 +1,7 @@
 export { TurnFeature } from "@/game/turn/TurnFeature";
 export { TurnFlowSystem } from "@/game/turn/systems/TurnFlowSystem";
 
-export { TurnComponent } from "@/game/turn/components/TurnComponent";
+export { TurnComponent, PHASE_ORDER } from "@/game/turn/components/TurnComponent";
 export type { TurnData } from "@/game/turn/components/TurnComponent";
 export { PhaseBannerComponent } from "@/game/turn/components/PhaseBannerComponent";
 export type { PhaseBannerData } from "@/game/turn/components/PhaseBannerComponent";

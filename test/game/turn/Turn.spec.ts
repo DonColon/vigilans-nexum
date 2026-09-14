@@ -14,7 +14,7 @@ import { TurnComponent } from "@/game/turn/components/TurnComponent";
 import { TurnSystem } from "@/game/turn/systems/TurnSystem";
 import { TurnFeature } from "@/game/turn/TurnFeature";
 import { buildUnit } from "@/game/units/content/UnitSheets";
-import { UnitComponent, UnitData } from "@/game/units/components/UnitComponent";
+import { UnitComponent, UnitData, UnitFaction } from "@/game/units/components/UnitComponent";
 import dardanDocument from "@/assets/data/units/dardan.unit.json";
 import hasanDocument from "@/assets/data/units/hasan.unit.json";
 
@@ -91,6 +91,7 @@ suite("Turn Test Suite", () => {
 
 		const turnEntity = () => world.getEntities().find((entity) => entity.hasComponent(TurnComponent)) as Entity;
 		const turn = () => turnEntity().getComponent(TurnComponent).read().number;
+		const phase = () => turnEntity().getComponent(TurnComponent).read().phase;
 		const moved = (unit: Entity, value: boolean) => {
 			const component = unit.getComponent(UnitComponent);
 			component.update({ ...component.read(), hasMoved: value });
@@ -132,37 +133,74 @@ suite("Turn Test Suite", () => {
 			tick();
 
 			expect(turn()).toBe(1);
-			expect(changed).toMatchObject({ number: 1 });
+			expect(changed).toMatchObject({ number: 1, phase: UnitFaction.PLAYER });
 		});
 
-		test("turn:end bumps the counter and wakes every player unit", () => {
+		test("turn:end with nobody on the other side goes straight to the next turn and wakes every player unit", () => {
 			const dardan = spawn(dardanDocument, true);
-			const hasan = spawn(hasanDocument, true); // enemy - left as-is
 
 			eventBus.dispatch("turn:end", {});
 			tick();
 
 			expect(turn()).toBe(2);
+			expect(phase()).toBe(UnitFaction.PLAYER);
 			expect(dardan.getComponent(UnitComponent).read().hasMoved).toBe(false);
-			expect(hasan.getComponent(UnitComponent).read().hasMoved).toBe(true);
 		});
 
-		test("The turn ends on its own once every player unit has acted", () => {
+		test("turn:end hands the phase to the enemy while it has units, and the counter only bumps when it comes back", () => {
+			const dardan = spawn(dardanDocument, true);
+			const hasan = spawn(hasanDocument, true);
+
+			const changes: TurnChangedEvent[] = [];
+			eventBus.subscribe("turn:changed", (event) => changes.push(event));
+
+			eventBus.dispatch("turn:end", {});
+			tick();
+
+			// Same turn, the enemy's phase - and everyone is fresh, the player's army included.
+			expect(turn()).toBe(1);
+			expect(phase()).toBe(UnitFaction.ENEMY);
+			expect(dardan.getComponent(UnitComponent).read().hasMoved).toBe(false);
+			expect(hasan.getComponent(UnitComponent).read().hasMoved).toBe(false);
+			expect(changes.at(-1)).toMatchObject({ number: 1, phase: UnitFaction.ENEMY });
+			dismissBanner();
+
+			// The enemy phase ends the same way - and now the turn is over.
+			moved(hasan, true);
+			eventBus.dispatch("turn:end", {});
+			tick();
+
+			expect(turn()).toBe(2);
+			expect(phase()).toBe(UnitFaction.PLAYER);
+			expect(hasan.getComponent(UnitComponent).read().hasMoved).toBe(false);
+			expect(changes.at(-1)).toMatchObject({ number: 2, phase: UnitFaction.PLAYER });
+		});
+
+		test("A phase ends on its own once every unit of the acting side has acted", () => {
 			const dardan = spawn(dardanDocument);
 			const other = spawn(dardanDocument);
-			spawn(hasanDocument); // enemy does not count
+			const hasan = spawn(hasanDocument); // the other side does not count
 
 			moved(dardan, true);
 			eventBus.dispatch("unit:acted", { unitId: "dardan" });
 			tick();
-			expect(turn()).toBe(1); // `other` still has to move
+			expect(phase()).toBe(UnitFaction.PLAYER); // `other` still has to move
 
 			moved(other, true);
 			eventBus.dispatch("unit:acted", { unitId: "dardan" });
 			tick();
-			expect(turn()).toBe(2);
+			expect(turn()).toBe(1);
+			expect(phase()).toBe(UnitFaction.ENEMY);
 			expect(dardan.getComponent(UnitComponent).read().hasMoved).toBe(false);
 			expect(other.getComponent(UnitComponent).read().hasMoved).toBe(false);
+			dismissBanner();
+
+			// The enemy's phase, in turn, ends once its last unit is spent.
+			moved(hasan, true);
+			eventBus.dispatch("unit:acted", { unitId: "hasan" });
+			tick();
+			expect(turn()).toBe(2);
+			expect(phase()).toBe(UnitFaction.PLAYER);
 		});
 
 		test("A finished turn waits for whatever is over the map - the last fight's experience bar - before the next starts", () => {

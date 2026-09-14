@@ -10,14 +10,7 @@ import { UnitPopComponent } from "@/game/units/components/UnitPopComponent";
 import { loadUnitCatalogs } from "@/game/units/content/UnitCatalog";
 import { buildUnit, UnitDocument } from "@/game/units/content/UnitSheets";
 import { unitsInWorld, unitById } from "@/game/units/rules/UnitLookup";
-
-/** Asset id of the deployment sheet this battle puts on the map. */
-const DEPLOYMENT_ASSET = "deployment-skirmish";
-
-/** A deployment sheet, as authored in `src/assets/data/deployments/*.deployment.json`. */
-interface DeploymentDocument {
-	units: { unit: string; column: number; row: number }[];
-}
+import { DEPLOYMENT_ASSET, DeploymentDocument, parseDeployment } from "@/game/units/content/Deployments";
 
 /**
  * Puts the playable units on the battle map and takes them off again. On
@@ -79,10 +72,10 @@ export class UnitDeploySystem extends ReactiveSystem {
 	/** The deployment sheet for this battle, or an empty one when it is not in storage. */
 	private deployment(): DeploymentDocument {
 		try {
-			return this.assets.getJson<DeploymentDocument>(DEPLOYMENT_ASSET);
+			return parseDeployment(this.assets.getJson(DEPLOYMENT_ASSET));
 		} catch (error) {
-			console.error(`Deployment "${DEPLOYMENT_ASSET}" is not in the asset bundle:`, error);
-			return { units: [] };
+			console.error(`Deployment "${DEPLOYMENT_ASSET}" could not be read:`, error);
+			return { format: "vigilans-deployment", version: 1, map: "", units: [] };
 		}
 	}
 

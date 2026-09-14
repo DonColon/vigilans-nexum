@@ -43,6 +43,7 @@ vigilans-nexum
 │   │   ├── GameState.ts
 │   │   └── ...
 │   ├── game                 # The game itself, one feature per folder
+│   │   ├── ai               # The enemy phase: what the other side does with its turn
 │   │   ├── combat
 │   │   │   ├── commands     # Input bindings, allowed per state
 │   │   │   ├── components   # Data shapes and the pure operations on each of them
