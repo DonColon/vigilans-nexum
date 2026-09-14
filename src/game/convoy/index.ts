@@ -1,4 +1,5 @@
 export { ConvoyFeature } from "@/game/convoy/ConvoyFeature";
+export { ConvoyFlowSystem } from "@/game/convoy/systems/ConvoyFlowSystem";
 
 export { ConvoyComponent } from "@/game/convoy/components/ConvoyComponent";
 export type { ConvoyData } from "@/game/convoy/components/ConvoyComponent";

@@ -1,4 +1,5 @@
 export { TalkFeature } from "@/game/talk/TalkFeature";
+export { TalkFlowSystem } from "@/game/talk/systems/TalkFlowSystem";
 
 export { TalkComponent } from "@/game/talk/components/TalkComponent";
 export type { TalkData } from "@/game/talk/components/TalkComponent";

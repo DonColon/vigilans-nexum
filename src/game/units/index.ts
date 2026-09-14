@@ -1,4 +1,5 @@
 export { UnitsFeature } from "@/game/units/UnitsFeature";
+export { UnitDeploySystem } from "@/game/units/systems/UnitDeploySystem";
 
 export { UnitComponent } from "@/game/units/components/UnitComponent";
 export { CommanderComponent } from "@/game/units/components/CommanderComponent";

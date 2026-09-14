@@ -1,4 +1,5 @@
 export { VisitFeature } from "@/game/visit/VisitFeature";
+export { VisitFlowSystem } from "@/game/visit/systems/VisitFlowSystem";
 
 export { VisitComponent } from "@/game/visit/components/VisitComponent";
 export type { VisitData, HouseDoorData } from "@/game/visit/components/VisitComponent";

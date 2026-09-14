@@ -1,4 +1,5 @@
 export { ExperienceFeature } from "@/game/experience/ExperienceFeature";
+export { ExperienceFlowSystem } from "@/game/experience/systems/ExperienceFlowSystem";
 
 export { ExperienceComponent, ExperiencePhase } from "@/game/experience/components/ExperienceComponent";
 export type { ExperienceData } from "@/game/experience/components/ExperienceComponent";

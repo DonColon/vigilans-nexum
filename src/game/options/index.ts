@@ -1,4 +1,5 @@
 export { OptionsFeature } from "@/game/options/OptionsFeature";
+export { OptionsFlowSystem } from "@/game/options/systems/OptionsFlowSystem";
 
 export { OptionsComponent } from "@/game/options/components/OptionsComponent";
 export type { OptionsData } from "@/game/options/components/OptionsComponent";

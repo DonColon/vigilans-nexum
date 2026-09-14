@@ -1,5 +1,5 @@
 import { test, expect, suite, vi } from "vitest";
-import { ReactiveUpdateSystem } from "@/core/ecs/ReactiveUpdateSystem";
+import { ReactiveSystem } from "@/core/ecs/ReactiveSystem";
 import { Query } from "@/core/ecs/Query";
 import { ServiceRegistry } from "@/core/service/ServiceRegistry";
 import { EventBus } from "@/core/events/EventBus";
@@ -7,9 +7,9 @@ import { UpdateSystem } from "@/core/ecs/UpdateSystem";
 import { Entity } from "@/core/ecs/Entity";
 
 suite("ReactiveSystem Test Suite", () => {
-	let entityChanged = false;
+	class TestReactiveSystem extends ReactiveSystem {
+		public seen = 0;
 
-	class TestReactiveSystem extends ReactiveUpdateSystem {
 		queries = {
 			query: new Query({
 				allowlist: [],
@@ -18,51 +18,62 @@ suite("ReactiveSystem Test Suite", () => {
 		};
 
 		public initialize(): void {
-			this.eventBus.subscribeOnce("entityChanged", () => {
-				entityChanged = true;
+			this.subscribe("entityChanged", () => {
+				this.seen++;
 			});
 		}
 	}
 
-	test("ReactiveSystem extends UpdateSystem and has eventBus", () => {
+	const dispatchChange = () => {
 		const eventBus = ServiceRegistry.get<EventBus>(EventBus);
+		eventBus.dispatch("entityChanged", { entity: new Entity("1337") });
+		eventBus.processQueue();
+	};
+
+	test("ReactiveSystem extends UpdateSystem and runs its handlers on events", () => {
 		const system = new TestReactiveSystem(0);
 
-		expect(system).toBeDefined();
 		expect(system.getPriority()).toBe(0);
 		expect(system.isEnabled()).toBeTruthy();
 		expect(system).toBeInstanceOf(UpdateSystem);
 
-		eventBus.dispatch("entityChanged", {
-			entity: new Entity("1337")
-		});
-		eventBus.processQueue();
+		dispatchChange();
 
-		expect(entityChanged).toBeTruthy();
+		expect(system.seen).toBe(1);
+		system.dispose();
 	});
 
 	test("ReactiveSystem execute method does nothing by default", () => {
 		const system = new TestReactiveSystem(0);
 
-		// Execute should not throw and does nothing
 		expect(() => system.execute(16, 1)).not.toThrow();
 
-		// Verify it was called (even though it does nothing)
 		const executeSpy = vi.spyOn(system, "execute");
 		system.execute(16, 1);
 		expect(executeSpy).toHaveBeenCalledWith(16, 1);
+		system.dispose();
 	});
 
-	test("ReactiveSystem can be enabled and disabled", () => {
+	test("A disabled ReactiveSystem lets its events pass by", () => {
 		const system = new TestReactiveSystem(5);
 
-		expect(system.isEnabled()).toBeTruthy();
-
 		system.disable();
-		expect(system.isEnabled()).toBeFalsy();
+		dispatchChange();
+		expect(system.seen).toBe(0);
 
 		system.enable();
-		expect(system.isEnabled()).toBeTruthy();
+		dispatchChange();
+		expect(system.seen).toBe(1);
+		system.dispose();
+	});
+
+	test("Disposing a ReactiveSystem drops its subscriptions", () => {
+		const system = new TestReactiveSystem(0);
+
+		system.dispose();
+		dispatchChange();
+
+		expect(system.seen).toBe(0);
 	});
 
 	test("ReactiveSystem can access queries", () => {
@@ -70,5 +81,6 @@ suite("ReactiveSystem Test Suite", () => {
 
 		expect(system.queries).toBeDefined();
 		expect(system.queries.query).toBeInstanceOf(Query);
+		system.dispose();
 	});
 });

@@ -1,5 +1,5 @@
 export { MapFeature } from "@/game/map/MapFeature";
-export { BattleMapFeature } from "@/game/map/BattleMapFeature";
+export { activeMap, activeGrid, activeCursor, tileToScreen } from "@/game/map/rules/ActiveMap";
 
 export { CursorComponent } from "@/game/map/components/CursorComponent";
 export { GridComponent } from "@/game/map/components/GridComponent";

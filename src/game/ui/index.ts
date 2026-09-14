@@ -1,4 +1,5 @@
 export { UIFeature } from "@/game/ui/UIFeature";
+export { UIDemoSystem } from "@/game/ui/systems/UIDemoSystem";
 export type { UIFeatureConfig } from "@/game/ui/UIFeature";
 
 export { DialogComponent } from "@/game/ui/components/DialogComponent";

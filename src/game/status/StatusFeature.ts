@@ -1,14 +1,11 @@
 import { GameFeature, GameFeatureConfig } from "@/core/GameFeature";
-import { MapInfoRequestedEvent } from "@/game.events";
-import { WalkComponent } from "@/game/movement/components/WalkComponent";
 import { statusCommands } from "@/game/status/commands/StatusCommands";
 import { StatusComponent } from "@/game/status/components/StatusComponent";
 import { StatusState } from "@/game/status/states/StatusState";
+import { StatusFlowSystem } from "@/game/status/systems/StatusFlowSystem";
 import { StatusRenderSystem } from "@/game/status/systems/StatusRenderSystem";
 import { StatusSystem } from "@/game/status/systems/StatusSystem";
 import { UnitCardRenderSystem } from "@/game/status/systems/UnitCardRenderSystem";
-import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { unitsInWorld, unitAt } from "@/game/units/rules/UnitLookup";
 
 /**
  * Looking at a unit, in two shapes:
@@ -29,6 +26,9 @@ import { unitsInWorld, unitAt } from "@/game/units/rules/UnitLookup";
  * Every unit type gets the same treatment. An enemy's sheet is as open as your
  * own - Fire Emblem lets you read the other side, and planning a fight depends
  * on it.
+ *
+ * The feature is the wiring; [[StatusFlowSystem]] opens the sheet on the info
+ * button, [[StatusSystem]] drives it while it is up.
  */
 export class StatusFeature extends GameFeature {
 	constructor(config: GameFeatureConfig = {}) {
@@ -37,6 +37,8 @@ export class StatusFeature extends GameFeature {
 			states: [StatusState],
 			commands: [...statusCommands],
 			systems: [
+				// Event-driven: opens the sheet. Order among the update systems does not matter.
+				{ system: StatusFlowSystem, priority: 9 },
 				// Alongside MenuSystem / RosterSystem in the update phase.
 				{ system: StatusSystem, priority: 10 },
 				// Right after UIRenderSystem (50) clears the layer, under the corner
@@ -47,42 +49,5 @@ export class StatusFeature extends GameFeature {
 			],
 			...config
 		});
-	}
-
-	protected onInstall(): void {
-		this.subscribe("map:infoRequested", (event) => this.onInfo(event));
-	}
-
-	/**
-	 * The info button over a tile: open the sheet of whoever is standing there.
-	 * An empty tile is a no-op, and so is a press while a unit walks a move -
-	 * input is locked until it lands, the same as for confirm and cancel.
-	 */
-	private onInfo(event: MapInfoRequestedEvent): void {
-		if (this.isWalking()) {
-			return;
-		}
-
-		const units = unitsInWorld(this.world);
-		const unit = unitAt(units, event.column, event.row);
-
-		if (unit === null) {
-			return;
-		}
-
-		// Every unit on the map, in the order they stand in the world - what left
-		// and right page through.
-		const unitIds = units.map((entity) => entity.getComponent(UnitComponent).read().id);
-		const unitId = unit.getComponent(UnitComponent).read().id;
-
-		this.stateManager.getState(StatusState).request({ unitIds, index: unitIds.indexOf(unitId) });
-		this.stateManager.push(StatusState);
-
-		this.events.dispatch("status:opened", { unitId });
-	}
-
-	/** A unit is mid-walk - the sheet waits until it lands. */
-	private isWalking(): boolean {
-		return this.world.getEntities().some((entity) => entity.hasComponent(WalkComponent));
 	}
 }

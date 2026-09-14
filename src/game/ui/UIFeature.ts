@@ -5,13 +5,13 @@ import { popupCommands } from "@/game/ui/commands/PopupCommands";
 import { DialogComponent } from "@/game/ui/components/DialogComponent";
 import { MenuComponent } from "@/game/ui/components/MenuComponent";
 import { PopupComponent } from "@/game/ui/components/PopupComponent";
-import { DEMO_MENU_ID, DemoMenuRow, LORE_DIALOG, terrainDialog, tileActionsMenu } from "@/game/ui/content/DemoContent";
 import { DialogState } from "@/game/ui/states/DialogState";
 import { MenuState } from "@/game/ui/states/MenuState";
 import { PopupState } from "@/game/ui/states/PopupState";
 import { DialogSystem } from "@/game/ui/systems/DialogSystem";
 import { MenuSystem } from "@/game/ui/systems/MenuSystem";
 import { PopupSystem } from "@/game/ui/systems/PopupSystem";
+import { UIDemoSystem } from "@/game/ui/systems/UIDemoSystem";
 import { UIRenderSystem } from "@/game/ui/systems/UIRenderSystem";
 
 export interface UIFeatureConfig extends GameFeatureConfig {
@@ -34,17 +34,18 @@ export interface UIFeatureConfig extends GameFeatureConfig {
  * their outcome through events (`ui:menuConfirmed`, `ui:dialogClosed`,
  * `ui:popupClosed`) rather
  * than calling back - so a menu does not need to know what its rows mean.
+ *
+ * The feature is the wiring; the demo, when it is on, is [[UIDemoSystem]].
  */
 export class UIFeature extends GameFeature {
-	private readonly demo: boolean;
-	private lastTile: { column: number; row: number; terrain: string } | null = null;
-
 	constructor(config: UIFeatureConfig = {}) {
 		super({
 			components: [DialogComponent, MenuComponent, PopupComponent],
 			states: [DialogState, MenuState, PopupState],
 			commands: [...dialogCommands, ...menuCommands, ...popupCommands],
 			systems: [
+				// Event-driven: the demo's tile menu and textboxes.
+				...((config.demo ?? true) ? [{ system: UIDemoSystem, priority: 7 }] : []),
 				// Both update systems run before the sync phase resolves transforms,
 				// like CursorSystem. The renderer owns the "ui" layer and sits above
 				// the map renderers.
@@ -54,37 +55,6 @@ export class UIFeature extends GameFeature {
 				{ system: UIRenderSystem, priority: 50 }
 			],
 			...config
-		});
-
-		this.demo = config.demo ?? true;
-	}
-
-	protected onInstall(): void {
-		if (!this.demo) {
-			return;
-		}
-
-		this.subscribe("map:tileConfirmed", (event) => {
-			this.lastTile = { column: event.column, row: event.row, terrain: event.terrain };
-
-			this.stateManager.getState(MenuState).request(tileActionsMenu(event.terrain));
-			this.stateManager.push(MenuState);
-		});
-
-		this.subscribe("ui:menuConfirmed", (event) => {
-			if (event.menu !== DEMO_MENU_ID) {
-				return;
-			}
-
-			const dialog = this.stateManager.getState(DialogState);
-
-			if (event.row === DemoMenuRow.INSPECT && this.lastTile) {
-				dialog.request(terrainDialog(this.lastTile.terrain, this.lastTile.column, this.lastTile.row));
-				this.stateManager.push(DialogState);
-			} else if (event.row === DemoMenuRow.LORE) {
-				dialog.request(LORE_DIALOG);
-				this.stateManager.push(DialogState);
-			}
 		});
 	}
 }

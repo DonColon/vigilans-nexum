@@ -72,6 +72,16 @@ export interface UnitDeselectedEvent extends GameEvent {
 	unitId: string;
 }
 
+/**
+ * A unit that had moved went back to where its move started - the command
+ * menu was cancelled - and is to be picked up again from there.
+ */
+export interface UnitReturnedEvent extends GameEvent {
+	unitId: string;
+	column: number;
+	row: number;
+}
+
 /** A unit finished its action for the turn - it is now spent. */
 export interface UnitActedEvent extends GameEvent {
 	unitId: string;
@@ -392,6 +402,7 @@ declare module "@/core/events/GameEvents" {
 		"unit:selected": UnitSelectedEvent;
 		"unit:moved": UnitMovedEvent;
 		"unit:deselected": UnitDeselectedEvent;
+		"unit:returned": UnitReturnedEvent;
 		"unit:acted": UnitActedEvent;
 		"unit:equipped": UnitEquippedEvent;
 		"unit:unequipped": UnitUnequippedEvent;

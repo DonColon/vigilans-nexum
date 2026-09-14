@@ -1,4 +1,5 @@
 export { TradeFeature } from "@/game/trade/TradeFeature";
+export { TradeFlowSystem } from "@/game/trade/systems/TradeFlowSystem";
 
 export { TradeComponent, TradeSide, NOTHING_HELD } from "@/game/trade/components/TradeComponent";
 export type { TradeData, TradePhase } from "@/game/trade/components/TradeComponent";

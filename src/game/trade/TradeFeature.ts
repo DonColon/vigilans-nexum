@@ -1,12 +1,10 @@
 import { GameFeature, GameFeatureConfig } from "@/core/GameFeature";
-import { TradeRequestedEvent } from "@/game.events";
 import { tradeCommands } from "@/game/trade/commands/TradeCommands";
 import { TradeComponent } from "@/game/trade/components/TradeComponent";
 import { TradeState } from "@/game/trade/states/TradeState";
+import { TradeFlowSystem } from "@/game/trade/systems/TradeFlowSystem";
 import { TradeRenderSystem } from "@/game/trade/systems/TradeRenderSystem";
 import { TradeSystem } from "@/game/trade/systems/TradeSystem";
-import { UnitComponent } from "@/game/units/components/UnitComponent";
-import { unitsInWorld, unitById, alliesBeside, tileOf } from "@/game/units/rules/UnitLookup";
 
 /**
  * Fire Emblem's trade, layered on top of the [[MovementFeature]]: two allied
@@ -24,6 +22,9 @@ import { unitsInWorld, unitById, alliesBeside, tileOf } from "@/game/units/rules
  *  - Closing reports `trade:closed`. Trading is a free action, so the
  *    MovementFeature simply re-opens the unit's command menu - it still has its
  *    turn to spend.
+ *
+ * The feature is the wiring; [[TradeFlowSystem]] opens the trade,
+ * [[TradeSystem]] drives it while it is up.
  */
 export class TradeFeature extends GameFeature {
 	constructor(config: GameFeatureConfig = {}) {
@@ -32,6 +33,8 @@ export class TradeFeature extends GameFeature {
 			states: [TradeState],
 			commands: [...tradeCommands],
 			systems: [
+				// Event-driven: opens the trade. Order among the update systems does not matter.
+				{ system: TradeFlowSystem, priority: 9 },
 				// Alongside MenuSystem / ForecastSystem in the update phase.
 				{ system: TradeSystem, priority: 10 },
 				// After UIRenderSystem (50), which owns and clears the "ui" layer.
@@ -39,42 +42,5 @@ export class TradeFeature extends GameFeature {
 			],
 			...config
 		});
-	}
-
-	protected onInstall(): void {
-		this.subscribe("trade:requested", (event) => this.open(event));
-	}
-
-	/**
-	 * Opens the trade on the unit that asked for it. The requested ally only says
-	 * which partner to point at first - every ally beside the unit is gathered
-	 * here, so the player can move the cursor between them before the packs open.
-	 */
-	private open(event: TradeRequestedEvent): void {
-		const units = unitsInWorld(this.world);
-		const unit = unitById(units, event.unitId);
-
-		if (unit === null) {
-			return;
-		}
-
-		const partners = alliesBeside(units, unit);
-
-		if (partners.length === 0) {
-			return;
-		}
-
-		const partnerIds = partners.map((partner) => partner.getComponent(UnitComponent).read().id);
-		const requestedIndex = partnerIds.indexOf(event.partnerId);
-		const tile = tileOf(unit);
-
-		this.stateManager.getState(TradeState).request({
-			unitId: event.unitId,
-			partnerIds,
-			partnerIndex: requestedIndex >= 0 ? requestedIndex : 0,
-			restoreColumn: tile.column,
-			restoreRow: tile.row
-		});
-		this.stateManager.push(TradeState);
 	}
 }

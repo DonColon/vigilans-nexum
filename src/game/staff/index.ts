@@ -1,4 +1,5 @@
 export { StaffFeature } from "@/game/staff/StaffFeature";
+export { StaffFlowSystem } from "@/game/staff/systems/StaffFlowSystem";
 
 export { StaffChoiceComponent } from "@/game/staff/components/StaffChoiceComponent";
 export type { StaffChoiceData } from "@/game/staff/components/StaffChoiceComponent";

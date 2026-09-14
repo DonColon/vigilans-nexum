@@ -1,4 +1,5 @@
 export { LocksFeature } from "@/game/locks/LocksFeature";
+export { LocksFlowSystem } from "@/game/locks/systems/LocksFlowSystem";
 
 export { LocksComponent } from "@/game/locks/components/LocksComponent";
 export type { LocksData, LockTileData } from "@/game/locks/components/LocksComponent";

@@ -1,4 +1,5 @@
 export { TurnFeature } from "@/game/turn/TurnFeature";
+export { TurnFlowSystem } from "@/game/turn/systems/TurnFlowSystem";
 
 export { TurnComponent } from "@/game/turn/components/TurnComponent";
 export type { TurnData } from "@/game/turn/components/TurnComponent";

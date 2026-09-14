@@ -1,4 +1,5 @@
 export { CombatFeature } from "@/game/combat/CombatFeature";
+export { CombatFlowSystem } from "@/game/combat/systems/CombatFlowSystem";
 
 export { ForecastComponent } from "@/game/combat/components/ForecastComponent";
 export type { ForecastData, ForecastPhase } from "@/game/combat/components/ForecastComponent";

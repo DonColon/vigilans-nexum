@@ -507,7 +507,10 @@ suite("Unit Movement Test Suite", () => {
 		expect(dardan.hasComponent(PendingMoveComponent)).toBe(false);
 		expect(cursor.getComponent(GridPositionComponent).read()).toStrictEqual({ column: 4, row: 10 });
 
-		// The unit is selected again with its range lit from the origin.
+		// The unit is selected again with its range lit from the origin - the
+		// command system reports `unit:returned`, and the move system answers it
+		// on the next pass over the queue.
+		eventBus.processQueue();
 		const selected = state();
 		expect(selected.unitId).toBe("dardan");
 		expect(selected).toMatchObject({ originColumn: 4, originRow: 10 });

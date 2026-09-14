@@ -1,4 +1,5 @@
 export { StatusFeature } from "@/game/status/StatusFeature";
+export { StatusFlowSystem } from "@/game/status/systems/StatusFlowSystem";
 
 export { StatusComponent } from "@/game/status/components/StatusComponent";
 export type { StatusData } from "@/game/status/components/StatusComponent";

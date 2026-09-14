@@ -1,4 +1,5 @@
 export { RosterFeature } from "@/game/roster/RosterFeature";
+export { RosterFlowSystem } from "@/game/roster/systems/RosterFlowSystem";
 
 export { RosterComponent } from "@/game/roster/components/RosterComponent";
 export type { RosterData } from "@/game/roster/components/RosterComponent";

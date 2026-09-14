@@ -2,10 +2,9 @@ import { GameFeature, GameFeatureConfig } from "@/core/GameFeature";
 import { rosterCommands } from "@/game/roster/commands/RosterCommands";
 import { RosterComponent } from "@/game/roster/components/RosterComponent";
 import { RosterState } from "@/game/roster/states/RosterState";
+import { RosterFlowSystem } from "@/game/roster/systems/RosterFlowSystem";
 import { RosterRenderSystem } from "@/game/roster/systems/RosterRenderSystem";
 import { RosterSystem } from "@/game/roster/systems/RosterSystem";
-import { UnitComponent, UnitFaction } from "@/game/units/components/UnitComponent";
-import { unitsInWorld, unitsOfFaction } from "@/game/units/rules/UnitLookup";
 
 /**
  * Fire Emblem's "Units" screen: the army list, opened from the map's own
@@ -19,17 +18,19 @@ import { unitsInWorld, unitsOfFaction } from "@/game/units/rules/UnitLookup";
  *    is nothing on it to confirm.
  *  - Only the player's own units are listed. What the other side is carrying is
  *    not something the list is for; the enemy-range overlay is.
+ *
+ * The feature is the wiring; [[RosterFlowSystem]] opens the list,
+ * [[RosterSystem]] drives it while it is up.
  */
 export class RosterFeature extends GameFeature {
-	/** Row the list was last left on, so re-opening it comes back to the same unit. */
-	private lastIndex = 0;
-
 	constructor(config: GameFeatureConfig = {}) {
 		super({
 			components: [RosterComponent],
 			states: [RosterState],
 			commands: [...rosterCommands],
 			systems: [
+				// Event-driven: opens the list. Order among the update systems does not matter.
+				{ system: RosterFlowSystem, priority: 9 },
 				// Alongside MenuSystem / TradeSystem in the update phase.
 				{ system: RosterSystem, priority: 10 },
 				// Above the corner HUDs (54, 55): a full list covers them while it is up.
@@ -37,19 +38,5 @@ export class RosterFeature extends GameFeature {
 			],
 			...config
 		});
-	}
-
-	protected onInstall(): void {
-		this.subscribe("roster:requested", () => this.open());
-		this.subscribe("roster:closed", (event) => (this.lastIndex = Math.max(0, event.selectedIndex)));
-		this.subscribe("map:closed", () => (this.lastIndex = 0));
-	}
-
-	/** Opens the list on every player unit currently on the map. */
-	private open(): void {
-		const unitIds = unitsOfFaction(unitsInWorld(this.world), UnitFaction.PLAYER).map((unit) => unit.getComponent(UnitComponent).read().id);
-
-		this.stateManager.getState(RosterState).request({ unitIds, selectedIndex: this.lastIndex });
-		this.stateManager.push(RosterState);
 	}
 }

@@ -1,4 +1,6 @@
 export { MovementFeature } from "@/game/movement/MovementFeature";
+export { UnitMoveSystem } from "@/game/movement/systems/UnitMoveSystem";
+export { UnitCommandSystem } from "@/game/movement/systems/UnitCommandSystem";
 
 export { MovementComponent, idleMovement } from "@/game/movement/components/MovementComponent";
 export type { MovementData } from "@/game/movement/components/MovementComponent";
