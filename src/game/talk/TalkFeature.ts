@@ -39,8 +39,8 @@ export class TalkFeature extends GameFeature {
 			commands: [...talkCommands],
 			// Alongside MenuSystem / ForecastSystem in the update phase.
 			systems: [
-				// Event-driven: the feature's flow. Order among the update systems does not matter.
-				{ system: TalkFlowSystem, priority: 7 },
+				// Event-driven: the feature's flow.
+				{ system: TalkFlowSystem },
 				{ system: TalkChoiceSystem, priority: 10 }
 			],
 			...config

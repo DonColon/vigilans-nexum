@@ -34,8 +34,8 @@ export class ThreatFeature extends GameFeature {
 			// Between the terrain art (14) and the move overlay (16): a picked-up
 			// unit's blue range reads on top of the enemy wash, units on top of both.
 			systems: [
-				// Event-driven: the feature's flow. Order among the update systems does not matter.
-				{ system: ThreatFlowSystem, priority: 7 },
+				// Event-driven: the feature's flow.
+				{ system: ThreatFlowSystem },
 				{ system: ThreatRenderSystem, priority: 15 }
 			],
 			...config

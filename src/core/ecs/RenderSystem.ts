@@ -1,3 +1,4 @@
-import { System } from "@/core/ecs/System";
+import { ScheduledSystem } from "@/core/ecs/ScheduledSystem";
 
-export abstract class RenderSystem extends System {}
+/** Runs in the render schedule - drawing, never writing game state. */
+export abstract class RenderSystem extends ScheduledSystem {}

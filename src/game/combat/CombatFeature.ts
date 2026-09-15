@@ -33,8 +33,8 @@ export class CombatFeature extends GameFeature {
 			states: [ForecastState, BattleAnimationState],
 			commands: [...forecastCommands],
 			systems: [
-				// Event-driven: the attack flow. Order among the update systems does not matter.
-				{ system: CombatFlowSystem, priority: 7 },
+				// Event-driven: the attack flow.
+				{ system: CombatFlowSystem },
 				// The animation clock; order among the update systems does not matter.
 				{ system: BattleAnimationSystem, priority: 8 },
 				// Alongside MenuSystem / DialogSystem in the update phase.

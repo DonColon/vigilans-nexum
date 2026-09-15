@@ -11,7 +11,7 @@ import { World } from "@/core/ecs/World";
 import { ComponentConstructor } from "@/core/ecs/Component";
 import { JsonSchema } from "@/core/ecs/JsonSchema";
 import { Entity, EntityType } from "@/core/ecs/Entity";
-import { SystemConstructor } from "@/core/ecs/System";
+import { ReactiveSystemConstructor, ScheduledSystemConstructor, SystemConstructor } from "@/core/ecs/System";
 import { GameStateConstructor } from "@/core/GameState";
 import { GameCommandConstructor } from "@/core/input/commands/GameCommand";
 import { Savegame } from "@/core/model/Savegame";
@@ -243,8 +243,14 @@ export class Game {
 		return this;
 	}
 
-	public registerSystem(systemType: SystemConstructor, priority: number): this {
-		this.world.registerSystem(systemType, priority);
+	public registerSystem(systemType: ScheduledSystemConstructor, priority: number): this;
+	public registerSystem(systemType: ReactiveSystemConstructor): this;
+	public registerSystem(systemType: SystemConstructor, priority?: number): this {
+		if (priority === undefined) {
+			this.world.registerSystem(systemType as ReactiveSystemConstructor);
+		} else {
+			this.world.registerSystem(systemType as ScheduledSystemConstructor, priority);
+		}
 		return this;
 	}
 

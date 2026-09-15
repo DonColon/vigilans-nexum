@@ -1,9 +1,10 @@
 import { test, expect, suite } from "vitest";
 import { System } from "@/core/ecs/System";
+import { ScheduledSystem } from "@/core/ecs/ScheduledSystem";
 import { Query } from "@/core/ecs/Query";
 
 suite("System Test Suite", () => {
-	class MovementSystem extends System {
+	class MovementSystem extends ScheduledSystem {
 		queries = {
 			query: new Query({
 				allowlist: [],
@@ -15,7 +16,7 @@ suite("System Test Suite", () => {
 		public execute(): void {}
 	}
 
-	class AttackSystem extends System {
+	class AttackSystem extends ScheduledSystem {
 		queries = {
 			query: new Query({
 				allowlist: [],
@@ -48,12 +49,23 @@ suite("System Test Suite", () => {
 		expect(system.isEnabled()).toBeTruthy();
 	});
 
+	test("A system that is not scheduled is built with nothing and has no priority", () => {
+		class FlowSystem extends System {
+			public initialize(): void {}
+		}
+
+		const system = new FlowSystem();
+		expect(system.isEnabled()).toBeTruthy();
+		expect("getPriority" in system).toBe(false);
+		expect(system).not.toBeInstanceOf(ScheduledSystem);
+	});
+
 	test("Sort systems by priority", () => {
 		const movementSystem = new MovementSystem(1);
 		const attackSystem = new AttackSystem(0);
 
 		const systems = [movementSystem, attackSystem];
-		systems.sort(System.byPriority);
+		systems.sort(ScheduledSystem.byPriority);
 
 		expect(systems[0]).toBe(attackSystem);
 		expect(systems[1]).toBe(movementSystem);

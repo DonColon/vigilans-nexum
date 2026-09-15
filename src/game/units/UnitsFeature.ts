@@ -20,8 +20,8 @@ export class UnitsFeature extends GameFeature {
 		super({
 			components: [UnitComponent, CommanderComponent, UnitPopComponent],
 			systems: [
-				// Event-driven: deploys and withdraws the units. Order among the update systems does not matter.
-				{ system: UnitDeploySystem, priority: 7 },
+				// Event-driven: deploys and withdraws the units.
+				{ system: UnitDeploySystem },
 				// Runs the floating-label clock; order among the update systems does not matter.
 				{ system: UnitPopSystem, priority: 8 },
 				// On the "background" layer above the tileset art and the move overlay,

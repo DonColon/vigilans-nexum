@@ -2,7 +2,8 @@ import { GameError } from "@/core/GameError";
 import { JsonSchema } from "@/core/ecs/JsonSchema";
 import { Component, ComponentConstructor } from "@/core/ecs/Component";
 import { Entity, EntityType } from "@/core/ecs/Entity";
-import { System, SystemConstructor } from "@/core/ecs/System";
+import { ReactiveSystemConstructor, ScheduledSystemConstructor, System, SystemConstructor } from "@/core/ecs/System";
+import { ScheduledSystem } from "@/core/ecs/ScheduledSystem";
 import { UpdateSystem } from "@/core/ecs/UpdateSystem";
 import { RenderSystem } from "@/core/ecs/RenderSystem";
 import { GameState, GameStateConstructor } from "@/core/GameState";
@@ -18,9 +19,9 @@ export class World {
 	private readonly entities: Map<string, Entity>;
 	private readonly systems: Map<string, System>;
 
-	private updateSchedule: System[];
-	private syncSchedule: System[];
-	private renderSchedule: System[];
+	private updateSchedule: ScheduledSystem[];
+	private syncSchedule: ScheduledSystem[];
+	private renderSchedule: ScheduledSystem[];
 
 	@GameCoreService(EventBus)
 	private eventBus!: EventBus;
@@ -199,26 +200,48 @@ export class World {
 		return this.entities.has(entityID);
 	}
 
-	public registerSystem(systemType: SystemConstructor, priority: number): this {
+	/**
+	 * Registers a system. A scheduled one - update, sync or render - is built
+	 * with the priority it runs at and put in its schedule; a reactive one is
+	 * built with nothing and only kept, so it can be found, disabled and
+	 * disposed - its handlers run on the event bus, ordered there. Giving a
+	 * reactive system a priority, or a scheduled one none, is a mistake and
+	 * throws.
+	 */
+	public registerSystem(systemType: ScheduledSystemConstructor, priority: number): this;
+	public registerSystem(systemType: ReactiveSystemConstructor): this;
+	public registerSystem(systemType: SystemConstructor, priority?: number): this {
 		if (this.hasSystem(systemType)) {
 			throw new GameError(`System ${systemType.name} is already registered`);
 		}
 
-		const system = new systemType(priority);
-		this.systems.set(systemType.name, system);
+		const system = new (systemType as new (priority?: number) => System)(priority);
 
-		this.scheduleSystem(system);
+		if (system instanceof ScheduledSystem) {
+			if (priority === undefined) {
+				system.dispose();
+				throw new GameError(`System ${systemType.name} runs on the clock and needs a priority`);
+			}
+
+			this.scheduleSystem(system);
+		} else if (priority !== undefined) {
+			system.dispose();
+			throw new GameError(`System ${systemType.name} runs on events and has no priority - order its handlers with subscribe(name, handler, priority)`);
+		}
+
+		this.systems.set(systemType.name, system);
 		return this;
 	}
 
-	private scheduleSystem(system: System) {
+	private scheduleSystem(system: ScheduledSystem) {
 		if (system instanceof UpdateSystem) {
-			binaryInsert(this.updateSchedule, system, System.byPriority);
+			binaryInsert(this.updateSchedule, system, ScheduledSystem.byPriority);
 		} else if (system instanceof SyncSystem) {
-			binaryInsert(this.syncSchedule, system, System.byPriority);
+			binaryInsert(this.syncSchedule, system, ScheduledSystem.byPriority);
 		} else if (system instanceof RenderSystem) {
-			binaryInsert(this.renderSchedule, system, System.byPriority);
+			binaryInsert(this.renderSchedule, system, ScheduledSystem.byPriority);
 		} else {
+			system.dispose();
 			throw new GameError(`System ${system.constructor.name} must extend UpdateSystem, SyncSystem or RenderSystem`);
 		}
 	}
@@ -228,11 +251,15 @@ export class World {
 		system.dispose();
 
 		this.systems.delete(systemType.name);
-		this.unscheduleSystem(system);
+
+		if (system instanceof ScheduledSystem) {
+			this.unscheduleSystem(system);
+		}
+
 		return this;
 	}
 
-	private unscheduleSystem(system: System) {
+	private unscheduleSystem(system: ScheduledSystem) {
 		if (system instanceof UpdateSystem) {
 			this.updateSchedule = this.updateSchedule.filter((s) => s !== system);
 		} else if (system instanceof SyncSystem) {
@@ -254,15 +281,15 @@ export class World {
 		return system as Type;
 	}
 
-	public getUpdateSchedule(): System[] {
+	public getUpdateSchedule(): ScheduledSystem[] {
 		return this.updateSchedule;
 	}
 
-	public getSyncSchedule(): System[] {
+	public getSyncSchedule(): ScheduledSystem[] {
 		return this.syncSchedule;
 	}
 
-	public getRenderSchedule(): System[] {
+	public getRenderSchedule(): ScheduledSystem[] {
 		return this.renderSchedule;
 	}
 

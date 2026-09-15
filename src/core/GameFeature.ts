@@ -3,7 +3,7 @@ import { EventHandler, EventNames, UnsubscribeFunction } from "@/core/events/Gam
 import { ComponentConstructor } from "@/core/ecs/Component";
 import { Entity, EntityType } from "@/core/ecs/Entity";
 import { JsonSchema } from "@/core/ecs/JsonSchema";
-import { SystemConstructor } from "@/core/ecs/System";
+import { ReactiveSystemConstructor, ScheduledSystemConstructor, SystemConstructor } from "@/core/ecs/System";
 import { World } from "@/core/ecs/World";
 import { GameError } from "@/core/GameError";
 import { GameStateConstructor } from "@/core/GameState";
@@ -12,16 +12,19 @@ import { GameCommandConstructor } from "@/core/input/commands/GameCommand";
 import { InputDevice } from "@/core/input/InputDevice";
 import { GameCoreService } from "@/core/service/GameCoreService";
 
-interface SystemPriorityList {
-	system: SystemConstructor;
-	priority: number;
-}
+/**
+ * One system a feature registers: a scheduled one with the priority it runs
+ * at, or a reactive one with none - a priority on a reactive system does not
+ * compile, since it would mean nothing (its handlers are ordered on their
+ * subscriptions, see `ReactiveSystem`).
+ */
+export type SystemEntry = { system: ScheduledSystemConstructor; priority: number } | { system: ReactiveSystemConstructor; priority?: never };
 
 export type GameFeatureConstructor = new (config: GameFeatureConfig) => GameFeature;
 
 export interface GameFeatureConfig {
 	components?: ComponentConstructor<any>[];
-	systems?: SystemPriorityList[];
+	systems?: SystemEntry[];
 	entities?: EntityType[];
 	entityStates?: GameStateConstructor[];
 	states?: GameStateConstructor[];
@@ -99,8 +102,8 @@ export abstract class GameFeature {
 		}
 
 		if (this.config.systems) {
-			for (const { system, priority } of this.config.systems) {
-				this.world.registerSystem(system, priority);
+			for (const entry of this.config.systems) {
+				this.registerEntry(entry);
 			}
 		}
 
@@ -250,16 +253,29 @@ export abstract class GameFeature {
 		return this;
 	}
 
-	public registerSystem(systemType: SystemConstructor, priority: number): this {
-		this.world.registerSystem(systemType, priority);
+	public registerSystem(systemType: ScheduledSystemConstructor, priority: number): this;
+	public registerSystem(systemType: ReactiveSystemConstructor): this;
+	public registerSystem(systemType: SystemConstructor, priority?: number): this {
+		const entry = (priority === undefined ? { system: systemType as ReactiveSystemConstructor } : { system: systemType as ScheduledSystemConstructor, priority }) satisfies SystemEntry;
+
+		this.registerEntry(entry);
 
 		if (this.config.systems) {
-			this.config.systems.push({ system: systemType, priority });
+			this.config.systems.push(entry);
 		} else {
-			this.config.systems = [{ system: systemType, priority }];
+			this.config.systems = [entry];
 		}
 
 		return this;
+	}
+
+	/** Hands one entry to the world by its kind - with its priority, or without one. */
+	private registerEntry(entry: SystemEntry): void {
+		if (entry.priority === undefined) {
+			this.world.registerSystem(entry.system as ReactiveSystemConstructor);
+		} else {
+			this.world.registerSystem(entry.system as ScheduledSystemConstructor, entry.priority);
+		}
 	}
 
 	public unregisterSystem(systemType: SystemConstructor): this {

@@ -37,8 +37,8 @@ export class StatusFeature extends GameFeature {
 			states: [StatusState],
 			commands: [...statusCommands],
 			systems: [
-				// Event-driven: opens the sheet. Order among the update systems does not matter.
-				{ system: StatusFlowSystem, priority: 9 },
+				// Event-driven: opens the sheet.
+				{ system: StatusFlowSystem },
 				// Alongside MenuSystem / RosterSystem in the update phase.
 				{ system: StatusSystem, priority: 10 },
 				// Right after UIRenderSystem (50) clears the layer, under the corner

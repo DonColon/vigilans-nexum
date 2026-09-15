@@ -39,8 +39,8 @@ export class LocksFeature extends GameFeature {
 	constructor(config: GameFeatureConfig = {}) {
 		super({
 			components: [LocksComponent],
-			// Event-driven: the feature's flow. Order among the update systems does not matter.
-			systems: [{ system: LocksFlowSystem, priority: 7 }],
+			// Event-driven: the feature's flow.
+			systems: [{ system: LocksFlowSystem }],
 			...config
 		});
 	}

@@ -29,8 +29,8 @@ export class RosterFeature extends GameFeature {
 			states: [RosterState],
 			commands: [...rosterCommands],
 			systems: [
-				// Event-driven: opens the list. Order among the update systems does not matter.
-				{ system: RosterFlowSystem, priority: 9 },
+				// Event-driven: opens the list.
+				{ system: RosterFlowSystem },
 				// Alongside MenuSystem / TradeSystem in the update phase.
 				{ system: RosterSystem, priority: 10 },
 				// Above the corner HUDs (54, 55): a full list covers them while it is up.

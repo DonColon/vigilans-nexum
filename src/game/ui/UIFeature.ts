@@ -45,7 +45,7 @@ export class UIFeature extends GameFeature {
 			commands: [...dialogCommands, ...menuCommands, ...popupCommands],
 			systems: [
 				// Event-driven: the demo's tile menu and textboxes.
-				...((config.demo ?? true) ? [{ system: UIDemoSystem, priority: 7 }] : []),
+				...((config.demo ?? true) ? [{ system: UIDemoSystem }] : []),
 				// Both update systems run before the sync phase resolves transforms,
 				// like CursorSystem. The renderer owns the "ui" layer and sits above
 				// the map renderers.

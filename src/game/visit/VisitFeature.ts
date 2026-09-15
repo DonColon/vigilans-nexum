@@ -40,8 +40,8 @@ export class VisitFeature extends GameFeature {
 	constructor(config: GameFeatureConfig = {}) {
 		super({
 			components: [VisitComponent],
-			// Event-driven: the feature's flow. Order among the update systems does not matter.
-			systems: [{ system: VisitFlowSystem, priority: 7 }],
+			// Event-driven: the feature's flow.
+			systems: [{ system: VisitFlowSystem }],
 			...config
 		});
 	}

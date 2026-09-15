@@ -1,3 +1,4 @@
-import { System } from "./System";
+import { ScheduledSystem } from "@/core/ecs/ScheduledSystem";
 
-export abstract class SyncSystem extends System {}
+/** Runs in the sync schedule, after every update system - reconciling what they wrote. */
+export abstract class SyncSystem extends ScheduledSystem {}

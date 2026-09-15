@@ -33,8 +33,8 @@ export class TradeFeature extends GameFeature {
 			states: [TradeState],
 			commands: [...tradeCommands],
 			systems: [
-				// Event-driven: opens the trade. Order among the update systems does not matter.
-				{ system: TradeFlowSystem, priority: 9 },
+				// Event-driven: opens the trade.
+				{ system: TradeFlowSystem },
 				// Alongside MenuSystem / ForecastSystem in the update phase.
 				{ system: TradeSystem, priority: 10 },
 				// After UIRenderSystem (50), which owns and clears the "ui" layer.

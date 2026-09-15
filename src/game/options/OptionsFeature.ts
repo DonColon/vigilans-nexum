@@ -39,8 +39,8 @@ export class OptionsFeature extends GameFeature {
 			states: [OptionsState],
 			commands: [...optionsCommands],
 			systems: [
-				// Event-driven: the feature's flow. Order among the update systems does not matter.
-				{ system: OptionsFlowSystem, priority: 7 },
+				// Event-driven: the feature's flow.
+				{ system: OptionsFlowSystem },
 				// Alongside MenuSystem / RosterSystem in the update phase.
 				{ system: OptionsSystem, priority: 10 },
 				// Above the corner HUDs (54, 55), like the army list.

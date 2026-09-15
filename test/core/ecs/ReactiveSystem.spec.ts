@@ -1,9 +1,10 @@
-import { test, expect, suite, vi } from "vitest";
+import { test, expect, suite } from "vitest";
 import { ReactiveSystem } from "@/core/ecs/ReactiveSystem";
+import { ScheduledSystem } from "@/core/ecs/ScheduledSystem";
 import { Query } from "@/core/ecs/Query";
 import { ServiceRegistry } from "@/core/service/ServiceRegistry";
 import { EventBus } from "@/core/events/EventBus";
-import { UpdateSystem } from "@/core/ecs/UpdateSystem";
+import { System } from "@/core/ecs/System";
 import { Entity } from "@/core/ecs/Entity";
 
 suite("ReactiveSystem Test Suite", () => {
@@ -24,18 +25,21 @@ suite("ReactiveSystem Test Suite", () => {
 		}
 	}
 
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus);
+
 	const dispatchChange = () => {
-		const eventBus = ServiceRegistry.get<EventBus>(EventBus);
 		eventBus.dispatch("entityChanged", { entity: new Entity("1337") });
 		eventBus.processQueue();
 	};
 
-	test("ReactiveSystem extends UpdateSystem and runs its handlers on events", () => {
-		const system = new TestReactiveSystem(0);
+	test("A ReactiveSystem is a System with no schedule: built with nothing, no priority, no execute", () => {
+		const system = new TestReactiveSystem();
 
-		expect(system.getPriority()).toBe(0);
+		expect(system).toBeInstanceOf(System);
+		expect(system).not.toBeInstanceOf(ScheduledSystem);
+		expect("getPriority" in system).toBe(false);
+		expect("execute" in system).toBe(false);
 		expect(system.isEnabled()).toBeTruthy();
-		expect(system).toBeInstanceOf(UpdateSystem);
 
 		dispatchChange();
 
@@ -43,19 +47,34 @@ suite("ReactiveSystem Test Suite", () => {
 		system.dispose();
 	});
 
-	test("ReactiveSystem execute method does nothing by default", () => {
-		const system = new TestReactiveSystem(0);
+	test("Order among the handlers of one event is said on the subscription, higher first", () => {
+		const order: string[] = [];
 
-		expect(() => system.execute(16, 1)).not.toThrow();
+		class FirstSystem extends ReactiveSystem {
+			public initialize(): void {
+				this.subscribe("entityChanged", () => order.push("first"), 10);
+			}
+		}
 
-		const executeSpy = vi.spyOn(system, "execute");
-		system.execute(16, 1);
-		expect(executeSpy).toHaveBeenCalledWith(16, 1);
-		system.dispose();
+		class LastSystem extends ReactiveSystem {
+			public initialize(): void {
+				this.subscribe("entityChanged", () => order.push("last"), -10);
+			}
+		}
+
+		// Registered last, runs first - the subscription's priority decides, not the order of creation.
+		const last = new LastSystem();
+		const first = new FirstSystem();
+
+		dispatchChange();
+
+		expect(order).toStrictEqual(["first", "last"]);
+		first.dispose();
+		last.dispose();
 	});
 
 	test("A disabled ReactiveSystem lets its events pass by", () => {
-		const system = new TestReactiveSystem(5);
+		const system = new TestReactiveSystem();
 
 		system.disable();
 		dispatchChange();
@@ -68,7 +87,7 @@ suite("ReactiveSystem Test Suite", () => {
 	});
 
 	test("Disposing a ReactiveSystem drops its subscriptions", () => {
-		const system = new TestReactiveSystem(0);
+		const system = new TestReactiveSystem();
 
 		system.dispose();
 		dispatchChange();
@@ -77,7 +96,7 @@ suite("ReactiveSystem Test Suite", () => {
 	});
 
 	test("ReactiveSystem can access queries", () => {
-		const system = new TestReactiveSystem(0);
+		const system = new TestReactiveSystem();
 
 		expect(system.queries).toBeDefined();
 		expect(system.queries.query).toBeInstanceOf(Query);

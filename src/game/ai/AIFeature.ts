@@ -26,8 +26,8 @@ export class AIFeature extends GameFeature {
 			components: [BehaviourComponent, EnemyActionComponent],
 			states: [EnemyPhaseState],
 			systems: [
-				// Event-driven: tags the enemies and hears their fights resolve. Order among the update systems does not matter.
-				{ system: EnemyFlowSystem, priority: 7 },
+				// Event-driven: tags the enemies and hears their fights resolve.
+				{ system: EnemyFlowSystem },
 				// Runs before the sync phase, beside the turn's and the fight's clocks.
 				{ system: EnemyPhaseSystem, priority: 8 }
 			],

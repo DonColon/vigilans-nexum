@@ -41,8 +41,8 @@ export class StaffFeature extends GameFeature {
 			commands: [...staffCommands],
 			// Alongside MenuSystem / TalkChoiceSystem in the update phase.
 			systems: [
-				// Event-driven: the feature's flow. Order among the update systems does not matter.
-				{ system: StaffFlowSystem, priority: 7 },
+				// Event-driven: the feature's flow.
+				{ system: StaffFlowSystem },
 				{ system: StaffChoiceSystem, priority: 10 }
 			],
 			...config

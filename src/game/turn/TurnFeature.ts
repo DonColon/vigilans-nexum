@@ -32,8 +32,8 @@ export class TurnFeature extends GameFeature {
 			components: [TurnComponent, PhaseBannerComponent],
 			states: [PhaseBannerState],
 			systems: [
-				// Event-driven: opens and marks the turns. Order among the update systems does not matter.
-				{ system: TurnFlowSystem, priority: 7 },
+				// Event-driven: opens and marks the turns.
+				{ system: TurnFlowSystem },
 				// Both run before the sync phase, like the fight animation's clock.
 				{ system: TurnSystem, priority: 8 },
 				{ system: PhaseBannerSystem, priority: 8 },

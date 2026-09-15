@@ -105,7 +105,7 @@ The game is an entity-component-system on top of a small framework in `src/core`
 | `rules/` | Pure game logic that spans entities or several shapes - pathfinding, targeting, who can talk to whom. It answers a question and returns; it never writes a component or dispatches an event. | components, content, `Entity` / `World` types. Never view or systems. |
 | `view/` | Themes, screen layout, menu tables, drawing helpers, animation timing, dialog and popup requests. | anything below it. |
 | `content/` | The document formats of the JSON under `src/assets/data`, their parsers and the catalogs. | nothing from the feature. |
-| `systems/` | The behaviour. Scheduled systems (`UpdateSystem`, `SyncSystem`, `RenderSystem`) run every frame at a priority; **reactive systems** (`ReactiveSystem`) run on events. | everything. |
+| `systems/` | The behaviour. Scheduled systems (`UpdateSystem`, `SyncSystem`, `RenderSystem`) run every frame at a priority; **reactive systems** (`ReactiveSystem`) run on events and have none. | everything. |
 | `states/`, `commands/` | Screens and modes, and the input bindings each of them allows. | |
 | `<Name>Feature.ts` | **Wiring only**: which components, systems, states and commands to register. No handlers, no state. | |
 
@@ -121,7 +121,7 @@ The import direction is enforced by `eslint.config.js` (`no-restricted-imports`)
 
 ### Reactive systems
 
-A `ReactiveSystem` subscribes in `initialize()` and its handlers are the behaviour; its scheduled `execute` is a no-op. Subscriptions are dropped in `dispose()`, and a disabled system lets its events pass by. Features register them like any other system:
+A `ReactiveSystem` subscribes in `initialize()` and its handlers are the behaviour. It has no `execute` and no priority - it sits in no schedule - so a feature registers it without one (a priority on a reactive entry does not compile). Subscriptions are dropped in `dispose()`, and a disabled system lets its events pass by.
 
 ```ts
 export class TradeFeature extends GameFeature {
@@ -131,7 +131,7 @@ export class TradeFeature extends GameFeature {
 			states: [TradeState],
 			commands: [...tradeCommands],
 			systems: [
-				{ system: TradeFlowSystem, priority: 7 },   // opens the trade on `trade:requested`
+				{ system: TradeFlowSystem },                // opens the trade on `trade:requested`
 				{ system: TradeSystem, priority: 10 },      // drives it while it is up
 				{ system: TradeRenderSystem, priority: 53 }
 			],
@@ -140,6 +140,8 @@ export class TradeFeature extends GameFeature {
 	}
 }
 ```
+
+Where order matters it is order *among the handlers of one event*, and it is said on the subscription: `this.subscribe("map:tileConfirmed", handler, 20)` runs before a handler subscribed at 10, and may stop the event before it gets there. One system can be first for one event and last for another, which is why the number lives on the subscription and not on the system.
 
 Two things to know when writing one:
 

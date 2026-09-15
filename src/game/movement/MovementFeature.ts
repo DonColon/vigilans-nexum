@@ -69,9 +69,9 @@ export class MovementFeature extends GameFeature {
 			components: [MovementComponent, WalkComponent, PendingMoveComponent],
 			systems: [
 				// Event-driven: picking a unit up and walking it, then everything it
-				// does once the walk lands. Order among the update systems does not matter.
-				{ system: UnitMoveSystem, priority: 7 },
-				{ system: UnitCommandSystem, priority: 7 },
+				// does once the walk lands.
+				{ system: UnitMoveSystem },
+				{ system: UnitCommandSystem },
 				// Below UnitRenderSystem (17) on the background layer: overlay first,
 				// units on top.
 				{ system: MovementRenderSystem, priority: 16 },

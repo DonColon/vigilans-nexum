@@ -41,8 +41,8 @@ export class ExperienceFeature extends GameFeature {
 			states: [ExperienceState],
 			commands: [...experienceCommands],
 			systems: [
-				// Event-driven: the feature's flow. Order among the update systems does not matter.
-				{ system: ExperienceFlowSystem, priority: 7 },
+				// Event-driven: the feature's flow.
+				{ system: ExperienceFlowSystem },
 				// The bar's clock, alongside the battle animation's.
 				{ system: ExperienceSystem, priority: 8 },
 				// After UIRenderSystem (50), which owns and clears the "ui" layer.
