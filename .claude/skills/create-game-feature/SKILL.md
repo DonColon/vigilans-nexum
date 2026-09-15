@@ -48,17 +48,17 @@ Read the **Features** table in `README.md` (`## Features`): every feature and wh
 
 4. **Declare the events** in `src/game.events.ts`: one documented interface per event and one line each in the `GameEvents` augmentation.
 
-5. **Add i18n keys** to both `src/game/i18n/en.json` and `src/game/i18n/de.json` - a key missing in one locale fails the build. Keys are `<feature>.<name>`. If the German wording is uncertain, write it and say so in the report.
+5. **Add i18n keys** to both `src/game/i18n/en.json` and `src/game/i18n/de.json` - a key missing in one locale fails the build. Keys are `<feature>.<name>`. If the German wording is uncertain, write it and say so in the report. `node .claude/skills/i18n-sync/check.mjs` finds what is missing or unused (the `i18n-sync` skill).
 
-6. **Content and assets**, if the feature owns a document: the JSON under `src/assets/data/<kind>/`, a manifest entry in `src/asset.manifest.ts`, and the same document seeded under the same id in `vitest.setup.ts`.
+6. **Content and assets**, if the feature owns a document: the JSON under `src/assets/data/<kind>/`, a manifest entry in `src/asset.manifest.ts`, and the same document seeded under the same id in `vitest.setup.ts`. The shapes of the existing documents and their cross-references are in the `add-content` skill.
 
 7. **Install it** in `src/index.ts` after every feature it depends on, with a comment saying what it needs and why it sits where it does, and mirror those features in the `dependencies` of the `new <Name>Feature({...})` call.
 
 8. **Register it in the README.** Add a row to the *Features* table in `README.md` at the feature's install position, in the same one-line "Owns" style as its neighbours. If it adds a scheduled system, add it to the *Render layers and priorities* table; if it adds a document format, add it to the table in *Content and assets*; if it adds a folder the layout tree should show, add that line.
 
-9. **Specs** under `test/game/<feature>/`: a pure spec for the rules and content (`<Name>.spec.ts`) and a flow spec that installs the real features and drives the event queue (`<Name>Flow.spec.ts`) - templates in templates.md.
+9. **Specs** under `test/game/<feature>/`: a pure spec for the rules and content (`<Name>.spec.ts`) and a flow spec that installs the real features and drives the event queue (`<Name>Flow.spec.ts`) - templates in templates.md; the harness, the event cascades with their pass counts, the fixtures and the helper idioms are in the `write-feature-spec` skill. A new event chain goes into its `cascades.md`.
 
-10. **Verify**, in this order, and fix what fails: `npx tsc --noEmit`; `npm run lint` (this is what enforces the folder layering); `npx vitest run test/game/<feature>`; `npx vitest run` (the whole suite - a new event or key can break another spec). Run the full suite **before** you change anything and note what already fails; anything failing afterwards that did not fail then is yours. Then run it in the game: `npm start`, open the page, and if the tab is hidden drive frames with `window.game.step(16)` (see the `run` skill and the project memory).
+10. **Verify**, in this order, and fix what fails: `npx tsc --noEmit`; `npm run lint` (this is what enforces the folder layering); `npx vitest run test/game/<feature>`; `npx vitest run` (the whole suite - a new event or key can break another spec). Run the full suite **before** you change anything and note what already fails; anything failing afterwards that did not fail then is yours. Then see it in the game with the `verify-in-browser` skill (it starts the dev server and drives frames by hand, since rAF is frozen in an automation tab).
 
 11. **Report**: the files created, the design decisions from step 2, what was verified and how, and anything left open (a German string to check, a priority chosen by judgement, a dependency you were unsure of).
 
