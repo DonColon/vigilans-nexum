@@ -47,6 +47,8 @@ import { PopupState } from "@/game/ui/states/PopupState";
 import { TalkComponent } from "@/game/talk/components/TalkComponent";
 import { availableTalk } from "@/game/talk/rules/Talks";
 import { MenuRequest, MenuState } from "@/game/ui/states/MenuState";
+import { ObjectiveComponent } from "@/game/objective/components/ObjectiveComponent";
+import { canSeize } from "@/game/objective/rules/Outcome";
 import { VisitComponent } from "@/game/visit/components/VisitComponent";
 import { House } from "@/game/visit/content/Houses";
 import { availableHouse } from "@/game/visit/rules/Visits";
@@ -87,6 +89,9 @@ import { activeCursor, tileToScreen } from "@/game/map/rules/ActiveMap";
  *  - "Visit" hands off to the visit feature (`visit:requested`), which plays what
  *    the villager has to say and shuts the door behind the unit. It only shows
  *    when the unit is standing beside the door of a house nobody has called on.
+ *  - "Seize" hands off to the objective feature (`seize:requested`), which
+ *    decides the battle. It only shows for the commander standing on the tile a
+ *    seize is won on, and it spends the unit - the battle's last action.
  *
  * Only some of those commands finish the unit's turn: "Wait", a used item, a
  * resolved fight, a raised staff, an opened lock and a visited house all spend
@@ -157,6 +162,7 @@ export class UnitCommandSystem extends ReactiveSystem {
 		const position = tileOf(mover);
 
 		const commands = {
+			canSeize: this.canSeize(mover),
 			canAttack: this.attackTargets(mover).length > 0,
 			canUseStaff: canUseStaff(data, position, this.units()),
 			canVisit: this.house(mover) !== null,
@@ -182,6 +188,18 @@ export class UnitCommandSystem extends ReactiveSystem {
 		}
 
 		return availableTalk(talk.getComponent(TalkComponent).read(), this.units(), mover)?.partner ?? null;
+	}
+
+	/**
+	 * Whether this unit can claim the objective from where it stands - the
+	 * commander on the tile a seize is won on. The objective is the objective
+	 * feature's, but the check over it is pure - the same way "Visit" asks the
+	 * visit rules about the houses.
+	 */
+	private canSeize(mover: Entity): boolean {
+		const objective = this.world.entityWith(ObjectiveComponent);
+
+		return objective !== null && canSeize(objective.getComponent(ObjectiveComponent).read(), mover);
 	}
 
 	/**
@@ -356,6 +374,18 @@ export class UnitCommandSystem extends ReactiveSystem {
 		}
 
 		if (event.menu !== COMMAND_MENU) {
+			return;
+		}
+
+		if (event.row === UnitMenuRow.SEIZE) {
+			if (this.canSeize(mover)) {
+				// Claiming the objective is the unit's action - and the battle's last. The
+				// objective feature takes it from here and decides the day.
+				this.closeOpenMenu();
+				this.spendMover(mover);
+				this.events.dispatch("seize:requested", { unitId: mover.getComponent(UnitComponent).read().id });
+			}
+
 			return;
 		}
 

@@ -15,4 +15,5 @@ export { PhaseBannerSystem } from "@/game/turn/systems/PhaseBannerSystem";
 export { PhaseBannerRenderSystem } from "@/game/turn/systems/PhaseBannerRenderSystem";
 
 export { TurnHud, turnDigits, DIGIT_ZERO } from "@/game/turn/view/TurnHud";
-export { PhaseBannerTheme, phaseBannerFrame, phaseBannerBox, phaseBannerDuration } from "@/game/turn/view/PhaseBanner";
+export { PhaseBannerTheme, phaseBannerFrame, phaseBannerBox, phaseBannerDuration, drawBanner, drawBand } from "@/game/turn/view/PhaseBanner";
+export type { BannerContent } from "@/game/turn/view/PhaseBanner";

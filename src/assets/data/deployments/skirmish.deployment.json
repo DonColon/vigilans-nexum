@@ -2,6 +2,7 @@
 	"format": "vigilans-deployment",
 	"version": 1,
 	"map": "fantasy",
+	"objective": { "win": "seize", "column": 12, "row": 3 },
 	"units": [
 		{ "unit": "dardan", "column": 4, "row": 10 },
 		{ "unit": "elira", "column": 5, "row": 10 },

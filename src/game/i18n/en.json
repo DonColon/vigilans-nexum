@@ -1,6 +1,7 @@
 {
 	"menu.examine": "Examine",
 	"menu.lore": "Lore",
+	"menu.seize": "Seize",
 	"menu.attack": "Attack",
 	"menu.staff": "Staff",
 	"menu.chest": "Chest",
@@ -88,6 +89,9 @@
 	"turn.banner": "Turn {turn}",
 	"turn.playerPhase": "Player Phase",
 	"turn.enemyPhase": "Enemy Phase",
+	"objective.victory": "Victory",
+	"objective.defeat": "Defeat",
+	"objective.continue": "Press confirm to fight the battle again",
 	"terrain.plain": "Plain",
 	"terrain.forest": "Forest",
 	"terrain.mountain": "Mountain",

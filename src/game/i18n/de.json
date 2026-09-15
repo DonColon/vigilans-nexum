@@ -1,6 +1,7 @@
 {
 	"menu.examine": "Untersuchen",
 	"menu.lore": "Überlieferung",
+	"menu.seize": "Einnehmen",
 	"menu.attack": "Angriff",
 	"menu.staff": "Stab",
 	"menu.chest": "Truhe",
@@ -88,6 +89,9 @@
 	"turn.banner": "Zug {turn}",
 	"turn.playerPhase": "Spielerphase",
 	"turn.enemyPhase": "Gegnerphase",
+	"objective.victory": "Sieg",
+	"objective.defeat": "Niederlage",
+	"objective.continue": "Bestätigen, um die Schlacht erneut zu schlagen",
 	"terrain.plain": "Ebene",
 	"terrain.forest": "Wald",
 	"terrain.mountain": "Gebirge",

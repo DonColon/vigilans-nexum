@@ -17,14 +17,28 @@ export interface DeploymentPlacement {
 }
 
 /**
+ * What the battle is won by. `win` names the condition - the ids are the
+ * objective feature's (see src/game/objective/content/Objectives) - and a
+ * condition about a place, seizing a throne, names its tile. A sheet without
+ * one gets that feature's default.
+ */
+export interface DeploymentObjective {
+	win: string;
+	column?: number;
+	row?: number;
+}
+
+/**
  * A deployment sheet, as authored in `src/assets/data/deployments/*.deployment.json`:
- * which units a battle starts with and where each of them stands.
+ * which units a battle starts with, where each of them stands, and what the
+ * battle is won by.
  */
 export interface DeploymentDocument {
 	format: "vigilans-deployment";
 	version: 1;
 	map: string;
 	units: DeploymentPlacement[];
+	objective?: DeploymentObjective;
 }
 
 /** Checks a parsed deployment sheet's shape. Throws a `GameError` naming what is wrong. */
@@ -61,5 +75,28 @@ export function parseDeployment(document: unknown): DeploymentDocument {
 		}
 	}
 
+	if (sheet.objective !== undefined) {
+		assertObjective(sheet.objective);
+	}
+
 	return document as DeploymentDocument;
+}
+
+/** Checks the shape of the objective block - the condition's meaning is the objective feature's to check. */
+function assertObjective(value: unknown): void {
+	if (typeof value !== "object" || value === null) {
+		throw new GameError("Deployment objective is not an object");
+	}
+
+	const objective = value as Record<string, unknown>;
+
+	if (typeof objective.win !== "string" || objective.win.length === 0) {
+		throw new GameError("Deployment objective is missing its win condition");
+	}
+
+	for (const key of ["column", "row"]) {
+		if (objective[key] !== undefined && !Number.isInteger(objective[key])) {
+			throw new GameError(`Deployment objective needs a whole-number ${key}, got ${objective[key]}`);
+		}
+	}
 }

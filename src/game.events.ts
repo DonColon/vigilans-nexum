@@ -1,6 +1,7 @@
 import { GameEvent } from "@/core/events/GameEvent";
 import type { StatBoost } from "@/game/units/content/UnitCatalog";
 import type { UnitFaction } from "@/game/units/components/UnitComponent";
+import type { Outcome } from "@/game/objective/components/ObjectiveComponent";
 
 /** The player pressed confirm on a battle map tile. */
 export interface TileConfirmedEvent extends GameEvent {
@@ -393,6 +394,23 @@ export interface TurnChangedEvent extends GameEvent {
 	phase: UnitFaction;
 }
 
+/** The player chose "Seize" - the commander is standing on the objective's tile and claims it. */
+export interface SeizeRequestedEvent extends GameEvent {
+	unitId: string;
+}
+
+/**
+ * The battle is decided: the objective was met, or the army lost. Nothing is
+ * shown yet - the outcome banner waits for whatever is over the map (the last
+ * fight's experience bar) before it goes up - but the turns stop here.
+ */
+export interface ObjectiveDecidedEvent extends GameEvent {
+	outcome: Outcome;
+}
+
+/** The outcome banner was acknowledged; the battle map starts over. */
+export type ObjectiveAcknowledgedEvent = GameEvent;
+
 declare module "@/core/events/GameEvents" {
 	interface GameEvents {
 		"map:tileConfirmed": TileConfirmedEvent;
@@ -453,5 +471,8 @@ declare module "@/core/events/GameEvents" {
 		"status:closed": StatusClosedEvent;
 		"turn:end": TurnEndEvent;
 		"turn:changed": TurnChangedEvent;
+		"seize:requested": SeizeRequestedEvent;
+		"objective:decided": ObjectiveDecidedEvent;
+		"objective:acknowledged": ObjectiveAcknowledgedEvent;
 	}
 }

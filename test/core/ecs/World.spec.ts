@@ -7,7 +7,6 @@ import { EntityType } from "@/core/ecs/Entity";
 import { Query } from "@/core/ecs/Query";
 import { UpdateSystem } from "@/core/ecs/UpdateSystem";
 import { RenderSystem } from "@/core/ecs/RenderSystem";
-import { System } from "@/core/ecs/System";
 import { ScheduledSystem } from "@/core/ecs/ScheduledSystem";
 import { ReactiveSystem } from "@/core/ecs/ReactiveSystem";
 import { ServiceRegistry } from "@/core/service/ServiceRegistry";

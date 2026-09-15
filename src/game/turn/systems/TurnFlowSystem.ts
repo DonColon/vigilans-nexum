@@ -14,6 +14,9 @@ import { unitsInWorld, unitsOfFaction } from "@/game/units/rules/UnitLookup";
  * the last action's experience bar or popup seen off - turning the counter
  * over to the next side and waking every unit back up.
  *
+ * Once the battle is decided (`objective:decided`) the counter stops for
+ * good - see [[TurnSystem]].
+ *
  * Every new phase - the first one included - opens with the phase banner
  * ("Player Phase" / "Enemy Phase") sweeping across the screen: a
  * [[PhaseBannerState]] pushed over the map, which freezes it until the banner
@@ -26,6 +29,7 @@ export class TurnFlowSystem extends ReactiveSystem {
 		this.subscribe("turn:end", () => this.finish());
 		this.subscribe("unit:acted", () => this.finishIfDone());
 		this.subscribe("turn:changed", (event) => this.announce(event));
+		this.subscribe("objective:decided", () => this.stop());
 	}
 
 	public dispose(): void {
@@ -60,6 +64,18 @@ export class TurnFlowSystem extends ReactiveSystem {
 
 		const component = turn.getComponent(TurnComponent);
 		component.update({ ...component.read(), ending: true });
+	}
+
+	/** The battle is decided: the counter stops, whatever phase it is in. */
+	private stop(): void {
+		const turn = this.world.entityWith(TurnComponent);
+
+		if (turn === null) {
+			return;
+		}
+
+		const component = turn.getComponent(TurnComponent);
+		component.update({ ...component.read(), over: true });
 	}
 
 	/** The acting side has nobody left to move - the phase is over on its own. */

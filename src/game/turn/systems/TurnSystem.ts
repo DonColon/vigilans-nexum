@@ -21,6 +21,9 @@ import { unitsOfFaction } from "@/game/units/rules/UnitLookup";
  * army is back in colour while the enemy moves and the enemy's is while the
  * player does.
  *
+ * A battle that is decided (`over`, set by the objective feature) turns no
+ * more: the phase that was ending stays where it is under the outcome banner.
+ *
  * Waiting for the map is what keeps the banner from landing on top of an
  * experience bar: the last unit's fight resolves, `unit:acted` ends the phase,
  * and the bar is pushed in the same breath. Nothing else is held up by this -
@@ -50,7 +53,7 @@ export class TurnSystem extends UpdateSystem {
 		const component = turn.getComponent(TurnComponent);
 		const data = component.read();
 
-		if (!data.ending || !this.mapOnTop()) {
+		if (!data.ending || data.over || !this.mapOnTop()) {
 			return;
 		}
 

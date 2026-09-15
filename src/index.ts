@@ -8,6 +8,7 @@ import { StaffFeature } from "@/game/staff";
 import { LocksFeature } from "@/game/locks";
 import { MapFeature } from "@/game/map";
 import { MovementFeature } from "@/game/movement";
+import { ObjectiveFeature } from "@/game/objective";
 import { OptionsFeature } from "@/game/options";
 import { RosterFeature } from "@/game/roster";
 import { StatusFeature } from "@/game/status";
@@ -26,6 +27,7 @@ const units = new UnitsFeature();
 const turn = new TurnFeature({ dependencies: [units] });
 const combat = new CombatFeature({ dependencies: [units] });
 const movement = new MovementFeature({ dependencies: [units, ui] });
+const ai = new AIFeature({ dependencies: [units, turn, combat, movement] });
 
 game.install(new MapFeature());
 game.install(ui);
@@ -76,7 +78,12 @@ game.install(new StatusFeature({ dependencies: [units] }));
 // The enemy phase: what the other side does once the turn is handed to it. It
 // walks and fights through the movement and combat features, so it is installed
 // after both, and after the turn feature whose phases it acts in.
-game.install(new AIFeature({ dependencies: [units, turn, combat, movement] }));
+game.install(ai);
+// What the battle is for: the objective off the deployment sheet, decided
+// after every death and on "Seize", and the victory / defeat banner that
+// starts the battle over. It stops the turns and holds the enemy phase, so it
+// is installed after both.
+game.install(new ObjectiveFeature({ dependencies: [units, turn, ai] }));
 game.start();
 
 // Dev-only handle so the loop can be driven by hand when rAF is throttled

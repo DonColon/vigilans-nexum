@@ -13,6 +13,12 @@ export interface TurnData extends JsonSchema {
 	 * next one starts. `TurnSystem` completes it.
 	 */
 	ending: boolean;
+	/**
+	 * The battle is decided - won or lost - and the counter has stopped: a
+	 * phase marked ending is never completed once this is set. The objective
+	 * feature says when.
+	 */
+	over: boolean;
 }
 
 /** The sides take their phases in this order; a turn is one pass through it. */
@@ -30,7 +36,7 @@ export class TurnComponent extends Component<TurnData> {
 
 	/** The first phase of a battle: turn 1, the player's. */
 	public static opening(): TurnData {
-		return { number: 1, phase: UnitFaction.PLAYER, ending: false };
+		return { number: 1, phase: UnitFaction.PLAYER, ending: false, over: false };
 	}
 
 	/**
@@ -54,10 +60,10 @@ export class TurnComponent extends Component<TurnData> {
 			const phase = PHASE_ORDER[index];
 
 			if (phase === UnitFaction.PLAYER || hasUnits(phase)) {
-				return { number, phase, ending: false };
+				return { ...turn, number, phase, ending: false };
 			}
 		}
 
-		return { number, phase: UnitFaction.PLAYER, ending: false };
+		return { ...turn, number, phase: UnitFaction.PLAYER, ending: false };
 	}
 }

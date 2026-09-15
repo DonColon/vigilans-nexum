@@ -17,7 +17,7 @@ npm run build      # type-check and bundle to dist/
 vigilans-nexum
 ├── src
 │   ├── assets               # Asset bundle: art, fonts and the game's content as JSON
-│   │   ├── data             # Unit sheets, catalogs, deployments, maps, houses, locks, conversations
+│   │   ├── data             # Unit sheets, catalogs, deployments (units, behaviours, objective), maps, houses, locks, conversations
 │   │   ├── fonts
 │   │   ├── icons
 │   │   ├── tilesets
@@ -59,6 +59,7 @@ vigilans-nexum
 │   │   ├── locks
 │   │   ├── map
 │   │   ├── movement
+│   │   ├── objective        # What the battle is won and lost by, and the outcome banner
 │   │   ├── options
 │   │   ├── roster
 │   │   ├── staff

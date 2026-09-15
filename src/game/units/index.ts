@@ -13,7 +13,7 @@ export type { UnitData, UnitStats, InventoryEntry } from "@/game/units/component
 export { buildUnit } from "@/game/units/content/UnitSheets";
 export type { UnitDocument, SheetStats } from "@/game/units/content/UnitSheets";
 export { DEPLOYMENT_ASSET, parseDeployment } from "@/game/units/content/Deployments";
-export type { DeploymentDocument, DeploymentPlacement } from "@/game/units/content/Deployments";
+export type { DeploymentDocument, DeploymentPlacement, DeploymentObjective } from "@/game/units/content/Deployments";
 
 // The rulebook the sheets resolve against - loaded from the asset bundle, not
 // bundled with the code. See src/assets/data/catalog.

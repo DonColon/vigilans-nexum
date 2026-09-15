@@ -24,6 +24,7 @@ export const ITEM_ACTION_MENU_GAP = 4;
  * which is what the move flow branches on.
  */
 export const UnitMenuRow = {
+	SEIZE: "seize",
 	ATTACK: "attack",
 	STAFF: "staff",
 	VISIT: "visit",
@@ -52,6 +53,7 @@ interface Row {
 
 /** The label of every row, resolved fresh so a locale switch is picked up. */
 const LABELS: Record<UnitMenuRow, () => string> = {
+	[UnitMenuRow.SEIZE]: () => i18n("menu.seize"),
 	[UnitMenuRow.ATTACK]: () => i18n("menu.attack"),
 	[UnitMenuRow.STAFF]: () => i18n("menu.staff"),
 	[UnitMenuRow.VISIT]: () => i18n("menu.visit"),
@@ -86,6 +88,8 @@ function toRequestRows(rows: readonly Row[]): { items: string[]; ids: string[] }
 
 /** What the unit can do from where it stands - what the command menu is built from. */
 export interface UnitCommands {
+	/** It is the commander, standing on the tile the battle is won by seizing. */
+	canSeize?: boolean;
 	/** Something is in reach of a weapon it carries. */
 	canAttack?: boolean;
 	/** A wounded ally is in reach of a staff it carries. */
@@ -103,8 +107,8 @@ export interface UnitCommands {
 }
 
 /**
- * The rows of the unit command menu, in Fire Emblem's order: "Attack" when
- * something is in reach, "Staff" when a wounded ally is in reach of a staff,
+ * The rows of the unit command menu, in Fire Emblem's order: "Seize" when the
+ * commander stands on the objective's tile, "Attack" when something is in reach, "Staff" when a wounded ally is in reach of a staff,
  * "Visit" when it is standing beside the door of a house nobody has called on,
  * "Chest" when it stands on or beside a locked chest with a key for it, "Door" when it
  * stands beside a locked door with a key for it, "Talk" when someone beside it
@@ -113,6 +117,10 @@ export interface UnitCommands {
  */
 export function unitCommandRows(unit: UnitData, commands: UnitCommands = {}): UnitMenuRow[] {
 	const rows: UnitMenuRow[] = [];
+
+	if (commands.canSeize) {
+		rows.push(UnitMenuRow.SEIZE);
+	}
 
 	if (commands.canAttack) {
 		rows.push(UnitMenuRow.ATTACK);
