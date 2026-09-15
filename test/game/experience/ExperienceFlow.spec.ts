@@ -80,7 +80,7 @@ suite("Experience Flow Test Suite", () => {
 	const display = () => stateManager.getState(ExperienceState).getDisplay()?.getComponent(ExperienceComponent).read();
 
 	const finishWalk = () => {
-		const walkSystem = new UnitWalkSystem(8);
+		const walkSystem = new UnitWalkSystem(8).initialize();
 		walkSystem.execute(10_000);
 		eventBus.processQueue();
 		walkSystem.dispose();
@@ -99,7 +99,7 @@ suite("Experience Flow Test Suite", () => {
 		eventBus.processQueue(); // combat:requested
 		forecast()?.update({ ...forecast()!.read(), phase: "forecast", weaponIndex: 0, confirmed: true });
 
-		const system = new ForecastSystem(10);
+		const system = new ForecastSystem(10).initialize();
 		system.execute(16, 0);
 		eventBus.processQueue(); // combat:confirmed -> resolve, combat:fought
 		eventBus.processQueue(); // combat:fought -> the scoring
@@ -109,7 +109,7 @@ suite("Experience Flow Test Suite", () => {
 
 	/** Runs the battle animation to its end so `combat:resolved` fires and the bar goes up. */
 	const finishBattleAnimation = () => {
-		const system = new BattleAnimationSystem(8);
+		const system = new BattleAnimationSystem(8).initialize();
 		system.execute(10_000);
 		eventBus.processQueue(); // unit:died, combat:resolved -> the bar / the spend
 		eventBus.processQueue(); // unit:acted
@@ -118,7 +118,7 @@ suite("Experience Flow Test Suite", () => {
 
 	/** Runs the bar's clock forward by `elapsed` milliseconds and settles what it reports. */
 	const pumpBar = (elapsed: number) => {
-		const system = new ExperienceSystem(8);
+		const system = new ExperienceSystem(8).initialize();
 		system.execute(elapsed, 0);
 		eventBus.processQueue(); // experience:shown -> the next bar
 		system.dispose();

@@ -7,7 +7,8 @@ import { World } from "@/core/ecs/World";
 
 /**
  * A system that runs on events rather than on the frame clock: it subscribes
- * in `initialize()` and its handlers are the behaviour. It has no `execute`
+ * in `initialize()` - which the World calls once the system is constructed -
+ * and its handlers are the behaviour. It has no `execute`
  * and no priority - it sits in no schedule - and the World registers it
  * without one, so it can be enabled, disabled and disposed like any other
  * system.
@@ -32,12 +33,7 @@ export abstract class ReactiveSystem extends System {
 	@GameCoreService(GameStateManager)
 	protected stateManager!: GameStateManager;
 
-	/**
-	 * Created on first use, not in a field initializer: `System`'s constructor
-	 * calls `initialize()` - where subclasses subscribe - before a subclass's
-	 * own field initializers have run.
-	 */
-	declare private subscriptions: UnsubscribeFunction[] | undefined;
+	private subscriptions: UnsubscribeFunction[] = [];
 
 	/**
 	 * Listens for an event for as long as the system is registered. The handler
@@ -45,7 +41,6 @@ export abstract class ReactiveSystem extends System {
 	 * event's other listeners, higher first.
 	 */
 	protected subscribe<Name extends EventNames>(eventName: Name, handler: EventHandler<Name>, priority: number = 0): void {
-		this.subscriptions ??= [];
 		this.subscriptions.push(
 			this.events.subscribe(
 				eventName,
@@ -60,7 +55,7 @@ export abstract class ReactiveSystem extends System {
 	}
 
 	public dispose(): void {
-		for (const unsubscribe of this.subscriptions ?? []) {
+		for (const unsubscribe of this.subscriptions) {
 			unsubscribe();
 		}
 

@@ -21,11 +21,13 @@ export class TurnRenderSystem extends MapRenderSystem {
 	@GameCoreService(AssetStorage)
 	private assetStorage!: AssetStorage;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			turns: new Query({ allowlist: [TurnComponent] }),
 			grids: new Query({ allowlist: [GridComponent] })
 		};
+
+		return this;
 	}
 
 	public execute(): void {

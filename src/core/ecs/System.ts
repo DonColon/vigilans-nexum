@@ -16,10 +16,16 @@ export type ScheduledSystemConstructor<Type extends ScheduledSystem = ScheduledS
 export type ReactiveSystemConstructor<Type extends System = System> = new () => Type;
 
 /**
- * What every system shares: its queries, whether it is enabled and the
- * `initialize()` the constructor calls. What makes it *do* anything is the
- * subclass's business - `ScheduledSystem` adds `execute` and a priority, a
- * `ReactiveSystem` subscribes to events instead.
+ * What every system shares: its queries, whether it is enabled, and the two
+ * ends of its life - `initialize()` and `dispose()`. What makes it *do*
+ * anything is the subclass's business - `ScheduledSystem` adds `execute` and a
+ * priority, a `ReactiveSystem` subscribes to events instead.
+ *
+ * A system is built in two steps, both the World's: it is constructed, and
+ * once it is - every field initializer of every subclass has run - the World
+ * calls `initialize()`, where the system declares its queries or subscribes,
+ * before it is scheduled or receives an event. A spec that builds a system by
+ * hand does the same: `new TurnSystem(8).initialize()`.
  */
 export abstract class System {
 	protected queries: QueryList;
@@ -28,10 +34,14 @@ export abstract class System {
 	constructor() {
 		this.enabled = true;
 		this.queries = {};
-		this.initialize();
 	}
 
-	public abstract initialize(): void;
+	/**
+	 * Declares the queries, subscribes to the events. Called once, after
+	 * construction, by whoever built the system - the World when registering it,
+	 * a spec when it built one by hand. Returns the system so the call chains.
+	 */
+	public abstract initialize(): this;
 
 	public isEnabled(): boolean {
 		return this.enabled;

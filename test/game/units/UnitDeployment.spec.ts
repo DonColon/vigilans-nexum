@@ -155,7 +155,7 @@ suite("Unit Deployment Test Suite", () => {
 
 		// Built once the pop exists, so the query snapshots it - the game loop is
 		// what would otherwise deliver the entityChanged event.
-		const system = new UnitPopSystem(8);
+		const system = new UnitPopSystem(8).initialize();
 
 		system.execute(POP_LIFETIME_MS / 2);
 		expect(dardan.getComponent(UnitPopComponent).read().elapsed).toBe(POP_LIFETIME_MS / 2);

@@ -19,13 +19,15 @@ import { unitById, unitLocations } from "@/game/units/rules/UnitLookup";
 export class PathPreviewSystem extends UpdateSystem {
 	private lastKey = "";
 
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			movements: new Query({ allowlist: [MovementComponent] }),
 			grids: new Query({ allowlist: [GridComponent] }),
 			cursors: new Query({ allowlist: [CursorComponent, GridPositionComponent] }),
 			units: new Query({ allowlist: [UnitComponent, GridPositionComponent] })
 		};
+
+		return this;
 	}
 
 	public execute(): void {

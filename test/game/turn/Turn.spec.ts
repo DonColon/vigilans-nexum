@@ -61,7 +61,7 @@ suite("Turn Test Suite", () => {
 
 		/** A TurnSystem whose queries already see the entities that exist right now. */
 		const turnSystem = () => {
-			const system = new TurnSystem(0);
+			const system = new TurnSystem(0).initialize();
 			systems.push(system);
 			return system;
 		};

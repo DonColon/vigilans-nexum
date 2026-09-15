@@ -23,10 +23,12 @@ export class PhaseBannerRenderSystem extends RenderSystem {
 	@GameCoreService(AssetStorage)
 	private assetStorage!: AssetStorage;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			banners: new Query({ allowlist: [PhaseBannerComponent] })
 		};
+
+		return this;
 	}
 
 	public execute(): void {

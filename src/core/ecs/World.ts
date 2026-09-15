@@ -215,7 +215,10 @@ export class World {
 			throw new GameError(`System ${systemType.name} is already registered`);
 		}
 
+		// Built, then initialised: only once construction is over have every
+		// subclass's field initializers run, so `initialize()` may set anything.
 		const system = new (systemType as new (priority?: number) => System)(priority);
+		system.initialize();
 
 		if (system instanceof ScheduledSystem) {
 			if (priority === undefined) {

@@ -39,12 +39,14 @@ export class StaffFlowSystem extends ReactiveSystem {
 	/** The unit whose staff list is open, so a chosen row knows who it belongs to. */
 	private healing: string | null = null;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.subscribe("map:closed", () => (this.healing = null));
 		this.subscribe("staff:requested", (event) => this.onRequested(event));
 		this.subscribe("ui:menuConfirmed", (event) => this.onStaffChosen(event));
 		this.subscribe("ui:menuCancelled", (event) => this.onStaffCancelled(event));
 		this.subscribe("staff:confirmed", (event) => this.raise(event));
+
+		return this;
 	}
 
 	public dispose(): void {

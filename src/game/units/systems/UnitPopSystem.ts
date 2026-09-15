@@ -8,10 +8,12 @@ import { UnitPopComponent } from "@/game/units/components/UnitPopComponent";
  * its lifetime, which is what makes the number disappear again.
  */
 export class UnitPopSystem extends UpdateSystem {
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			pops: new Query({ allowlist: [UnitPopComponent] })
 		};
+
+		return this;
 	}
 
 	public execute(elapsed: number): void {

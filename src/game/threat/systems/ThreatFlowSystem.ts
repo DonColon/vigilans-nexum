@@ -35,7 +35,7 @@ export class ThreatFlowSystem extends ReactiveSystem {
 	/** One of the player's units is up, so the move flow owns the presses. */
 	private moving = false;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.subscribe("map:ready", () => this.open());
 		this.subscribe("map:closed", () => this.close());
 		this.subscribe("map:tileConfirmed", (event) => this.onConfirm(event), 20);
@@ -52,6 +52,8 @@ export class ThreatFlowSystem extends ReactiveSystem {
 		this.subscribe("unit:moved", () => this.onUnitMoved());
 		this.subscribe("unit:died", () => this.refresh());
 		this.subscribe("turn:changed", () => this.refresh());
+
+		return this;
 	}
 
 	public dispose(): void {

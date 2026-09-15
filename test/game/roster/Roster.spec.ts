@@ -86,7 +86,7 @@ suite("Roster Test Suite", () => {
 
 	/** A RosterSystem whose query already sees the list that exists right now. */
 	const rosterSystem = () => {
-		const system = new RosterSystem(10);
+		const system = new RosterSystem(10).initialize();
 		systems.push(system);
 		return system;
 	};

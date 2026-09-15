@@ -35,12 +35,14 @@ export class ConvoyFlowSystem extends ReactiveSystem {
 	/** The delivery the open choice menu belongs to. */
 	private pending: { unitId: string; itemId: string } | null = null;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.subscribe("map:ready", () => this.open());
 		this.subscribe("map:closed", () => this.close());
 		this.subscribe("convoy:requested", (event) => this.onRequested(event));
 		this.subscribe("ui:menuConfirmed", (event) => this.onChoice(event));
 		this.subscribe("ui:menuCancelled", (event) => this.onChoiceCancelled(event));
+
+		return this;
 	}
 
 	public dispose(): void {

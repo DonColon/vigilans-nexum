@@ -56,12 +56,14 @@ export class EnemyPhaseSystem extends UpdateSystem {
 	@GameCoreService(World)
 	private world!: World;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			turns: new Query({ allowlist: [TurnComponent] }),
 			units: new Query({ allowlist: [UnitComponent] }),
 			actions: new Query({ allowlist: [EnemyActionComponent, UnitComponent] })
 		};
+
+		return this;
 	}
 
 	public execute(elapsed: number): void {

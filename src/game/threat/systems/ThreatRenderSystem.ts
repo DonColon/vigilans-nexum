@@ -19,11 +19,13 @@ import { ThreatTheme } from "@/game/threat/view/ThreatTheme";
  * layer every frame.
  */
 export class ThreatRenderSystem extends MapRenderSystem {
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			threats: new Query({ allowlist: [ThreatComponent] }),
 			grids: new Query({ allowlist: [GridComponent, TransformComponent] })
 		};
+
+		return this;
 	}
 
 	public execute(): void {

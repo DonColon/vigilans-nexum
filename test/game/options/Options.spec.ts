@@ -111,7 +111,7 @@ suite("Options Test Suite", () => {
 
 	/** An OptionsSystem whose query already sees the screen that exists right now. */
 	const optionsSystem = () => {
-		const system = new OptionsSystem(10);
+		const system = new OptionsSystem(10).initialize();
 		systems.push(system);
 		return system;
 	};

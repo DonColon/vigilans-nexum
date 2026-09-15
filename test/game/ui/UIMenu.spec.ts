@@ -90,7 +90,7 @@ suite("UI Menu Test Suite", () => {
 		// Built after the menu entity exists, so the system's query snapshots it -
 		// the entityChanged event that would otherwise add it is only delivered by
 		// the game loop, which the test does not run.
-		system = new MenuSystem(0);
+		system = new MenuSystem(0).initialize();
 	});
 
 	afterEach(() => {

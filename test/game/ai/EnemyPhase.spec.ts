@@ -104,11 +104,11 @@ suite("Enemy Phase Test Suite", () => {
 	/** One frame of the game: the queued events land, then every clock involved runs. */
 	const frame = (elapsed = 1000) => {
 		eventBus.processQueue();
-		run(new TurnSystem(8), elapsed);
-		run(new EnemyPhaseSystem(8), elapsed);
+		run(new TurnSystem(8).initialize(), elapsed);
+		run(new EnemyPhaseSystem(8).initialize(), elapsed);
 		eventBus.processQueue();
-		run(new UnitWalkSystem(8), elapsed);
-		run(new BattleAnimationSystem(8), elapsed);
+		run(new UnitWalkSystem(8).initialize(), elapsed);
+		run(new BattleAnimationSystem(8).initialize(), elapsed);
 		eventBus.processQueue();
 	};
 

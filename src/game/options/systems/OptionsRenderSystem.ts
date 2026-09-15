@@ -37,10 +37,12 @@ export class OptionsRenderSystem extends RenderSystem {
 	@GameCoreService(OptionsService)
 	private options!: OptionsService;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			screens: new Query({ allowlist: [OptionsComponent] })
 		};
+
+		return this;
 	}
 
 	public execute(): void {

@@ -70,7 +70,7 @@ suite("Unit Trade Test Suite", () => {
 
 	/** Runs TradeSystem once, so a flagged confirm / cancel is resolved and its fallout settles. */
 	const pumpTrade = () => {
-		const system = new TradeSystem(10);
+		const system = new TradeSystem(10).initialize();
 		system.execute(16, 0);
 		eventBus.processQueue(); // trade:closed -> MovementFeature
 		eventBus.processQueue(); // unit:acted
@@ -114,7 +114,7 @@ suite("Unit Trade Test Suite", () => {
 	};
 
 	const finishWalk = () => {
-		const walkSystem = new UnitWalkSystem(8);
+		const walkSystem = new UnitWalkSystem(8).initialize();
 		walkSystem.execute(10_000);
 		eventBus.processQueue();
 		walkSystem.dispose();

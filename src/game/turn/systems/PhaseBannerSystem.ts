@@ -15,7 +15,9 @@ export class PhaseBannerSystem extends UpdateSystem {
 	@GameCoreService(GameStateManager)
 	private stateManager!: GameStateManager;
 
-	public initialize(): void {}
+	public initialize(): this {
+		return this;
+	}
 
 	public execute(elapsed: number): void {
 		const state = this.stateManager.peek();

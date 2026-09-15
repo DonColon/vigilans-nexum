@@ -23,13 +23,15 @@ import { unitsInWorld, unitsOfFaction } from "@/game/units/rules/UnitLookup";
  * has faded on its own.
  */
 export class TurnFlowSystem extends ReactiveSystem {
-	public initialize(): void {
+	public initialize(): this {
 		this.subscribe("map:ready", () => this.begin());
 		this.subscribe("map:closed", () => this.end());
 		this.subscribe("turn:end", () => this.finish());
 		this.subscribe("unit:acted", () => this.finishIfDone());
 		this.subscribe("turn:changed", (event) => this.announce(event));
 		this.subscribe("objective:decided", () => this.stop());
+
+		return this;
 	}
 
 	public dispose(): void {

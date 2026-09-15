@@ -38,11 +38,13 @@ export class TradeSystem extends UpdateSystem {
 	@GameCoreService(EventBus)
 	private eventBus!: EventBus;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			units: new Query({ allowlist: [UnitComponent] }),
 			cursors: new Query({ allowlist: [CursorComponent, GridPositionComponent] })
 		};
+
+		return this;
 	}
 
 	public execute(elapsed: number, frame: number): void {

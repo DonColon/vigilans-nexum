@@ -39,11 +39,13 @@ export class TradeRenderSystem extends RenderSystem {
 	@GameCoreService(AssetStorage)
 	private assetStorage!: AssetStorage;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			trades: new Query({ allowlist: [TradeComponent] }),
 			units: new Query({ allowlist: [UnitComponent] })
 		};
+
+		return this;
 	}
 
 	public execute(): void {

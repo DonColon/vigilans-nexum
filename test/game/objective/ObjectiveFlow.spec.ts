@@ -117,9 +117,9 @@ suite("Objective Flow Test Suite", () => {
 	const frame = (elapsed = 1000) => {
 		eventBus.processQueue();
 		objectiveSystem?.execute(elapsed, 0);
-		run(new TurnSystem(8), elapsed);
-		run(new EnemyPhaseSystem(8), elapsed);
-		run(new UnitWalkSystem(8), elapsed);
+		run(new TurnSystem(8).initialize(), elapsed);
+		run(new EnemyPhaseSystem(8).initialize(), elapsed);
+		run(new UnitWalkSystem(8).initialize(), elapsed);
 	};
 
 	const dismissBanner = () => {
@@ -171,7 +171,7 @@ suite("Objective Flow Test Suite", () => {
 			feature.install();
 		}
 
-		objectiveSystem = new ObjectiveSystem(6);
+		objectiveSystem = new ObjectiveSystem(6).initialize();
 
 		eventBus.processQueue(); // map:ready - the battle is set up
 		eventBus.processQueue(); // turn:changed - the player's banner
@@ -291,7 +291,7 @@ suite("Objective Flow Test Suite", () => {
 		eventBus.processQueue();
 		eventBus.dispatch("map:tileConfirmed", { column: 4, row: 8, terrain: "plain" });
 		eventBus.processQueue();
-		run(new UnitWalkSystem(8), 10_000);
+		run(new UnitWalkSystem(8).initialize(), 10_000);
 		eventBus.processQueue();
 
 		expect(menu()?.items[0]).toBe(i18n("menu.seize"));
@@ -315,7 +315,7 @@ suite("Objective Flow Test Suite", () => {
 		eventBus.processQueue();
 		eventBus.dispatch("map:tileConfirmed", { column: 4, row: 8, terrain: "plain" });
 		eventBus.processQueue();
-		run(new UnitWalkSystem(8), 10_000);
+		run(new UnitWalkSystem(8).initialize(), 10_000);
 		eventBus.processQueue();
 
 		expect(menu()?.items).not.toContain(i18n("menu.seize"));

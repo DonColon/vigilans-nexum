@@ -126,7 +126,7 @@ suite("Unit Staff Test Suite", () => {
 
 	/** Runs StaffChoiceSystem once, so a flagged confirm / cancel is resolved and its fallout settles. */
 	const pumpChoice = () => {
-		const system = new StaffChoiceSystem(10);
+		const system = new StaffChoiceSystem(10).initialize();
 		system.execute(16, 0);
 		eventBus.processQueue(); // staff:confirmed / staff:cancelled
 		eventBus.processQueue(); // staff:resolved / the menu coming back
@@ -135,7 +135,7 @@ suite("Unit Staff Test Suite", () => {
 	};
 
 	const finishWalk = () => {
-		const walkSystem = new UnitWalkSystem(8);
+		const walkSystem = new UnitWalkSystem(8).initialize();
 		walkSystem.execute(10_000);
 		eventBus.processQueue();
 		walkSystem.dispose();
@@ -255,7 +255,7 @@ suite("Unit Staff Test Suite", () => {
 		expect(choice().read()).toMatchObject({ unitId: "teuta", staffId: "heal", partnerIds: ["elira"], partnerId: "elira" });
 
 		// The cursor is parked on Elira by the choice system.
-		new StaffChoiceSystem(10).execute(16, 0);
+		new StaffChoiceSystem(10).initialize().execute(16, 0);
 		expect(cursorTile()).toStrictEqual({ column: 5, row: 10 });
 	});
 
@@ -349,7 +349,7 @@ suite("Unit Staff Test Suite", () => {
 		expect(choice().read().partnerIds.sort()).toStrictEqual(["dardan", "elira"]);
 
 		choice().update({ ...choice().read(), partnerIndex: 1 });
-		new StaffChoiceSystem(10).execute(16, 0);
+		new StaffChoiceSystem(10).initialize().execute(16, 0);
 		const second = choice().read().partnerId;
 		expect(cursorTile()).toStrictEqual(tileOf(unit(second)));
 

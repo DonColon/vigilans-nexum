@@ -16,10 +16,12 @@ export class UnitWalkSystem extends UpdateSystem {
 	@GameCoreService(EventBus)
 	private events!: EventBus;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			walkers: new Query({ allowlist: [WalkComponent, UnitComponent] })
 		};
+
+		return this;
 	}
 
 	public execute(elapsed: number): void {

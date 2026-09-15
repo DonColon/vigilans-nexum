@@ -27,10 +27,12 @@ export class EnemyFlowSystem extends ReactiveSystem {
 	@GameCoreService(AssetStorage)
 	private assets!: AssetStorage;
 
-	public initialize(): void {
+	public initialize(): this {
 		// Below the units feature's own handler (0), so the units are on the map to tag.
 		this.subscribe("map:ready", () => this.tagEnemies(), -1);
 		this.subscribe("combat:resolved", (event) => this.onCombatResolved(event));
+
+		return this;
 	}
 
 	private tagEnemies(): void {

@@ -39,7 +39,7 @@ export class UIRenderSystem extends RenderSystem {
 	@GameCoreService(AssetStorage)
 	private assetStorage!: AssetStorage;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			dialogs: new Query({ allowlist: [DialogComponent, TransformComponent] }),
 			menus: new Query({ allowlist: [MenuComponent, TransformComponent] }),
@@ -47,6 +47,8 @@ export class UIRenderSystem extends RenderSystem {
 		};
 
 		this.blink = 0;
+
+		return this;
 	}
 
 	public execute(elapsed: number): void {

@@ -44,12 +44,14 @@ export class ForecastRenderSystem extends MapRenderSystem {
 	@GameCoreService(AssetStorage)
 	private assetStorage!: AssetStorage;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			forecasts: new Query({ allowlist: [ForecastComponent] }),
 			units: new Query({ allowlist: [UnitComponent, GridPositionComponent] }),
 			grids: new Query({ allowlist: [GridComponent] })
 		};
+
+		return this;
 	}
 
 	public execute(): void {

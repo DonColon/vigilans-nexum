@@ -34,17 +34,13 @@ export class OptionsFlowSystem extends ReactiveSystem {
 	/** Row the screen was last left on, so re-opening it comes back to the same setting. */
 	private lastIndex = 0;
 
-	/**
-	 * Drops the fullscreenchange subscription when the system is disposed. No
-	 * initializer - it is set from `initialize()`, which `System`'s constructor
-	 * runs before any field initializer would, wiping it again.
-	 */
-	declare private unwatchFullscreen: (() => void) | undefined;
+	/** Drops the fullscreenchange subscription when the system is disposed. */
+	private unwatchFullscreen: (() => void) | undefined;
 
-	/** The one-shot gesture listener that restores a remembered fullscreen, while it is still armed. Set from `initialize()` too. */
-	declare private restoreFullscreen: (() => void) | undefined;
+	/** The one-shot gesture listener that restores a remembered fullscreen, while it is still armed. */
+	private restoreFullscreen: (() => void) | undefined;
 
-	public initialize(): void {
+	public initialize(): this {
 		// The catalog and the audio device are both up by the time features install,
 		// so this is where the choices become what the game was actually built with -
 		// and where every setting is pushed out to the device it drives.
@@ -55,6 +51,8 @@ export class OptionsFlowSystem extends ReactiveSystem {
 
 		this.watchFullscreen();
 		this.armFullscreenRestore();
+
+		return this;
 	}
 
 	public dispose(): void {

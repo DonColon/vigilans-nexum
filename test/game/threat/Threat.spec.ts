@@ -81,7 +81,7 @@ suite("Enemy Range Test Suite", () => {
 	// A fresh system each time so its query snapshots the walking unit that
 	// already exists - see UnitMovement.spec.
 	const finishWalk = () => {
-		const walkSystem = new UnitWalkSystem(8);
+		const walkSystem = new UnitWalkSystem(8).initialize();
 		walkSystem.execute(10_000);
 		settle();
 		walkSystem.dispose();

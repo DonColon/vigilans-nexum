@@ -27,10 +27,12 @@ export class BattleAnimationSystem extends UpdateSystem {
 	@GameCoreService(EventBus)
 	private eventBus!: EventBus;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			units: new Query({ allowlist: [UnitComponent] })
 		};
+
+		return this;
 	}
 
 	public execute(elapsed: number): void {

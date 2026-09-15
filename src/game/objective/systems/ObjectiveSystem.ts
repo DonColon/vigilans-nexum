@@ -42,10 +42,12 @@ export class ObjectiveSystem extends UpdateSystem {
 	@GameCoreService(World)
 	private world!: World;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			turns: new Query({ allowlist: [TurnComponent] })
 		};
+
+		return this;
 	}
 
 	public execute(elapsed: number, frame: number): void {

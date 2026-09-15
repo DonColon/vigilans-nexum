@@ -50,7 +50,7 @@ export class UnitCardRenderSystem extends MapRenderSystem {
 	@GameCoreService(GameStateManager)
 	private stateManager!: GameStateManager;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			cursors: new Query({ allowlist: [CursorComponent, GridPositionComponent] }),
 			units: new Query({ allowlist: [UnitComponent, GridPositionComponent] }),
@@ -59,6 +59,8 @@ export class UnitCardRenderSystem extends MapRenderSystem {
 			movements: new Query({ allowlist: [MovementComponent] }),
 			grids: new Query({ allowlist: [GridComponent] })
 		};
+
+		return this;
 	}
 
 	public execute(): void {

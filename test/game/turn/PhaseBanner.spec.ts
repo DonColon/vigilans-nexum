@@ -86,7 +86,7 @@ suite("Phase Banner Test Suite", () => {
 		const systems: (PhaseBannerSystem | TurnSystem)[] = [];
 
 		const bannerSystem = () => {
-			const system = new PhaseBannerSystem(0);
+			const system = new PhaseBannerSystem(0).initialize();
 			systems.push(system);
 			return system;
 		};
@@ -96,7 +96,7 @@ suite("Phase Banner Test Suite", () => {
 			eventBus.dispatch("turn:end", {});
 			eventBus.processQueue();
 
-			const system = new TurnSystem(0);
+			const system = new TurnSystem(0).initialize();
 			systems.push(system);
 			system.execute();
 			settle();

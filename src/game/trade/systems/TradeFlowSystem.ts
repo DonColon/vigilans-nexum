@@ -9,8 +9,10 @@ import { unitsInWorld, unitById, alliesBeside, tileOf } from "@/game/units/rules
  * the unit) pushes a [[TradeState]] on its partner step.
  */
 export class TradeFlowSystem extends ReactiveSystem {
-	public initialize(): void {
+	public initialize(): this {
 		this.subscribe("trade:requested", (event) => this.open(event));
+
+		return this;
 	}
 
 	/**

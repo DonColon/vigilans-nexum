@@ -36,11 +36,13 @@ export class TurnSystem extends UpdateSystem {
 	@GameCoreService(EventBus)
 	private eventBus!: EventBus;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			turns: new Query({ allowlist: [TurnComponent] }),
 			units: new Query({ allowlist: [UnitComponent] })
 		};
+
+		return this;
 	}
 
 	public execute(): void {

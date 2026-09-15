@@ -62,13 +62,15 @@ export class LocksFlowSystem extends ReactiveSystem {
 	/** The notice on screen right now, so the chest can be reported once it is acknowledged. */
 	private showing: { chestId: string; unitId: string; itemId: string } | null = null;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.subscribe("map:ready", () => this.open());
 		this.subscribe("map:closed", () => this.close());
 		this.subscribe("door:requested", (event) => this.onDoorRequested(event));
 		this.subscribe("chest:requested", (event) => this.onChestRequested(event));
 		this.subscribe("convoy:delivered", (event) => this.onDelivered(event));
 		this.subscribe("ui:popupClosed", (event) => this.onPopupClosed(event));
+
+		return this;
 	}
 
 	public dispose(): void {

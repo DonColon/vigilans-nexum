@@ -24,13 +24,15 @@ export class CursorRenderSystem extends MapRenderSystem {
 
 	private time!: number;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			cursors: new Query({ allowlist: [CursorComponent, TransformComponent] }),
 			grids: new Query({ allowlist: [GridComponent] })
 		};
 
 		this.time = 0;
+
+		return this;
 	}
 
 	public execute(elapsed: number): void {

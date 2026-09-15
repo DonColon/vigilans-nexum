@@ -21,12 +21,14 @@ export class TransformSystem extends SyncSystem {
 	@GameCoreService(World)
 	private world!: World;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			transforms: new Query({ allowlist: [TransformComponent] })
 		};
 
 		this.worldMatrices = new Map<string, Matrix2D>();
+
+		return this;
 	}
 
 	public execute(): void {

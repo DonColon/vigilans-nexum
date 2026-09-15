@@ -24,10 +24,12 @@ export class PopupSystem extends UpdateSystem {
 	@GameCoreService(EventBus)
 	private eventBus!: EventBus;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			popups: new Query({ allowlist: [PopupComponent, TransformComponent] })
 		};
+
+		return this;
 	}
 
 	public execute(elapsed: number, frame: number): void {

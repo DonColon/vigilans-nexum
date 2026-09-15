@@ -75,7 +75,7 @@ suite("Unit Movement Test Suite", () => {
 	// already exists - the entityChanged event that would add it is only
 	// delivered by the loop, which the test does not run.
 	const finishWalk = () => {
-		const walkSystem = new UnitWalkSystem(8);
+		const walkSystem = new UnitWalkSystem(8).initialize();
 		walkSystem.execute(10_000);
 		eventBus.processQueue();
 		walkSystem.dispose();
@@ -153,7 +153,7 @@ suite("Unit Movement Test Suite", () => {
 	});
 
 	test("The path preview follows the cursor through the range", () => {
-		const preview = new PathPreviewSystem(12);
+		const preview = new PathPreviewSystem(12).initialize();
 
 		eventBus.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
 		eventBus.processQueue();

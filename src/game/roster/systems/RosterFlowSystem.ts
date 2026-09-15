@@ -12,10 +12,12 @@ export class RosterFlowSystem extends ReactiveSystem {
 	/** Row the list was last left on, so re-opening it comes back to the same unit. */
 	private lastIndex = 0;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.subscribe("roster:requested", () => this.open());
 		this.subscribe("roster:closed", (event) => (this.lastIndex = Math.max(0, event.selectedIndex)));
 		this.subscribe("map:closed", () => (this.lastIndex = 0));
+
+		return this;
 	}
 
 	/** Opens the list on every player unit currently on the map. */

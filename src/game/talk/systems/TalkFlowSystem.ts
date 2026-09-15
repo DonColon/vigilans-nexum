@@ -51,12 +51,14 @@ export class TalkFlowSystem extends ReactiveSystem {
 	/** The conversation on screen right now, so its pair can be struck off when the box closes. */
 	private playing: { conversationId: string; unitId: string; partnerId: string } | null = null;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.subscribe("map:ready", () => this.open());
 		this.subscribe("map:closed", () => this.close());
 		this.subscribe("talk:requested", (event) => this.onRequested(event));
 		this.subscribe("talk:confirmed", (event) => this.play(event.unitId, event.partnerId));
 		this.subscribe("ui:dialogClosed", (event) => this.onDialogClosed(event));
+
+		return this;
 	}
 
 	public dispose(): void {

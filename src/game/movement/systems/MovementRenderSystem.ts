@@ -23,11 +23,13 @@ import { Direction, OPPOSITE, pathTiles } from "@/game/movement/view/PathTiles";
  * the straight beside it. A centred band has no such seam.
  */
 export class MovementRenderSystem extends MapRenderSystem {
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			movements: new Query({ allowlist: [MovementComponent] }),
 			grids: new Query({ allowlist: [GridComponent, TransformComponent] })
 		};
+
+		return this;
 	}
 
 	public execute(): void {

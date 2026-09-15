@@ -22,10 +22,12 @@ export class RosterSystem extends UpdateSystem {
 	@GameCoreService(EventBus)
 	private eventBus!: EventBus;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			rosters: new Query({ allowlist: [RosterComponent] })
 		};
+
+		return this;
 	}
 
 	public execute(elapsed: number, frame: number): void {

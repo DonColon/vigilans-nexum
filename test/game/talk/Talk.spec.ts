@@ -169,7 +169,7 @@ suite("Unit Talk Test Suite", () => {
 
 	/** Runs TalkChoiceSystem once, so a flagged confirm / cancel is resolved and its fallout settles. */
 	const pumpChoice = () => {
-		const system = new TalkChoiceSystem(10);
+		const system = new TalkChoiceSystem(10).initialize();
 		system.execute(16, 0);
 		eventBus.processQueue(); // talk:confirmed / talk:cancelled
 		eventBus.processQueue();
@@ -186,7 +186,7 @@ suite("Unit Talk Test Suite", () => {
 	const placeUnit = (id: string, column: number, row: number) => unit(id).getComponent(GridPositionComponent).update({ column, row });
 
 	const finishWalk = () => {
-		const walkSystem = new UnitWalkSystem(8);
+		const walkSystem = new UnitWalkSystem(8).initialize();
 		walkSystem.execute(10_000);
 		eventBus.processQueue();
 		walkSystem.dispose();

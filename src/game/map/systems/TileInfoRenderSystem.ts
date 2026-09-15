@@ -20,11 +20,13 @@ import { MapRenderSystem } from "@/game/map/systems/MapRenderSystem";
  * place the turn counter sits, directly underneath it.
  */
 export class TileInfoRenderSystem extends MapRenderSystem {
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			cursors: new Query({ allowlist: [CursorComponent, GridPositionComponent] }),
 			grids: new Query({ allowlist: [GridComponent] })
 		};
+
+		return this;
 	}
 
 	public execute(): void {

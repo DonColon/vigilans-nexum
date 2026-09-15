@@ -37,11 +37,13 @@ export class RosterRenderSystem extends RenderSystem {
 	@GameCoreService(AssetStorage)
 	private assetStorage!: AssetStorage;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			rosters: new Query({ allowlist: [RosterComponent] }),
 			units: new Query({ allowlist: [UnitComponent] })
 		};
+
+		return this;
 	}
 
 	public execute(): void {

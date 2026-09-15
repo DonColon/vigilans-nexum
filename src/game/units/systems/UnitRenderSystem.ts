@@ -52,11 +52,13 @@ interface FloatingPop {
  * cursor is drawn over the top from its own layer.
  */
 export class UnitRenderSystem extends MapRenderSystem {
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			units: new Query({ allowlist: [UnitComponent, GridPositionComponent] }),
 			grids: new Query({ allowlist: [GridComponent, TransformComponent] })
 		};
+
+		return this;
 	}
 
 	public execute(): void {

@@ -17,10 +17,12 @@ import { optionEnabled } from "@/game/options/GameSettings";
 export class GridRenderSystem extends MapRenderSystem {
 	protected queries!: QueryList;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			grids: new Query({ allowlist: [GridComponent] })
 		};
+
+		return this;
 	}
 
 	public execute(): void {

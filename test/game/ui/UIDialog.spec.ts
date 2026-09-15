@@ -61,7 +61,7 @@ suite("UI Dialog Test Suite", () => {
 
 	/** A DialogSystem whose query already sees the entities that exist right now. */
 	const dialogSystem = () => {
-		const system = new DialogSystem(0);
+		const system = new DialogSystem(0).initialize();
 		systems.push(system);
 		return system;
 	};

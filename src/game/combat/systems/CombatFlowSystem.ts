@@ -25,10 +25,12 @@ import { ForecastState } from "@/game/combat/states/ForecastState";
  *  - `unit:died` (from the animation landing) takes the fallen unit off the map.
  */
 export class CombatFlowSystem extends ReactiveSystem {
-	public initialize(): void {
+	public initialize(): this {
 		this.subscribe("combat:requested", (event) => this.openForecast(event));
 		this.subscribe("combat:confirmed", (event) => this.resolve(event));
 		this.subscribe("unit:died", (event) => this.removeUnit(event));
+
+		return this;
 	}
 
 	private openForecast(event: CombatRequestedEvent): void {

@@ -49,12 +49,14 @@ export class ExperienceFlowSystem extends ReactiveSystem {
 	/** Units whose gain is due on screen, in order. */
 	private queue: string[] = [];
 
-	public initialize(): void {
+	public initialize(): this {
 		this.subscribe("map:closed", () => this.clear());
 		this.subscribe("combat:fought", (event) => this.scoreFight(event));
 		this.subscribe("combat:resolved", (event) => this.showFight(event));
 		this.subscribe("staff:resolved", (event) => this.scoreStaff(event));
 		this.subscribe("experience:shown", () => this.showNext());
+
+		return this;
 	}
 
 	public dispose(): void {

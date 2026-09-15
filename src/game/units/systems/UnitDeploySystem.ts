@@ -28,11 +28,13 @@ export class UnitDeploySystem extends ReactiveSystem {
 	@GameCoreService(AssetStorage)
 	private assets!: AssetStorage;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.subscribe("map:ready", (event) => this.deploy(event.mapId));
 		this.subscribe("map:closed", () => this.withdraw());
 		this.subscribe("unit:usedItem", (event) => this.showHealed(event.unitId, event.healed));
 		this.subscribe("staff:resolved", (event) => this.showHealed(event.targetId, event.healed));
+
+		return this;
 	}
 
 	public dispose(): void {

@@ -37,10 +37,12 @@ export class ExperienceRenderSystem extends RenderSystem {
 	@GameCoreService(AssetStorage)
 	private assetStorage!: AssetStorage;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			displays: new Query({ allowlist: [ExperienceComponent] })
 		};
+
+		return this;
 	}
 
 	public execute(): void {

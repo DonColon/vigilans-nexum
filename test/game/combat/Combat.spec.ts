@@ -86,7 +86,7 @@ suite("Combat Flow Test Suite", () => {
 	};
 
 	const finishWalk = () => {
-		const walkSystem = new UnitWalkSystem(8);
+		const walkSystem = new UnitWalkSystem(8).initialize();
 		walkSystem.execute(10_000);
 		eventBus.processQueue();
 		walkSystem.dispose();
@@ -103,7 +103,7 @@ suite("Combat Flow Test Suite", () => {
 
 	/** Runs ForecastSystem once so it reports a confirmed / cancelled forecast, then lets the fallout settle. */
 	const pumpForecast = () => {
-		const system = new ForecastSystem(10);
+		const system = new ForecastSystem(10).initialize();
 		system.execute(16, 0);
 		eventBus.processQueue(); // combat:confirmed -> resolve (pushes BattleAnimationState)
 		eventBus.processQueue();
@@ -112,7 +112,7 @@ suite("Combat Flow Test Suite", () => {
 
 	/** Runs the battle animation to its end so deaths land and `combat:resolved` fires. */
 	const finishBattleAnimation = () => {
-		const system = new BattleAnimationSystem(8);
+		const system = new BattleAnimationSystem(8).initialize();
 		system.execute(10_000);
 		eventBus.processQueue(); // unit:died -> remove, combat:resolved -> MovementFeature
 		eventBus.processQueue(); // unit:acted

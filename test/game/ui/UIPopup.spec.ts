@@ -72,7 +72,7 @@ suite("UI Popup Test Suite", () => {
 
 	/** A PopupSystem whose query already sees the entities that exist right now. */
 	const popupSystem = () => {
-		const system = new PopupSystem(0);
+		const system = new PopupSystem(0).initialize();
 		systems.push(system);
 		return system;
 	};

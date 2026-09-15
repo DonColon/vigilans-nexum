@@ -28,12 +28,14 @@ export class StatusSystem extends UpdateSystem {
 	@GameCoreService(EventBus)
 	private eventBus!: EventBus;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			statuses: new Query({ allowlist: [StatusComponent] }),
 			cursors: new Query({ allowlist: [CursorComponent, GridPositionComponent] }),
 			units: new Query({ allowlist: [UnitComponent, GridPositionComponent] })
 		};
+
+		return this;
 	}
 
 	public execute(elapsed: number, frame: number): void {

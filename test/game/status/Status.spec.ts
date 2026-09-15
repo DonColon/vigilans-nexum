@@ -81,7 +81,7 @@ suite("Status Test Suite", () => {
 
 	/** A StatusSystem whose queries already see the sheet, the cursor and the units that exist right now. */
 	const statusSystem = () => {
-		const system = new StatusSystem(10);
+		const system = new StatusSystem(10).initialize();
 		systems.push(system);
 		return system;
 	};

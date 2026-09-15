@@ -29,12 +29,14 @@ export class ObjectiveFlowSystem extends ReactiveSystem {
 	@GameCoreService(AssetStorage)
 	private assets!: AssetStorage;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.subscribe("map:ready", () => this.open());
 		this.subscribe("map:closed", () => this.close());
 		// Below the combat feature's own handler (0), so the fallen unit is already gone.
 		this.subscribe("unit:died", () => this.check(), -1);
 		this.subscribe("seize:requested", (event) => this.onSeize(event));
+
+		return this;
 	}
 
 	public dispose(): void {

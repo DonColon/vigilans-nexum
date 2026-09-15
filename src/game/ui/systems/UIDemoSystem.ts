@@ -11,7 +11,7 @@ import { MenuState } from "@/game/ui/states/MenuState";
 export class UIDemoSystem extends ReactiveSystem {
 	private lastTile: { column: number; row: number; terrain: string } | null = null;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.subscribe("map:tileConfirmed", (event) => {
 			this.lastTile = { column: event.column, row: event.row, terrain: event.terrain };
 
@@ -34,5 +34,7 @@ export class UIDemoSystem extends ReactiveSystem {
 				this.stateManager.push(DialogState);
 			}
 		});
+
+		return this;
 	}
 }

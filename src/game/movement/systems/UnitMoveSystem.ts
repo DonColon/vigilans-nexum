@@ -71,12 +71,14 @@ import { activeGrid, tileToScreen } from "@/game/map/rules/ActiveMap";
 export class UnitMoveSystem extends ReactiveSystem {
 	private movement: Entity | null = null;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.subscribe("map:ready", () => this.open());
 		this.subscribe("map:closed", () => this.close());
 		this.subscribe("map:tileConfirmed", (event) => this.onConfirm(event), 10);
 		this.subscribe("map:cancelled", () => this.onCancel(), 10);
 		this.subscribe("unit:returned", (event) => this.onReturned(event));
+
+		return this;
 	}
 
 	public dispose(): void {

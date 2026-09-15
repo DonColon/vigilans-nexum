@@ -68,13 +68,15 @@ export class VisitFlowSystem extends ReactiveSystem {
 	/** The gift notice on screen right now, so the visit can be reported once it is acknowledged. */
 	private showing: { houseId: string; unitId: string; itemId: string } | null = null;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.subscribe("map:ready", () => this.open());
 		this.subscribe("map:closed", () => this.close());
 		this.subscribe("visit:requested", (event) => this.onRequested(event));
 		this.subscribe("ui:dialogClosed", (event) => this.onDialogClosed(event));
 		this.subscribe("convoy:delivered", (event) => this.onDelivered(event));
 		this.subscribe("ui:popupClosed", (event) => this.onPopupClosed(event));
+
+		return this;
 	}
 
 	public dispose(): void {

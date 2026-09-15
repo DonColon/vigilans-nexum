@@ -68,12 +68,14 @@ export class StatusRenderSystem extends RenderSystem {
 	@GameCoreService(AssetStorage)
 	private assetStorage!: AssetStorage;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			statuses: new Query({ allowlist: [StatusComponent] }),
 			units: new Query({ allowlist: [UnitComponent, GridPositionComponent] }),
 			grids: new Query({ allowlist: [GridComponent] })
 		};
+
+		return this;
 	}
 
 	public execute(): void {

@@ -41,7 +41,7 @@ suite("TransformSystem Test Suite", () => {
 	test("Resolves a root transform to its local position", () => {
 		const entity = makeEntity("root", { x: 30, y: 40 });
 
-		const system = new TransformSystem(0);
+		const system = new TransformSystem(0).initialize();
 		system.execute();
 
 		const position = system.getWorldPosition(entity);
@@ -54,7 +54,7 @@ suite("TransformSystem Test Suite", () => {
 		const parent = makeEntity("parent", { x: 100, y: 50 });
 		const child = makeEntity("child", { x: 10, y: 5, parent: parent.getID() });
 
-		const system = new TransformSystem(0);
+		const system = new TransformSystem(0).initialize();
 		system.execute();
 
 		const position = system.getWorldPosition(child);
@@ -67,7 +67,7 @@ suite("TransformSystem Test Suite", () => {
 		const parent = makeEntity("parent", { rotation: 90 });
 		const child = makeEntity("child", { x: 10, parent: parent.getID() });
 
-		const system = new TransformSystem(0);
+		const system = new TransformSystem(0).initialize();
 		system.execute();
 
 		const position = system.getWorldPosition(child);
@@ -80,7 +80,7 @@ suite("TransformSystem Test Suite", () => {
 		const child = makeEntity("child", { x: 10, parent: "parent" });
 		const parent = makeEntity("parent", { x: 100 });
 
-		const system = new TransformSystem(0);
+		const system = new TransformSystem(0).initialize();
 		system.execute();
 
 		expect(system.getWorldPosition(child)?.x).toBe(110);
@@ -90,7 +90,7 @@ suite("TransformSystem Test Suite", () => {
 	test("Unknown parent is treated as a root transform", () => {
 		const entity = makeEntity("orphan", { x: 7, parent: "does-not-exist" });
 
-		const system = new TransformSystem(0);
+		const system = new TransformSystem(0).initialize();
 		system.execute();
 
 		expect(system.getWorldPosition(entity)?.x).toBe(7);
@@ -102,7 +102,7 @@ suite("TransformSystem Test Suite", () => {
 
 		const entity = makeEntity("child", { x: 7, parent: parent.getID() });
 
-		const system = new TransformSystem(0);
+		const system = new TransformSystem(0).initialize();
 		system.execute();
 
 		expect(system.getWorldPosition(entity)?.x).toBe(7);
@@ -112,13 +112,13 @@ suite("TransformSystem Test Suite", () => {
 		makeEntity("a", { parent: "b" });
 		makeEntity("b", { parent: "a" });
 
-		const system = new TransformSystem(0);
+		const system = new TransformSystem(0).initialize();
 
 		expect(() => system.execute()).toThrowError(GameError);
 	});
 
 	test("Entities without a transform have no world matrix", () => {
-		const system = new TransformSystem(0);
+		const system = new TransformSystem(0).initialize();
 		system.execute();
 
 		expect(system.getWorldMatrix("nothing-here")).toBeNull();

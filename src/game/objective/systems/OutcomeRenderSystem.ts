@@ -25,10 +25,12 @@ export class OutcomeRenderSystem extends RenderSystem {
 	@GameCoreService(AssetStorage)
 	private assetStorage!: AssetStorage;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			banners: new Query({ allowlist: [OutcomeComponent] })
 		};
+
+		return this;
 	}
 
 	public execute(): void {

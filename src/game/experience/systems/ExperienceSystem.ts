@@ -28,7 +28,9 @@ export class ExperienceSystem extends UpdateSystem {
 	@GameCoreService(EventBus)
 	private eventBus!: EventBus;
 
-	public initialize(): void {}
+	public initialize(): this {
+		return this;
+	}
 
 	public execute(elapsed: number, frame: number): void {
 		const state = this.stateManager.peek();

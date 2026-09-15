@@ -123,7 +123,7 @@ suite("Map Cursor Test Suite", () => {
 	});
 
 	test("Cursor steps one tile when its command is triggered", () => {
-		const system = new CursorSystem(0);
+		const system = new CursorSystem(0).initialize();
 		const start = tile();
 
 		press(MoveCursorRightCommand);
@@ -135,7 +135,7 @@ suite("Map Cursor Test Suite", () => {
 	});
 
 	test("Holding a direction repeats after the initial delay", () => {
-		const system = new CursorSystem(0);
+		const system = new CursorSystem(0).initialize();
 		const start = tile();
 
 		press(MoveCursorDownCommand);
@@ -154,7 +154,7 @@ suite("Map Cursor Test Suite", () => {
 	});
 
 	test("Cursor stops at the border of the map", () => {
-		const system = new CursorSystem(0);
+		const system = new CursorSystem(0).initialize();
 
 		press(MoveCursorLeftCommand);
 
@@ -168,7 +168,7 @@ suite("Map Cursor Test Suite", () => {
 	});
 
 	test("Cursor does not move while another state is pushed on top", () => {
-		const system = new CursorSystem(0);
+		const system = new CursorSystem(0).initialize();
 		const start = tile();
 
 		stateManager.push(MenuState);
@@ -188,7 +188,7 @@ suite("Map Cursor Test Suite", () => {
 	});
 
 	test("Cursor tile is written into its transform", () => {
-		const system = new CursorSystem(0);
+		const system = new CursorSystem(0).initialize();
 		const { cellSize } = (state.getMap() as Entity).getComponent(GridComponent).read();
 
 		press(MoveCursorUpCommand);

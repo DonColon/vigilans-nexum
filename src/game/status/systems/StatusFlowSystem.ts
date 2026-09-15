@@ -10,8 +10,10 @@ import { unitsInWorld, unitAt } from "@/game/units/rules/UnitLookup";
  * pushes a [[StatusState]] on whoever is standing there.
  */
 export class StatusFlowSystem extends ReactiveSystem {
-	public initialize(): void {
+	public initialize(): this {
 		this.subscribe("map:infoRequested", (event) => this.onInfo(event));
+
+		return this;
 	}
 
 	/**

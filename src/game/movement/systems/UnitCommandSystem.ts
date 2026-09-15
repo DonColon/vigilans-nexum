@@ -114,7 +114,7 @@ export class UnitCommandSystem extends ReactiveSystem {
 	private actionSlot = -1;
 	private boosting: string | null = null;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.subscribe("map:closed", () => {
 			this.boosting = null;
 			this.actionSlot = -1;
@@ -135,6 +135,8 @@ export class UnitCommandSystem extends ReactiveSystem {
 		this.subscribe("chest:opened", (event) => this.onChestOpened(event));
 		this.subscribe("lock:cancelled", (event) => this.onLockCancelled(event));
 		this.subscribe("ui:popupClosed", (event) => this.onPopupClosed(event));
+
+		return this;
 	}
 
 	/** Pack slot the open item-action menu (equip / unequip / drop) works on. */

@@ -25,11 +25,13 @@ export class CursorSystem extends UpdateSystem {
 	@GameCoreService(GameStateManager)
 	private stateManager!: GameStateManager;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			cursors: new Query({ allowlist: [CursorComponent, GridPositionComponent, TransformComponent] }),
 			grids: new Query({ allowlist: [GridComponent] })
 		};
+
+		return this;
 	}
 
 	public execute(elapsed: number, frame: number): void {
