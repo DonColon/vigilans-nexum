@@ -31,7 +31,7 @@ export interface LocaleValidationResult {
  * reported and left out of the key comparison.
  */
 export function validateLocaleCatalog(catalog: RawLocaleCatalog): LocaleValidationResult {
-	const locales = Object.keys(catalog).sort();
+	const locales = Object.keys(catalog).sort((a, b) => a.localeCompare(b));
 
 	if (locales.length === 0) {
 		return {
@@ -75,7 +75,7 @@ export function validateLocaleCatalog(catalog: RawLocaleCatalog): LocaleValidati
 	}
 
 	for (const [locale, keys] of keysByLocale) {
-		const missing = [...referenceKeys].filter((key) => !keys.has(key)).sort();
+		const missing = [...referenceKeys].filter((key) => !keys.has(key)).sort((a, b) => a.localeCompare(b));
 
 		if (missing.length > 0) {
 			issues.push({

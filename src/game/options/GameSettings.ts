@@ -30,7 +30,8 @@ export const OPTIONS_STORAGE_KEY = "vigilans-nexum.options";
  */
 export function gameSettings(): OptionsService {
 	if (!ServiceRegistry.has(OptionsService)) {
-		new OptionsService(OPTIONS_STORAGE_KEY);
+		// The @GameCoreService proxy registers the instance as it is built.
+		return new OptionsService(OPTIONS_STORAGE_KEY);
 	}
 
 	return ServiceRegistry.get(OptionsService);

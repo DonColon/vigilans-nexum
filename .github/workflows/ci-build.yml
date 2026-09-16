@@ -34,6 +34,9 @@ jobs:
       - name: Check ESLint Rules
         run: npm run lint --if-present
 
+      - name: Test Application with Coverage Report
+        run: npm run test:coverage --if-present
+
       - name: Check Sonarcloud Rules
         uses: SonarSource/sonarcloud-github-action@master
         env:

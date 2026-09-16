@@ -6,8 +6,8 @@ import { gainFromPercentage, rampGain, VOLUME_RAMP_SECONDS } from "@/core/audio/
  * A mixing bus every voice of one kind goes through - "sound", "music",
  * "voice" - and what an options screen offers a volume row for.
  *
- * Two gains sit in the chain, `voices -> duck -> volume -> out`, because two
- * different parties drive them. `volume` is the player's: their slider, their
+ * Two gains sit in the chain, `voices -> duck -> volumeGain -> out`, because two
+ * different parties drive them. `volumeGain` is the player's: their slider, their
  * mute. `duck` is the engine's: music dips while a line is spoken and comes
  * back up after. Sharing one gain would have the two fight - a duck restoring
  * "100%" over a slider the player had at 40.
@@ -19,7 +19,7 @@ export class AudioChannel {
 	private readonly context: BaseAudioContext;
 	private readonly name: string;
 	private readonly duck: GainNode;
-	private readonly volume: GainNode;
+	private readonly volumeGain: GainNode;
 	private readonly voices = new Set<AudioVoice>();
 
 	/** What the player set, kept apart from the gain so a mute can put it back. */
@@ -31,8 +31,8 @@ export class AudioChannel {
 		this.name = name;
 
 		this.duck = context.createGain();
-		this.volume = context.createGain();
-		this.duck.connect(this.volume);
+		this.volumeGain = context.createGain();
+		this.duck.connect(this.volumeGain);
 	}
 
 	public getName(): string {
@@ -77,7 +77,7 @@ export class AudioChannel {
 		this.level = Number.isFinite(volume) ? Math.min(Math.max(volume, 0), 100) : 100;
 
 		if (!this.muted) {
-			rampGain(this.volume.gain, gainFromPercentage(this.level), this.context.currentTime, VOLUME_RAMP_SECONDS);
+			rampGain(this.volumeGain.gain, gainFromPercentage(this.level), this.context.currentTime, VOLUME_RAMP_SECONDS);
 		}
 	}
 
@@ -92,7 +92,7 @@ export class AudioChannel {
 		}
 
 		this.muted = true;
-		rampGain(this.volume.gain, 0, this.context.currentTime, VOLUME_RAMP_SECONDS);
+		rampGain(this.volumeGain.gain, 0, this.context.currentTime, VOLUME_RAMP_SECONDS);
 	}
 
 	public unmute(): void {
@@ -101,7 +101,7 @@ export class AudioChannel {
 		}
 
 		this.muted = false;
-		rampGain(this.volume.gain, gainFromPercentage(this.level), this.context.currentTime, VOLUME_RAMP_SECONDS);
+		rampGain(this.volumeGain.gain, gainFromPercentage(this.level), this.context.currentTime, VOLUME_RAMP_SECONDS);
 	}
 
 	public isMuted(): boolean {
@@ -118,7 +118,7 @@ export class AudioChannel {
 	}
 
 	public connect(node: AudioNode): void {
-		this.volume.connect(node);
+		this.volumeGain.connect(node);
 	}
 
 	/** Silences and drops everything: stops every voice and takes the channel off the graph. */
@@ -126,6 +126,6 @@ export class AudioChannel {
 		this.stopAll();
 		this.voices.clear();
 		this.duck.disconnect();
-		this.volume.disconnect();
+		this.volumeGain.disconnect();
 	}
 }

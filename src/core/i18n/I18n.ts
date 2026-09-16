@@ -92,7 +92,7 @@ export class I18nService {
 			this.catalog[locale] = parseLocaleFile(locale, raw);
 		}
 
-		this.available = Object.keys(this.catalog).sort();
+		this.available = Object.keys(this.catalog).sort((a, b) => a.localeCompare(b));
 		this.fallbackLocale = this.resolveFallback(options.fallbackLocale);
 		this.setLocale(options.locale ?? detectLocale(this.available, this.fallbackLocale));
 
@@ -156,7 +156,8 @@ export class I18nService {
  */
 export function getI18n(): I18nService {
 	if (!ServiceRegistry.has(I18nService)) {
-		new I18nService();
+		// The @GameCoreService proxy registers the instance as it is built.
+		return new I18nService();
 	}
 
 	return ServiceRegistry.get(I18nService);

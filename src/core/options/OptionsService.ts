@@ -214,7 +214,8 @@ export class OptionsService {
  */
 export function getOptions(): OptionsService {
 	if (!ServiceRegistry.has(OptionsService)) {
-		new OptionsService();
+		// The @GameCoreService proxy registers the instance as it is built.
+		return new OptionsService();
 	}
 
 	return ServiceRegistry.get(OptionsService);

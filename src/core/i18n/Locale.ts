@@ -95,7 +95,7 @@ export function findDuplicateKeys(raw: string): string[] {
 		}
 	}
 
-	return [...duplicates].sort();
+	return [...duplicates].sort((a, b) => a.localeCompare(b));
 }
 
 function topLevelKeys(raw: string): string[] {

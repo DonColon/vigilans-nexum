@@ -18,8 +18,8 @@ const TRIANGLE_BEATS: Partial<Record<WeaponType, WeaponType>> = {
 	[WeaponType.LANCE]: WeaponType.SWORD
 };
 
-/** Weapon types that strike with Magic and are resisted by Resistance. Empty until tomes exist. */
-const MAGIC_WEAPON_TYPES = new Set<WeaponType>();
+/** Weapon types that draw on Magic rather than Strength - staves for now, tomes once they exist. */
+const MAGIC_WEAPON_TYPES: ReadonlySet<WeaponType> = new Set([WeaponType.STAFF]);
 
 /** Weapon-triangle bonus: advantage adds it to Might and Hit, disadvantage subtracts it. */
 export const TRIANGLE_MIGHT = 1;
