@@ -411,6 +411,12 @@ export interface ObjectiveDecidedEvent extends GameEvent {
 /** The outcome banner was acknowledged; the battle map starts over. */
 export type ObjectiveAcknowledgedEvent = GameEvent;
 
+/** A request to open the objective screen (from the global command menu). */
+export type ObjectiveRequestedEvent = GameEvent;
+
+/** The objective screen was closed. It is a readout, so nothing changed and there is nothing to report. */
+export type ObjectiveClosedEvent = GameEvent;
+
 declare module "@/core/events/GameEvents" {
 	interface GameEvents {
 		"map:tileConfirmed": TileConfirmedEvent;
@@ -474,5 +480,7 @@ declare module "@/core/events/GameEvents" {
 		"seize:requested": SeizeRequestedEvent;
 		"objective:decided": ObjectiveDecidedEvent;
 		"objective:acknowledged": ObjectiveAcknowledgedEvent;
+		"objective:requested": ObjectiveRequestedEvent;
+		"objective:closed": ObjectiveClosedEvent;
 	}
 }

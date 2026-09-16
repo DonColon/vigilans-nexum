@@ -34,6 +34,7 @@ export const UnitMenuRow = {
 	ITEMS: "items",
 	TRADE: "trade",
 	WAIT: "wait",
+	OBJECTIVE: "objective",
 	UNITS: "units",
 	OPTIONS: "options",
 	END_TURN: "end-turn",
@@ -63,6 +64,7 @@ const LABELS: Record<UnitMenuRow, () => string> = {
 	[UnitMenuRow.ITEMS]: () => i18n("menu.items"),
 	[UnitMenuRow.TRADE]: () => i18n("menu.trade"),
 	[UnitMenuRow.WAIT]: () => i18n("menu.wait"),
+	[UnitMenuRow.OBJECTIVE]: () => i18n("menu.objective"),
 	[UnitMenuRow.UNITS]: () => i18n("menu.units"),
 	[UnitMenuRow.OPTIONS]: () => i18n("menu.options"),
 	[UnitMenuRow.END_TURN]: () => i18n("menu.endTurn"),
@@ -166,7 +168,7 @@ export function unitCommandRows(unit: UnitData, commands: UnitCommands = {}): Un
  * row here that cannot be taken back.
  */
 export function globalCommandRequest(): Omit<MenuRequest, "anchor"> {
-	return { id: GLOBAL_MENU, ...toRequestRows([row(UnitMenuRow.UNITS), row(UnitMenuRow.OPTIONS), row(UnitMenuRow.END_TURN)]), width: GLOBAL_MENU_WIDTH };
+	return { id: GLOBAL_MENU, ...toRequestRows([row(UnitMenuRow.OBJECTIVE), row(UnitMenuRow.UNITS), row(UnitMenuRow.OPTIONS), row(UnitMenuRow.END_TURN)]), width: GLOBAL_MENU_WIDTH };
 }
 
 /** The unit command menu, tucked against the tile the unit stands on. */

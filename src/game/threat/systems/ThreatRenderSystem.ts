@@ -13,9 +13,9 @@ import { ThreatTheme } from "@/game/threat/view/ThreatTheme";
 /**
  * Draws the enemy-range overlay: the crimson wash over the tiles the other side
  * can walk onto and the amber one over what that puts in reach. On the
- * "background" layer between the terrain art (14) and the player's own move
- * overlay (16), so a picked-up unit's blue range reads on top of it and the
- * unit tokens (17) sit above both. It never clears - GridRenderSystem wipes the
+ * "background" layer between the seize marker (15) and the player's own move
+ * overlay (17), so a picked-up unit's blue range reads on top of it and the
+ * unit tokens (18) sit above both. It never clears - GridRenderSystem wipes the
  * layer every frame.
  */
 export class ThreatRenderSystem extends MapRenderSystem {

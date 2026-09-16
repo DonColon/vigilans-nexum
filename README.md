@@ -141,7 +141,7 @@ The game is one folder per feature under `src/game`, installed in this order in 
 | `threat` | the enemy range overlay |
 | `status` | the hover card and the unit sheet screen |
 | `ai` | the enemy phase: enemies moving and fighting on their turn |
-| `objective` | what the battle is won and lost by, the victory / defeat banner, the restart |
+| `objective` | what the battle is won and lost by, the "Objective" readout, the seize marker on the map, the victory / defeat banner, the restart |
 
 A new feature is added to this table at its install position - the [Building a feature](#building-a-feature) section says how one is built.
 
@@ -463,14 +463,14 @@ The `Display` creates one canvas per configured layer (`background`, `gameplay`,
 |---|---|---|
 | update | 6 | `ObjectiveSystem` - ahead of the two clocks it must beat to a quiet map |
 | update | 8 | the clocks: `TurnSystem`, `PhaseBannerSystem`, `BattleAnimationSystem`, `ExperienceSystem`, `EnemyPhaseSystem`, `UnitWalkSystem`, `UnitPopSystem` |
-| update | 10 | the screens, polling their commands: `CursorSystem`, `MenuSystem`, `DialogSystem`, `PopupSystem`, `ForecastSystem`, `TradeSystem`, `StaffChoiceSystem`, `TalkChoiceSystem`, `OptionsSystem`, `RosterSystem`, `StatusSystem` |
+| update | 10 | the screens, polling their commands: `CursorSystem`, `MenuSystem`, `DialogSystem`, `PopupSystem`, `ForecastSystem`, `TradeSystem`, `StaffChoiceSystem`, `TalkChoiceSystem`, `OptionsSystem`, `RosterSystem`, `StatusSystem`, `ObjectiveScreenSystem` |
 | update | 12 | `PathPreviewSystem` - after the cursor has moved |
 | sync | 0 | `TransformSystem` |
 | render `background` | 10 | `GridRenderSystem` - **clears the layer** |
-| render `background` | 14, 15, 16, 17 | `TileMapRenderSystem`, `ThreatRenderSystem`, `MovementRenderSystem`, `UnitRenderSystem` |
+| render `background` | 14, 15, 16, 17, 18 | `TileMapRenderSystem`, `SeizeMarkerRenderSystem`, `ThreatRenderSystem`, `MovementRenderSystem`, `UnitRenderSystem` |
 | render `gameplay` | 20 | `CursorRenderSystem` - **clears the layer** |
 | render `ui` | 50 | `UIRenderSystem` - **clears the layer**; menus, textboxes, popups |
-| render `ui` | 51-56 | `UnitCardRenderSystem` (51), `ForecastRenderSystem` and `ExperienceRenderSystem` (52), `TradeRenderSystem` (53), `TileInfoRenderSystem` (54), `TurnRenderSystem` (55), the options, roster and status screens (56) |
+| render `ui` | 51-56 | `UnitCardRenderSystem` (51), `ForecastRenderSystem` and `ExperienceRenderSystem` (52), `TradeRenderSystem` (53), `TileInfoRenderSystem` (54), `TurnRenderSystem` (55), the options, roster, status and objective screens (56) |
 | render `ui` | 58, 59 | `PhaseBannerRenderSystem`, `OutcomeRenderSystem` - the banners, over everything |
 
 Clearing is what takes a box off the screen: the frame after its state is popped, the owning render system clears the layer and nothing draws the box again.
@@ -730,7 +730,7 @@ Where logic goes:
 	"format": "vigilans-deployment",
 	"version": 1,
 	"map": "fantasy",
-	"objective": { "win": "seize", "column": 12, "row": 3 },
+	"objective": { "win": "seize", "column": 12, "row": 5 },
 	"units": [ { "unit": "dardan", "column": 4, "row": 10 }, ... ]
 }
 ```

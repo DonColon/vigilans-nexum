@@ -1,8 +1,12 @@
 import { ReactiveSystem } from "@/core/ecs/ReactiveSystem";
 import { TurnChangedEvent } from "@/game.events";
+import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
+import { activeCursor } from "@/game/map/rules/ActiveMap";
+import { moveCursorTo } from "@/game/map/rules/MapCursor";
 import { TurnComponent } from "@/game/turn/components/TurnComponent";
 import { PhaseBannerState } from "@/game/turn/states/PhaseBannerState";
-import { UnitComponent } from "@/game/units/components/UnitComponent";
+import { CommanderComponent } from "@/game/units/components/CommanderComponent";
+import { UnitComponent, UnitFaction } from "@/game/units/components/UnitComponent";
 import { unitsInWorld, unitsOfFaction } from "@/game/units/rules/UnitLookup";
 
 /**
@@ -20,7 +24,9 @@ import { unitsInWorld, unitsOfFaction } from "@/game/units/rules/UnitLookup";
  * Every new phase - the first one included - opens with the phase banner
  * ("Player Phase" / "Enemy Phase") sweeping across the screen: a
  * [[PhaseBannerState]] pushed over the map, which freezes it until the banner
- * has faded on its own.
+ * has faded on its own. A player phase also brings the map cursor back to the
+ * commander, so every turn opens where the army's head is rather than
+ * wherever the enemy's last move left it.
  */
 export class TurnFlowSystem extends ReactiveSystem {
 	public initialize(): this {
@@ -95,9 +101,24 @@ export class TurnFlowSystem extends ReactiveSystem {
 		}
 	}
 
-	/** Puts the phase banner up for the phase that just started. */
+	/** Puts the phase banner up for the phase that just started - and, for the player's, the cursor on the commander. */
 	private announce(event: TurnChangedEvent): void {
+		if (event.phase === UnitFaction.PLAYER) {
+			this.focusCommander();
+		}
+
 		this.stateManager.getState(PhaseBannerState).request({ turn: event.number, faction: event.phase });
 		this.stateManager.push(PhaseBannerState);
+	}
+
+	/** Drops the map cursor onto the commander, if both are on the map. */
+	private focusCommander(): void {
+		const commander = this.world.entityWith(CommanderComponent);
+
+		if (commander === null || !commander.hasComponent(GridPositionComponent)) {
+			return;
+		}
+
+		moveCursorTo(activeCursor(this.world), commander.getComponent(GridPositionComponent).read());
 	}
 }

@@ -46,6 +46,7 @@ Cancelling any of these (`x:cancelled`, `lock:cancelled`, `ui:menuCancelled` on 
 | Row | Pass 1 | Pass 2 | Pass 3 |
 |---|---|---|---|
 | `end-turn` | `turn:end` → `TurnFlowSystem` → `turn:changed` (enemy) | `PhaseBannerState`; threat redraws; `EnemyPhaseState` pushed | run `EnemyPhaseSystem(8).execute(...)` per enemy: walks via `UnitWalkSystem`, fights via `combat:confirmed`, then `unit:acted`; last one → `turn:end` → `turn:changed` (player) |
+| `objective` | `objective:requested` → `ObjectiveScreenState` | run `ObjectiveScreenSystem` → `objective:closed` | |
 | `units` | `roster:requested` → `RosterState` | run `RosterSystem` → `roster:closed` | |
 | `options` | `options:requested` → `OptionsState` | run `OptionsSystem` → `options:closed` | |
 | `seize` (on the objective tile, by the commander) | `seize:requested` → `ObjectiveFlowSystem` → `objective:decided` | `TurnFlowSystem` stops the turns; `ObjectiveSystem.execute` pushes `OutcomeState` once the map is quiet | `objective:acknowledged` → map restarts (`map:closed`, `map:ready`) |

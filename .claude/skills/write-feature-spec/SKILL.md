@@ -67,7 +67,7 @@ plus a verb per step of the flow under test (`attackFrom(column, row)`, `finishW
 | hasan | enemy | axe-fighter L1 | 4,14 | bronze-axe | 26 HP, str 9, spd 5; iron-axe, vulnerary |
 | besnik | enemy | axe-fighter L1 | 2,14 | bronze-axe | 22 HP |
 
-Objective: seize 12,3. Houses at 18,14 / 23,12 / 27,17 / 23,21; door 12,9; chest 14,4 (energy-drop). Conversations dardan–elira and elira–hasan. A hit is worth 10 EXP at equal level and tier, a kill 25 (10 + `KILL_BONUS` 15; a boss adds 40 more); `LEVEL_UP_EXPERIENCE` is 100, a pack holds 8. Sword beats axe: Dardan attacks Hasan with advantage. When a test needs different numbers, `patch` them in `beforeEach` and say why in a comment - do not edit the shipped sheets for a test.
+Objective: seize 12,5 (before the castle gate). Houses at 18,14 / 23,12 / 27,17 / 23,21; door 12,9; chest 14,4 (energy-drop). Conversations dardan–elira and elira–hasan. A hit is worth 10 EXP at equal level and tier, a kill 25 (10 + `KILL_BONUS` 15; a boss adds 40 more); `LEVEL_UP_EXPERIENCE` is 100, a pack holds 8. Sword beats axe: Dardan attacks Hasan with advantage. When a test needs different numbers, `patch` them in `beforeEach` and say why in a comment - do not edit the shipped sheets for a test.
 
 ## Procedure
 

@@ -26,7 +26,7 @@ export class UnitsFeature extends GameFeature {
 				{ system: UnitPopSystem, priority: 8 },
 				// On the "background" layer above the tileset art and the move overlay,
 				// below the cursor's own layer - see UnitRenderSystem.
-				{ system: UnitRenderSystem, priority: 17 }
+				{ system: UnitRenderSystem, priority: 18 }
 			],
 			...config
 		});

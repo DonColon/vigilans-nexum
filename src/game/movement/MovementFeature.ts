@@ -72,9 +72,9 @@ export class MovementFeature extends GameFeature {
 				// does once the walk lands.
 				{ system: UnitMoveSystem },
 				{ system: UnitCommandSystem },
-				// Below UnitRenderSystem (17) on the background layer: overlay first,
+				// Below UnitRenderSystem (18) on the background layer: overlay first,
 				// units on top.
-				{ system: MovementRenderSystem, priority: 16 },
+				{ system: MovementRenderSystem, priority: 17 },
 				// After CursorSystem (10) so the path tracks this frame's cursor tile.
 				{ system: PathPreviewSystem, priority: 12 },
 				// Runs the walk clock; order among the update systems does not matter.

@@ -31,12 +31,12 @@ export class ThreatFeature extends GameFeature {
 	constructor(config: GameFeatureConfig = {}) {
 		super({
 			components: [ThreatComponent],
-			// Between the terrain art (14) and the move overlay (16): a picked-up
+			// Between the seize marker (15) and the move overlay (17): a picked-up
 			// unit's blue range reads on top of the enemy wash, units on top of both.
 			systems: [
 				// Event-driven: the feature's flow.
 				{ system: ThreatFlowSystem },
-				{ system: ThreatRenderSystem, priority: 15 }
+				{ system: ThreatRenderSystem, priority: 16 }
 			],
 			...config
 		});

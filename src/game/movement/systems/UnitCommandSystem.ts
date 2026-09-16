@@ -100,7 +100,8 @@ import { activeCursor, tileToScreen } from "@/game/map/rules/ActiveMap";
  * still has its action.
  *  - Confirm off the range or `map:cancelled` sets it back down without moving.
  *  - Confirm on a tile with nothing to pick up opens the global command menu
- *    next to the cursor: "Units" opens the army list (`roster:requested`),
+ *    next to the cursor: "Objective" opens the objective readout
+ *    (`objective:requested`), "Units" opens the army list (`roster:requested`),
  *    "Options" the settings screen (`options:requested`), "End Turn" ends the
  *    turn (`turn:end`).
  *
@@ -345,7 +346,10 @@ export class UnitCommandSystem extends ReactiveSystem {
 	 */
 	private onCommand(event: MenuConfirmedEvent): void {
 		if (event.menu === GLOBAL_MENU) {
-			if (event.row === UnitMenuRow.UNITS) {
+			if (event.row === UnitMenuRow.OBJECTIVE) {
+				// The objective feature owns the readout; it puts the screen up.
+				this.events.dispatch("objective:requested", {});
+			} else if (event.row === UnitMenuRow.UNITS) {
 				// The roster feature takes it from here - it gathers the army and puts
 				// the list up. Nothing about the map changes.
 				this.events.dispatch("roster:requested", {});

@@ -5,6 +5,7 @@ import { SeizeRequestedEvent } from "@/game.events";
 import { ObjectiveComponent, Outcome } from "@/game/objective/components/ObjectiveComponent";
 import { objectiveOf, ObjectiveSetup } from "@/game/objective/content/Objectives";
 import { battleOutcome, canSeize } from "@/game/objective/rules/Outcome";
+import { ObjectiveScreenState } from "@/game/objective/states/ObjectiveScreenState";
 import { DEPLOYMENT_ASSET, parseDeployment } from "@/game/units/content/Deployments";
 import { unitById, unitsInWorld } from "@/game/units/rules/UnitLookup";
 
@@ -20,6 +21,9 @@ import { unitById, unitsInWorld } from "@/game/units/rules/UnitLookup";
  *    the last enemy gone a victory when the objective is a rout.
  *  - `seize:requested` (the "Seize" command) is a victory when the unit really
  *    can claim the tile.
+ *  - `objective:requested` (the "Objective" row of the global menu) pushes an
+ *    [[ObjectiveScreenState]] over the map: the readout of what the battle is
+ *    won and lost by. What it says is read live while it is up.
  *
  * The first outcome sticks: it is written on the component and reported as
  * `objective:decided`, which stops the turns. Showing it is
@@ -35,6 +39,7 @@ export class ObjectiveFlowSystem extends ReactiveSystem {
 		// Below the combat feature's own handler (0), so the fallen unit is already gone.
 		this.subscribe("unit:died", () => this.check(), -1);
 		this.subscribe("seize:requested", (event) => this.onSeize(event));
+		this.subscribe("objective:requested", () => this.stateManager.push(ObjectiveScreenState));
 
 		return this;
 	}

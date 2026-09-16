@@ -11,7 +11,7 @@ import { i18n } from "@/core/i18n/I18n";
 import { InputDevice } from "@/core/input/InputDevice";
 import { seedRandom } from "@/core/math/generation/Randomizer";
 import { ServiceRegistry } from "@/core/service/ServiceRegistry";
-import { ObjectiveDecidedEvent } from "@/game.events";
+import { ObjectiveClosedEvent, ObjectiveDecidedEvent } from "@/game.events";
 import { AIFeature } from "@/game/ai/AIFeature";
 import { EnemyPhaseState } from "@/game/ai/states/EnemyPhaseState";
 import { EnemyPhaseSystem } from "@/game/ai/systems/EnemyPhaseSystem";
@@ -23,8 +23,12 @@ import { parseTileMap } from "@/game/map/content/TileMaps";
 import { MapState } from "@/game/map/states/MapState";
 import { MovementFeature } from "@/game/movement/MovementFeature";
 import { UnitWalkSystem } from "@/game/movement/systems/UnitWalkSystem";
-import { UnitMenuRow } from "@/game/movement/view/UnitMenus";
+import { GLOBAL_MENU, UnitMenuRow } from "@/game/movement/view/UnitMenus";
 import { ObjectiveComponent, Outcome } from "@/game/objective/components/ObjectiveComponent";
+import { ObjectiveScreenComponent } from "@/game/objective/components/ObjectiveScreenComponent";
+import { objectiveScreenCommands } from "@/game/objective/commands/ObjectiveScreenCommands";
+import { ObjectiveScreenState } from "@/game/objective/states/ObjectiveScreenState";
+import { ObjectiveScreenSystem } from "@/game/objective/systems/ObjectiveScreenSystem";
 import { OutcomeComponent } from "@/game/objective/components/OutcomeComponent";
 import { WinCondition } from "@/game/objective/content/Objectives";
 import { ObjectiveFeature } from "@/game/objective/ObjectiveFeature";
@@ -103,6 +107,14 @@ suite("Objective Flow Test Suite", () => {
 	const turn = () => (world.entityWith(TurnComponent) as Entity).getComponent(TurnComponent).read();
 	const banner = () => (stateManager.getState(OutcomeState) as OutcomeState).getBanner()?.getComponent(OutcomeComponent);
 	const menu = () => (stateManager.peek() as MenuState).getMenu()?.getComponent(MenuComponent).read();
+	const screen = () => stateManager.getState(ObjectiveScreenState).getScreen()?.getComponent(ObjectiveScreenComponent);
+
+	/** Opens the objective screen the way the global menu's row does. */
+	const openScreen = () => {
+		eventBus.dispatch("ui:menuConfirmed", { menu: GLOBAL_MENU, row: UnitMenuRow.OBJECTIVE, index: 0, item: i18n("menu.objective") });
+		eventBus.processQueue();
+		eventBus.processQueue(); // objective:requested - the screen goes up
+	};
 
 	const run = <T extends { execute(elapsed: number, frame: number): void; dispose(): void }>(system: T, elapsed: number) => {
 		system.execute(elapsed, 0);
@@ -210,8 +222,8 @@ suite("Objective Flow Test Suite", () => {
 	test("The objective is read off the deployment sheet when the map opens", () => {
 		open();
 
-		// The skirmish is a seize of the fort's throne.
-		expect(objective()).toStrictEqual({ win: WinCondition.SEIZE, seizeColumn: 12, seizeRow: 3, outcome: "" });
+		// The skirmish is a seize of the tile before the castle gate.
+		expect(objective()).toStrictEqual({ win: WinCondition.SEIZE, seizeColumn: 12, seizeRow: 5, outcome: "" });
 	});
 
 	test("A rout is won when the last enemy falls; the banner waits for whatever is over the map", () => {
@@ -324,6 +336,34 @@ suite("Objective Flow Test Suite", () => {
 		eventBus.dispatch("seize:requested", { unitId: "elira" });
 		settle();
 		expect(decided).toHaveLength(0);
+	});
+
+	test("The global menu's Objective row opens the readout over the map, and closing it changes nothing", () => {
+		open();
+
+		const closed: ObjectiveClosedEvent[] = [];
+		const stop = eventBus.subscribe("objective:closed", (event) => closed.push(event));
+		const before = JSON.stringify(objective());
+
+		openScreen();
+
+		// On top, with only its own commands: the map is frozen under it.
+		expect(stateManager.peek()).toBeInstanceOf(ObjectiveScreenState);
+		expect(stateManager.getState(ObjectiveScreenState).getCommands()).toHaveLength(objectiveScreenCommands.length);
+		expect(screen()?.read()).toStrictEqual({ closed: false });
+
+		// The close command marks the screen; the tick that sees it pops the state and reports.
+		screen()?.update({ closed: true });
+		run(new ObjectiveScreenSystem(10).initialize(), 16);
+		eventBus.processQueue();
+
+		expect(closed).toHaveLength(1);
+		expect(stateManager.peek()).not.toBeInstanceOf(ObjectiveScreenState);
+		expect(world.getEntities().filter((entity) => entity.hasComponent(ObjectiveScreenComponent))).toStrictEqual([]);
+		expect(JSON.stringify(objective())).toBe(before);
+		expect(decided).toHaveLength(0);
+
+		stop();
 	});
 
 	test("Acknowledging the banner starts the battle over", () => {

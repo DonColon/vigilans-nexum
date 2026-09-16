@@ -8,12 +8,15 @@ import { Display } from "@/core/graphics/Display";
 import { InputDevice } from "@/core/input/InputDevice";
 import { ServiceRegistry } from "@/core/service/ServiceRegistry";
 import { TurnChangedEvent } from "@/game.events";
+import { CursorComponent } from "@/game/map/components/CursorComponent";
+import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
 import { MapState } from "@/game/map/states/MapState";
 import { DIGIT_ZERO, turnDigits } from "@/game/turn/view/TurnHud";
 import { TurnComponent } from "@/game/turn/components/TurnComponent";
 import { TurnSystem } from "@/game/turn/systems/TurnSystem";
 import { TurnFeature } from "@/game/turn/TurnFeature";
 import { buildUnit } from "@/game/units/content/UnitSheets";
+import { CommanderComponent } from "@/game/units/components/CommanderComponent";
 import { UnitComponent, UnitData, UnitFaction } from "@/game/units/components/UnitComponent";
 import dardanDocument from "@/assets/data/units/dardan.unit.json";
 import hasanDocument from "@/assets/data/units/hasan.unit.json";
@@ -49,6 +52,9 @@ suite("Turn Test Suite", () => {
 		const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
 
 		world.registerComponent(UnitComponent);
+		world.registerComponent(CommanderComponent);
+		world.registerComponent(GridPositionComponent);
+		world.registerComponent(CursorComponent);
 
 		const stateManager = new GameStateManager();
 		// The phase banner state resets its command list on entry, which needs an input device - and that a display.
@@ -174,6 +180,33 @@ suite("Turn Test Suite", () => {
 			expect(phase()).toBe(UnitFaction.PLAYER);
 			expect(hasan.getComponent(UnitComponent).read().hasMoved).toBe(false);
 			expect(changes.at(-1)).toMatchObject({ number: 2, phase: UnitFaction.PLAYER });
+		});
+
+		test("A new player phase brings the map cursor back to the commander", () => {
+			const dardan = spawn(dardanDocument, true);
+			dardan.addComponent(CommanderComponent, {});
+			dardan.addComponent(GridPositionComponent, { column: 4, row: 10 });
+			const hasan = spawn(hasanDocument, true);
+
+			const cursor = world.createEntity();
+			cursor.addComponent(CursorComponent, {});
+			// Wherever the cursor was left - a look at the far corner.
+			cursor.addComponent(GridPositionComponent, { column: 7, row: 0 });
+
+			// Over to the enemy: its phase does not touch the cursor.
+			eventBus.dispatch("turn:end", {});
+			tick();
+			dismissBanner();
+			expect(phase()).toBe(UnitFaction.ENEMY);
+			expect(cursor.getComponent(GridPositionComponent).read()).toMatchObject({ column: 7, row: 0 });
+
+			// And back: the player's phase opens on the commander.
+			moved(hasan, true);
+			eventBus.dispatch("turn:end", {});
+			tick();
+
+			expect(phase()).toBe(UnitFaction.PLAYER);
+			expect(cursor.getComponent(GridPositionComponent).read()).toMatchObject({ column: 4, row: 10 });
 		});
 
 		test("A phase ends on its own once every unit of the acting side has acted", () => {
