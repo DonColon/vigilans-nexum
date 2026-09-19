@@ -14,9 +14,10 @@ import { House, HousesDocument, parseHouses } from "@/game/visit/content/Houses"
 import { giftPopup, houseDialog } from "@/game/visit/view/VisitPopups";
 import { availableHouse, findDoor } from "@/game/visit/rules/Visits";
 import { activeMap } from "@/game/map/rules/ActiveMap";
+import { scenarioAsset } from "@/game/map/content/Scenario";
 
-/** Asset id of the house sheet this battle is scripted with. */
-const HOUSES_ASSET = "houses-skirmish";
+/** Asset id of the house sheet a scenario is scripted with. */
+const housesAsset = (scenario: string) => scenarioAsset("houses", scenario);
 
 /**
  * Fire Emblem's "Visit": the houses on the map have someone in, and a unit that
@@ -69,7 +70,7 @@ export class VisitFlowSystem extends ReactiveSystem {
 	private showing: { houseId: string; unitId: string; itemId: string } | null = null;
 
 	public initialize(): this {
-		this.subscribe("map:ready", () => this.open());
+		this.subscribe("map:ready", (event) => this.open(event.scenario));
 		this.subscribe("map:closed", () => this.close());
 		this.subscribe("visit:requested", (event) => this.onRequested(event));
 		this.subscribe("ui:dialogClosed", (event) => this.onDialogClosed(event));
@@ -85,10 +86,10 @@ export class VisitFlowSystem extends ReactiveSystem {
 	}
 
 	/** Reads the scenario's houses and opens the door of every one still worth a knock. */
-	private open(): void {
+	private open(scenario: string): void {
 		this.close();
 
-		const houses = this.houses();
+		const houses = this.houses(scenario);
 
 		this.visit = this.world.createEntity();
 		this.visit.addComponent(VisitComponent, { houses, visited: [], doors: [] });
@@ -132,11 +133,11 @@ export class VisitFlowSystem extends ReactiveSystem {
 	}
 
 	/** The scenario's house sheet, or none at all when it is not in the bundle. */
-	private houses(): House[] {
+	private houses(scenario: string): House[] {
 		try {
-			return parseHouses(this.assets.getJson<HousesDocument>(HOUSES_ASSET));
+			return parseHouses(this.assets.getJson<HousesDocument>(housesAsset(scenario)));
 		} catch (error) {
-			console.error(`House sheet "${HOUSES_ASSET}" could not be read:`, error);
+			console.error(`House sheet "${housesAsset(scenario)}" could not be read:`, error);
 			return [];
 		}
 	}

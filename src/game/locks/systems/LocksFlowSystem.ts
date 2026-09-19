@@ -15,9 +15,10 @@ import { UnitComponent } from "@/game/units/components/UnitComponent";
 import { LockKind } from "@/game/units/content/UnitCatalog";
 import { unitsInWorld, unitById } from "@/game/units/rules/UnitLookup";
 import { activeMap } from "@/game/map/rules/ActiveMap";
+import { scenarioAsset } from "@/game/map/content/Scenario";
 
-/** Asset id of the lock sheet this battle is scripted with. */
-const LOCKS_ASSET = "locks-skirmish";
+/** Asset id of the lock sheet a scenario is scripted with. */
+const locksAsset = (scenario: string) => scenarioAsset("locks", scenario);
 
 /**
  * Fire Emblem's "Door" and "Chest": the locked doors and chests on the map, and
@@ -63,7 +64,7 @@ export class LocksFlowSystem extends ReactiveSystem {
 	private showing: { chestId: string; unitId: string; itemId: string } | null = null;
 
 	public initialize(): this {
-		this.subscribe("map:ready", () => this.open());
+		this.subscribe("map:ready", (event) => this.open(event.scenario));
 		this.subscribe("map:closed", () => this.close());
 		this.subscribe("door:requested", (event) => this.onDoorRequested(event));
 		this.subscribe("chest:requested", (event) => this.onChestRequested(event));
@@ -79,10 +80,10 @@ export class LocksFlowSystem extends ReactiveSystem {
 	}
 
 	/** Reads the scenario's locks and finds each one in the tile map. */
-	private open(): void {
+	private open(scenario: string): void {
 		this.close();
 
-		const { doors, chests } = this.sheet();
+		const { doors, chests } = this.sheet(scenario);
 
 		this.locks = this.world.createEntity();
 		this.locks.addComponent(LocksComponent, { doors, chests, opened: [], tiles: [] });
@@ -121,11 +122,11 @@ export class LocksFlowSystem extends ReactiveSystem {
 	}
 
 	/** The scenario's lock sheet, or none at all when it is not in the bundle. */
-	private sheet(): { doors: Door[]; chests: Chest[] } {
+	private sheet(scenario: string): { doors: Door[]; chests: Chest[] } {
 		try {
-			return parseLocks(this.assets.getJson<LocksDocument>(LOCKS_ASSET));
+			return parseLocks(this.assets.getJson<LocksDocument>(locksAsset(scenario)));
 		} catch (error) {
-			console.error(`Lock sheet "${LOCKS_ASSET}" could not be read:`, error);
+			console.error(`Lock sheet "${locksAsset(scenario)}" could not be read:`, error);
 			return { doors: [], chests: [] };
 		}
 	}

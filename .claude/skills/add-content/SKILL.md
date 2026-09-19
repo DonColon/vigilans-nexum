@@ -23,6 +23,7 @@ Every shape below is checked against a loader that throws a `GameError` with a p
 | Houses | `houses/<scenario>.houses.json` | `src/game/visit/content/Houses.ts` | `houses-<scenario>` |
 | Doors + chests | `locks/<scenario>.locks.json` | `src/game/locks/content/Locks.ts` | `locks-<scenario>` |
 | Tile map | `maps/<name>.tilemap.json` | `src/game/map/content/TileMapFormat.ts` | `map-<name>` |
+| Campaign (chapters in order) | `campaign/campaign.json` | `src/game/campaign/content/Campaigns.ts` | `campaign` |
 
 Everything a document refers to by id must exist where the loader looks it up - see *Cross-references* below. The loaders check most of these at startup; a few (a deployment naming a unit with no sheet, a reward naming no item) only fail when that unit or house is reached, so check them yourself.
 
@@ -36,7 +37,7 @@ Everything a document refers to by id must exist where the loader looks it up - 
    - **A new file** (unit sheet, scenario document, map) needs an entry in the `BattleMap` bundle of `src/asset.manifest.ts` (`{ id, type: "json", url: "/data/<kind>/<file>" }` - the url is rooted at `src/assets`) **and** the same document imported and seeded under the same id in `vitest.setup.ts`, or the running game and the specs disagree.
    - **A catalog entry** (class, weapon, item) is a key in the existing catalog file; nothing to wire.
    - **A placement, conversation, house or lock** is an entry in the scenario's existing document; nothing to wire.
-   - **A new scenario** means one document of each scenario kind (deployment, conversations, houses, locks - the latter three may hold empty lists) plus the map it names. The scenario constants are hard-coded to `skirmish` today - `DEPLOYMENT_ASSET` in `src/game/units/content/Deployments.ts`, `HOUSES_ASSET`, `LOCKS_ASSET`, `CONVERSATIONS_ASSET` in the feature flow systems, and `MAP_ASSET` in `src/game/map/states/MapState.ts`; the deployment's `map` field is not what picks the map. Switching scenarios is a code change to those constants; say so and make it only if asked. (Turning them into a chapter selection is a feature, not content.)
+   - **A new scenario / chapter** means one document of each scenario kind (deployment, conversations, houses, locks - the latter three may hold empty lists), each listed in the manifest as `<kind>-<scenario>`, plus a chapter entry in `campaign/campaign.json` - `{ "id": "<scenario>", "title": { "de", "en" }, "map": "<name>" }` - at its place in the order. The chapter's `map` is what picks the tile map (`map-<name>` must be in the manifest); the deployment's own `map` field is informational. Which scenario a battle reads comes with `map:ready` (see `src/game/map/content/Scenario.ts`); nothing is hard-coded. The shipped chapters are `skirmish` (on `fantasy`) and `river` (on `river`).
 
 4. **Check the cross-references** yourself, in both directions:
    - A unit's `class` is in `classes.json`; its `weapon` is in `weapons.json` **and** of a `type` the class's `weaponTypes` lists (a cleric wields a `staff`, not a sword); every `inventory` id is a weapon or an item; the pack (the equipped weapon plus the inventory) holds at most 8.
@@ -73,4 +74,4 @@ Everything a document refers to by id must exist where the loader looks it up - 
 - An item has exactly one effect: `heal` (a number or `"full"`), `boost` (a partial stat record), or `unlocks` (`"door"` or `"chest"`). Do not combine them.
 - Map coordinates are `column`, `row`, zero-based, row-major; the shipped map is 48×24 and the display is sized to it exactly (`game.config.ts`), so a map of another size needs a display change too.
 - Placements are read at `map:ready`; edit the deployment and reload the page, no build step.
-- `maps/skirmish.tilemap.json` ships but is unlisted in the manifest and unused; `map-fantasy` is the battle map.
+- Two maps ship: `fantasy` (48×24, the first chapter) and `river` (20×15, the second); a smaller map is centred in the viewport.

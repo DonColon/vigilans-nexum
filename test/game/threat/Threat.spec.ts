@@ -107,7 +107,7 @@ suite("Enemy Range Test Suite", () => {
 		threat = new ThreatFeature({ dependencies: [units] });
 		threat.install();
 
-		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "skirmish" });
 		eventBus.processQueue();
 	});
 

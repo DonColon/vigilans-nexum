@@ -65,7 +65,7 @@ suite("Objective Flow Test Suite", () => {
 	class MapStub extends GameState {
 		public static readonly type = MapState.type;
 		onEnter() {
-			eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
+			eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "skirmish" });
 		}
 		onExit() {
 			eventBus.dispatch("map:closed", {});
@@ -233,7 +233,7 @@ suite("Objective Flow Test Suite", () => {
 		open();
 
 		// The skirmish is a seize of the tile before the castle gate.
-		expect(objective()).toStrictEqual({ win: WinCondition.SEIZE, seizeColumn: 12, seizeRow: 5, outcome: "" });
+		expect(objective()).toStrictEqual({ win: WinCondition.SEIZE, seizeColumn: 12, seizeRow: 5, outcome: "", acknowledged: false });
 	});
 
 	test("A rout is won when the last enemy falls; the banner waits for whatever is over the map", () => {
@@ -394,7 +394,8 @@ suite("Objective Flow Test Suite", () => {
 
 		// The banner holds until the player presses - the press is what the command marks.
 		banner()?.update({ ...banner()!.read(), acknowledged: true });
-		frame(); // acknowledged: the states come down and the map is entered again
+		frame(); // acknowledged: the states come down, the outcome is handed on
+		frame(); // objective:acknowledged lands - the map is entered again
 		frame(); // map:closed and map:ready land - the battle is rebuilt
 
 		expect(events).toStrictEqual(["acknowledged", "closed", "ready"]);
@@ -443,7 +444,8 @@ suite("Objective Flow Test Suite", () => {
 		expect(stateManager.peek()).toBeInstanceOf(OutcomeState);
 
 		banner()?.update({ ...banner()!.read(), acknowledged: true });
-		frame(); // acknowledged: the states come down and the map is entered again
+		frame(); // acknowledged: the states come down, the outcome is handed on
+		frame(); // objective:acknowledged lands - the map is entered again
 		frame(); // map:closed and map:ready land - the battle is rebuilt
 		frame();
 		frame();

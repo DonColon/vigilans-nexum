@@ -98,7 +98,8 @@
 	"turn.enemyPhase": "Gegnerphase",
 	"objective.victory": "Sieg",
 	"objective.defeat": "Niederlage",
-	"objective.continue": "Bestätigen, um die Schlacht erneut zu schlagen",
+	"objective.continueVictory": "Bestätigen, um weiterzuziehen",
+	"objective.continueDefeat": "Bestätigen, um die Schlacht erneut zu schlagen",
 	"objective.title": "Ziel",
 	"objective.win": "Sieg",
 	"objective.lose": "Niederlage",
@@ -121,5 +122,10 @@
 	"forecast.hp": "HP",
 	"forecast.damage": "Schaden",
 	"forecast.hit": "Treffer",
-	"forecast.crit": "Krit."
+	"forecast.crit": "Krit.",
+	"campaign.newGame": "Neues Spiel",
+	"campaign.continue": "Fortsetzen",
+	"campaign.tagline": "Eine Geschichte über Vertrauen und die Bande, die ein Schlachtfeld zusammenhalten",
+	"campaign.chapter": "Kapitel {number}",
+	"campaign.begin": "Bestätigen, um zu beginnen"
 }

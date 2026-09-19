@@ -98,7 +98,8 @@
 	"turn.enemyPhase": "Enemy Phase",
 	"objective.victory": "Victory",
 	"objective.defeat": "Defeat",
-	"objective.continue": "Press confirm to fight the battle again",
+	"objective.continueVictory": "Press confirm to go on",
+	"objective.continueDefeat": "Press confirm to fight the battle again",
 	"objective.title": "Objective",
 	"objective.win": "Win",
 	"objective.lose": "Lose",
@@ -121,5 +122,10 @@
 	"forecast.hp": "HP",
 	"forecast.damage": "Dmg",
 	"forecast.hit": "Hit",
-	"forecast.crit": "Crit"
+	"forecast.crit": "Crit",
+	"campaign.newGame": "New Game",
+	"campaign.continue": "Continue",
+	"campaign.tagline": "A tale of trust, and the bonds that hold a battlefield together",
+	"campaign.chapter": "Chapter {number}",
+	"campaign.begin": "Press confirm to begin"
 }

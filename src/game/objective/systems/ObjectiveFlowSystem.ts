@@ -6,7 +6,8 @@ import { ObjectiveComponent, Outcome } from "@/game/objective/components/Objecti
 import { objectiveOf, ObjectiveSetup } from "@/game/objective/content/Objectives";
 import { battleOutcome, canSeize } from "@/game/objective/rules/Outcome";
 import { ObjectiveScreenState } from "@/game/objective/states/ObjectiveScreenState";
-import { DEPLOYMENT_ASSET, parseDeployment } from "@/game/units/content/Deployments";
+import { MapState } from "@/game/map/states/MapState";
+import { deploymentAsset, parseDeployment } from "@/game/units/content/Deployments";
 import { unitById, unitsInWorld } from "@/game/units/rules/UnitLookup";
 
 /**
@@ -27,19 +28,24 @@ import { unitById, unitsInWorld } from "@/game/units/rules/UnitLookup";
  *
  * The first outcome sticks: it is written on the component and reported as
  * `objective:decided`, which stops the turns. Showing it is
- * [[ObjectiveSystem]]'s, once the map is quiet.
+ * [[ObjectiveSystem]]'s, once the map is quiet; when the banner is
+ * acknowledged (`objective:acknowledged`, delivered with the map back on top)
+ * the battle is started over by entering the map state again, which tears it
+ * down (`map:closed`) and sets it up afresh (`map:ready`). A feature that
+ * knows where a won battle leads claims the event ahead of this handler.
  */
 export class ObjectiveFlowSystem extends ReactiveSystem {
 	@GameCoreService(AssetStorage)
 	private assets!: AssetStorage;
 
 	public initialize(): this {
-		this.subscribe("map:ready", () => this.open());
+		this.subscribe("map:ready", (event) => this.open(event.scenario));
 		this.subscribe("map:closed", () => this.close());
 		// Below the combat feature's own handler (0), so the fallen unit is already gone.
 		this.subscribe("unit:died", () => this.check(), -1);
 		this.subscribe("seize:requested", (event) => this.onSeize(event));
 		this.subscribe("objective:requested", () => this.stateManager.push(ObjectiveScreenState));
+		this.subscribe("objective:acknowledged", () => this.stateManager.switch(MapState.type));
 
 		return this;
 	}
@@ -49,9 +55,9 @@ export class ObjectiveFlowSystem extends ReactiveSystem {
 		super.dispose();
 	}
 
-	private open(): void {
+	private open(scenario: string): void {
 		this.close();
-		this.world.createEntity().addComponent(ObjectiveComponent, ObjectiveComponent.open(this.setup()));
+		this.world.createEntity().addComponent(ObjectiveComponent, ObjectiveComponent.open(this.setup(scenario)));
 	}
 
 	private close(): void {
@@ -63,11 +69,11 @@ export class ObjectiveFlowSystem extends ReactiveSystem {
 	}
 
 	/** The sheet's objective, or a rout when the sheet cannot be read. */
-	private setup(): ObjectiveSetup {
+	private setup(scenario: string): ObjectiveSetup {
 		try {
-			return objectiveOf(parseDeployment(this.assets.getJson(DEPLOYMENT_ASSET)).objective);
+			return objectiveOf(parseDeployment(this.assets.getJson(deploymentAsset(scenario))).objective);
 		} catch (error) {
-			console.error(`Deployment "${DEPLOYMENT_ASSET}" could not be read for the objective:`, error);
+			console.error(`Deployment "${deploymentAsset(scenario)}" could not be read for the objective:`, error);
 			return objectiveOf(undefined);
 		}
 	}

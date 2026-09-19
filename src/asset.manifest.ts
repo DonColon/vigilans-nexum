@@ -42,6 +42,15 @@ const assetManifest: AssetManifest = {
 				url: "/ui/divider.png",
 				layout: { type: "grid", tileWidth: 96, tileHeight: 22, columns: 1, rows: 1 }
 			},
+			// The border nine-sliced around the selected row of a bare menu (the
+			// title screen's) - see drawMenuFrame in src/game/ui/view/UIPanel.ts.
+			{
+				id: "ui-select",
+				type: "image",
+				subtype: "spritesheet",
+				url: "/ui/select.png",
+				layout: { type: "grid", tileWidth: 48, tileHeight: 48, columns: 1, rows: 1 }
+			},
 			// The same flourish with its tail fading out - one on each side of the
 			// phase banner (see src/game/turn/view/PhaseBanner.ts). Not 1-bit: the
 			// fade is a real alpha ramp, which the tint keeps.
@@ -70,13 +79,26 @@ const assetManifest: AssetManifest = {
 				type: "json",
 				url: "/data/catalog/items.json"
 			},
-			// Scenario content. A deployment names the units it puts on the map, and
+			// The chapters in order, each naming its scenario and map - see
+			// src/game/campaign.
+			{
+				id: "campaign",
+				type: "json",
+				url: "/data/campaign/campaign.json"
+			},
+			// Scenario content, one document of each kind per scenario under
+			// `<kind>-<scenario>`. A deployment names the units it puts on the map, and
 			// each is looked up as `unit-<id>`, so a new character is a sheet plus an
 			// entry here - no TypeScript changes.
 			{
 				id: "deployment-skirmish",
 				type: "json",
 				url: "/data/deployments/skirmish.deployment.json"
+			},
+			{
+				id: "deployment-river",
+				type: "json",
+				url: "/data/deployments/river.deployment.json"
 			},
 			{
 				id: "unit-dardan",
@@ -110,6 +132,11 @@ const assetManifest: AssetManifest = {
 				type: "json",
 				url: "/data/houses/skirmish.houses.json"
 			},
+			{
+				id: "houses-river",
+				type: "json",
+				url: "/data/houses/river.houses.json"
+			},
 			// The locked doors and chests on the map, and what the chests hold - see
 			// src/game/locks.
 			{
@@ -117,19 +144,33 @@ const assetManifest: AssetManifest = {
 				type: "json",
 				url: "/data/locks/skirmish.locks.json"
 			},
+			{
+				id: "locks-river",
+				type: "json",
+				url: "/data/locks/river.locks.json"
+			},
 			// Who may talk to whom, and the script they speak - see src/game/talk.
 			{
 				id: "conversations-skirmish",
 				type: "json",
 				url: "/data/conversations/skirmish.conversations.json"
 			},
-			// The battle map MapState builds. `maps/skirmish.tilemap.json` ships
-			// alongside it but is left unlisted - no scenario loads it yet, and an
-			// entry here would cost a fetch at startup.
+			{
+				id: "conversations-river",
+				type: "json",
+				url: "/data/conversations/river.conversations.json"
+			},
+			// The tile maps the chapters are fought on, `map-<name>` as the campaign
+			// sheet names them; MapState builds whichever the chapter asks for.
 			{
 				id: "map-fantasy",
 				type: "json",
 				url: "/data/maps/fantasy.tilemap.json"
+			},
+			{
+				id: "map-river",
+				type: "json",
+				url: "/data/maps/river.tilemap.json"
 			},
 			// Pixel fonts for the UI text. AssetLoader registers each as
 			// `new FontFace("<id>", ...)`, so the CSS family name is the asset id.

@@ -19,6 +19,8 @@ export interface ObjectiveData extends JsonSchema {
 	seizeRow: number;
 	/** How the battle ended, or "" while it is still being fought. */
 	outcome: Outcome | "";
+	/** The outcome banner has been seen and pressed away - it is not put up again while the battle is torn down. */
+	acknowledged: boolean;
 }
 
 /**
@@ -31,7 +33,7 @@ export class ObjectiveComponent extends Component<ObjectiveData> {
 
 	/** A fresh objective from the sheet's setup, still being fought. */
 	public static open(setup: ObjectiveSetup): ObjectiveData {
-		return { ...setup, outcome: "" };
+		return { ...setup, outcome: "", acknowledged: false };
 	}
 
 	/** Whether the battle has been decided either way. */

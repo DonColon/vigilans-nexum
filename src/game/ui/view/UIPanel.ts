@@ -41,7 +41,7 @@ export function drawText(graphics: Graphics, value: string, x: number, centreY: 
  * the raw `HTMLImageElement` behind it stays reachable for nine-slicing.
  */
 export function uiAssetsReady(assets: AssetStorage): boolean {
-	return assets.hasSpritesheet(UITheme.assets.panel) && assets.hasSpritesheet(UITheme.assets.frame) && assets.hasSpritesheet(UITheme.assets.divider);
+	return assets.hasSpritesheet(UITheme.assets.panel) && assets.hasSpritesheet(UITheme.assets.frame) && assets.hasSpritesheet(UITheme.assets.divider) && assets.hasSpritesheet(UITheme.assets.select);
 }
 
 function nineSlice(assets: AssetStorage, id: string): NineSlice {
@@ -64,6 +64,16 @@ export function drawPanel(graphics: Graphics, assets: AssetStorage, bounds: Rect
 	const keyline = new Rectangle(x + inset, y + inset, bounds.getWidth() - 2 * inset, bounds.getHeight() - 2 * inset);
 
 	graphics.strokeColor(UITheme.panelInline).lineStyle({ width: 1 }).strokeRectangle(keyline);
+}
+
+/**
+ * Marks the selected row of a bare menu: the select art nine-sliced around the
+ * row, the way Kenney's sample frames its buttons. The art brings its own
+ * half-transparent fill, so nothing is washed under it.
+ */
+export function drawMenuFrame(graphics: Graphics, assets: AssetStorage, row: Rectangle): void {
+	graphics.imageSmoothing();
+	drawNineSlice(graphics, nineSlice(assets, UITheme.assets.select), row, UITheme.menuFrame);
 }
 
 /**

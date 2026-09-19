@@ -1,7 +1,13 @@
 import { GameError } from "@/core/GameError";
+import { DEFAULT_SCENARIO, scenarioAsset } from "@/game/map/content/Scenario";
 
-/** Asset id of the deployment sheet this battle puts on the map. */
-export const DEPLOYMENT_ASSET = "deployment-skirmish";
+/** Asset id of the deployment sheet a scenario puts on the map. */
+export function deploymentAsset(scenario: string): string {
+	return scenarioAsset("deployment", scenario);
+}
+
+/** Asset id of the default scenario's deployment sheet - the one a battle map builds when nothing asks for a chapter. */
+export const DEPLOYMENT_ASSET = deploymentAsset(DEFAULT_SCENARIO);
 
 /**
  * One unit's place on the map at the top of the battle. `behaviour` is only

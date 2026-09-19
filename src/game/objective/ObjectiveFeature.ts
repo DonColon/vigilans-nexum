@@ -21,7 +21,8 @@ import { SeizeMarkerRenderSystem } from "@/game/objective/systems/SeizeMarkerRen
  * objective and decides it after every death and on a seize, which stops the
  * turns; [[ObjectiveSystem]] waits for the map to be quiet and puts the
  * outcome banner up - "Victory" or "Defeat", the phase banner's shape, held
- * until a press - and then starts the battle over.
+ * until a press - and hands the outcome on; a lost battle is started over
+ * here, a won one is the campaign feature's to lead on from.
  *
  * The player can look the objective up at any time: the global menu's
  * "Objective" row opens a readout of what wins and loses

@@ -60,7 +60,7 @@ export class OutcomeRenderSystem extends RenderSystem {
 		const box = outcomeContinueBox(viewport);
 		drawBand(graphics, box);
 
-		drawText(graphics, i18n(OUTCOME_CONTINUE_KEY), Math.round(viewport.width / 2), Math.round(box.getPosition().y + box.getHeight() / 2), {
+		drawText(graphics, i18n(OUTCOME_CONTINUE_KEY[data.outcome]), Math.round(viewport.width / 2), Math.round(box.getPosition().y + box.getHeight() / 2), {
 			font: OutcomeBannerTheme.continueFont,
 			color: OutcomeBannerTheme.continueColor,
 			align: TextAlign.CENTER

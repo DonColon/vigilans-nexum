@@ -1,6 +1,20 @@
 import { Component } from "@/core/ecs/Component";
 import { JsonSchema } from "@/core/ecs/JsonSchema";
 
+/**
+ * How a menu is drawn. `panel`: the framed panel every in-battle menu uses,
+ * rows left-aligned, the selected one bracketed. `bare`: no panel at all -
+ * the rows sit on whatever is behind them, centred, and the selected one is
+ * framed by the ornate select border (Kenney's sample title menu). The bare
+ * style draws no badges or values.
+ */
+export type MenuStyle = (typeof MenuStyle)[keyof typeof MenuStyle];
+
+export const MenuStyle = {
+	PANEL: "panel",
+	BARE: "bare"
+} as const;
+
 export interface MenuData extends JsonSchema {
 	/** Stable name of this menu, echoed by the `ui:menuConfirmed` / `ui:menuCancelled` events. */
 	id: string;
@@ -8,6 +22,8 @@ export interface MenuData extends JsonSchema {
 	title: string;
 	/** Panel width in pixels - the state and the renderer read it from here so they agree. */
 	width: number;
+	/** How the menu is drawn - see [[MenuStyle]]. */
+	style: MenuStyle;
 	/** The rows, top to bottom. */
 	items: string[];
 	/**

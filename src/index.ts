@@ -1,6 +1,7 @@
 import { Game } from "@/core/Game";
 import { gameConfiguration } from "@/game.config";
 import { AIFeature } from "@/game/ai";
+import { CampaignFeature } from "@/game/campaign";
 import { CombatFeature } from "@/game/combat";
 import { ExperienceFeature } from "@/game/experience";
 import { ConvoyFeature } from "@/game/convoy";
@@ -89,7 +90,14 @@ game.install(ai);
 // after every death and on "Seize", and the victory / defeat banner that
 // starts the battle over. It stops the turns and holds the enemy phase, so it
 // is installed after both.
-game.install(new ObjectiveFeature({ dependencies: [units, turn, ai] }));
+const objective = new ObjectiveFeature({ dependencies: [units, turn, ai] });
+game.install(objective);
+// The game around the battles: the title screen, the chapter cards, and the
+// save that carries the army from one chapter to the next. It puts the title
+// menu up through the UI feature, lays the saved roster over the units and
+// the convoy once a battle is set up, and takes a won battle off the
+// objective feature's hands, so it is installed after all of them.
+game.install(new CampaignFeature({ dependencies: [ui, units, convoy, objective] }));
 game.start();
 
 // Dev-only handle so the loop can be driven by hand when rAF is throttled

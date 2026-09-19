@@ -43,11 +43,16 @@ export interface PopupClosedEvent extends GameEvent {
 /** The player pressed the cancel button on a battle map (Fire Emblem's B). */
 export type TileCancelledEvent = GameEvent;
 
-/** A battle map finished setting up. Carries the id its entity was created with. */
+/**
+ * A battle map finished setting up. Carries the id its entity was created
+ * with, and the scenario it was built for - the features that put things on
+ * the map read that scenario's documents (see `src/game/map/content/Scenario`).
+ */
 export interface MapReadyEvent extends GameEvent {
 	mapId: string;
 	columns: number;
 	rows: number;
+	scenario: string;
 }
 
 /** A battle map tore down - the cursor and grid entities are gone. */
@@ -448,14 +453,50 @@ export interface ObjectiveDecidedEvent extends GameEvent {
 	outcome: Outcome;
 }
 
-/** The outcome banner was acknowledged; the battle map starts over. */
-export type ObjectiveAcknowledgedEvent = GameEvent;
+/**
+ * The outcome banner was acknowledged and everything over the map has come
+ * down. What happens next is the listeners': the objective feature starts the
+ * battle over, and a feature that knows what a won battle leads to - the
+ * campaign - takes a victory off its hands with `stopPropagation()`.
+ */
+export interface ObjectiveAcknowledgedEvent extends GameEvent {
+	outcome: Outcome;
+}
 
 /** A request to open the objective screen (from the global command menu). */
 export type ObjectiveRequestedEvent = GameEvent;
 
 /** The objective screen was closed. It is a readout, so nothing changed and there is nothing to report. */
 export type ObjectiveClosedEvent = GameEvent;
+
+/** The title screen went up. The campaign feature reads the save slot in answer, and puts the title menu up once it knows what to offer. */
+export type TitleOpenedEvent = GameEvent;
+
+/** The save slot was read: `found` says whether it holds a run to continue. Lands after `title:opened`, once the store has answered. */
+export interface CampaignSlotReadEvent extends GameEvent {
+	found: boolean;
+}
+
+/** A chapter's card went up - a new run's first, a continued run's, or the one after a won battle. */
+export interface CampaignChapterStartedEvent extends GameEvent {
+	chapter: string;
+	/** The chapter's place in the campaign, one-based. */
+	number: number;
+}
+
+/** A chapter was won and the run moved on. `next` is the chapter it moved to, or "" when it was the last. The roster and convoy are already recorded. */
+export interface CampaignChapterClearedEvent extends GameEvent {
+	chapter: string;
+	next: string;
+}
+
+/** The last chapter was won; the game goes back to the title screen. */
+export type CampaignFinishedEvent = GameEvent;
+
+/** The store took a write of the run. Lands a frame or more after the chapter it recorded began. */
+export interface CampaignSavedEvent extends GameEvent {
+	slot: number;
+}
 
 declare module "@/core/events/GameEvents" {
 	interface GameEvents {
@@ -526,5 +567,11 @@ declare module "@/core/events/GameEvents" {
 		"objective:acknowledged": ObjectiveAcknowledgedEvent;
 		"objective:requested": ObjectiveRequestedEvent;
 		"objective:closed": ObjectiveClosedEvent;
+		"title:opened": TitleOpenedEvent;
+		"campaign:slotRead": CampaignSlotReadEvent;
+		"campaign:chapterStarted": CampaignChapterStartedEvent;
+		"campaign:chapterCleared": CampaignChapterClearedEvent;
+		"campaign:finished": CampaignFinishedEvent;
+		"campaign:saved": CampaignSavedEvent;
 	}
 }

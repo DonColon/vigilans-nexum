@@ -8,7 +8,7 @@ Every event's payload is typed in `src/game.events.ts` - read the interface befo
 
 | Dispatch | Pass 1 | Pass 2 |
 |---|---|---|
-| `map:ready` `{ mapId, columns, rows }` (or `switch(MapStub)`) | units deployed (`UnitsFeature`), map-lifetime entities created by turn / movement / threat / talk / visit / locks / convoy / objective / ai; `TurnFlowSystem` → `turn:changed` | `PhaseBannerState` pushed ("Player Phase"); threat cleared. `dismissBanner()` pops it |
+| `map:ready` `{ mapId, columns, rows, scenario }` (or `switch(MapStub)`) | units deployed (`UnitsFeature`) off `deployment-<scenario>`, map-lifetime entities created by turn / movement / threat / talk / visit / locks / convoy / objective / ai, the campaign's veterans and fallen laid over the units (-2); `TurnFlowSystem` → `turn:changed` | `PhaseBannerState` pushed ("Player Phase"); threat cleared. `dismissBanner()` pops it |
 | `map:closed` `{}` | every feature drops its map-lifetime entities | - |
 
 ## Moving
@@ -60,6 +60,17 @@ Cancelling any of these (`x:cancelled`, `lock:cancelled`, `ui:menuCancelled` on 
 | `map:infoRequested` | `StatusFlowSystem` → `status:opened`, `StatusState` pushed | run `StatusSystem` → `status:closed` |
 | `map:threatToggled` | `threat:shown` / `threat:cleared` | - |
 | `experience:shown` | next queued bar, or the level-up panel, or the state pops | - |
+
+## Campaign
+
+The store answers on a promise: `await` a `setTimeout(0)` between the pass that asks and the pass that lands the answer.
+
+| Dispatch | Pass 1 | Pass 2 | Pass 3 |
+|---|---|---|---|
+| `switch(TitleState)` → `title:opened` | the slot is read (async) | after a tick: `campaign:slotRead` → `MenuState` pushed (id `title`, rows `continue`? / `new`) | - |
+| `ui:menuConfirmed` `{ menu: "title", row }` | run begun / continued, `campaign:chapterStarted`, `switch(ChapterCardState)`; a new run is written (async → `campaign:saved`) | `campaign:chapterStarted` lands | - |
+| card `acknowledged` + run `CampaignSystem` | `switch(MapState)` → `map:ready` `{ scenario }` | battle setup (above) | `turn:changed` |
+| banner `acknowledged` + run `ObjectiveSystem` | states popped to the map, `objective:acknowledged` `{ outcome }` | victory + run: roster / convoy recorded, `campaign:chapterCleared`, `switch(ChapterCardState)` → `map:closed`; last chapter: `campaign:finished`, `switch(TitleState)`. Otherwise `ObjectiveFlowSystem` → `switch(MapState)` → `map:closed`, `map:ready` | those land |
 
 ## How many passes is `settle()`?
 

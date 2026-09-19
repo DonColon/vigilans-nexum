@@ -1,0 +1,16 @@
+{
+	"format": "vigilans-campaign",
+	"version": 1,
+	"chapters": [
+		{
+			"id": "skirmish",
+			"title": { "de": "Jedes Ende...", "en": "Every End..." },
+			"map": "fantasy"
+		},
+		{
+			"id": "river",
+			"title": { "de": "...ist ein neuer Anfang", "en": "...Is A New Beginning" },
+			"map": "river"
+		}
+	]
+}

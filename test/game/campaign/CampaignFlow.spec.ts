@@ -1,0 +1,483 @@
+import { test, expect, suite, beforeEach, afterEach } from "vitest";
+import { AssetStorage } from "@/core/assets/AssetStorage";
+import { Entity } from "@/core/ecs/Entity";
+import { World } from "@/core/ecs/World";
+import { TransformComponent } from "@/core/ecs/components/TransformComponent";
+import { EventBus } from "@/core/events/EventBus";
+import { GameState } from "@/core/GameState";
+import { GameStateManager } from "@/core/GameStateManager";
+import { Display } from "@/core/graphics/Display";
+import { getI18n } from "@/core/i18n/I18n";
+import { InputDevice } from "@/core/input/InputDevice";
+import { seedRandom } from "@/core/math/generation/Randomizer";
+import { ServiceRegistry } from "@/core/service/ServiceRegistry";
+import { CampaignChapterClearedEvent, CampaignChapterStartedEvent, CampaignSavedEvent, CampaignSlotReadEvent, MapReadyEvent } from "@/game.events";
+import { AIFeature } from "@/game/ai/AIFeature";
+import { CampaignFeature } from "@/game/campaign/CampaignFeature";
+import { CAMPAIGN_SLOT, CampaignComponent, CampaignData } from "@/game/campaign/components/CampaignComponent";
+import { ChapterCardComponent } from "@/game/campaign/components/ChapterCardComponent";
+import { TitleComponent } from "@/game/campaign/components/TitleComponent";
+import { ChapterCardState } from "@/game/campaign/states/ChapterCardState";
+import { TitleState } from "@/game/campaign/states/TitleState";
+import { CampaignSystem } from "@/game/campaign/systems/CampaignSystem";
+import { TITLE_MENU_ID, TitleRow } from "@/game/campaign/view/TitleScreen";
+import { CombatFeature } from "@/game/combat/CombatFeature";
+import { ConvoyComponent } from "@/game/convoy/components/ConvoyComponent";
+import { ConvoyFeature } from "@/game/convoy/ConvoyFeature";
+import { MapFeature } from "@/game/map/MapFeature";
+import { MapState } from "@/game/map/states/MapState";
+import { MovementFeature } from "@/game/movement/MovementFeature";
+import { ObjectiveComponent } from "@/game/objective/components/ObjectiveComponent";
+import { OutcomeComponent } from "@/game/objective/components/OutcomeComponent";
+import { ObjectiveFeature } from "@/game/objective/ObjectiveFeature";
+import { OutcomeState } from "@/game/objective/states/OutcomeState";
+import { ObjectiveSystem } from "@/game/objective/systems/ObjectiveSystem";
+import { PhaseBannerState } from "@/game/turn/states/PhaseBannerState";
+import { TurnFeature } from "@/game/turn/TurnFeature";
+import { MenuComponent } from "@/game/ui/components/MenuComponent";
+import { MenuState } from "@/game/ui/states/MenuState";
+import { MenuSystem } from "@/game/ui/systems/MenuSystem";
+import { UIFeature } from "@/game/ui/UIFeature";
+import { UnitComponent } from "@/game/units/components/UnitComponent";
+import { deploymentAsset, DeploymentDocument } from "@/game/units/content/Deployments";
+import { buildUnit, UnitDocument } from "@/game/units/content/UnitSheets";
+import { unitById, unitsInWorld } from "@/game/units/rules/UnitLookup";
+import { UnitsFeature } from "@/game/units/UnitsFeature";
+import dardanDocument from "@/assets/data/units/dardan.unit.json";
+
+/**
+ * The run end to end, on the real map state: the title asks the store and
+ * offers what it found, a run begins or continues into a chapter card, the
+ * card enters the chapter's battle, a won battle carries the survivors and
+ * the convoy into the next chapter's card and the slot, a lost one starts the
+ * chapter over from the same record, and the last chapter won returns to the
+ * title.
+ */
+suite("Campaign Flow Test Suite", () => {
+	const world = ServiceRegistry.get<World>(World.name);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
+	const assets = ServiceRegistry.get<AssetStorage>(AssetStorage.name);
+
+	/**
+	 * Stands in for the database: the one store the campaign writes, in memory,
+	 * answering a tick later the way IndexedDB does. Registered under the class
+	 * name the flow injects by; nothing else in a spec builds a LocalDatabase.
+	 */
+	const slots = new Map<number, CampaignData>();
+	const repository = {
+		read: (key: number) => Promise.resolve(slots.get(key)),
+		save: (data: CampaignData) => {
+			slots.set(data.slot, structuredClone(data));
+			return Promise.resolve(data.slot);
+		}
+	};
+	ServiceRegistry.register("LocalDatabase", { getRepository: () => repository });
+
+	world.registerComponent(TransformComponent);
+	getI18n();
+
+	new Display("campaign-test", { dimension: { width: 1280, height: 720 } });
+	const stateManager = new GameStateManager();
+	new InputDevice({ gamepad: { axisThreshold: 0.5, deadZone: 0.1 } });
+
+	const skirmish = assets.getJson<DeploymentDocument>(deploymentAsset("skirmish"));
+	const river = assets.getJson<DeploymentDocument>(deploymentAsset("river"));
+
+	let features: { install(): void; uninstall(): void }[] = [];
+	let objectiveSystem: ObjectiveSystem | null = null;
+	let stop: (() => void)[] = [];
+	let ready: MapReadyEvent[] = [];
+	let started: CampaignChapterStartedEvent[] = [];
+	let cleared: CampaignChapterClearedEvent[] = [];
+	let saved: CampaignSavedEvent[] = [];
+	let slotRead: CampaignSlotReadEvent[] = [];
+	let finished = 0;
+
+	const unit = (id: string) => unitById(unitsInWorld(world), id);
+	const sheet = (id: string) => (unit(id) as Entity).getComponent(UnitComponent);
+	const campaign = () => (world.entityWith(CampaignComponent) as Entity).getComponent(CampaignComponent).read();
+	const convoy = () => (world.entityWith(ConvoyComponent) as Entity).getComponent(ConvoyComponent);
+	const card = () => stateManager.getState(ChapterCardState).getCard()?.getComponent(ChapterCardComponent);
+	const banner = () => stateManager.getState(OutcomeState).getBanner()?.getComponent(OutcomeComponent);
+	const menu = () => (stateManager.peek() as MenuState).getMenu()?.getComponent(MenuComponent);
+	const topType = () => (stateManager.peek()?.constructor as typeof GameState).type;
+
+	const run = <T extends { execute(elapsed: number, frame: number): void; dispose(): void }>(system: T, elapsed: number) => {
+		system.execute(elapsed, 0);
+		system.dispose();
+	};
+
+	/** One frame as the game runs one: the queue drained once, then the clocks in schedule order. */
+	const frame = (elapsed = 16) => {
+		eventBus.processQueue();
+		objectiveSystem?.execute(elapsed, 0);
+		run(new CampaignSystem(10).initialize(), elapsed);
+		run(new MenuSystem(10).initialize(), elapsed);
+	};
+
+	/** Lets the store answer - a promise resolves between two frames. */
+	const tick = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+	const dismissBanner = () => {
+		if (stateManager.peek() instanceof PhaseBannerState) {
+			stateManager.pop();
+		}
+	};
+
+	/** Puts a sheet with this objective in the bundle - read when the map opens. */
+	const setObjective = (scenario: string, document: DeploymentDocument, objective: DeploymentDocument["objective"]) => {
+		assets.setJson(deploymentAsset(scenario), { ...document, objective });
+	};
+
+	/** The title screen up, its slot read and its menu offered. */
+	const openTitle = async () => {
+		stateManager.switch(TitleState); // queues title:opened
+		frame(); // title:opened - the store is asked
+		await tick();
+		frame(); // campaign:slotRead - the menu goes up
+	};
+
+	/** Confirms a row of the title menu the way the player does: marked on the menu, taken by MenuSystem. */
+	const choose = (row: TitleRow) => {
+		const component = menu() as MenuComponent;
+		const data = component.read();
+		component.update({ ...data, confirmedIndex: data.ids.indexOf(row) });
+		frame(); // MenuSystem reports the row and pops the menu
+		frame(); // ui:menuConfirmed - the run begins or continues, the card goes up
+		frame(); // campaign:chapterStarted lands
+	};
+
+	/** Presses the chapter card away and lets the battle set up under its banner. */
+	const enterBattle = () => {
+		const component = card() as ChapterCardComponent;
+		component.update({ ...component.read(), acknowledged: true });
+		frame(); // the map is entered
+		frame(); // map:ready - the battle is set up
+		frame(); // turn:changed - the player's banner
+		dismissBanner();
+	};
+
+	/** Takes the unit off the map the way a fight does, and lets the fallout land. */
+	const fell = (id: string) => {
+		eventBus.dispatch("unit:died", { unitId: id });
+		for (let pass = 0; pass < 4; pass++) {
+			eventBus.processQueue();
+		}
+	};
+
+	/** Presses the outcome banner away once it is up. */
+	const acknowledge = () => {
+		frame(); // the banner goes up on the quiet map
+		expect(stateManager.peek()).toBeInstanceOf(OutcomeState);
+		const component = banner() as OutcomeComponent;
+		component.update({ ...component.read(), acknowledged: true });
+		frame(); // acknowledged: the states come down, the outcome is handed on
+		frame(); // objective:acknowledged - the campaign or the objective feature answers
+		frame(); // what the answer dispatched lands: the campaign's report, or the map's rebuild
+	};
+
+	/** A run begun from the title and taken into its first battle. */
+	const beginRun = async () => {
+		await openTitle();
+		choose(TitleRow.NEW_GAME);
+		enterBattle();
+	};
+
+	beforeEach(() => {
+		seedRandom(1);
+		slots.clear();
+		stateManager.clear();
+
+		const map = new MapFeature();
+		const ui = new UIFeature({ demo: false });
+		const units = new UnitsFeature();
+		const turn = new TurnFeature({ dependencies: [units] });
+		const combat = new CombatFeature({ dependencies: [units] });
+		const convoyFeature = new ConvoyFeature({ dependencies: [units, ui] });
+		const movement = new MovementFeature({ dependencies: [units, ui] });
+		const ai = new AIFeature({ dependencies: [units, turn, combat, movement] });
+		const objective = new ObjectiveFeature({ dependencies: [units, turn, ai] });
+		const feature = new CampaignFeature({ dependencies: [ui, units, convoyFeature, objective] });
+
+		features = [map, ui, units, turn, combat, convoyFeature, movement, ai, objective, feature];
+
+		for (const installed of features) {
+			installed.install();
+		}
+
+		objectiveSystem = new ObjectiveSystem(6).initialize();
+
+		ready = [];
+		started = [];
+		cleared = [];
+		saved = [];
+		slotRead = [];
+		finished = 0;
+		stop = [
+			eventBus.subscribe("map:ready", (event) => ready.push(event)),
+			eventBus.subscribe("campaign:chapterStarted", (event) => started.push(event)),
+			eventBus.subscribe("campaign:chapterCleared", (event) => cleared.push(event)),
+			eventBus.subscribe("campaign:saved", (event) => saved.push(event)),
+			eventBus.subscribe("campaign:slotRead", (event) => slotRead.push(event)),
+			eventBus.subscribe("campaign:finished", () => finished++)
+		];
+	});
+
+	afterEach(() => {
+		for (const unsubscribe of stop) {
+			unsubscribe();
+		}
+
+		objectiveSystem?.dispose();
+		objectiveSystem = null;
+		assets.setJson(deploymentAsset("skirmish"), skirmish);
+		assets.setJson(deploymentAsset("river"), river);
+
+		stateManager.clear();
+
+		for (const feature of [...features].reverse()) {
+			feature.uninstall();
+		}
+
+		for (const entity of world.getEntities()) {
+			world.unregisterEntity(entity);
+		}
+
+		eventBus.processQueue();
+	});
+
+	test("The title screen asks the store and offers only a new game when the slot is empty", async () => {
+		await openTitle();
+
+		expect(slotRead).toStrictEqual([expect.objectContaining({ found: false })]);
+		expect(stateManager.peek()).toBeInstanceOf(MenuState);
+		expect(menu()?.read()).toMatchObject({ id: TITLE_MENU_ID, ids: [TitleRow.NEW_GAME] });
+
+		const screen = stateManager.getState(TitleState).getScreen()?.getComponent(TitleComponent).read();
+		expect(screen).toMatchObject({ hasSave: false, menuOpened: true });
+		expect(screen?.elapsed).toBeGreaterThan(0);
+	});
+
+	test("With a run in the slot the title offers to continue it, first", async () => {
+		slots.set(CAMPAIGN_SLOT, CampaignComponent.begin(CAMPAIGN_SLOT, "river", ""));
+
+		await openTitle();
+
+		expect(slotRead).toStrictEqual([expect.objectContaining({ found: true })]);
+		expect(menu()?.read()).toMatchObject({ id: TITLE_MENU_ID, ids: [TitleRow.CONTINUE, TitleRow.NEW_GAME] });
+	});
+
+	test("Backing out of the title menu puts it straight back up", async () => {
+		await openTitle();
+
+		const component = menu() as MenuComponent;
+		component.update({ ...component.read(), cancelled: true });
+		frame(); // MenuSystem reports the cancel and pops the menu
+		expect(stateManager.peek()).toBeInstanceOf(TitleState);
+
+		frame(); // ui:menuCancelled - the menu is offered again
+		expect(stateManager.peek()).toBeInstanceOf(MenuState);
+		expect(menu()?.read()).toMatchObject({ id: TITLE_MENU_ID });
+	});
+
+	test("A new game begins the run at the first chapter, writes it to the slot and puts the chapter card up", async () => {
+		await openTitle();
+		choose(TitleRow.NEW_GAME);
+
+		expect(stateManager.getCurrentStates().map((state) => (state.constructor as typeof GameState).type)).toStrictEqual([ChapterCardState.type]);
+		expect(card()?.read()).toMatchObject({ chapter: "skirmish", number: 1, map: "map-fantasy", acknowledged: false });
+		expect(["Every End...", "Jedes Ende..."]).toContain(card()?.read().title);
+		expect(started).toStrictEqual([expect.objectContaining({ chapter: "skirmish", number: 1 })]);
+
+		expect(campaign()).toMatchObject({ slot: CAMPAIGN_SLOT, chapter: "skirmish", roster: [], fallen: [], convoy: [], casualties: [] });
+		// The title screen is gone with its state.
+		expect(world.getEntities().some((entity) => entity.hasComponent(TitleComponent))).toBe(false);
+
+		await tick();
+		frame();
+		expect(slots.get(CAMPAIGN_SLOT)).toMatchObject({ slot: CAMPAIGN_SLOT, chapter: "skirmish" });
+		expect(saved).toStrictEqual([expect.objectContaining({ slot: CAMPAIGN_SLOT })]);
+	});
+
+	test("Acknowledging the card enters the battle for the chapter's scenario, on its map", async () => {
+		await openTitle();
+		choose(TitleRow.NEW_GAME);
+
+		// Not before the card has been read.
+		const component = card() as ChapterCardComponent;
+		component.update({ ...component.read(), elapsed: 0 });
+		frame(500);
+		expect(stateManager.peek()).toBeInstanceOf(ChapterCardState);
+
+		enterBattle();
+
+		expect(topType()).toBe(MapState.type);
+		expect(stateManager.getState(MapState).getBattle()).toStrictEqual({ scenario: "skirmish", map: "map-fantasy" });
+		expect(ready).toStrictEqual([expect.objectContaining({ scenario: "skirmish", columns: 48, rows: 24 })]);
+		expect(unit("dardan")).not.toBeNull();
+		expect(unit("hasan")).not.toBeNull();
+		// A fresh run: everyone off their sheet.
+		expect(sheet("dardan").read().level).toBe(buildUnit(dardanDocument as UnitDocument).level);
+		expect(campaign().casualties).toStrictEqual([]);
+	});
+
+	test("A won chapter records the survivors and the convoy, moves the run on, writes it and puts the next card up", async () => {
+		setObjective("skirmish", skirmish, { win: "rout" });
+		await beginRun();
+
+		// A battle's worth of change: Dardan grew and was hurt, something went to the convoy.
+		const dardan = sheet("dardan");
+		dardan.update({ ...dardan.read(), level: 5, currentHP: 2, hasMoved: true });
+		const spare = { ...dardan.read().inventory[0], equipped: false };
+		convoy().store(spare);
+
+		fell("hasan");
+		fell("besnik");
+		acknowledge();
+
+		// The next chapter's card, and the run on it.
+		expect(stateManager.getCurrentStates().map((state) => (state.constructor as typeof GameState).type)).toStrictEqual([ChapterCardState.type]);
+		expect(card()?.read()).toMatchObject({ chapter: "river", number: 2, map: "map-river" });
+		expect(cleared).toStrictEqual([expect.objectContaining({ chapter: "skirmish", next: "river" })]);
+		expect(started.map((event) => event.chapter)).toStrictEqual(["skirmish", "river"]);
+
+		const record = campaign();
+		expect(record).toMatchObject({ chapter: "river", fallen: [], casualties: [] });
+		expect(record.roster.map((veteran) => veteran.id).sort()).toStrictEqual(["dardan", "elira", "teuta"]);
+		expect(CampaignComponent.veteran(record, "dardan")).toMatchObject({ level: 5, currentHP: dardan.read().stats.hp, hasMoved: false });
+		expect(record.convoy).toStrictEqual([spare]);
+
+		// The last battle is torn down with its map.
+		expect(unitsInWorld(world)).toStrictEqual([]);
+		expect(world.entityWith(ObjectiveComponent)).toBeNull();
+
+		await tick();
+		frame();
+		expect(slots.get(CAMPAIGN_SLOT)).toMatchObject({ chapter: "river" });
+		expect(saved).toHaveLength(2);
+
+		// Into the next battle: the veterans over their sheets, the convoy refilled, the new scenario's enemies.
+		enterBattle();
+		expect(topType()).toBe(MapState.type);
+		expect(ready.at(-1)).toMatchObject({ scenario: "river", columns: 20, rows: 15 });
+		expect(sheet("dardan").read()).toMatchObject({ level: 5, currentHP: dardan.read().stats.hp, hasMoved: false });
+		expect(convoy().read().items).toStrictEqual([spare]);
+		expect(unit("hasan")?.getComponent(UnitComponent).read().faction).toBe("enemy");
+		expect(world.entityWith(ObjectiveComponent)?.getComponent(ObjectiveComponent).read()).toMatchObject({ win: "seize", seizeColumn: 16, seizeRow: 4 });
+	});
+
+	test("A unit that fell in a won chapter stays fallen: it is not deployed again", async () => {
+		setObjective("skirmish", skirmish, { win: "rout" });
+		await beginRun();
+
+		fell("elira");
+		expect(campaign().casualties).toStrictEqual(["elira"]);
+
+		fell("hasan");
+		fell("besnik");
+		acknowledge();
+
+		expect(campaign()).toMatchObject({ chapter: "river", fallen: ["elira"], casualties: [] });
+		expect(campaign().roster.map((veteran) => veteran.id)).not.toContain("elira");
+
+		enterBattle();
+		expect(unit("dardan")).not.toBeNull();
+		expect(unit("teuta")).not.toBeNull();
+		expect(unit("elira")).toBeNull();
+	});
+
+	test("A lost chapter starts over from the same record, its casualties forgotten", async () => {
+		await beginRun();
+
+		fell("elira");
+		expect(campaign().casualties).toStrictEqual(["elira"]);
+
+		// The commander falls: a defeat, which the objective feature answers with a restart.
+		fell("dardan");
+		acknowledge(); // ... and the battle is rebuilt
+		frame(); // turn:changed - the banner
+		dismissBanner();
+
+		expect(topType()).toBe(MapState.type);
+		expect(ready.map((event) => event.scenario)).toStrictEqual(["skirmish", "skirmish"]);
+		expect(unit("dardan")).not.toBeNull();
+		expect(unit("elira")).not.toBeNull();
+		expect(campaign()).toMatchObject({ chapter: "skirmish", fallen: [], casualties: [] });
+		expect(cleared).toStrictEqual([]);
+		expect(started).toHaveLength(1);
+	});
+
+	test("Continue takes the run up at the top of the chapter the slot left it on, veterans and fallen included", async () => {
+		const veteran = { ...buildUnit(dardanDocument as UnitDocument), level: 7, currentHP: 1 };
+		slots.set(CAMPAIGN_SLOT, { ...CampaignComponent.begin(CAMPAIGN_SLOT, "river", "2026-09-19T00:00:00.000Z"), roster: [veteran], fallen: ["elira"] });
+
+		await openTitle();
+		choose(TitleRow.CONTINUE);
+
+		expect(card()?.read()).toMatchObject({ chapter: "river", number: 2, map: "map-river" });
+		expect(campaign()).toMatchObject({ chapter: "river", fallen: ["elira"], savedOn: "2026-09-19T00:00:00.000Z" });
+		// Taking a run up is not a write.
+		expect(saved).toStrictEqual([]);
+
+		enterBattle();
+		expect(ready).toStrictEqual([expect.objectContaining({ scenario: "river" })]);
+		expect(sheet("dardan").read()).toMatchObject({ level: 7, currentHP: veteran.stats.hp });
+		expect(unit("elira")).toBeNull();
+		expect(unit("teuta")).not.toBeNull();
+	});
+
+	test("A slot on a chapter this campaign does not have starts a new run instead", async () => {
+		slots.set(CAMPAIGN_SLOT, CampaignComponent.begin(CAMPAIGN_SLOT, "nowhere", ""));
+
+		await openTitle();
+		choose(TitleRow.CONTINUE);
+
+		expect(card()?.read()).toMatchObject({ chapter: "skirmish", number: 1 });
+		expect(campaign().chapter).toBe("skirmish");
+	});
+
+	test("The last chapter won finishes the run and returns to the title", async () => {
+		setObjective("skirmish", skirmish, { win: "rout" });
+		setObjective("river", river, { win: "rout" });
+		await beginRun();
+
+		fell("hasan");
+		fell("besnik");
+		acknowledge();
+		enterBattle();
+		expect(ready.at(-1)?.scenario).toBe("river");
+
+		fell("hasan");
+		fell("besnik");
+		acknowledge();
+
+		expect(finished).toBe(1);
+		expect(cleared.at(-1)).toMatchObject({ chapter: "river", next: "" });
+		expect(stateManager.getCurrentStates().map((state) => (state.constructor as typeof GameState).type)).toStrictEqual([TitleState.type]);
+		expect(unitsInWorld(world)).toStrictEqual([]);
+
+		// And the title asks the store again, which still holds the run at its last chapter.
+		await tick();
+		frame();
+		expect(stateManager.peek()).toBeInstanceOf(MenuState);
+		expect(menu()?.read().ids).toStrictEqual([TitleRow.CONTINUE, TitleRow.NEW_GAME]);
+		expect(slots.get(CAMPAIGN_SLOT)?.chapter).toBe("river");
+	});
+
+	test("Without a run under way a decided battle is the objective feature's to start over", () => {
+		// The map entered straight, the way the game ran before there was a campaign.
+		stateManager.switch(MapState);
+		frame(); // map:ready
+		frame(); // turn:changed
+		dismissBanner();
+
+		expect(world.entityWith(CampaignComponent)).toBeNull();
+		fell("dardan");
+		acknowledge(); // ... and the battle is rebuilt
+
+		expect(topType()).toBe(MapState.type);
+		expect(ready).toHaveLength(2);
+		expect(world.entityWith(ObjectiveComponent)?.getComponent(ObjectiveComponent).read().outcome).toBe("");
+		expect(unit("dardan")).not.toBeNull();
+	});
+});

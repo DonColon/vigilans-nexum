@@ -10,11 +10,11 @@ import { TextAlign, TextAlignType } from "@/core/graphics/styles/text/TextAlign"
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { DialogComponent, DialogData } from "@/game/ui/components/DialogComponent";
-import { MenuComponent, MenuData } from "@/game/ui/components/MenuComponent";
+import { MenuComponent, MenuData, MenuStyle } from "@/game/ui/components/MenuComponent";
 import { PopupComponent, PopupData } from "@/game/ui/components/PopupComponent";
-import { BADGE_DIAMETER, drawBadge, drawDivider, drawMenuHighlight, drawPanel, drawText, uiAssetsReady } from "@/game/ui/view/UIPanel";
+import { BADGE_DIAMETER, drawBadge, drawDivider, drawMenuFrame, drawMenuHighlight, drawPanel, drawText, uiAssetsReady } from "@/game/ui/view/UIPanel";
 import { countWords, revealedWordCount, splitWords, wrapText } from "@/game/ui/view/TextReveal";
-import { dialogBox, menuHeight, popupBox } from "@/game/ui/view/UILayout";
+import { BARE_ROW_GAP, bareRowPitch, dialogBox, menuHeight, popupBox } from "@/game/ui/view/UILayout";
 import { UITheme } from "@/game/ui/view/UITheme";
 import { textRevealDelay } from "@/game/options/GameSettings";
 
@@ -168,6 +168,11 @@ export class UIRenderSystem extends RenderSystem {
 	}
 
 	private renderMenu(graphics: Graphics, data: MenuData, x: number, y: number): void {
+		if (data.style === MenuStyle.BARE) {
+			this.renderBareMenu(graphics, data, x, y);
+			return;
+		}
+
 		const hasTitle = data.title.length > 0;
 		const box = new Rectangle(x, y, data.width, menuHeight(data.items.length, hasTitle));
 
@@ -214,6 +219,34 @@ export class UIRenderSystem extends RenderSystem {
 			if (value.length > 0) {
 				this.label(graphics, value, x + box.getWidth() - UITheme.padding, centreY, UITheme.menu, color, TextAlign.RIGHT);
 			}
+		}
+	}
+
+	/**
+	 * A bare menu: no panel, every row centred on the menu's width with air
+	 * between them, and the selected one framed by the select border - Kenney's
+	 * sample title menu. Badges and values have no place here and are not drawn.
+	 */
+	private renderBareMenu(graphics: Graphics, data: MenuData, x: number, y: number): void {
+		const centreX = x + data.width / 2;
+		let slotTop = y;
+
+		if (data.title.length > 0) {
+			this.label(graphics, data.title, centreX, slotTop + UITheme.lineHeight / 2, UITheme.name, UITheme.menuTitle, TextAlign.CENTER);
+			slotTop += UITheme.lineHeight + BARE_ROW_GAP;
+		}
+
+		for (const [index, item] of data.items.entries()) {
+			const rowTop = slotTop + index * bareRowPitch();
+			const centreY = rowTop + UITheme.lineHeight / 2;
+			const selected = index === data.selectedIndex;
+
+			if (selected) {
+				// The frame encloses the row's line height; its corner squares reach into the gap.
+				drawMenuFrame(graphics, this.assetStorage, new Rectangle(x, rowTop, data.width, UITheme.lineHeight));
+			}
+
+			this.label(graphics, item, centreX, centreY, UITheme.menu, menuRowColor(selected, data.disabled[index] ?? false), TextAlign.CENTER);
 		}
 	}
 

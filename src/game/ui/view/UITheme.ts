@@ -35,7 +35,9 @@ export const UITheme = {
 	assets: {
 		panel: "ui-panel",
 		frame: "ui-frame",
-		divider: "ui-divider"
+		divider: "ui-divider",
+		/** The border drawn around the selected row of a bare menu - Kenney's sample title menu. */
+		select: "ui-select"
 	},
 
 	/**
@@ -87,6 +89,12 @@ export const UITheme = {
 	menuItemDisabled: Color.hex("#7d8088"),
 	menuItemDisabledSelected: Color.hex("#a3a6ae"),
 	menuTitle: Color.hex("#ffe07a"),
+	/**
+	 * The select art around a bare menu's chosen row, in the gold the panels are
+	 * edged with. The art fills its centre at half alpha, so over the dark title
+	 * ground the row becomes a warm brown button the selected-row cream reads on.
+	 */
+	menuFrame: Color.hex("#c8a86e"),
 
 	/**
 	 * The per-row badge disc (the "equipped" mark on a weapon, Fire Emblem style):

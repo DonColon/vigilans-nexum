@@ -136,7 +136,7 @@ suite("Phase Banner Test Suite", () => {
 		});
 
 		test("The first turn opens with the player phase banner over the map", () => {
-			eventBus.dispatch("map:ready", { mapId: "map", columns: 8, rows: 8 });
+			eventBus.dispatch("map:ready", { mapId: "map", columns: 8, rows: 8, scenario: "skirmish" });
 			settle();
 
 			expect(stateManager.peek()).toBeInstanceOf(PhaseBannerState);
@@ -144,7 +144,7 @@ suite("Phase Banner Test Suite", () => {
 		});
 
 		test("Every later turn announces itself the same way", () => {
-			eventBus.dispatch("map:ready", { mapId: "map", columns: 8, rows: 8 });
+			eventBus.dispatch("map:ready", { mapId: "map", columns: 8, rows: 8, scenario: "skirmish" });
 			settle();
 			stateManager.pop();
 
@@ -155,7 +155,7 @@ suite("Phase Banner Test Suite", () => {
 		});
 
 		test("The banner never lands on top of something else - the turn waits until the map is on top", () => {
-			eventBus.dispatch("map:ready", { mapId: "map", columns: 8, rows: 8 });
+			eventBus.dispatch("map:ready", { mapId: "map", columns: 8, rows: 8, scenario: "skirmish" });
 			settle();
 			stateManager.pop();
 
@@ -175,7 +175,7 @@ suite("Phase Banner Test Suite", () => {
 		});
 
 		test("The banner runs its clock and takes itself down once it has faded", () => {
-			eventBus.dispatch("map:ready", { mapId: "map", columns: 8, rows: 8 });
+			eventBus.dispatch("map:ready", { mapId: "map", columns: 8, rows: 8, scenario: "skirmish" });
 			settle();
 
 			const system = bannerSystem();
@@ -190,7 +190,7 @@ suite("Phase Banner Test Suite", () => {
 		});
 
 		test("The clock only runs while the banner is on top", () => {
-			eventBus.dispatch("map:ready", { mapId: "map", columns: 8, rows: 8 });
+			eventBus.dispatch("map:ready", { mapId: "map", columns: 8, rows: 8, scenario: "skirmish" });
 			settle();
 
 			stateManager.push(MapStub);

@@ -18,8 +18,11 @@ export const OUTCOME_TITLE_KEY: Record<Outcome, string> = {
 	[Outcome.DEFEAT]: "objective.defeat"
 };
 
-/** i18n key of the line under the band, once the banner holds - what a press does. */
-export const OUTCOME_CONTINUE_KEY = "objective.continue";
+/** i18n key of the line under the band, once the banner holds - what a press does, by outcome: on to the next chapter, or the battle again. */
+export const OUTCOME_CONTINUE_KEY: Record<Outcome, string> = {
+	[Outcome.VICTORY]: "objective.continueVictory",
+	[Outcome.DEFEAT]: "objective.continueDefeat"
+};
 
 /** Milliseconds the banner has to be up before a press is taken - a mashed confirm from the fight does not skip it. */
 export const OUTCOME_HOLD_MS = 1200;

@@ -52,9 +52,12 @@ export class TileMapRenderSystem extends MapRenderSystem {
 		// tile edge turns into a grey smear.
 		graphics.imageSmoothing();
 
+		// The ground colour covers the whole screen, not just the map: a map
+		// smaller than the viewport is centred in it, and the band around it
+		// should read as more of the same ground rather than the page behind.
 		if (tilemap.background) {
-			const size = new Rectangle(view.origin.x, view.origin.y, tilemap.columns * view.cellSize, tilemap.rows * view.cellSize);
-			graphics.fillColor(Color.hex(tilemap.background)).fillRectangle(size);
+			const viewport = this.display.getViewportDimension();
+			graphics.fillColor(Color.hex(tilemap.background)).fillRectangle(new Rectangle(0, 0, viewport.width, viewport.height));
 		}
 
 		this.renderLayers(graphics, tilemap, view.origin, view.cellSize);

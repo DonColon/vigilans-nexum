@@ -295,7 +295,7 @@ suite("Visit Test Suite", () => {
 		movement = new MovementFeature({ dependencies: [units, ui] });
 		movement.install();
 
-		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: COLUMNS, rows: ROWS });
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: COLUMNS, rows: ROWS, scenario: "skirmish" });
 		eventBus.processQueue();
 	};
 

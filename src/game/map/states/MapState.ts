@@ -15,16 +15,20 @@ import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
 import { TileMapComponent } from "@/game/map/components/TileMapComponent";
+import { DEFAULT_MAP_ASSET, DEFAULT_SCENARIO } from "@/game/map/content/Scenario";
 import { TileMapDocument, parseTileMapDocument } from "@/game/map/content/TileMapFormat";
 import { MapTheme } from "@/game/map/view/MapTheme";
 
 /**
- * Asset id of the battle map this state builds. The map is content, so it ships
- * as a JSON asset rather than in the bundle; `Game.start` has it in storage
- * before this state is entered. Hardcoded the way the map always has been - a
- * scenario system would pass it in.
+ * What a battle is: the scenario whose documents the features read, and the
+ * asset id of the tile map it is fought on. The map is content, so it ships
+ * as a JSON asset rather than in the bundle; `Game.start` has the bundle in
+ * storage before this state is entered.
  */
-const MAP_ASSET = "map-fantasy";
+export interface MapRequest {
+	scenario: string;
+	map: string;
+}
 
 /** Edge length of a tile in pixels - the viewport is sized to a whole number of these. */
 const CELL_SIZE = MapTheme.cellSize;
@@ -62,8 +66,26 @@ export class MapState extends GameState {
 	private map: Entity | null = null;
 	private cursor: Entity | null = null;
 
+	/**
+	 * The battle this state builds when entered. Kept rather than consumed: a
+	 * lost battle is started over by entering the state again, and it has to
+	 * build the same one. The default is the scenario the game has always
+	 * shipped, so the map works with nothing asking for a chapter.
+	 */
+	private battle: MapRequest = { scenario: DEFAULT_SCENARIO, map: DEFAULT_MAP_ASSET };
+
+	/** Sets which battle is built the next time this state is entered - and every time after, until asked again. */
+	public request(request: MapRequest): void {
+		this.battle = { ...request };
+	}
+
+	/** The battle this state builds, or built. */
+	public getBattle(): MapRequest {
+		return { ...this.battle };
+	}
+
 	public onEnter(): void {
-		const tilemap = parseTileMapDocument(this.assetStorage.getJson<TileMapDocument>(MAP_ASSET));
+		const tilemap = parseTileMapDocument(this.assetStorage.getJson<TileMapDocument>(this.battle.map));
 
 		const grid = GridComponent.fromTileMap(tilemap, CELL_SIZE);
 		const dimension = GridComponent.dimension(grid);
@@ -101,9 +123,10 @@ export class MapState extends GameState {
 		this.resetCommands();
 
 		// Announced rather than acted on: a feature that puts things on the map -
-		// units today - listens for this and spawns them parented to `this.map`.
-		// With no such feature installed the event simply has no subscribers.
-		this.eventBus.dispatch("map:ready", { mapId: this.map.getID(), columns: grid.columns, rows: grid.rows });
+		// units today - listens for this and spawns them parented to `this.map`,
+		// reading the scenario's documents by the id carried here. With no such
+		// feature installed the event simply has no subscribers.
+		this.eventBus.dispatch("map:ready", { mapId: this.map.getID(), columns: grid.columns, rows: grid.rows, scenario: this.battle.scenario });
 	}
 
 	public onExit(): void {

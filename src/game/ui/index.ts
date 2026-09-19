@@ -13,6 +13,7 @@ export { DialogState } from "@/game/ui/states/DialogState";
 export type { DialogRequest } from "@/game/ui/states/DialogState";
 export { MenuState } from "@/game/ui/states/MenuState";
 export type { MenuRequest } from "@/game/ui/states/MenuState";
+export { MenuStyle } from "@/game/ui/components/MenuComponent";
 export { PopupState } from "@/game/ui/states/PopupState";
 export type { PopupRequest } from "@/game/ui/states/PopupState";
 

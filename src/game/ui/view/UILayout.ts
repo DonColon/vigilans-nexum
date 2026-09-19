@@ -1,6 +1,7 @@
 import { Dimension } from "@/core/math/geometry/Dimension";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { MapTheme } from "@/game/map/view/MapTheme";
+import { MenuStyle } from "@/game/ui/components/MenuComponent";
 import { UITheme } from "@/game/ui/view/UITheme";
 
 /** Gap between a UI panel and the edge of the screen. */
@@ -64,10 +65,26 @@ export function popupBox(viewport: Dimension, lineCount: number, hasTitle: boole
 }
 
 /** Height a menu panel needs for its title and rows. */
-export function menuHeight(itemCount: number, hasTitle: boolean): number {
+export function menuHeight(itemCount: number, hasTitle: boolean, style: MenuStyle = MenuStyle.PANEL): number {
+	if (style === MenuStyle.BARE) {
+		return (hasTitle ? UITheme.lineHeight + BARE_ROW_GAP : 0) + itemCount * bareRowPitch();
+	}
+
 	const rows = itemCount * UITheme.lineHeight;
 	const title = hasTitle ? UITheme.lineHeight + UITheme.padding / 2 : 0;
 	return UITheme.padding * 2 + title + rows;
+}
+
+/**
+ * Air between the rows of a bare menu: the rows are not lined up inside a
+ * panel, so they need room of their own for the select frame to sit around
+ * one of them without touching its neighbours.
+ */
+export const BARE_ROW_GAP = 12;
+
+/** Top-to-top distance of a bare menu's rows. */
+export function bareRowPitch(): number {
+	return UITheme.lineHeight + BARE_ROW_GAP;
 }
 
 /**

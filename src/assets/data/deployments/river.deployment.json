@@ -1,0 +1,13 @@
+{
+	"format": "vigilans-deployment",
+	"version": 1,
+	"map": "river",
+	"objective": { "win": "seize", "column": 16, "row": 4 },
+	"units": [
+		{ "unit": "dardan", "column": 3, "row": 7 },
+		{ "unit": "elira", "column": 4, "row": 8 },
+		{ "unit": "teuta", "column": 3, "row": 9 },
+		{ "unit": "hasan", "column": 16, "row": 5, "behaviour": "hold" },
+		{ "unit": "besnik", "column": 14, "row": 8 }
+	]
+}

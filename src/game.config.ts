@@ -1,13 +1,16 @@
 import { GameConfiguration } from "@/core/Game";
 import { assetManifest } from "@/asset.manifest";
-import { MapState } from "@/game/map";
+import { TitleState } from "@/game/campaign";
 
 const gameConfiguration: GameConfiguration = {
 	id: "vigilans-nexum",
 	maxFPS: 60,
 	savegameSlots: 8,
+	// The title screen first: the campaign feature takes it from there to the
+	// chapter card and the battle map. The bundle carries every chapter's
+	// content, so nothing is fetched between them.
 	initial: {
-		state: MapState,
+		state: TitleState,
 		bundle: "BattleMap"
 	},
 	eventBus: {
@@ -30,11 +33,17 @@ const gameConfiguration: GameConfiguration = {
 		manifest: assetManifest,
 		useCache: true
 	},
+	// Version 2: the campaign store, and the framework's savegames keyed by
+	// their id - a store's key is fixed when it is created, so changing one is
+	// an upgrade.
 	localDatabase: {
-		version: 1,
+		version: 2,
 		repositories: {
 			savegames: {
-				key: ""
+				key: "id"
+			},
+			campaign: {
+				key: "slot"
 			}
 		}
 	},

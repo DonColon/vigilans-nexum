@@ -10,7 +10,7 @@ import { UnitPopComponent } from "@/game/units/components/UnitPopComponent";
 import { loadUnitCatalogs } from "@/game/units/content/UnitCatalog";
 import { buildUnit, UnitDocument } from "@/game/units/content/UnitSheets";
 import { unitsInWorld, unitById } from "@/game/units/rules/UnitLookup";
-import { DEPLOYMENT_ASSET, DeploymentDocument, parseDeployment } from "@/game/units/content/Deployments";
+import { deploymentAsset, DeploymentDocument, parseDeployment } from "@/game/units/content/Deployments";
 
 /**
  * Puts the playable units on the battle map and takes them off again. On
@@ -29,7 +29,7 @@ export class UnitDeploySystem extends ReactiveSystem {
 	private assets!: AssetStorage;
 
 	public initialize(): this {
-		this.subscribe("map:ready", (event) => this.deploy(event.mapId));
+		this.subscribe("map:ready", (event) => this.deploy(event.mapId, event.scenario));
 		this.subscribe("map:closed", () => this.withdraw());
 		this.subscribe("unit:usedItem", (event) => this.showHealed(event.unitId, event.healed));
 		this.subscribe("staff:resolved", (event) => this.showHealed(event.targetId, event.healed));
@@ -42,14 +42,14 @@ export class UnitDeploySystem extends ReactiveSystem {
 		super.dispose();
 	}
 
-	private deploy(mapId: string): void {
+	private deploy(mapId: string, scenario: string): void {
 		this.withdraw();
 
 		// Every sheet resolves its class and weapon against the catalogs, so they
 		// have to be in place before the first unit is built.
 		loadUnitCatalogs(this.assets);
 
-		for (const placement of this.deployment().units) {
+		for (const placement of this.deployment(scenario).units) {
 			const document = this.unitDocument(placement.unit);
 
 			if (document === null) {
@@ -71,12 +71,12 @@ export class UnitDeploySystem extends ReactiveSystem {
 		this.centreCursorOnCommander();
 	}
 
-	/** The deployment sheet for this battle, or an empty one when it is not in storage. */
-	private deployment(): DeploymentDocument {
+	/** The scenario's deployment sheet, or an empty one when it is not in storage. */
+	private deployment(scenario: string): DeploymentDocument {
 		try {
-			return parseDeployment(this.assets.getJson(DEPLOYMENT_ASSET));
+			return parseDeployment(this.assets.getJson(deploymentAsset(scenario)));
 		} catch (error) {
-			console.error(`Deployment "${DEPLOYMENT_ASSET}" could not be read:`, error);
+			console.error(`Deployment "${deploymentAsset(scenario)}" could not be read:`, error);
 			return { format: "vigilans-deployment", version: 1, map: "", units: [] };
 		}
 	}

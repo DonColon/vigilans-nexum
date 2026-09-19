@@ -12,9 +12,10 @@ import { availableTalks } from "@/game/talk/rules/Talks";
 import { DialogState } from "@/game/ui/states/DialogState";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
 import { unitsInWorld, unitById, tileOf } from "@/game/units/rules/UnitLookup";
+import { scenarioAsset } from "@/game/map/content/Scenario";
 
-/** Asset id of the conversation sheet this battle is scripted with. */
-const CONVERSATIONS_ASSET = "conversations-skirmish";
+/** Asset id of the conversation sheet a scenario is scripted with. */
+const conversationsAsset = (scenario: string) => scenarioAsset("conversations", scenario);
 
 /**
  * Fire Emblem's "Talk": two units the scenario has written a conversation for
@@ -52,7 +53,7 @@ export class TalkFlowSystem extends ReactiveSystem {
 	private playing: { conversationId: string; unitId: string; partnerId: string } | null = null;
 
 	public initialize(): this {
-		this.subscribe("map:ready", () => this.open());
+		this.subscribe("map:ready", (event) => this.open(event.scenario));
 		this.subscribe("map:closed", () => this.close());
 		this.subscribe("talk:requested", (event) => this.onRequested(event));
 		this.subscribe("talk:confirmed", (event) => this.play(event.unitId, event.partnerId));
@@ -66,11 +67,11 @@ export class TalkFlowSystem extends ReactiveSystem {
 		super.dispose();
 	}
 
-	private open(): void {
+	private open(scenario: string): void {
 		this.close();
 
 		this.talk = this.world.createEntity();
-		this.talk.addComponent(TalkComponent, { conversations: this.conversations(), talked: [] });
+		this.talk.addComponent(TalkComponent, { conversations: this.conversations(scenario), talked: [] });
 	}
 
 	private close(): void {
@@ -83,11 +84,11 @@ export class TalkFlowSystem extends ReactiveSystem {
 	}
 
 	/** The scenario's conversation sheet, or none at all when it is not in the bundle. */
-	private conversations(): Conversation[] {
+	private conversations(scenario: string): Conversation[] {
 		try {
-			return parseConversations(this.assets.getJson<ConversationsDocument>(CONVERSATIONS_ASSET));
+			return parseConversations(this.assets.getJson<ConversationsDocument>(conversationsAsset(scenario)));
 		} catch (error) {
-			console.error(`Conversation sheet "${CONVERSATIONS_ASSET}" could not be read:`, error);
+			console.error(`Conversation sheet "${conversationsAsset(scenario)}" could not be read:`, error);
 			return [];
 		}
 	}

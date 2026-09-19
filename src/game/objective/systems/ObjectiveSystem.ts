@@ -8,7 +8,7 @@ import { GameCoreService } from "@/core/service/GameCoreService";
 import { EnemyPhaseState } from "@/game/ai/states/EnemyPhaseState";
 import { MapState } from "@/game/map/states/MapState";
 import { OutcomeCommand } from "@/game/objective/commands/OutcomeCommands";
-import { ObjectiveComponent } from "@/game/objective/components/ObjectiveComponent";
+import { ObjectiveComponent, Outcome } from "@/game/objective/components/ObjectiveComponent";
 import { OutcomeComponent } from "@/game/objective/components/OutcomeComponent";
 import { OutcomeState } from "@/game/objective/states/OutcomeState";
 import { TurnComponent } from "@/game/turn/components/TurnComponent";
@@ -22,11 +22,11 @@ import { TurnComponent } from "@/game/turn/components/TurnComponent";
  *    [[OutcomeState]], whose banner freezes everything under it.
  *  - While that state is on top it runs the banner's clock and its
  *    acknowledge command.
- *  - Acknowledged, it reports `objective:acknowledged` and starts the battle
- *    over: everything over the map is popped and the map state entered again,
- *    which tears the battle down (`map:closed`) and sets it up afresh
- *    (`map:ready`). Starting over is what a lost battle gets in Fire Emblem;
- *    for a won one it stands in until there is a next chapter to go to.
+ *  - Acknowledged, it pops everything over the map and reports
+ *    `objective:acknowledged` with the outcome. [[ObjectiveFlowSystem]] answers
+ *    that by starting the battle over - what a lost battle gets in Fire Emblem
+ *    - unless a feature that knows where a won battle leads, the campaign,
+ *    claims the event first.
  *
  * It runs ahead of the turn's and the enemy phase's clocks in the update
  * schedule, so the banner is on the stack before either of them sees the map
@@ -62,14 +62,14 @@ export class ObjectiveSystem extends UpdateSystem {
 
 		const data = objective.getComponent(ObjectiveComponent).read();
 
-		if (data.outcome === "") {
+		if (data.outcome === "" || data.acknowledged) {
 			return;
 		}
 
 		const top = this.stateManager.peek();
 
 		if (top instanceof OutcomeState) {
-			this.run(top, elapsed, frame);
+			this.run(top, objective.getComponent(ObjectiveComponent), elapsed, frame);
 			return;
 		}
 
@@ -79,8 +79,8 @@ export class ObjectiveSystem extends UpdateSystem {
 		}
 	}
 
-	/** The banner is up: advance its clock, take the press, and start over once it is acknowledged. */
-	private run(state: OutcomeState, elapsed: number, frame: number): void {
+	/** The banner is up: advance its clock, take the press, and hand the outcome on once it is acknowledged. */
+	private run(state: OutcomeState, objective: ObjectiveComponent, elapsed: number, frame: number): void {
 		const entity = state.getBanner();
 
 		if (entity === null) {
@@ -91,7 +91,7 @@ export class ObjectiveSystem extends UpdateSystem {
 		const data = component.read();
 
 		if (data.acknowledged) {
-			this.restart();
+			this.acknowledge(objective, data.outcome);
 			return;
 		}
 
@@ -102,15 +102,20 @@ export class ObjectiveSystem extends UpdateSystem {
 		}
 	}
 
-	/** Pops everything over the map and enters the map state again, which rebuilds the battle. */
-	private restart(): void {
-		this.events.dispatch("objective:acknowledged", {});
+	/**
+	 * Pops everything over the map - the banner included - and hands the
+	 * outcome on. The objective is marked acknowledged first: the map is on top
+	 * again for a frame before whoever answers the event takes it down, and a
+	 * decided objective on a quiet map is exactly what puts the banner up.
+	 */
+	private acknowledge(component: ObjectiveComponent, outcome: Outcome): void {
+		component.update({ ...component.read(), acknowledged: true });
 
 		while (this.stateManager.peek() !== null && !this.isMap(this.stateManager.peek())) {
 			this.stateManager.pop();
 		}
 
-		this.stateManager.switch(MapState.type);
+		this.events.dispatch("objective:acknowledged", { outcome });
 	}
 
 	/** Whether the outcome banner is already on the stack, on top or under something. */

@@ -10,6 +10,8 @@ export { TileMapComponent } from "@/game/map/components/TileMapComponent";
 export type { TileMapData } from "@/game/map/components/TileMapComponent";
 
 export { MapState } from "@/game/map/states/MapState";
+export type { MapRequest } from "@/game/map/states/MapState";
+export { DEFAULT_SCENARIO, DEFAULT_MAP_ASSET, scenarioAsset, mapAsset } from "@/game/map/content/Scenario";
 
 export { MapRenderSystem } from "@/game/map/systems/MapRenderSystem";
 export type { MapView } from "@/game/map/systems/MapRenderSystem";

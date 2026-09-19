@@ -64,6 +64,7 @@ vigilans-nexum
 │   │   ├── data                  # The game's content as JSON (see "Content and assets")
 │   │   │   ├── catalog           # classes, weapons, items - the rulebook every sheet resolves against
 │   │   │   ├── units             # one *.unit.json per character
+│   │   │   ├── campaign          # the chapters in order, each a scenario on a map
 │   │   │   ├── deployments       # which units a battle starts with, where, and what it is won by
 │   │   │   ├── maps              # *.tilemap.json
 │   │   │   ├── houses, locks, conversations
@@ -142,7 +143,8 @@ The game is one folder per feature under `src/game`, installed in this order in 
 | `threat` | the enemy range overlay |
 | `status` | the hover card and the unit sheet screen |
 | `ai` | the enemy phase: enemies moving and fighting on their turn |
-| `objective` | what the battle is won and lost by, the "Objective" readout, the seize marker on the map, the victory / defeat banner, the restart |
+| `objective` | what the battle is won and lost by, the "Objective" readout, the seize marker on the map, the victory / defeat banner, the restart of a lost battle |
+| `campaign` | the title screen and its menu, the chapters in order and their cards, the save slot: the roster, the fallen and the convoy carried from a won chapter into the next |
 
 A new feature is added to this table at its install position - the [Building a feature](#building-a-feature) section says how one is built.
 
@@ -364,6 +366,8 @@ const savegame: Savegame = {
 
 `Game.load(slot)` restores the timer and the random state, re-registers every entity through `Entity.parse` (each component by its `type`) and pushes each saved state. Three consequences for feature code: component data must stay JSON-serialisable; components **and** states need a stable `static type`; state that only lives between two events and is not worth persisting belongs on the system, not on a component.
 
+The game does not use that whole-world snapshot yet. What it saves is the campaign feature's run - the chapter, the roster, the fallen, the convoy - as one row of its own `campaign` store, declared in `src/database.schema.ts` and configured in `src/game.config.ts`, written at the top of every chapter and read back on "Continue". A store's key is fixed when it is created, so changing one (`key` in the repository settings, IndexedDB's `keyPath`) is a database `version` bump; `LocalDatabase` recreates a store whose key no longer matches on upgrade.
+
 ## Systems
 
 Systems are where behaviour lives. There are two families: **scheduled** systems run every frame at a priority, **reactive** systems run on events and have no priority.
@@ -464,10 +468,11 @@ The `Display` creates one canvas per configured layer (`background`, `gameplay`,
 |---|---|---|
 | update | 6 | `ObjectiveSystem` - ahead of the two clocks it must beat to a quiet map |
 | update | 8 | the clocks: `TurnSystem`, `PhaseBannerSystem`, `BattleAnimationSystem`, `ExperienceSystem`, `EnemyPhaseSystem`, `UnitWalkSystem`, `UnitPopSystem` |
-| update | 10 | the screens, polling their commands: `CursorSystem`, `MenuSystem`, `DialogSystem`, `PopupSystem`, `ForecastSystem`, `TradeSystem`, `StaffChoiceSystem`, `TalkChoiceSystem`, `PositionalChoiceSystem`, `OptionsSystem`, `RosterSystem`, `StatusSystem`, `ObjectiveScreenSystem` |
+| update | 10 | the screens, polling their commands: `CursorSystem`, `MenuSystem`, `DialogSystem`, `PopupSystem`, `ForecastSystem`, `TradeSystem`, `StaffChoiceSystem`, `TalkChoiceSystem`, `PositionalChoiceSystem`, `OptionsSystem`, `RosterSystem`, `StatusSystem`, `ObjectiveScreenSystem`, `CampaignSystem` |
 | update | 12 | `PathPreviewSystem` - after the cursor has moved |
 | sync | 0 | `TransformSystem` |
 | render `background` | 10 | `GridRenderSystem` - **clears the layer** |
+| render `background` | 11 | `CampaignRenderSystem` - the title screen and the chapter card, which never share the screen with a map |
 | render `background` | 14, 15, 16, 17, 18, 19 | `TileMapRenderSystem`, `SeizeMarkerRenderSystem`, `ThreatRenderSystem`, `MovementRenderSystem`, `UnitRenderSystem`, `PositionalRenderSystem` (the landing wash, over the tokens) |
 | render `gameplay` | 20 | `CursorRenderSystem` - **clears the layer** |
 | render `ui` | 50 | `UIRenderSystem` - **clears the layer**; menus, textboxes, popups |
@@ -507,7 +512,7 @@ export class OutcomeState extends GameState {
 - `commands` lists the command *classes* allowed here. `getCommands(family?)` resolves the instances from the `InputDevice` and narrows them to one family, so a system only sees the commands it knows how to run.
 - `resetCommands()` forgets every held input on those commands and flushes the shared input buffer. States call it in `onEnter` and `onResume`; without the flush, a single confirm press cascades through every state it opens, because the buffer keeps replaying it for a few frames.
 
-The manager keeps one instance per registered state type. `push` pauses the top state and enters the new one; `pop` exits the top and resumes the one below; `peek` returns the top; `getState(Ctor)` returns the typed instance so a caller can hand it a request before pushing it. `switch` replaces the whole stack - and calls `onExit` on the **top** state only, dropping anything under it silently. Code that restarts the map therefore pops down to it first (`ObjectiveSystem.restart()`).
+The manager keeps one instance per registered state type. `push` pauses the top state and enters the new one; `pop` exits the top and resumes the one below; `peek` returns the top; `getState(Ctor)` returns the typed instance so a caller can hand it a request before pushing it. `switch` replaces the whole stack - and calls `onExit` on the **top** state only, dropping anything under it silently. Code that leaves the map therefore pops down to it first (`ObjectiveSystem.acknowledge()`), and only then switches - the objective feature back to the map for a lost battle, the campaign feature to the next chapter's card for a won one.
 
 ```mermaid
 sequenceDiagram
@@ -523,6 +528,7 @@ sequenceDiagram
 	OS->>SM: pop()
 	SM->>Out: onExit()
 	SM->>Map: onResume()
+	Note over OS,Map: objective:acknowledged - the flow that answers it switches
 	OS->>SM: switch MapState
 	SM->>Map: onExit()
 	SM->>Map: onEnter()
@@ -638,7 +644,7 @@ Names are `<feature>:<what happened>`. The game currently declares 67 of them un
 
 **Request, flow, result.** A command or a menu row asks for something (`combat:requested`, `trade:requested`, `seize:requested`); the owning feature's flow system does it and reports how it ended in the past tense (`combat:fought` then `combat:resolved`, `trade:swapped` then `trade:closed`, `objective:decided` then `objective:acknowledged`), with a `...:cancelled` when the player backed out. Whoever asked listens for the result; the feature that did the work never knows who asked.
 
-**`map:ready` and `map:closed` are the battle's lifecycle.** The `MapState` announces `map:ready` on entering and `map:closed` on leaving. Every feature creates the entities it keeps for the length of a battle - the turn counter, the objective, the units, the houses - on `map:ready`, and removes them on `map:closed`. Nothing else needs a "reset".
+**`map:ready` and `map:closed` are the battle's lifecycle.** The `MapState` announces `map:ready` on entering - naming the scenario it built, which every feature reads its scenario documents by (`deployment-<scenario>`, `houses-<scenario>`, ...; see `src/game/map/content/Scenario.ts`) - and `map:closed` on leaving. Every feature creates the entities it keeps for the length of a battle - the turn counter, the objective, the units, the houses - on `map:ready`, and removes them on `map:closed`. Nothing else needs a "reset".
 
 ```ts
 // src/game/objective/systems/ObjectiveFlowSystem.ts
@@ -826,7 +832,8 @@ Every document carries a `format` and a `version`, and the feature that owns it 
 | `catalog/weapons.json` | `vigilans-weapons` | `units/content/UnitCatalog.ts` | might, hit, critical, weight, range, uses |
 | `catalog/items.json` | `vigilans-items` | `units/content/UnitCatalog.ts` | consumables: healing, stat boosts, keys |
 | `units/*.unit.json` | `vigilans-unit` | `units/content/UnitSheets.ts` | a character: faction, class, level, pack, abilities, base stats, growths, caps |
-| `deployments/*.deployment.json` | `vigilans-deployment` | `units/content/Deployments.ts` | the map, the units and where they stand, each enemy's `behaviour`, the `objective` |
+| `campaign/campaign.json` | `vigilans-campaign` | `campaign/content/Campaigns.ts` | the chapters in order: each a scenario id, a title per locale and the map it is fought on |
+| `deployments/*.deployment.json` | `vigilans-deployment` | `units/content/Deployments.ts` | the units and where they stand, each enemy's `behaviour`, the `objective` |
 | `maps/*.tilemap.json` | `vigilans-tilemap` | `map/content/TileMaps.ts` | tile layers of frame indices into the tileset |
 | `houses/*.houses.json` | `vigilans-houses` | `visit/content/Houses.ts` | who is in, what they say (per locale), what they hand over |
 | `locks/*.locks.json` | `vigilans-locks` | `locks/content/Locks.ts` | doors and chests, their open frames and rewards |
@@ -839,6 +846,7 @@ Adding content is therefore a data change:
 - **An enemy's behaviour** is the optional `behaviour` on its placement (`charge` or `hold`; bosses hold by default).
 - **The objective** is the `objective` block of the deployment: `{ "win": "rout" }` or `{ "win": "seize", "column", "row" }`.
 - **A house, a lock or a conversation** is an entry in the scenario's sheet; the text is authored per locale inline (`{ "de": ..., "en": ... }`).
+- **A chapter** is an entry in `campaign/campaign.json` naming a scenario and a map, plus one document of each scenario kind - deployment, houses, locks, conversations, the latter three may hold empty lists - under `<kind>-<scenario>` in the manifest, and the map under `map-<name>`.
 
 Interface strings are separate from content: flat `[locale].json` tables under `src/game/i18n`, read through `i18n(key, params)`, with the locale detected from the browser and German as the fallback. A test fails the build when the locales disagree on their keys - see [src/game/i18n/README.md](src/game/i18n/README.md).
 

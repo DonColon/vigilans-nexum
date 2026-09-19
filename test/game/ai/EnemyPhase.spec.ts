@@ -154,7 +154,7 @@ suite("Enemy Phase Test Suite", () => {
 			feature.install();
 		}
 
-		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "skirmish" });
 		eventBus.processQueue();
 		eventBus.processQueue(); // turn:changed -> the player's banner
 		dismissBanner();
@@ -215,7 +215,7 @@ suite("Enemy Phase Test Suite", () => {
 				units: deployment.units.map((placement) => (placement.unit === "hasan" ? { ...placement, behaviour: "hold" } : placement))
 			});
 
-			eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
+			eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "skirmish" });
 			eventBus.processQueue();
 
 			expect((unit("hasan") as Entity).getComponent(BehaviourComponent).read().behaviour).toBe(EnemyBehaviour.HOLD);
@@ -302,7 +302,7 @@ suite("Enemy Phase Test Suite", () => {
 				...deployment,
 				units: deployment.units.map((placement) => (placement.unit === "hasan" ? { ...placement, behaviour: "hold" } : placement))
 			});
-			eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16 });
+			eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "skirmish" });
 			eventBus.processQueue();
 			eventBus.processQueue();
 			dismissBanner();

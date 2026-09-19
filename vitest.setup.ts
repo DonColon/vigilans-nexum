@@ -16,6 +16,12 @@ import fantasyMap from "./src/assets/data/maps/fantasy.tilemap.json";
 import skirmishConversations from "./src/assets/data/conversations/skirmish.conversations.json";
 import skirmishHouses from "./src/assets/data/houses/skirmish.houses.json";
 import skirmishLocks from "./src/assets/data/locks/skirmish.locks.json";
+import campaign from "./src/assets/data/campaign/campaign.json";
+import riverDeployment from "./src/assets/data/deployments/river.deployment.json";
+import riverMap from "./src/assets/data/maps/river.tilemap.json";
+import riverConversations from "./src/assets/data/conversations/river.conversations.json";
+import riverHouses from "./src/assets/data/houses/river.houses.json";
+import riverLocks from "./src/assets/data/locks/river.locks.json";
 
 new EventBus({
 	history: {
@@ -51,6 +57,12 @@ assetStorage.setJson("map-fantasy", fantasyMap);
 assetStorage.setJson("conversations-skirmish", skirmishConversations);
 assetStorage.setJson("houses-skirmish", skirmishHouses);
 assetStorage.setJson("locks-skirmish", skirmishLocks);
+assetStorage.setJson("campaign", campaign);
+assetStorage.setJson("deployment-river", riverDeployment);
+assetStorage.setJson("map-river", riverMap);
+assetStorage.setJson("conversations-river", riverConversations);
+assetStorage.setJson("houses-river", riverHouses);
+assetStorage.setJson("locks-river", riverLocks);
 
 // Seeded once here as well, so a spec that calls buildUnit directly - without
 // ever going through the UnitsFeature - resolves its classes and weapons.

@@ -2,7 +2,7 @@ import { test, expect, suite } from "vitest";
 import { GameError } from "@/core/GameError";
 import { Terrain } from "@/game/map/content/Terrain";
 import { TileMapDocument, parseTileMapDocument } from "@/game/map/content/TileMapFormat";
-import skirmishDocument from "@/assets/data/maps/skirmish.tilemap.json";
+import riverDocument from "@/assets/data/maps/river.tilemap.json";
 import fantasyDocument from "@/assets/data/maps/fantasy.tilemap.json";
 
 function baseDocument(overrides: Partial<TileMapDocument> = {}): TileMapDocument {
@@ -84,8 +84,8 @@ suite("Tile Map Format Test Suite", () => {
 		expect(() => parseTileMapDocument(baseDocument({ layers: [{ name: "ground", tiles: [0, -2, 0, 0] }] }))).toThrowError(GameError);
 	});
 
-	test("The shipped skirmish map is a valid document", () => {
-		const map = parseTileMapDocument(skirmishDocument as TileMapDocument);
+	test("The shipped river map is a valid document", () => {
+		const map = parseTileMapDocument(riverDocument as TileMapDocument);
 
 		expect(map.tileset).toBe("kenney-1bit");
 		expect(map.terrain).toHaveLength(map.columns * map.rows);

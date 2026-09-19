@@ -19,7 +19,7 @@ export interface OutcomeRequest {
  *
  * The content is set with `request()` just before the state is pushed. The
  * state owns the banner entity; `ObjectiveSystem` runs its clock and its
- * press and, once acknowledged, starts the battle over.
+ * press and, once acknowledged, hands the outcome on.
  */
 export class OutcomeState extends GameState {
 	public static readonly type = "outcome";

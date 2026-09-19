@@ -5,7 +5,7 @@ import { GameState } from "@/core/GameState";
 import { Display } from "@/core/graphics/Display";
 import { clamp } from "@/core/math/utils/Clamp";
 import { GameCoreService } from "@/core/service/GameCoreService";
-import { MenuComponent } from "@/game/ui/components/MenuComponent";
+import { MenuComponent, MenuStyle } from "@/game/ui/components/MenuComponent";
 import { menuCommands } from "@/game/ui/commands/MenuCommands";
 import { DEFAULT_MENU_WIDTH, menuAt, menuBeside, menuBox, menuHeight } from "@/game/ui/view/UILayout";
 
@@ -46,6 +46,8 @@ export interface MenuRequest {
 	selectedIndex?: number;
 	/** Panel width in pixels. Defaults to the wide right-hand slot. */
 	width?: number;
+	/** How the menu is drawn - the framed panel unless said otherwise. See [[MenuStyle]]. */
+	style?: MenuStyle;
 	/**
 	 * Screen point to tuck the menu next to - a selected unit's tile. Left out,
 	 * the menu sits in the fixed right-hand slot.
@@ -169,13 +171,14 @@ export class MenuState extends GameState {
 		const items = request.items.length > 0 ? [...request.items] : [...FALLBACK.items];
 		const title = request.title ?? FALLBACK.title;
 		const width = request.width ?? DEFAULT_MENU_WIDTH;
+		const style = request.style ?? MenuStyle.PANEL;
 		const ids = items.map((_, index) => request.ids?.[index] ?? "");
 		const badges = items.map((_, index) => request.badges?.[index] ?? "");
 		const values = items.map((_, index) => request.values?.[index] ?? "");
 		const disabled = items.map((_, index) => request.disabled?.[index] ?? false);
 
 		const viewport = this.display.getViewportDimension();
-		const height = menuHeight(items.length, title.length > 0);
+		const height = menuHeight(items.length, title.length > 0, style);
 		const box = request.position
 			? menuAt(viewport, request.position, width, height)
 			: request.anchor
@@ -187,6 +190,7 @@ export class MenuState extends GameState {
 			id: request.id ?? FALLBACK.id,
 			title,
 			width,
+			style,
 			items,
 			ids,
 			badges,
