@@ -99,6 +99,13 @@ export class EnemyPhaseSystem extends UpdateSystem {
 
 		const acting = this.queries.actions.getSingleResult();
 
+		// The frame after a restart the query still holds the enemy that was acting
+		// when the battle was decided; it is off the map, so there is nothing to
+		// drive - the fresh turn takes the phase back to the player next frame.
+		if (acting !== null && !this.world.hasEntity(acting)) {
+			return;
+		}
+
 		if (acting === null) {
 			this.beginNext();
 		} else {

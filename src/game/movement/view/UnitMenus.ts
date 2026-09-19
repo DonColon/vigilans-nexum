@@ -3,6 +3,7 @@ import { MenuRequest } from "@/game/ui/states/MenuState";
 import { UnitComponent, InventoryEntry, InventoryKind, UnitData } from "@/game/units/components/UnitComponent";
 import { STAT_NAMES, StatBoost } from "@/game/units/content/UnitCatalog";
 import { PopupRequest } from "@/game/ui/states/PopupState";
+import { PositionalAbility } from "@/game/positional/content/PositionalAbilities";
 
 /** Menu ids, echoed by the `ui:menu*` events. */
 export const COMMAND_MENU = "unit-command";
@@ -33,6 +34,13 @@ export const UnitMenuRow = {
 	TALK: "talk",
 	ITEMS: "items",
 	TRADE: "trade",
+	/** The positional abilities - the row ids are the ability ids, so a chosen row names the ability outright. */
+	SWAP: PositionalAbility.SWAP,
+	SHOVE: PositionalAbility.SHOVE,
+	REPOSITION: PositionalAbility.REPOSITION,
+	KNOCKBACK: PositionalAbility.KNOCKBACK,
+	DRAW_BACK: PositionalAbility.DRAW_BACK,
+	MYSTIC_PULL: PositionalAbility.MYSTIC_PULL,
 	WAIT: "wait",
 	OBJECTIVE: "objective",
 	UNITS: "units",
@@ -63,6 +71,12 @@ const LABELS: Record<UnitMenuRow, () => string> = {
 	[UnitMenuRow.TALK]: () => i18n("menu.talk"),
 	[UnitMenuRow.ITEMS]: () => i18n("menu.items"),
 	[UnitMenuRow.TRADE]: () => i18n("menu.trade"),
+	[UnitMenuRow.SWAP]: () => i18n("menu.swap"),
+	[UnitMenuRow.SHOVE]: () => i18n("menu.shove"),
+	[UnitMenuRow.REPOSITION]: () => i18n("menu.reposition"),
+	[UnitMenuRow.KNOCKBACK]: () => i18n("menu.knockback"),
+	[UnitMenuRow.DRAW_BACK]: () => i18n("menu.drawBack"),
+	[UnitMenuRow.MYSTIC_PULL]: () => i18n("menu.mysticPull"),
 	[UnitMenuRow.WAIT]: () => i18n("menu.wait"),
 	[UnitMenuRow.OBJECTIVE]: () => i18n("menu.objective"),
 	[UnitMenuRow.UNITS]: () => i18n("menu.units"),
@@ -106,6 +120,8 @@ export interface UnitCommands {
 	canTalk?: boolean;
 	/** An ally is standing next to it. */
 	canTrade?: boolean;
+	/** The positional abilities on its sheet that have somebody in reach right now, in catalog order. */
+	abilities?: readonly PositionalAbility[];
 }
 
 /**
@@ -115,7 +131,9 @@ export interface UnitCommands {
  * "Chest" when it stands on or beside a locked chest with a key for it, "Door" when it
  * stands beside a locked door with a key for it, "Talk" when someone beside it
  * has something to say, "Items" when the unit carries anything, "Trade" when an
- * ally is standing next to it, then always "Wait".
+ * ally is standing next to it, a row per positional ability with someone in
+ * reach of it (Shove, Swap, ... - where Radiant Dawn puts them, after the pack),
+ * then always "Wait".
  */
 export function unitCommandRows(unit: UnitData, commands: UnitCommands = {}): UnitMenuRow[] {
 	const rows: UnitMenuRow[] = [];
@@ -154,6 +172,10 @@ export function unitCommandRows(unit: UnitData, commands: UnitCommands = {}): Un
 
 	if (commands.canTrade) {
 		rows.push(UnitMenuRow.TRADE);
+	}
+
+	for (const ability of commands.abilities ?? []) {
+		rows.push(ability);
 	}
 
 	rows.push(UnitMenuRow.WAIT);

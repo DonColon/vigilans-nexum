@@ -61,7 +61,7 @@ plus a verb per step of the flow under test (`attackFrom(column, row)`, `finishW
 
 | Unit | Faction | Class | Tile | Readied | Notes |
 |---|---|---|---|---|---|
-| dardan | player | swordsman L1 | 4,10 | bronze-sword | commander; carries iron-sword, iron-blade, vulnerary, door-key, chest-key; movement 99 |
+| dardan | player | swordsman L1 | 4,10 | bronze-sword | commander; carries iron-sword, iron-blade, vulnerary, door-key, chest-key; movement 99; all six positional abilities (`swap shove reposition knockback draw-back mystic-pull`) |
 | elira | player | axe-fighter L1 | 5,10 | iron-axe | bronze-axe, concoction |
 | teuta | player | cleric L1 | 5,11 | heal (staff) | door-key, chest-key |
 | hasan | enemy | axe-fighter L1 | 4,14 | bronze-axe | 26 HP, str 9, spd 5; iron-axe, vulnerary |

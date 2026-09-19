@@ -10,6 +10,7 @@
 	"weapon": "bronze-sword",
 	"inventory": ["bronze-sword", "iron-sword", "iron-blade", "vulnerary", "door-key", "chest-key"],
 	"commander": true,
+	"abilities": ["swap", "shove", "reposition", "knockback", "draw-back", "mystic-pull"],
 	"stats": {
 		"hp": 20,
 		"mp": 0,

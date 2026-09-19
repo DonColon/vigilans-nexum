@@ -109,6 +109,30 @@ suite("Query Test Suite", () => {
 		query.dispose();
 	});
 
+	test("Query does not resurrect an entity that changes after it left the world", () => {
+		const query = new Query({
+			allowlist: [PointComponent]
+		});
+
+		const entity = world.createEntity("ghost-test");
+		entity.addComponent(PointComponent, { x: 3, y: 3 });
+		eventBus.processQueue();
+
+		world.unregisterEntity(entity);
+		eventBus.processQueue();
+		expect(query.getResult().some((e) => e.getID() === "ghost-test")).toBeFalsy();
+
+		// Something still holding the entity writes to it - the way a system with
+		// a stale reference does the frame after a map restart.
+		entity.getComponent(PointComponent).update({ x: 4, y: 4 });
+		entity.addComponent(MoveComponent, { dx: 1, dy: 1 });
+		eventBus.processQueue();
+
+		expect(query.getResult().some((e) => e.getID() === "ghost-test")).toBeFalsy();
+
+		query.dispose();
+	});
+
 	test("Query getSingleResult returns first entity or null", () => {
 		const query = new Query({
 			allowlist: [PointComponent],

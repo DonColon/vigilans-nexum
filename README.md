@@ -138,6 +138,7 @@ The game is one folder per feature under `src/game`, installed in this order in 
 | `visit` | "Visit": houses, their villagers and gifts |
 | `locks` | "Door" / "Chest": locked doors and chests, and the keys that open them |
 | `movement` | picking a unit up, its range, the walk, the unit and global command menus |
+| `positional` | "Shove" / "Swap" / "Reposition" / "Knockback" / "Draw Back" / "Mystic Pull": the Base-tier positional abilities off a unit's sheet, the target choice and the slide |
 | `threat` | the enemy range overlay |
 | `status` | the hover card and the unit sheet screen |
 | `ai` | the enemy phase: enemies moving and fighting on their turn |
@@ -463,11 +464,11 @@ The `Display` creates one canvas per configured layer (`background`, `gameplay`,
 |---|---|---|
 | update | 6 | `ObjectiveSystem` - ahead of the two clocks it must beat to a quiet map |
 | update | 8 | the clocks: `TurnSystem`, `PhaseBannerSystem`, `BattleAnimationSystem`, `ExperienceSystem`, `EnemyPhaseSystem`, `UnitWalkSystem`, `UnitPopSystem` |
-| update | 10 | the screens, polling their commands: `CursorSystem`, `MenuSystem`, `DialogSystem`, `PopupSystem`, `ForecastSystem`, `TradeSystem`, `StaffChoiceSystem`, `TalkChoiceSystem`, `OptionsSystem`, `RosterSystem`, `StatusSystem`, `ObjectiveScreenSystem` |
+| update | 10 | the screens, polling their commands: `CursorSystem`, `MenuSystem`, `DialogSystem`, `PopupSystem`, `ForecastSystem`, `TradeSystem`, `StaffChoiceSystem`, `TalkChoiceSystem`, `PositionalChoiceSystem`, `OptionsSystem`, `RosterSystem`, `StatusSystem`, `ObjectiveScreenSystem` |
 | update | 12 | `PathPreviewSystem` - after the cursor has moved |
 | sync | 0 | `TransformSystem` |
 | render `background` | 10 | `GridRenderSystem` - **clears the layer** |
-| render `background` | 14, 15, 16, 17, 18 | `TileMapRenderSystem`, `SeizeMarkerRenderSystem`, `ThreatRenderSystem`, `MovementRenderSystem`, `UnitRenderSystem` |
+| render `background` | 14, 15, 16, 17, 18, 19 | `TileMapRenderSystem`, `SeizeMarkerRenderSystem`, `ThreatRenderSystem`, `MovementRenderSystem`, `UnitRenderSystem`, `PositionalRenderSystem` (the landing wash, over the tokens) |
 | render `gameplay` | 20 | `CursorRenderSystem` - **clears the layer** |
 | render `ui` | 50 | `UIRenderSystem` - **clears the layer**; menus, textboxes, popups |
 | render `ui` | 51-56 | `UnitCardRenderSystem` (51), `ForecastRenderSystem` and `ExperienceRenderSystem` (52), `TradeRenderSystem` (53), `TileInfoRenderSystem` (54), `TurnRenderSystem` (55), the options, roster, status and objective screens (56) |
@@ -633,7 +634,7 @@ The module augmentation is what makes `dispatch("objective:decided", { outcome }
 - `event.stopPropagation()` stops the remaining handlers of that delivery.
 - The bus keeps a history (100 events in the game's configuration) with per-event statistics; `printEventStatistics()` dumps it to the console.
 
-Names are `<feature>:<what happened>`. The game currently declares 61 of them under these prefixes: `map`, `ui`, `unit`, `combat`, `experience`, `staff`, `door` / `chest` / `lock`, `trade`, `talk`, `threat`, `convoy`, `visit`, `options`, `roster`, `status`, `turn`, `seize`, `objective`. Two conventions carry the whole game:
+Names are `<feature>:<what happened>`. The game currently declares 67 of them under these prefixes: `map`, `ui`, `unit`, `combat`, `experience`, `staff`, `door` / `chest` / `lock`, `trade`, `talk`, `positional`, `threat`, `convoy`, `visit`, `options`, `roster`, `status`, `turn`, `seize`, `objective`. Two conventions carry the whole game:
 
 **Request, flow, result.** A command or a menu row asks for something (`combat:requested`, `trade:requested`, `seize:requested`); the owning feature's flow system does it and reports how it ended in the past tense (`combat:fought` then `combat:resolved`, `trade:swapped` then `trade:closed`, `objective:decided` then `objective:acknowledged`), with a `...:cancelled` when the player backed out. Whoever asked listens for the result; the feature that did the work never knows who asked.
 
@@ -824,7 +825,7 @@ Every document carries a `format` and a `version`, and the feature that owns it 
 | `catalog/classes.json` | `vigilans-classes` | `units/content/UnitCatalog.ts` | class name, tier, weapon types, movement, promotion |
 | `catalog/weapons.json` | `vigilans-weapons` | `units/content/UnitCatalog.ts` | might, hit, critical, weight, range, uses |
 | `catalog/items.json` | `vigilans-items` | `units/content/UnitCatalog.ts` | consumables: healing, stat boosts, keys |
-| `units/*.unit.json` | `vigilans-unit` | `units/content/UnitSheets.ts` | a character: faction, class, level, pack, base stats, growths, caps |
+| `units/*.unit.json` | `vigilans-unit` | `units/content/UnitSheets.ts` | a character: faction, class, level, pack, abilities, base stats, growths, caps |
 | `deployments/*.deployment.json` | `vigilans-deployment` | `units/content/Deployments.ts` | the map, the units and where they stand, each enemy's `behaviour`, the `objective` |
 | `maps/*.tilemap.json` | `vigilans-tilemap` | `map/content/TileMaps.ts` | tile layers of frame indices into the tileset |
 | `houses/*.houses.json` | `vigilans-houses` | `visit/content/Houses.ts` | who is in, what they say (per locale), what they hand over |
@@ -834,6 +835,7 @@ Every document carries a `format` and a `version`, and the feature that owns it 
 Adding content is therefore a data change:
 
 - **A character** is a `*.unit.json` sheet plus a manifest entry with the id `unit-<id>`; a placement in the deployment puts it on the map.
+- **A unit's abilities** are the optional `abilities` list on its sheet - ids such as `swap` or `shove`; the positional feature reads its six off it, anything else is carried along for the features to come.
 - **An enemy's behaviour** is the optional `behaviour` on its placement (`charge` or `hold`; bosses hold by default).
 - **The objective** is the `objective` block of the deployment: `{ "win": "rout" }` or `{ "win": "seize", "column", "row" }`.
 - **A house, a lock or a conversation** is an entry in the scenario's sheet; the text is authored per locale inline (`{ "de": ..., "en": ... }`).

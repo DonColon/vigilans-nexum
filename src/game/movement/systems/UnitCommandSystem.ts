@@ -12,6 +12,8 @@ import {
 	MenuConfirmedEvent,
 	MenuCancelledEvent,
 	PopupClosedEvent,
+	PositionalCancelledEvent,
+	PositionalResolvedEvent,
 	TalkCancelledEvent,
 	TalkFinishedEvent,
 	TradeClosedEvent,
@@ -52,7 +54,10 @@ import { canSeize } from "@/game/objective/rules/Outcome";
 import { VisitComponent } from "@/game/visit/components/VisitComponent";
 import { House } from "@/game/visit/content/Houses";
 import { availableHouse } from "@/game/visit/rules/Visits";
-import { activeCursor, tileToScreen } from "@/game/map/rules/ActiveMap";
+import { activeCursor, activeGrid, tileToScreen } from "@/game/map/rules/ActiveMap";
+import { PositionalComponent } from "@/game/positional/components/PositionalComponent";
+import { isPositionalAbility, PositionalAbility } from "@/game/positional/content/PositionalAbilities";
+import { availablePositionalAbilities } from "@/game/positional/rules/Positioning";
 
 /**
  * The Fire Emblem move flow, wired to the map's `map:*` events on top of the
@@ -92,12 +97,17 @@ import { activeCursor, tileToScreen } from "@/game/map/rules/ActiveMap";
  *  - "Seize" hands off to the objective feature (`seize:requested`), which
  *    decides the battle. It only shows for the commander standing on the tile a
  *    seize is won on, and it spends the unit - the battle's last action.
+ *  - "Shove", "Swap", "Reposition", "Knockback", "Draw Back" and "Mystic Pull"
+ *    hand off to the positional feature (`positional:requested`), which moves
+ *    the map cursor between the units the ability could be used on and slides
+ *    the pieces. A row only shows for an ability on the unit's sheet with
+ *    somebody in reach of it; using one spends the unit.
  *
  * Only some of those commands finish the unit's turn: "Wait", a used item, a
- * resolved fight, a raised staff, an opened lock and a visited house all spend
- * it (`unit:acted`, the token greys out). Talking, trading, equipping,
- * unequipping and dropping are free - the command menu comes back and the unit
- * still has its action.
+ * resolved fight, a raised staff, an opened lock, a visited house and a used
+ * positional ability all spend it (`unit:acted`, the token greys out).
+ * Talking, trading, equipping, unequipping and dropping are free - the command
+ * menu comes back and the unit still has its action.
  *  - Confirm off the range or `map:cancelled` sets it back down without moving.
  *  - Confirm on a tile with nothing to pick up opens the global command menu
  *    next to the cursor: "Objective" opens the objective readout
@@ -135,6 +145,8 @@ export class UnitCommandSystem extends ReactiveSystem {
 		this.subscribe("door:opened", (event) => this.onDoorOpened(event));
 		this.subscribe("chest:opened", (event) => this.onChestOpened(event));
 		this.subscribe("lock:cancelled", (event) => this.onLockCancelled(event));
+		this.subscribe("positional:resolved", (event) => this.onPositionalResolved(event));
+		this.subscribe("positional:cancelled", (event) => this.onPositionalCancelled(event));
 		this.subscribe("ui:popupClosed", (event) => this.onPopupClosed(event));
 
 		return this;
@@ -172,10 +184,27 @@ export class UnitCommandSystem extends ReactiveSystem {
 			canOpenChest: this.chest(mover) !== null,
 			canOpenDoor: this.door(mover) !== null,
 			canTalk: this.talkPartner(mover) !== null,
-			canTrade: this.tradePartners(mover).length > 0
+			canTrade: this.tradePartners(mover).length > 0,
+			abilities: this.positionalAbilities(mover)
 		};
 
 		this.openMenu(unitCommandRequest(data, commands), position.column, position.row);
+	}
+
+	/**
+	 * The positional abilities on this unit's sheet with somebody in reach of
+	 * them, or none while the positional feature has not marked the battle. The
+	 * abilities are the positional feature's, but the lookup over them is pure -
+	 * the same way "Talk" asks the talk rules who is beside the unit.
+	 */
+	private positionalAbilities(mover: Entity): PositionalAbility[] {
+		const grid = activeGrid(this.world);
+
+		if (grid === null || this.world.entityWith(PositionalComponent) === null) {
+			return [];
+		}
+
+		return availablePositionalAbilities(mover, this.units(), grid);
 	}
 
 	/**
@@ -486,6 +515,17 @@ export class UnitCommandSystem extends ReactiveSystem {
 			return;
 		}
 
+		if (isPositionalAbility(event.row)) {
+			if (this.positionalAbilities(mover).includes(event.row)) {
+				// The positional feature takes it from here - it moves the cursor
+				// between the units in reach and slides the pieces.
+				this.closeOpenMenu();
+				this.events.dispatch("positional:requested", { unitId: mover.getComponent(UnitComponent).read().id, ability: event.row });
+			}
+
+			return;
+		}
+
 		if (event.row === UnitMenuRow.WAIT) {
 			this.spendMover(mover);
 			return;
@@ -565,6 +605,16 @@ export class UnitCommandSystem extends ReactiveSystem {
 
 	/** The lock was not there to open after all - nothing happened, so put the menu back. */
 	private onLockCancelled(event: LockCancelledEvent): void {
+		this.reopenCommandMenu(event.unitId);
+	}
+
+	/** The pieces slid - pushing, pulling or trading places is the unit's action for the turn, so it is spent. */
+	private onPositionalResolved(event: PositionalResolvedEvent): void {
+		this.spendPending(event.unitId);
+	}
+
+	/** The player backed out of choosing who to move - nothing happened, so put the menu back. */
+	private onPositionalCancelled(event: PositionalCancelledEvent): void {
 		this.reopenCommandMenu(event.unitId);
 	}
 

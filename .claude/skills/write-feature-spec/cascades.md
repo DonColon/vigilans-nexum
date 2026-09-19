@@ -36,6 +36,7 @@ The menu event shape: `{ menu: "unit-command", row: UnitMenuRow.X, index, item: 
 | `VISIT` | `visit:requested` → dialog pushed | `ui:dialogClosed` → reward handed over; pack full → `convoy:requested` | `convoy:delivered` → popup with the gift | `ui:popupClosed` → `visit:finished` → `unit:acted` |
 | `DOOR` / `CHEST` | `door:requested` / `chest:requested` → `LocksFlowSystem` | `door:opened` → `unit:acted` / chest: `convoy:requested` or popup | `convoy:delivered` / `ui:popupClosed` → `chest:opened` | `unit:acted` |
 | `TRADE` | `trade:requested` → `TradeState` | run `TradeSystem` with the swap → `trade:swapped` … `trade:closed` | **free**: the `unit-command` menu comes back, no `unit:acted` | |
+| `SWAP` / `SHOVE` / `REPOSITION` / `KNOCKBACK` / `DRAW_BACK` / `MYSTIC_PULL` (the row id is the ability id) | `positional:requested` → `PositionalFlowSystem` pushes `PositionalState`; run `PositionalChoiceSystem(10)` with the choice `confirmed` → `positional:confirmed` | `PositionalFlowSystem` writes the new tiles + `WalkComponent`s → `positional:resolved` | `UnitCommandSystem` → `unit:acted` (a pushed unit, ally or enemy, is not spent) | run `UnitWalkSystem(8).execute(10_000)` → `unit:moved` per slid unit; no menu reopens |
 | `ITEMS` → equip / drop | `unit:equipped` / `unit:unequipped` / `unit:droppedItem` - **free**, the menu comes back | | | |
 | `ITEMS` → use | `unit:usedItem` → `UnitsFeature` applies it; a booster shows a popup first | `ui:popupClosed` → spent → `unit:acted` | | |
 

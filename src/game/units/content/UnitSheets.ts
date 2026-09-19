@@ -39,6 +39,12 @@ export interface UnitDocument {
 	commander?: boolean;
 	/** Marks a chapter's boss - felling one is worth a good deal more experience. */
 	boss?: boolean;
+	/**
+	 * Ids of the abilities the unit has learned - the character sheet's
+	 * *Abilities* line. Opaque here: each feature reads the ones it owns off the
+	 * list (the positional feature its six), the rest are simply carried.
+	 */
+	abilities?: string[];
 	stats: SheetStats;
 	growths: SheetStats;
 	maxStats: SheetStats;
@@ -70,6 +76,27 @@ function assertStats(value: unknown, where: string, classMovement: number, minim
 	}
 
 	return { ...(value as UnitStats), movement: movement as number };
+}
+
+/**
+ * Checks a sheet's ability list: absent means none, otherwise every entry is a
+ * non-empty id and none is listed twice. Which ids mean anything is not checked
+ * here - the feature that owns an ability is the one that knows it.
+ */
+function assertAbilities(value: unknown, where: string): string[] {
+	if (value === undefined) {
+		return [];
+	}
+
+	if (!Array.isArray(value) || value.some((entry) => typeof entry !== "string" || entry.length === 0)) {
+		throw new GameError(`${where} needs a list of ability ids`);
+	}
+
+	if (new Set(value).size !== value.length) {
+		throw new GameError(`${where} lists an ability twice`);
+	}
+
+	return [...(value as string[])];
 }
 
 /**
@@ -125,6 +152,7 @@ export function buildUnit(document: UnitDocument): UnitData {
 		throw new GameError(`Unit "${document.id}" carries ${packIds.length} entries, a pack holds ${INVENTORY_SIZE}`);
 	}
 
+	const abilities = assertAbilities(document.abilities, `Unit "${document.id}"`);
 	const inventory = packIds.map((id) => UnitComponent.resolveEntry(id, unitClass.weaponTypes, document.weapon));
 	const equippedEntry = inventory.find((entry) => entry.equipped);
 
@@ -139,6 +167,7 @@ export function buildUnit(document: UnitDocument): UnitData {
 		experience: document.experience ?? 0,
 		commander: document.commander ?? false,
 		boss: document.boss ?? false,
+		abilities,
 		weaponTypes: [...unitClass.weaponTypes],
 		stats,
 		growths,

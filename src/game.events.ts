@@ -285,6 +285,46 @@ export interface TalkFinishedEvent extends GameEvent {
 	conversationId: string;
 }
 
+/** The player chose a positional ability's row (Shove, Swap, ...) - someone in reach should be picked to use it on. */
+export interface PositionalRequestedEvent extends GameEvent {
+	unitId: string;
+	/** The ability's id - the row ids are the ability ids (see `PositionalAbility`). */
+	ability: string;
+}
+
+/** The player settled on who to use the ability on. */
+export interface PositionalConfirmedEvent extends GameEvent {
+	unitId: string;
+	ability: string;
+	targetId: string;
+}
+
+/** The player backed out of choosing who to move - nobody moved, so the unit still has its turn. */
+export interface PositionalCancelledEvent extends GameEvent {
+	unitId: string;
+}
+
+/** One unit's slide under a positional ability, as `positional:resolved` reports it. */
+export interface PositionalResolvedStep {
+	unitId: string;
+	fromColumn: number;
+	fromRow: number;
+	toColumn: number;
+	toRow: number;
+}
+
+/**
+ * A positional ability was used. Every moved unit already stands on its new
+ * tile and its token is sliding there; using one is the unit's action for the
+ * turn, so the move flow spends the user on this.
+ */
+export interface PositionalResolvedEvent extends GameEvent {
+	unitId: string;
+	ability: string;
+	targetId: string;
+	steps: PositionalResolvedStep[];
+}
+
 /** Hand this catalog item to this unit, putting it in the army convoy if the pack is full. */
 export interface ConvoyRequestedEvent extends GameEvent {
 	unitId: string;
@@ -462,6 +502,10 @@ declare module "@/core/events/GameEvents" {
 		"talk:confirmed": TalkConfirmedEvent;
 		"talk:cancelled": TalkCancelledEvent;
 		"talk:finished": TalkFinishedEvent;
+		"positional:requested": PositionalRequestedEvent;
+		"positional:confirmed": PositionalConfirmedEvent;
+		"positional:cancelled": PositionalCancelledEvent;
+		"positional:resolved": PositionalResolvedEvent;
 		"threat:shown": ThreatShownEvent;
 		"threat:cleared": ThreatClearedEvent;
 		"convoy:requested": ConvoyRequestedEvent;

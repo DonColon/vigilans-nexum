@@ -20,6 +20,7 @@ Loader: `UnitSheets.ts` → `buildUnit(document)`. One file per character, asset
 | `experience` | no | 0-99 towards the next level |
 | `commander` | no | `true` on the army's leader - the cursor starts there; a seize is won by this unit; their fall is a defeat |
 | `boss` | no | `true` on the chapter boss - worth more experience, defaults to `hold` behaviour |
+| `abilities` | no | ids of the abilities the character has learned, each once; the positional feature knows `swap shove reposition knockback draw-back mystic-pull`, any other id is carried along unread |
 | `stats` | yes | `hp mp strength magic dexterity speed luck defense resistance`, all finite numbers; `movement` optional (class fills it), integer ≥ 1 |
 | `growths` | yes | same keys, 0-100 percent per level; `movement` optional, ≥ 0 |
 | `maxStats` | yes | same keys, the caps; `movement` optional, defaults to 15 |

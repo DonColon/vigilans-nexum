@@ -10,6 +10,7 @@ import { MapFeature } from "@/game/map";
 import { MovementFeature } from "@/game/movement";
 import { ObjectiveFeature } from "@/game/objective";
 import { OptionsFeature } from "@/game/options";
+import { PositionalFeature } from "@/game/positional";
 import { RosterFeature } from "@/game/roster";
 import { StatusFeature } from "@/game/status";
 import { TalkFeature } from "@/game/talk";
@@ -67,6 +68,11 @@ game.install(new LocksFeature({ dependencies: [units, convoy] }));
 // Moving a unit needs the units on the map and the UI feature for its command
 // menus - the install order and the dependencies both say so.
 game.install(movement);
+// The positional abilities - Shove, Swap, Reposition, Knockback, Draw Back,
+// Mystic Pull - the command menu offers a row for. They slide the pieces with
+// the movement feature's walk, so they are installed after it; the move flow
+// asks their rules which rows to offer, the way it asks the talk rules.
+game.install(new PositionalFeature({ dependencies: [units, movement] }));
 // The enemy-range overlay - one enemy on confirm, the whole army on the R
 // button. It sits above the move flow on map:tileConfirmed, so it is installed
 // after it; it only needs the units on the map.

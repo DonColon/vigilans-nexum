@@ -56,7 +56,9 @@ export class Query {
 		const index = this.entities.indexOf(event.entity);
 		const exists = index !== -1;
 
-		const matches = this.match(event.entity);
+		// A change to an entity that has already left the world - a system still
+		// holding it after a map restart - must not bring it back as a ghost.
+		const matches = this.world.hasEntity(event.entity) && this.match(event.entity);
 
 		if (matches && !exists) {
 			this.entities.push(event.entity);

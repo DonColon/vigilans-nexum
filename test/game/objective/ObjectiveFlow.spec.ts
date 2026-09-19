@@ -15,6 +15,8 @@ import { ObjectiveClosedEvent, ObjectiveDecidedEvent } from "@/game.events";
 import { AIFeature } from "@/game/ai/AIFeature";
 import { EnemyPhaseState } from "@/game/ai/states/EnemyPhaseState";
 import { EnemyPhaseSystem } from "@/game/ai/systems/EnemyPhaseSystem";
+import { EnemyActionComponent } from "@/game/ai/components/EnemyActionComponent";
+import { Query } from "@/core/ecs/Query";
 import { CombatFeature } from "@/game/combat/CombatFeature";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
@@ -100,6 +102,8 @@ suite("Objective Flow Test Suite", () => {
 	let unsubscribe = () => {};
 	/** Kept across frames, the way the game keeps it, so its queries lag entity changes by a frame as they do there. */
 	let objectiveSystem: ObjectiveSystem | null = null;
+	/** Set by a test that needs the enemy phase to lag the same way; built per frame otherwise. */
+	let enemyPhaseSystem: EnemyPhaseSystem | null = null;
 
 	const unit = (id: string) => unitById(unitsInWorld(world), id);
 	const sheet = (id: string) => (unit(id) as Entity).getComponent(UnitComponent).read();
@@ -130,7 +134,11 @@ suite("Objective Flow Test Suite", () => {
 		eventBus.processQueue();
 		objectiveSystem?.execute(elapsed, 0);
 		run(new TurnSystem(8).initialize(), elapsed);
-		run(new EnemyPhaseSystem(8).initialize(), elapsed);
+		if (enemyPhaseSystem) {
+			enemyPhaseSystem.execute(elapsed);
+		} else {
+			run(new EnemyPhaseSystem(8).initialize(), elapsed);
+		}
 		run(new UnitWalkSystem(8).initialize(), elapsed);
 	};
 
@@ -203,6 +211,8 @@ suite("Objective Flow Test Suite", () => {
 	afterEach(() => {
 		unsubscribe();
 		objectiveSystem?.dispose();
+		enemyPhaseSystem?.dispose();
+		enemyPhaseSystem = null;
 		objectiveSystem = null;
 		assets.setJson(DEPLOYMENT_ASSET, deployment);
 
@@ -406,5 +416,51 @@ suite("Objective Flow Test Suite", () => {
 		for (const unsubscribe of stop) {
 			unsubscribe();
 		}
+	});
+
+	test("Restarting from a defeat in the enemy phase leaves no ghost of the enemy that was acting", () => {
+		open();
+
+		// The enemy phase kept across frames, as the game keeps it: its queries lag
+		// entity changes by a frame - which is what once let it spend the old
+		// battle's acting enemy the frame after the map had been rebuilt.
+		enemyPhaseSystem = new EnemyPhaseSystem(8).initialize();
+
+		// A query kept across the restart, the way the unit renderer's is.
+		const rendered = new Query({ allowlist: [UnitComponent] });
+
+		eventBus.dispatch("turn:end", {});
+		frame(); // the turn turns over
+		frame(); // the enemy's banner goes up
+		dismissBanner();
+		frame(0); // the enemy phase takes the map
+		frame(0); // ... and picks Hasan as the first to act
+		const acting = unit("hasan") as Entity;
+		expect(acting.hasComponent(EnemyActionComponent)).toBe(true);
+
+		fell("dardan");
+		frame();
+		expect(stateManager.peek()).toBeInstanceOf(OutcomeState);
+
+		banner()?.update({ ...banner()!.read(), acknowledged: true });
+		frame(); // acknowledged: the states come down and the map is entered again
+		frame(); // map:closed and map:ready land - the battle is rebuilt
+		frame();
+		frame();
+
+		// The old Hasan is off the map and stays off it: whatever the stale phase
+		// still did to him, no query lists an entity the world no longer has.
+		expect(world.hasEntity(acting)).toBe(false);
+		expect(rendered.getResult().every((entity) => world.hasEntity(entity))).toBe(true);
+		expect(
+			rendered
+				.getResult()
+				.map((entity) => entity.getComponent(UnitComponent).read().id)
+				.sort()
+		).toStrictEqual(["besnik", "dardan", "elira", "hasan", "teuta"]);
+		expect(unitsInWorld(world).length).toBe(5);
+		expect(turn()).toMatchObject({ number: 1, phase: UnitFaction.PLAYER, over: false });
+
+		rendered.dispose();
 	});
 });
