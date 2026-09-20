@@ -382,7 +382,7 @@ suite("Prepare Test Suite", () => {
 		const leona = buildUnit(leonaDocument as UnitDocument);
 
 		test("Deployed units are enrolled once; a benched unit takes its sheet with it", () => {
-			const begun = CampaignComponent.begin(1, "bellum", "");
+			const begun = CampaignComponent.begin(1, "bellum");
 			const enrolled = CampaignComponent.enrolled(begun, [dardan, hasan]);
 
 			expect(enrolled.roster.map((unit) => unit.id)).toStrictEqual(["dardan-niveli", "hasan-eyletmez"]);
@@ -395,8 +395,8 @@ suite("Prepare Test Suite", () => {
 		});
 
 		test("Winning keeps the benched on the roster and drops the casualties", () => {
-			const before = CampaignComponent.withCasualty(CampaignComponent.enrolled(CampaignComponent.begin(1, "bellum", ""), [dardan, hasan, leona]), "leona-kaori");
-			const after = CampaignComponent.cleared(before, [{ ...dardan, level: 4 }], [], "river", "");
+			const before = CampaignComponent.withCasualty(CampaignComponent.enrolled(CampaignComponent.begin(1, "bellum"), [dardan, hasan, leona]), "leona-kaori");
+			const after = CampaignComponent.cleared(before, [{ ...dardan, level: 4 }], [], "river");
 
 			expect(after.roster.map((unit) => `${unit.id} L${unit.level}`)).toStrictEqual(["dardan-niveli L4", "hasan-eyletmez L1"]);
 			expect(after.fallen).toStrictEqual(["leona-kaori"]);

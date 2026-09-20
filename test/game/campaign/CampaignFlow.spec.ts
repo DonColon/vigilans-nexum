@@ -9,15 +9,18 @@ import { GameStateManager } from "@/core/GameStateManager";
 import { Display } from "@/core/graphics/Display";
 import { getI18n } from "@/core/i18n/I18n";
 import { InputDevice } from "@/core/input/InputDevice";
-import { seedRandom } from "@/core/math/generation/Randomizer";
+import { getRandomState, seedRandom } from "@/core/math/generation/Randomizer";
 import { ServiceRegistry } from "@/core/service/ServiceRegistry";
-import { CampaignChapterClearedEvent, CampaignChapterStartedEvent, CampaignSavedEvent, CampaignSlotReadEvent, MapReadyEvent } from "@/game.events";
+import { CampaignChapterClearedEvent, CampaignChapterStartedEvent, CampaignSavedEvent, CampaignSlotChosenEvent, CampaignSlotReadEvent, MapReadyEvent } from "@/game.events";
 import { AIFeature } from "@/game/ai/AIFeature";
 import { CampaignFeature } from "@/game/campaign/CampaignFeature";
-import { CAMPAIGN_SLOT, CampaignComponent, CampaignData } from "@/game/campaign/components/CampaignComponent";
+import { Savegame } from "@/core/model/Savegame";
+import { CAMPAIGN_SLOT, CampaignComponent, CampaignData, SAVE_SLOTS } from "@/game/campaign/components/CampaignComponent";
 import { ChapterCardComponent } from "@/game/campaign/components/ChapterCardComponent";
+import { SaveSlotComponent, SlotPurpose } from "@/game/campaign/components/SaveSlotComponent";
 import { TitleComponent } from "@/game/campaign/components/TitleComponent";
 import { ChapterCardState } from "@/game/campaign/states/ChapterCardState";
+import { SaveSlotState } from "@/game/campaign/states/SaveSlotState";
 import { TitleState } from "@/game/campaign/states/TitleState";
 import { CampaignSystem } from "@/game/campaign/systems/CampaignSystem";
 import { TITLE_MENU_ID, TitleRow } from "@/game/campaign/view/TitleScreen";
@@ -63,14 +66,19 @@ suite("Campaign Flow Test Suite", () => {
 	 * answering a tick later the way IndexedDB does. Registered under the class
 	 * name the flow injects by; nothing else in a spec builds a LocalDatabase.
 	 */
-	const slots = new Map<number, CampaignData>();
+	const slots = new Map<number, Savegame>();
 	const repository = {
 		read: (key: number) => Promise.resolve(slots.get(key)),
-		save: (data: CampaignData) => {
-			slots.set(data.slot, structuredClone(data));
-			return Promise.resolve(data.slot);
+		list: () => Promise.resolve([...slots.values()]),
+		save: (data: Savegame) => {
+			slots.set(data.id, structuredClone(data));
+			return Promise.resolve(data.id);
 		}
 	};
+
+	/** A run as a slot would hold it: laid into an empty snapshot, written on a fixed date. */
+	const stash = (run: CampaignData, modifiedOn = "2026-09-19T00:00:00.000Z", randomState = 7) =>
+		slots.set(run.slot, CampaignComponent.toSave(run, { id: run.slot, playtime: run.playtime, modifiedOn, screenshot: "", currentState: [], entities: [] }, randomState));
 	ServiceRegistry.register("LocalDatabase", { getRepository: () => repository });
 
 	world.registerComponent(TransformComponent);
@@ -91,6 +99,7 @@ suite("Campaign Flow Test Suite", () => {
 	let cleared: CampaignChapterClearedEvent[] = [];
 	let saved: CampaignSavedEvent[] = [];
 	let slotRead: CampaignSlotReadEvent[] = [];
+	let slotChosen: CampaignSlotChosenEvent[] = [];
 	let finished = 0;
 
 	const unit = (id: string) => unitById(unitsInWorld(world), id);
@@ -100,6 +109,7 @@ suite("Campaign Flow Test Suite", () => {
 	const card = () => stateManager.getState(ChapterCardState).getCard()?.getComponent(ChapterCardComponent);
 	const banner = () => stateManager.getState(OutcomeState).getBanner()?.getComponent(OutcomeComponent);
 	const menu = () => (stateManager.peek() as MenuState).getMenu()?.getComponent(MenuComponent);
+	const slotList = () => (stateManager.peek() as SaveSlotState).getSlots()?.getComponent(SaveSlotComponent);
 	const topType = () => (stateManager.peek()?.constructor as typeof GameState).type;
 
 	const run = <T extends { execute(elapsed: number, frame: number): void; dispose(): void }>(system: T, elapsed: number) => {
@@ -132,14 +142,28 @@ suite("Campaign Flow Test Suite", () => {
 		frame(); // campaign:slotRead - the menu goes up
 	};
 
-	/** Confirms a row of the title menu the way the player does: marked on the menu, taken by MenuSystem. */
-	const choose = (row: TitleRow) => {
+	/** Confirms a row of the title menu the way the player does: marked on the menu, taken by MenuSystem; the slot list comes up. */
+	const chooseRow = (row: TitleRow) => {
 		const component = menu() as MenuComponent;
 		const data = component.read();
 		component.update({ ...data, confirmedIndex: data.ids.indexOf(row) });
 		frame(); // MenuSystem reports the row and pops the menu
-		frame(); // ui:menuConfirmed - the run begins or continues, the card goes up
+		frame(); // ui:menuConfirmed - the slot list goes up
+	};
+
+	/** Confirms a slot of the list the way the player does: the highlight moved there, confirm marked, taken by CampaignSystem. */
+	const pickSlot = (slot: number) => {
+		const component = slotList() as SaveSlotComponent;
+		component.update({ ...component.read(), selectedIndex: slot - 1, confirmed: true });
+		frame(); // CampaignSystem reports the slot
+		frame(); // campaign:slotChosen - the run begins or continues, the card goes up
 		frame(); // campaign:chapterStarted lands
+	};
+
+	/** A title row through to its chosen slot - the first by default. */
+	const choose = (row: TitleRow, slot = CAMPAIGN_SLOT) => {
+		chooseRow(row);
+		pickSlot(slot);
 	};
 
 	/** Presses the chapter card away and lets the battle set up under its banner. */
@@ -221,6 +245,7 @@ suite("Campaign Flow Test Suite", () => {
 		cleared = [];
 		saved = [];
 		slotRead = [];
+		slotChosen = [];
 		finished = 0;
 		stop = [
 			eventBus.subscribe("map:ready", (event) => ready.push(event)),
@@ -228,6 +253,7 @@ suite("Campaign Flow Test Suite", () => {
 			eventBus.subscribe("campaign:chapterCleared", (event) => cleared.push(event)),
 			eventBus.subscribe("campaign:saved", (event) => saved.push(event)),
 			eventBus.subscribe("campaign:slotRead", (event) => slotRead.push(event)),
+			eventBus.subscribe("campaign:slotChosen", (event) => slotChosen.push(event)),
 			eventBus.subscribe("campaign:finished", () => finished++)
 		];
 	});
@@ -268,12 +294,51 @@ suite("Campaign Flow Test Suite", () => {
 	});
 
 	test("With a run in the slot the title offers to continue it, first", async () => {
-		slots.set(CAMPAIGN_SLOT, CampaignComponent.begin(CAMPAIGN_SLOT, "river", ""));
+		stash(CampaignComponent.begin(CAMPAIGN_SLOT, "river"));
 
 		await openTitle();
 
 		expect(slotRead).toStrictEqual([expect.objectContaining({ found: true })]);
 		expect(menu()?.read()).toMatchObject({ id: TITLE_MENU_ID, ids: [TitleRow.CONTINUE, TitleRow.NEW_GAME] });
+	});
+
+	test("Either title row opens the save slot list: every slot, the occupied ones put into words, and backing out returns to the menu", async () => {
+		stash({ ...CampaignComponent.begin(2, "river"), playtime: 3_725_000 });
+
+		await openTitle();
+		chooseRow(TitleRow.CONTINUE);
+
+		expect(stateManager.getCurrentStates().map((state) => (state.constructor as typeof GameState).type)).toStrictEqual([TitleState.type, SaveSlotState.type]);
+		const list = slotList()?.read();
+		expect(list).toMatchObject({ purpose: SlotPurpose.CONTINUE, selectedIndex: 1 });
+		expect(list?.slots).toHaveLength(SAVE_SLOTS);
+		expect(list?.slots.map((slot) => slot.empty)).toStrictEqual([true, false, true]);
+		expect(list?.slots[1]).toMatchObject({ slot: 2, chapter: "river", number: 2, playtime: 3_725_000, snapshot: "" });
+		expect(["...Is A New Beginning", "...ist ein neuer Anfang"]).toContain(list?.slots[1].title);
+		expect(list?.slots[1].savedOn).toContain("2026");
+
+		// An empty slot cannot be continued: the press does nothing.
+		const component = slotList() as SaveSlotComponent;
+		component.update({ ...component.read(), selectedIndex: 0, confirmed: true });
+		frame();
+		frame();
+		expect(slotChosen).toStrictEqual([]);
+		expect(stateManager.peek()).toBeInstanceOf(SaveSlotState);
+		expect(slotList()?.read().confirmed).toBe(false);
+
+		// Backing out: the title menu again.
+		component.update({ ...component.read(), cancelled: true });
+		frame(); // CampaignSystem reports the cancel and pops the list
+		frame(); // campaign:slotsClosed - the menu is offered again
+		expect(stateManager.peek()).toBeInstanceOf(MenuState);
+		expect(menu()?.read()).toMatchObject({ id: TITLE_MENU_ID, ids: [TitleRow.CONTINUE, TitleRow.NEW_GAME] });
+
+		// "New Game" opens the same list on the first empty slot; any slot may be chosen.
+		chooseRow(TitleRow.NEW_GAME);
+		expect(slotList()?.read()).toMatchObject({ purpose: SlotPurpose.NEW_GAME, selectedIndex: 0 });
+		pickSlot(3);
+		expect(slotChosen).toStrictEqual([expect.objectContaining({ purpose: SlotPurpose.NEW_GAME, slot: 3 })]);
+		expect(campaign()).toMatchObject({ slot: 3, chapter: "bellum", playtime: expect.any(Number) });
 	});
 
 	test("Backing out of the title menu puts it straight back up", async () => {
@@ -304,7 +369,9 @@ suite("Campaign Flow Test Suite", () => {
 
 		await tick();
 		frame();
-		expect(slots.get(CAMPAIGN_SLOT)).toMatchObject({ slot: CAMPAIGN_SLOT, chapter: "bellum" });
+		// The framework's record - the world as it stood at the write, still the title - with the run laid into it.
+		expect(slots.get(CAMPAIGN_SLOT)).toMatchObject({ id: CAMPAIGN_SLOT, chapter: "bellum", roster: [], currentState: [TitleState.type], randomState: expect.any(Number) });
+		expect(slots.get(CAMPAIGN_SLOT)?.entities.some((entity) => CampaignComponent.type in entity.components)).toBe(true);
 		expect(saved).toStrictEqual([expect.objectContaining({ slot: CAMPAIGN_SLOT })]);
 	});
 
@@ -367,6 +434,9 @@ suite("Campaign Flow Test Suite", () => {
 		frame();
 		expect(slots.get(CAMPAIGN_SLOT)).toMatchObject({ chapter: "river" });
 		expect(saved).toHaveLength(2);
+		// The slot carries how long the run has been played and a picture of the screen it was written from.
+		expect(slots.get(CAMPAIGN_SLOT)?.playtime).toBeGreaterThan(0);
+		expect(typeof slots.get(CAMPAIGN_SLOT)?.screenshot).toBe("string");
 
 		// Into the next battle: the veterans over their sheets, the convoy refilled, the new scenario's enemies.
 		enterBattle();
@@ -426,13 +496,17 @@ suite("Campaign Flow Test Suite", () => {
 
 	test("Continue takes the run up at the top of the chapter the slot left it on, veterans and fallen included", async () => {
 		const veteran = { ...buildUnit(dardanDocument as UnitDocument), level: 7, currentHP: 1 };
-		slots.set(CAMPAIGN_SLOT, { ...CampaignComponent.begin(CAMPAIGN_SLOT, "river", "2026-09-19T00:00:00.000Z"), roster: [veteran], fallen: ["hasan-eyletmez"] });
+		stash({ ...CampaignComponent.begin(CAMPAIGN_SLOT, "river"), roster: [veteran], fallen: ["hasan-eyletmez"], playtime: 9000 }, "2026-09-19T00:00:00.000Z", 4242);
 
 		await openTitle();
 		choose(TitleRow.CONTINUE);
 
+		expect(slotChosen).toStrictEqual([expect.objectContaining({ purpose: SlotPurpose.CONTINUE, slot: CAMPAIGN_SLOT })]);
 		expect(card()?.read()).toMatchObject({ chapter: "river", number: 2, map: "map-river" });
-		expect(campaign()).toMatchObject({ chapter: "river", fallen: ["hasan-eyletmez"], savedOn: "2026-09-19T00:00:00.000Z" });
+		expect(campaign()).toMatchObject({ chapter: "river", fallen: ["hasan-eyletmez"] });
+		expect(campaign().playtime).toBeGreaterThanOrEqual(9000);
+		// The dice roll on from where the save left them.
+		expect(getRandomState()).toBe(4242);
 		// Taking a run up is not a write.
 		expect(saved).toStrictEqual([]);
 
@@ -444,7 +518,7 @@ suite("Campaign Flow Test Suite", () => {
 	});
 
 	test("A slot on a chapter this campaign does not have starts a new run instead", async () => {
-		slots.set(CAMPAIGN_SLOT, CampaignComponent.begin(CAMPAIGN_SLOT, "nowhere", ""));
+		stash(CampaignComponent.begin(CAMPAIGN_SLOT, "nowhere"));
 
 		await openTitle();
 		choose(TitleRow.CONTINUE);

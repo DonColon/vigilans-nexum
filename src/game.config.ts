@@ -33,17 +33,15 @@ const gameConfiguration: GameConfiguration = {
 		manifest: assetManifest,
 		useCache: true
 	},
-	// Version 2: the campaign store, and the framework's savegames keyed by
-	// their id - a store's key is fixed when it is created, so changing one is
-	// an upgrade.
+	// Version 3: one store, the framework's savegames keyed by their slot id;
+	// the campaign's run is part of the same record (see src/database.schema.ts).
+	// A store's key is fixed when it is created, so changing one is an upgrade,
+	// and a store no longer listed here is dropped on the next.
 	localDatabase: {
-		version: 2,
+		version: 3,
 		repositories: {
 			savegames: {
 				key: "id"
-			},
-			campaign: {
-				key: "slot"
 			}
 		}
 	},

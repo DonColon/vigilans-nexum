@@ -1,9 +1,13 @@
 import { Component } from "@/core/ecs/Component";
 import { JsonSchema } from "@/core/ecs/JsonSchema";
+import { Savegame, SavegameCore } from "@/core/model/Savegame";
 import { InventoryEntry, UnitData } from "@/game/units/components/UnitComponent";
 
-/** The one save slot this build writes. A slot choice on the title screen would pass another. */
+/** The first save slot - the one a spec writes; the title screen's slot list offers [[SAVE_SLOTS]] of them. */
 export const CAMPAIGN_SLOT = 1;
+
+/** How many save slots the title screen lists. */
+export const SAVE_SLOTS = 3;
 
 export interface CampaignData extends JsonSchema {
 	/** Which save this run is written to - the store's key. */
@@ -23,15 +27,16 @@ export interface CampaignData extends JsonSchema {
 	convoy: InventoryEntry[];
 	/** The player's units that fell in the battle under way - kept apart from `fallen` until the battle is won, since a lost one is started over. */
 	casualties: string[];
-	/** ISO timestamp of the last write - what a "Continue" row could show. */
-	savedOn: string;
+	/** Milliseconds the run has been played, over every session; the save's header carries it and the slot list shows it. */
+	playtime: number;
 }
 
 /**
  * The run the player is on: which chapter, who is still standing and what they
  * carry. One instance, created when a campaign is begun or continued from the
- * title screen and kept across battles - it is not a map-lifetime entity - and
- * what the save slot holds, field for field.
+ * title screen and kept across battles - it is not a map-lifetime entity. It
+ * is the game's part of a save: `toSave` lays it into the framework's
+ * [[Savegame]] record and `fromSave` takes it back out.
  *
  * The statics are the pure steps of a run; each returns a new record and
  * leaves its argument alone.
@@ -40,8 +45,41 @@ export class CampaignComponent extends Component<CampaignData> {
 	public static readonly type = "campaign";
 
 	/** A run at the top of its first chapter: nobody a veteran, nobody fallen, an empty convoy. */
-	public static begin(slot: number, chapter: string, savedOn: string): CampaignData {
-		return { slot, chapter, roster: [], fallen: [], convoy: [], casualties: [], savedOn };
+	public static begin(slot: number, chapter: string): CampaignData {
+		return { slot, chapter, roster: [], fallen: [], convoy: [], casualties: [], playtime: 0 };
+	}
+
+	/** Another `elapsed` milliseconds of play. */
+	public static played(data: CampaignData, elapsed: number): CampaignData {
+		return { ...data, playtime: data.playtime + elapsed };
+	}
+
+	/** The run laid into a save: the framework's snapshot of the world, the random generator's state, and the run itself. */
+	public static toSave(data: CampaignData, snapshot: SavegameCore, randomState: number): Savegame {
+		return {
+			...snapshot,
+			id: data.slot,
+			playtime: data.playtime,
+			randomState,
+			chapter: data.chapter,
+			roster: data.roster.map((unit) => ({ ...unit })),
+			fallen: [...data.fallen],
+			convoy: data.convoy.map((entry) => ({ ...entry })),
+			casualties: [...data.casualties]
+		};
+	}
+
+	/** The run as a save holds it. */
+	public static fromSave(save: Savegame): CampaignData {
+		return {
+			slot: save.id,
+			chapter: save.chapter,
+			roster: save.roster.map((unit) => ({ ...unit })),
+			fallen: [...save.fallen],
+			convoy: save.convoy.map((entry) => ({ ...entry })),
+			casualties: [...save.casualties],
+			playtime: save.playtime
+		};
 	}
 
 	/** A battle began: whatever fell in the last attempt at it is forgotten. */
@@ -63,7 +101,7 @@ export class CampaignComponent extends Component<CampaignData> {
 	 * bench, become the roster the next one deploys; the battle's casualties
 	 * join the fallen for good; the convoy is kept; the run moves on to `next`.
 	 */
-	public static cleared(data: CampaignData, survivors: UnitData[], convoy: InventoryEntry[], next: string, savedOn: string): CampaignData {
+	public static cleared(data: CampaignData, survivors: UnitData[], convoy: InventoryEntry[], next: string): CampaignData {
 		const onMap = new Set(survivors.map((unit) => unit.id));
 		const benched = data.roster.filter((unit) => !onMap.has(unit.id) && !data.casualties.includes(unit.id));
 
@@ -73,8 +111,7 @@ export class CampaignComponent extends Component<CampaignData> {
 			roster: [...survivors, ...benched].map((unit) => ({ ...unit })),
 			fallen: [...data.fallen, ...data.casualties.filter((id) => !data.fallen.includes(id))],
 			convoy: convoy.map((entry) => ({ ...entry })),
-			casualties: [],
-			savedOn
+			casualties: []
 		};
 	}
 

@@ -5,14 +5,19 @@ import { ReactiveSystem } from "@/core/ecs/ReactiveSystem";
 import { Display } from "@/core/graphics/Display";
 import { i18n, I18nService } from "@/core/i18n/I18n";
 import { localizedText } from "@/core/i18n/LocalizedText";
+import { getRandomState, setRandomState } from "@/core/math/generation/Randomizer";
+import { Savegame, snapshotWorld } from "@/core/model/Savegame";
 import { GameCoreService } from "@/core/service/GameCoreService";
-import { MenuCancelledEvent, MenuConfirmedEvent, ObjectiveAcknowledgedEvent, UnitDiedEvent } from "@/game.events";
-import { CAMPAIGN_SLOT, CampaignComponent, CampaignData } from "@/game/campaign/components/CampaignComponent";
+import { CampaignSlotChosenEvent, MenuCancelledEvent, MenuConfirmedEvent, ObjectiveAcknowledgedEvent, UnitDiedEvent } from "@/game.events";
+import { CampaignComponent, CampaignData, SAVE_SLOTS } from "@/game/campaign/components/CampaignComponent";
+import { SaveSlotSummary, SlotPurpose } from "@/game/campaign/components/SaveSlotComponent";
 import { TitleComponent } from "@/game/campaign/components/TitleComponent";
 import { CAMPAIGN_ASSET, CampaignChapter, CampaignDocument, chapterAfter, chapterById, chapterNumber, parseCampaign } from "@/game/campaign/content/Campaigns";
 import { rested, rosterOf } from "@/game/campaign/rules/Roster";
 import { ChapterCardState } from "@/game/campaign/states/ChapterCardState";
+import { SaveSlotState } from "@/game/campaign/states/SaveSlotState";
 import { TitleState } from "@/game/campaign/states/TitleState";
+import { formatSavedOn } from "@/game/campaign/view/SaveSlots";
 import { TITLE_MENU_ID, TITLE_ROW_KEY, titleMenuPosition, TitleRow, titleRows } from "@/game/campaign/view/TitleScreen";
 import { ConvoyComponent } from "@/game/convoy/components/ConvoyComponent";
 import { mapAsset } from "@/game/map/content/Scenario";
@@ -25,14 +30,17 @@ import { MenuState } from "@/game/ui/states/MenuState";
 /**
  * The run from the title screen to the last chapter:
  *
- *  - `title:opened` reads the save slot; `campaign:slotRead`, once the store
- *    has answered, puts the title menu up - "Continue" when there is a run,
- *    "New Game" always. The menu cannot be backed out of: cancelled, it goes
- *    straight back up.
- *  - "New Game" begins a run at the campaign's first chapter and writes it;
- *    "Continue" takes the slot's run up again. Either way the chapter's card is
- *    switched to ([[ChapterCardState]]) - `CampaignSystem` enters the battle
- *    from there.
+ *  - `title:opened` reads every save slot; `campaign:slotRead`, once the
+ *    store has answered, puts the title menu up - "Continue" when any slot
+ *    holds a run, "New Game" always. The menu cannot be backed out of:
+ *    cancelled, it goes straight back up.
+ *  - Either row opens the save slot list ([[SaveSlotState]]): every slot with
+ *    the chapter its run is on, its playtime, its date and the screen it was
+ *    written from. "New Game" then begins a run at the campaign's first
+ *    chapter in the chosen slot and writes it; "Continue" takes the chosen
+ *    slot's run up again. Either way the chapter's card is switched to
+ *    ([[ChapterCardState]]) - `CampaignSystem` enters the battle from there.
+ *    Backing out of the list returns to the title menu.
  *  - On `map:ready`, after every feature has set the battle up, the run is
  *    laid over it: a veteran gets the sheet it ended the last chapter with, a
  *    unit that has fallen for good is taken off the map, the convoy is
@@ -47,8 +55,12 @@ import { MenuState } from "@/game/ui/states/MenuState";
  *    `campaign:finished` and returns to the title. A defeat is left to the
  *    objective feature, which starts the chapter over.
  *
- * The store is IndexedDB, which answers later: a read or a write is fired
- * here and its result is reported as an event, so nothing waits mid-frame.
+ * A save is the framework's [[Savegame]] - the slot's header with the run's
+ * playtime (which `CampaignSystem` keeps) and a thumbnail of the screen, and
+ * the world as it stood - with the game's own fields merged in: the random
+ * generator's state and the run itself (`CampaignComponent.toSave`). The
+ * store is IndexedDB, which answers later: a read or a write is fired here
+ * and its result is reported as an event, so nothing waits mid-frame.
  */
 export class CampaignFlowSystem extends ReactiveSystem {
 	@GameCoreService(AssetStorage)
@@ -63,14 +75,16 @@ export class CampaignFlowSystem extends ReactiveSystem {
 	@GameCoreService(I18nService)
 	private i18n!: I18nService;
 
-	/** What the slot held when it was last read - the run "Continue" takes up. */
-	private stored: CampaignData | null = null;
+	/** What the slots held when they were last read, by slot - the saves "Continue" offers. */
+	private stored = new Map<number, Savegame>();
 
 	public initialize(): this {
-		this.subscribe("title:opened", () => this.readSlot());
+		this.subscribe("title:opened", () => this.readSlots());
 		this.subscribe("campaign:slotRead", (event) => this.offerMenu(event.found));
 		this.subscribe("ui:menuConfirmed", (event) => this.onTitleChoice(event));
 		this.subscribe("ui:menuCancelled", (event) => this.onTitleCancelled(event));
+		this.subscribe("campaign:slotChosen", (event) => this.onSlotChosen(event));
+		this.subscribe("campaign:slotsClosed", () => this.offerMenu(this.stored.size > 0));
 		// After every feature has put its part of the battle up (the enemy tags at -1).
 		this.subscribe("map:ready", () => this.applyRun(), -2);
 		// Before the combat feature (0) takes the fallen unit off the map, while its side can still be read.
@@ -81,17 +95,17 @@ export class CampaignFlowSystem extends ReactiveSystem {
 		return this;
 	}
 
-	/** Asks the store for the slot; the answer lands as `campaign:slotRead`. */
-	private readSlot(): void {
+	/** Asks the store for every slot; the answer lands as `campaign:slotRead`. */
+	private readSlots(): void {
 		this.repository()
-			.then((repository) => repository.read(CAMPAIGN_SLOT))
-			.then((save) => {
-				this.stored = isCampaignData(save) ? save : null;
-				this.events.dispatch("campaign:slotRead", { found: this.stored !== null });
+			.then((repository) => repository.list())
+			.then((saves) => {
+				this.stored = new Map(saves.filter(isCampaignSave).map((save) => [save.id, save]));
+				this.events.dispatch("campaign:slotRead", { found: this.stored.size > 0 });
 			})
 			.catch((error: unknown) => {
-				console.error("The save slot could not be read:", error);
-				this.stored = null;
+				console.error("The save slots could not be read:", error);
+				this.stored = new Map();
 				this.events.dispatch("campaign:slotRead", { found: false });
 			});
 	}
@@ -123,48 +137,99 @@ export class CampaignFlowSystem extends ReactiveSystem {
 		this.stateManager.push(MenuState);
 	}
 
+	/** Either row of the title menu opens the slot list - "Continue" on the first occupied slot, "New Game" on the first empty one. */
 	private onTitleChoice(event: MenuConfirmedEvent): void {
 		if (event.menu !== TITLE_MENU_ID) {
 			return;
 		}
 
-		if (event.row === TitleRow.CONTINUE && this.stored !== null) {
-			this.continueRun(this.stored);
-		} else {
-			this.beginRun();
-		}
+		this.openSlots(event.row === TitleRow.CONTINUE && this.stored.size > 0 ? SlotPurpose.CONTINUE : SlotPurpose.NEW_GAME);
 	}
 
 	/** The title menu is the only way forward, so backing out of it puts it straight back up. */
 	private onTitleCancelled(event: MenuCancelledEvent): void {
 		if (event.menu === TITLE_MENU_ID) {
-			this.offerMenu(this.stored !== null);
+			this.offerMenu(this.stored.size > 0);
+		}
+	}
+
+	/** The save slot list over the title screen, every slot put into words. */
+	private openSlots(purpose: SlotPurpose): void {
+		const slots = Array.from({ length: SAVE_SLOTS }, (_, index) => this.summarize(index + 1));
+		const wanted = purpose === SlotPurpose.CONTINUE ? slots.findIndex((slot) => !slot.empty) : slots.findIndex((slot) => slot.empty);
+
+		this.stateManager.getState(SaveSlotState).request({ purpose, slots, selectedIndex: Math.max(0, wanted) });
+		this.stateManager.push(SaveSlotState);
+	}
+
+	/** One slot as the list shows it. */
+	private summarize(slot: number): SaveSlotSummary {
+		const stored = this.stored.get(slot);
+
+		if (stored === undefined) {
+			return { slot, empty: true, chapter: "", number: 0, title: "", playtime: 0, savedOn: "", snapshot: "" };
+		}
+
+		const campaign = this.campaign();
+		const chapter = chapterById(campaign, stored.chapter);
+
+		return {
+			slot,
+			empty: false,
+			chapter: stored.chapter,
+			number: chapterNumber(campaign, stored.chapter),
+			title: chapter === null ? stored.chapter : localizedText(chapter.title, this.i18n.getLocale(), this.i18n.getFallbackLocale()),
+			playtime: stored.playtime,
+			savedOn: formatSavedOn(stored.modifiedOn, this.i18n.getLocale()),
+			snapshot: stored.screenshot
+		};
+	}
+
+	/** A slot was chosen: its run is taken up, or a new one begun in it. An empty slot cannot be continued - nothing happens. */
+	private onSlotChosen(event: CampaignSlotChosenEvent): void {
+		const stored = this.stored.get(event.slot);
+
+		if (event.purpose === SlotPurpose.CONTINUE && stored === undefined) {
+			return;
+		}
+
+		// The list comes down first: switching to the card exits only the state
+		// on top, and the title screen under the list has to be torn down too.
+		if (this.stateManager.peek() instanceof SaveSlotState) {
+			this.stateManager.pop();
+		}
+
+		if (event.purpose === SlotPurpose.CONTINUE && stored !== undefined) {
+			this.continueRun(stored);
+		} else {
+			this.beginRun(event.slot);
 		}
 	}
 
 	/** A fresh run at the campaign's first chapter, written to the slot. */
-	private beginRun(): void {
+	private beginRun(slot: number): void {
 		const campaign = this.campaign();
 		const first = campaign.chapters[0];
-		const data = CampaignComponent.begin(CAMPAIGN_SLOT, first.id, new Date().toISOString());
+		const data = CampaignComponent.begin(slot, first.id);
 
 		this.install(data);
 		this.write(data);
 		this.startChapter(campaign, first);
 	}
 
-	/** The slot's run taken up again from the top of the chapter it was on. */
-	private continueRun(stored: CampaignData): void {
+	/** The slot's run taken up again from the top of the chapter it was on, the dice where they were left. */
+	private continueRun(stored: Savegame): void {
 		const campaign = this.campaign();
 		const chapter = chapterById(campaign, stored.chapter);
 
 		if (chapter === null) {
 			console.error(`The saved run is on chapter "${stored.chapter}", which this campaign does not have - starting over`);
-			this.beginRun();
+			this.beginRun(stored.id);
 			return;
 		}
 
-		this.install(stored);
+		this.install(CampaignComponent.fromSave(stored));
+		setRandomState(stored.randomState);
 		this.startChapter(campaign, chapter);
 	}
 
@@ -257,7 +322,7 @@ export class CampaignFlowSystem extends ReactiveSystem {
 			return;
 		}
 
-		const cleared = CampaignComponent.cleared(data, roster, convoy, next.id, new Date().toISOString());
+		const cleared = CampaignComponent.cleared(data, roster, convoy, next.id);
 		component.update(cleared);
 		this.write(cleared);
 
@@ -276,22 +341,28 @@ export class CampaignFlowSystem extends ReactiveSystem {
 		this.world.createEntity().addComponent(CampaignComponent, data);
 	}
 
-	/** Fires a write of the run to the slot; `campaign:saved` lands once the store has taken it. */
+	/**
+	 * Fires a write of the run to its slot - the framework's snapshot of the
+	 * world as it stands (the screen as the battle ended is the slot's picture)
+	 * with the run laid into it; `campaign:saved` lands once the store has
+	 * taken it.
+	 */
 	private write(data: CampaignData): void {
-		const record = JSON.parse(JSON.stringify(data)) as CampaignData;
+		const snapshot = snapshotWorld(this.world, this.stateManager, this.display, data.slot, data.playtime);
+		const record = JSON.parse(JSON.stringify(CampaignComponent.toSave(data, snapshot, getRandomState()))) as Savegame;
 
 		this.repository()
 			.then((repository) => repository.save(record))
 			.then(() => {
-				this.stored = record;
-				this.events.dispatch("campaign:saved", { slot: record.slot });
+				this.stored.set(record.id, record);
+				this.events.dispatch("campaign:saved", { slot: record.id });
 			})
 			.catch((error: unknown) => console.error("The run could not be saved:", error));
 	}
 
-	/** The slot's repository, as a promise so a store that is not connected fails the same way a failed read does. */
-	private repository(): Promise<Repository<"campaign">> {
-		return new Promise((resolve) => resolve(this.database.getRepository("campaign")));
+	/** The saves' repository, as a promise so a store that is not connected fails the same way a failed read does. */
+	private repository(): Promise<Repository<"savegames">> {
+		return new Promise((resolve) => resolve(this.database.getRepository("savegames")));
 	}
 
 	/** The campaign sheet. It is a build error for the bundle not to carry one, so this throws rather than falling back. */
@@ -300,13 +371,13 @@ export class CampaignFlowSystem extends ReactiveSystem {
 	}
 }
 
-/** Whether what came out of the store is a run this build can take up. */
-function isCampaignData(value: unknown): value is CampaignData {
+/** Whether what came out of the store is a save this build can take a run up from. */
+function isCampaignSave(value: unknown): value is Savegame {
 	if (typeof value !== "object" || value === null) {
 		return false;
 	}
 
 	const data = value as Record<string, unknown>;
 
-	return typeof data.chapter === "string" && Array.isArray(data.roster) && Array.isArray(data.fallen) && Array.isArray(data.convoy);
+	return typeof data.id === "number" && typeof data.chapter === "string" && Array.isArray(data.roster) && Array.isArray(data.fallen) && Array.isArray(data.convoy) && Array.isArray(data.casualties);
 }

@@ -14,8 +14,8 @@ import { Entity, EntityType } from "@/core/ecs/Entity";
 import { ReactiveSystemConstructor, ScheduledSystemConstructor, SystemConstructor } from "@/core/ecs/System";
 import { GameStateConstructor } from "@/core/GameState";
 import { GameCommandConstructor } from "@/core/input/commands/GameCommand";
-import { Savegame } from "@/core/model/Savegame";
-import { getRandomState, setRandomState, seedRandom } from "@/core/math/generation/Randomizer";
+import { Savegame, SavegameExtension, snapshotWorld } from "@/core/model/Savegame";
+import { seedRandom } from "@/core/math/generation/Randomizer";
 import { GameFeature, GameFeatureConstructor } from "./GameFeature";
 import { TimerManager } from "./timer/TimerManager";
 import { CooldownManager } from "./timer/CooldownManager";
@@ -139,12 +139,16 @@ export class Game {
 		this.animationFrame = window.requestAnimationFrame((current) => this.main(current));
 	}
 
-	public async load(slot: number) {
+	/**
+	 * Restores the framework's part of a save - the timer, every entity and
+	 * the state stack - and hands the whole record back so the game can take
+	 * up what it added (see `SavegameExtension`).
+	 */
+	public async load(slot: number): Promise<Savegame> {
 		const repository = this.localDatabase.getRepository("savegames");
 		const savegame = await repository.read(slot);
 
 		this.timer = savegame.playtime;
-		setRandomState(savegame.randomState);
 
 		for (const entity of savegame.entities) {
 			this.registerEntity(entity);
@@ -153,24 +157,16 @@ export class Game {
 		for (const state of savegame.currentState) {
 			this.stateManager.push(state);
 		}
+
+		return savegame;
 	}
 
-	public async save(slot: number) {
-		const entities = this.world.getEntities();
-		const states = this.stateManager.getCurrentStates();
-
-		const savegame: Savegame = {
-			id: slot,
-			playtime: this.timer,
-			modifiedOn: new Date().toISOString(),
-			screenshot: await this.display.screenshot(),
-			currentState: states.map((state) => (state.constructor as GameStateConstructor).type),
-			entities: entities.map((entity) => entity.toObject()),
-			randomState: getRandomState()
-		};
+	/** Writes the world as it stands, with the play timer and the game's own part of the save, into the slot. */
+	public async save(slot: number, extension: SavegameExtension): Promise<void> {
+		const savegame: Savegame = { ...snapshotWorld(this.world, this.stateManager, this.display, slot, this.timer), ...extension };
 
 		const repository = this.localDatabase.getRepository("savegames");
-		repository.save(savegame);
+		await repository.save(savegame);
 	}
 
 	public stop() {

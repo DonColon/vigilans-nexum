@@ -144,7 +144,7 @@ The game is one folder per feature under `src/game`, installed in this order in 
 | `status` | the hover card and the unit sheet screen |
 | `ai` | the enemy phase: enemies moving and fighting on their turn |
 | `objective` | what the battle is won and lost by, the "Objective" readout, the seize marker on the map, the victory / defeat banner, the restart of a lost battle |
-| `campaign` | the title screen and its menu, the chapters in order and their cards, the save slot: the roster, the fallen and the convoy carried from a won chapter into the next |
+| `campaign` | the title screen and its menu, the save slot list (each slot's chapter, playtime, date and a thumbnail of the screen it was saved from), the chapters in order and their cards, and the save: the roster, the fallen and the convoy carried from a won chapter into the next |
 | `prepare` | battle preparations over the map before the first turn of a run's chapter: who deploys (the deployment's capacity, deploy tiles and required units), where each stands, what each carries and the convoy |
 
 A new feature is added to this table at its install position - the [Building a feature](#building-a-feature) section says how one is built.
@@ -350,24 +350,23 @@ It is seeded from the world when constructed and kept in step by the `entityChan
 
 ### Savegames
 
-`Game.save(slot)` writes, into the `savegames` IndexedDB repository, the play time, a screenshot, the random generator's state, the state stack as a list of `static type` ids and every entity as `entity.toObject()`:
+One model, `Savegame` in `src/core/model/Savegame.ts`, is a save slot. The framework's part (`SavegameCore`) is the slot's header - `id`, `playtime`, `modifiedOn`, a small JPEG `screenshot` from `Display.thumbnail()` - and the world as it stood: the state stack as a list of `static type` ids and every entity as `entity.toObject()`; `snapshotWorld()` builds it. The game merges what is its own into the same interface in `src/database.schema.ts` - the random generator's state and the campaign's run (chapter, roster, fallen, convoy, casualties) - so one record of the `savegames` store holds all of it:
 
 ```ts
-// src/core/Game.ts
-const savegame: Savegame = {
-	id: slot,
-	playtime: this.timer,
-	modifiedOn: new Date().toISOString(),
-	screenshot: await this.display.screenshot(),
-	currentState: states.map((state) => (state.constructor as GameStateConstructor).type),
-	entities: entities.map((entity) => entity.toObject()),
-	randomState: getRandomState()
-};
+// src/database.schema.ts
+declare module "@/core/model/Savegame" {
+	interface Savegame {
+		randomState: number;
+		chapter: string;
+		roster: UnitData[];
+		// ...
+	}
+}
 ```
 
-`Game.load(slot)` restores the timer and the random state, re-registers every entity through `Entity.parse` (each component by its `type`) and pushes each saved state. Three consequences for feature code: component data must stay JSON-serialisable; components **and** states need a stable `static type`; state that only lives between two events and is not worth persisting belongs on the system, not on a component.
+`Game.save(slot, extension)` writes the framework's snapshot with the game's part laid over it; `Game.load(slot)` restores the timer, re-registers every entity through `Entity.parse` (each component by its `type`), pushes each saved state and hands the record back for the game to take up its part. Three consequences for feature code: component data must stay JSON-serialisable; components **and** states need a stable `static type`; state that only lives between two events and is not worth persisting belongs on the system, not on a component.
 
-The game does not use that whole-world snapshot yet. What it saves is the campaign feature's run - the chapter, the roster, the fallen, the convoy - as one row of its own `campaign` store, declared in `src/database.schema.ts` and configured in `src/game.config.ts`, written at the top of every chapter and read back on "Continue". A store's key is fixed when it is created, so changing one (`key` in the repository settings, IndexedDB's `keyPath`) is a database `version` bump; `LocalDatabase` recreates a store whose key no longer matches on upgrade.
+The campaign feature is what writes saves today: at the top of every chapter it lays its run into `snapshotWorld()` (`CampaignComponent.toSave`) and, on "Continue", takes it back out (`fromSave`) and rebuilds the chapter rather than restoring the world snapshot - a run resumes at the top of its chapter. The store is configured in `src/game.config.ts`; a store's key is fixed when it is created, so changing one (`key` in the repository settings, IndexedDB's `keyPath`) is a database `version` bump, and `LocalDatabase` recreates a store whose key no longer matches - and drops one no longer listed - on upgrade.
 
 ## Systems
 

@@ -176,7 +176,7 @@ suite("Prepare Flow Test Suite", () => {
 	const open = (bench: string[] = ["maksimo-auditore"]) => {
 		const run = world.createEntity();
 		run.addComponent(CampaignComponent, {
-			...CampaignComponent.begin(CAMPAIGN_SLOT, "bellum", ""),
+			...CampaignComponent.begin(CAMPAIGN_SLOT, "bellum"),
 			roster: bench.map((id) => buildUnit({ ...maksimoDocument, id } as UnitDocument))
 		});
 

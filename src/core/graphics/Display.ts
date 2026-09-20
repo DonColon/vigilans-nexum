@@ -109,6 +109,38 @@ export class Display {
 		});
 	}
 
+	/**
+	 * The screen as it is right now, every layer composited and scaled down to
+	 * `width` x `height`, as a JPEG data URL - small enough to keep in a save
+	 * slot as its thumbnail. Synchronous, unlike `screenshot()`; an empty string
+	 * when the canvas cannot be encoded (a headless run).
+	 */
+	public thumbnail(width: number, height: number, quality = 0.8): string {
+		const layers = Array.from(this.layers.values());
+		layers.sort(Graphics.byLayerIndex);
+
+		const thumbnail = document.createElement("canvas");
+		thumbnail.width = width;
+		thumbnail.height = height;
+
+		const context = thumbnail.getContext("2d");
+
+		if (!context) {
+			return "";
+		}
+
+		for (const layer of layers) {
+			context.drawImage(layer.getCanvas(), 0, 0, width, height);
+		}
+
+		try {
+			const url = thumbnail.toDataURL("image/jpeg", quality);
+			return typeof url === "string" && url.startsWith("data:") ? url : "";
+		} catch {
+			return "";
+		}
+	}
+
 	public addLayer(name: string, order: number): this {
 		if (this.layers.has(name)) {
 			throw new GameError(`Layer ${name} already exists`);

@@ -478,10 +478,19 @@ export type ObjectiveClosedEvent = GameEvent;
 /** The title screen went up. The campaign feature reads the save slot in answer, and puts the title menu up once it knows what to offer. */
 export type TitleOpenedEvent = GameEvent;
 
-/** The save slot was read: `found` says whether it holds a run to continue. Lands after `title:opened`, once the store has answered. */
+/** The save slots were read: `found` says whether any holds a run to continue. Lands after `title:opened`, once the store has answered. */
 export interface CampaignSlotReadEvent extends GameEvent {
 	found: boolean;
 }
+
+/** A slot was chosen off the save slot list - to take its run up, or to begin a new one in. */
+export interface CampaignSlotChosenEvent extends GameEvent {
+	purpose: "continue" | "new";
+	slot: number;
+}
+
+/** The save slot list was backed out of; the title menu comes back. */
+export type CampaignSlotsClosedEvent = GameEvent;
 
 /** A chapter's card went up - a new run's first, a continued run's, or the one after a won battle. */
 export interface CampaignChapterStartedEvent extends GameEvent {
@@ -636,6 +645,8 @@ declare module "@/core/events/GameEvents" {
 		"objective:closed": ObjectiveClosedEvent;
 		"title:opened": TitleOpenedEvent;
 		"campaign:slotRead": CampaignSlotReadEvent;
+		"campaign:slotChosen": CampaignSlotChosenEvent;
+		"campaign:slotsClosed": CampaignSlotsClosedEvent;
 		"campaign:chapterStarted": CampaignChapterStartedEvent;
 		"campaign:chapterCleared": CampaignChapterClearedEvent;
 		"campaign:finished": CampaignFinishedEvent;
