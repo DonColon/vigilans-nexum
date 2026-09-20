@@ -12,6 +12,7 @@ import { MovementFeature } from "@/game/movement";
 import { ObjectiveFeature } from "@/game/objective";
 import { OptionsFeature } from "@/game/options";
 import { PositionalFeature } from "@/game/positional";
+import { PrepareFeature } from "@/game/prepare";
 import { RosterFeature } from "@/game/roster";
 import { StatusFeature } from "@/game/status";
 import { TalkFeature } from "@/game/talk";
@@ -35,8 +36,10 @@ game.install(new MapFeature());
 game.install(ui);
 game.install(units);
 game.install(turn);
-// The army list the global menu's "Units" row opens; needs the units on the map.
-game.install(new RosterFeature({ dependencies: [units] }));
+// The army list the global menu's "Units" row opens - and the preparations'
+// deploy list; needs the units on the map.
+const roster = new RosterFeature({ dependencies: [units] });
+game.install(roster);
 // The settings screen its "Options" row opens. It owns no map state of its own -
 // the settings live on the OptionsService, which everything else reads.
 game.install(new OptionsFeature());
@@ -97,7 +100,14 @@ game.install(objective);
 // menu up through the UI feature, lays the saved roster over the units and
 // the convoy once a battle is set up, and takes a won battle off the
 // objective feature's hands, so it is installed after all of them.
-game.install(new CampaignFeature({ dependencies: [ui, units, convoy, objective] }));
+const campaign = new CampaignFeature({ dependencies: [ui, units, convoy, objective] });
+game.install(campaign);
+// Battle preparations: the screen over the map before the first turn, where
+// the run's army is picked, placed and equipped. It reads the run off the
+// campaign feature, moves the cursor with the map's commands, opens its lists
+// through the UI feature and holds the turn feature's opening banner back, so
+// it is installed after all of them.
+game.install(new PrepareFeature({ dependencies: [ui, units, convoy, turn, campaign, roster] }));
 game.start();
 
 // Dev-only handle so the loop can be driven by hand when rAF is throttled

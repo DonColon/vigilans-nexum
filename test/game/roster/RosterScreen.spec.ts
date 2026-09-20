@@ -1,6 +1,6 @@
 import { test, expect, suite } from "vitest";
 import { TextAlign } from "@/core/graphics/styles/text/TextAlign";
-import { ROSTER_COLUMNS, rosterCellX, rosterColumnLayout, rosterHeading, rosterHeight, rosterPanel, rosterWidth } from "@/game/roster/view/RosterScreen";
+import { ROSTER_COLUMNS, rosterCellX, rosterColumnLayout, rosterHeading, rosterHeight, rosterPanel, rosterWidth, STATUS_WIDTH } from "@/game/roster/view/RosterScreen";
 import { UITheme } from "@/game/ui/view/UITheme";
 import { buildUnit, UnitDocument } from "@/game/units/content/UnitSheets";
 import dardanDocument from "@/assets/data/units/dardan.unit.json";
@@ -67,6 +67,19 @@ suite("Roster Screen Test Suite", () => {
 
 		test("An empty army still gets a panel with a line to say so in", () => {
 			expect(rosterHeight(0)).toBe(rosterHeight(1));
+		});
+
+		test("Rows with a status word get a last column for it, and the stat columns make room", () => {
+			expect(rosterWidth(true)).toBe(rosterWidth() + STATUS_WIDTH);
+			expect(rosterPanel({ width: 1920, height: 1080 }, 2, true).getWidth()).toBe(rosterWidth(true));
+
+			const plain = rosterColumnLayout(1000);
+			const withStatus = rosterColumnLayout(1000, true);
+			const last = withStatus[withStatus.length - 1];
+
+			expect(withStatus).toHaveLength(plain.length);
+			expect(last.x + last.width).toBeLessThan(1000);
+			expect(1000 - (last.x + last.width)).toBeCloseTo((STATUS_WIDTH * 1000) / (rosterWidth(true) - 2 * UITheme.padding), 5);
 		});
 
 		test("The columns tile the table edge to edge, in order", () => {

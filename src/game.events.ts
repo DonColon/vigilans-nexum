@@ -426,6 +426,12 @@ export interface RosterClosedEvent extends GameEvent {
 	selectedIndex: number;
 }
 
+/** A row of a selectable army list was confirmed; the list is still up. */
+export interface RosterConfirmedEvent extends GameEvent {
+	unitId: string;
+	selectedIndex: number;
+}
+
 /**
  * A request to end the current phase: the player's from the global command
  * menu's "End Turn", the enemy's from the enemy phase once it has nobody left
@@ -498,6 +504,66 @@ export interface CampaignSavedEvent extends GameEvent {
 	slot: number;
 }
 
+/** The preparations screen went up over a freshly set-up battle; the opening turn is held until `prepare:finished`. */
+export interface PrepareOpenedEvent extends GameEvent {
+	scenario: string;
+}
+
+/** The player pressed confirm on the map while preparing - the cursor's tile. What it means depends on the mode. */
+export interface PrepareConfirmedEvent extends GameEvent {
+	column: number;
+	row: number;
+}
+
+/** The player pressed cancel on the map while preparing. */
+export type PrepareCancelledEvent = GameEvent;
+
+/** A benched unit was put on the map, on a deploy tile. */
+export interface PrepareDeployedEvent extends GameEvent {
+	unitId: string;
+	column: number;
+	row: number;
+}
+
+/** A unit was taken off the map onto the bench; its sheet is on the roster. */
+export interface PrepareBenchedEvent extends GameEvent {
+	unitId: string;
+}
+
+/** A unit was put on another deploy tile - swapping with whoever stood there. */
+export interface PrepareMovedEvent extends GameEvent {
+	unitId: string;
+	column: number;
+	row: number;
+}
+
+/** An entry of one unit's pack was handed to another before the battle. */
+export interface PrepareTradedEvent extends GameEvent {
+	unitId: string;
+	partnerId: string;
+	itemId: string;
+}
+
+/** An entry of a unit's pack was sent to the convoy before the battle. */
+export interface PrepareStoredEvent extends GameEvent {
+	unitId: string;
+	itemId: string;
+}
+
+/** An entry of the convoy was taken into a unit's pack before the battle. */
+export interface PrepareTakenEvent extends GameEvent {
+	unitId: string;
+	itemId: string;
+}
+
+/** The packs opened against the convoy or another unit were closed; the army list is back. */
+export interface PrepareExchangeClosedEvent extends GameEvent {
+	unitId: string;
+}
+
+/** The player chose "Begin": the screen is down and the held `turn:changed` is on its way. */
+export type PrepareFinishedEvent = GameEvent;
+
 declare module "@/core/events/GameEvents" {
 	interface GameEvents {
 		"map:tileConfirmed": TileConfirmedEvent;
@@ -558,6 +624,7 @@ declare module "@/core/events/GameEvents" {
 		"options:closed": OptionsClosedEvent;
 		"roster:requested": RosterRequestedEvent;
 		"roster:closed": RosterClosedEvent;
+		"roster:confirmed": RosterConfirmedEvent;
 		"status:opened": StatusOpenedEvent;
 		"status:closed": StatusClosedEvent;
 		"turn:end": TurnEndEvent;
@@ -573,5 +640,16 @@ declare module "@/core/events/GameEvents" {
 		"campaign:chapterCleared": CampaignChapterClearedEvent;
 		"campaign:finished": CampaignFinishedEvent;
 		"campaign:saved": CampaignSavedEvent;
+		"prepare:opened": PrepareOpenedEvent;
+		"prepare:confirmed": PrepareConfirmedEvent;
+		"prepare:cancelled": PrepareCancelledEvent;
+		"prepare:deployed": PrepareDeployedEvent;
+		"prepare:benched": PrepareBenchedEvent;
+		"prepare:moved": PrepareMovedEvent;
+		"prepare:traded": PrepareTradedEvent;
+		"prepare:stored": PrepareStoredEvent;
+		"prepare:taken": PrepareTakenEvent;
+		"prepare:exchangeClosed": PrepareExchangeClosedEvent;
+		"prepare:finished": PrepareFinishedEvent;
 	}
 }

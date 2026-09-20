@@ -1,0 +1,44 @@
+{
+	"format": "vigilans-unit",
+	"version": 1,
+	"id": "marven-camini",
+	"name": "Marven Camini",
+	"faction": "player",
+	"class": "citizen",
+	"level": 1,
+	"weapon": "bronze-axe",
+	"inventory": ["bronze-axe", "vulnerary"],
+	"stats": {
+		"hp": 21,
+		"mp": 7,
+		"strength": 7,
+		"magic": 0,
+		"dexterity": 4,
+		"speed": 4,
+		"luck": 3,
+		"defense": 7,
+		"resistance": 1
+	},
+	"growths": {
+		"hp": 80,
+		"mp": 15,
+		"strength": 60,
+		"magic": 10,
+		"dexterity": 40,
+		"speed": 35,
+		"luck": 30,
+		"defense": 60,
+		"resistance": 25
+	},
+	"maxStats": {
+		"hp": 60,
+		"mp": 30,
+		"strength": 25,
+		"magic": 25,
+		"dexterity": 28,
+		"speed": 29,
+		"luck": 30,
+		"defense": 24,
+		"resistance": 22
+	}
+}

@@ -16,7 +16,7 @@ import { OPTIONS_ARROW_GAP, OPTIONS_PLATE, OPTIONS_VALUE_WIDTH, optionsPanel } f
 import { OptionsService } from "@/core/options/OptionsService";
 import { drawMenuHighlight, drawPanel, drawText, uiAssetsReady } from "@/game/ui/view/UIPanel";
 import { UITheme } from "@/game/ui/view/UITheme";
-import { menuRowColor } from "@/game/ui/systems/UIRenderSystem";
+import { menuRowColor } from "@/game/ui/view/UIMenuPanel";
 
 /**
  * Draws the options screen: one row per setting, its name on the left and what

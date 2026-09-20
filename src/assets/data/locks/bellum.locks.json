@@ -1,0 +1,21 @@
+{
+	"format": "vigilans-locks",
+	"version": 1,
+	"doors": [
+		{
+			"id": "fort-gate",
+			"column": 12,
+			"row": 9,
+			"openFrame": 551
+		}
+	],
+	"chests": [
+		{
+			"id": "fort-chest",
+			"column": 14,
+			"row": 4,
+			"openFrame": 305,
+			"reward": "energy-drop"
+		}
+	]
+}

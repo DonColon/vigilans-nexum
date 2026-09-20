@@ -69,7 +69,11 @@ The store answers on a promise: `await` a `setTimeout(0)` between the pass that 
 |---|---|---|---|
 | `switch(TitleState)` → `title:opened` | the slot is read (async) | after a tick: `campaign:slotRead` → `MenuState` pushed (id `title`, rows `continue`? / `new`) | - |
 | `ui:menuConfirmed` `{ menu: "title", row }` | run begun / continued, `campaign:chapterStarted`, `switch(ChapterCardState)`; a new run is written (async → `campaign:saved`) | `campaign:chapterStarted` lands | - |
-| card `acknowledged` + run `CampaignSystem` | `switch(MapState)` → `map:ready` `{ scenario }` | battle setup (above) | `turn:changed` |
+| card `acknowledged` + run `CampaignSystem` | `switch(MapState)` → `map:ready` `{ scenario }` | battle setup (above); with a run on, `PrepareFlowSystem` (-3) pushes `PrepareState` + the `prepare` menu and dispatches `prepare:opened` | `turn:changed` - **held** by the prepare flow (priority 10, `stopPropagation`) while the screen is up |
+| `prepare` menu row `begin` | `prepare:finished`, the held `turn:changed` re-dispatched, states popped to the map | the banner goes up | - |
+| `prepare` menu row `units` / pick-list row | pick menu pushed / unit deployed or benched (`prepare:deployed` / `prepare:benched`), menu updated in place | those land | - |
+| map confirm on `PrepareState` + run `PrepareSystem` | `prepare:confirmed` `{ column, row }` | formation: pick up or put down (`prepare:moved`) | those land | - |
+| `prepare` menu row `items` | the `prepare-army` list pushed (top half; the pack panel beside it is drawn off the highlighted row) | confirming a unit swaps its `prepare-items` pack list into the same MenuState; an entry opens `prepare-item-action` (equip / unequip / give / store); `give` opens `prepare-partner` → `prepare:traded` | those land |
 | banner `acknowledged` + run `ObjectiveSystem` | states popped to the map, `objective:acknowledged` `{ outcome }` | victory + run: roster / convoy recorded, `campaign:chapterCleared`, `switch(ChapterCardState)` → `map:closed`; last chapter: `campaign:finished`, `switch(TitleState)`. Otherwise `ObjectiveFlowSystem` → `switch(MapState)` → `map:closed`, `map:ready` | those land |
 
 ## How many passes is `settle()`?

@@ -1,0 +1,44 @@
+{
+	"format": "vigilans-unit",
+	"version": 1,
+	"id": "ivan-grussinskin",
+	"name": "Ivan Grussinskin",
+	"faction": "player",
+	"class": "citizen",
+	"level": 1,
+	"weapon": "bronze-lance",
+	"inventory": ["bronze-lance", "vulnerary"],
+	"stats": {
+		"hp": 20,
+		"mp": 9,
+		"strength": 6,
+		"magic": 1,
+		"dexterity": 5,
+		"speed": 5,
+		"luck": 6,
+		"defense": 5,
+		"resistance": 2
+	},
+	"growths": {
+		"hp": 75,
+		"mp": 25,
+		"strength": 50,
+		"magic": 15,
+		"dexterity": 50,
+		"speed": 45,
+		"luck": 55,
+		"defense": 45,
+		"resistance": 30
+	},
+	"maxStats": {
+		"hp": 60,
+		"mp": 30,
+		"strength": 25,
+		"magic": 25,
+		"dexterity": 28,
+		"speed": 29,
+		"luck": 30,
+		"defense": 24,
+		"resistance": 22
+	}
+}

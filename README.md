@@ -145,6 +145,7 @@ The game is one folder per feature under `src/game`, installed in this order in 
 | `ai` | the enemy phase: enemies moving and fighting on their turn |
 | `objective` | what the battle is won and lost by, the "Objective" readout, the seize marker on the map, the victory / defeat banner, the restart of a lost battle |
 | `campaign` | the title screen and its menu, the chapters in order and their cards, the save slot: the roster, the fallen and the convoy carried from a won chapter into the next |
+| `prepare` | battle preparations over the map before the first turn of a run's chapter: who deploys (the deployment's capacity, deploy tiles and required units), where each stands, what each carries and the convoy |
 
 A new feature is added to this table at its install position - the [Building a feature](#building-a-feature) section says how one is built.
 
@@ -468,15 +469,17 @@ The `Display` creates one canvas per configured layer (`background`, `gameplay`,
 |---|---|---|
 | update | 6 | `ObjectiveSystem` - ahead of the two clocks it must beat to a quiet map |
 | update | 8 | the clocks: `TurnSystem`, `PhaseBannerSystem`, `BattleAnimationSystem`, `ExperienceSystem`, `EnemyPhaseSystem`, `UnitWalkSystem`, `UnitPopSystem` |
-| update | 10 | the screens, polling their commands: `CursorSystem`, `MenuSystem`, `DialogSystem`, `PopupSystem`, `ForecastSystem`, `TradeSystem`, `StaffChoiceSystem`, `TalkChoiceSystem`, `PositionalChoiceSystem`, `OptionsSystem`, `RosterSystem`, `StatusSystem`, `ObjectiveScreenSystem`, `CampaignSystem` |
+| update | 9 | `PrepareSystem` - runs the cursor commands for the preparations screen just ahead of `CursorSystem`, which syncs the cursor's transform |
+| update | 10 | the screens, polling their commands: `CursorSystem`, `MenuSystem`, `DialogSystem`, `PopupSystem`, `ForecastSystem`, `TradeSystem`, `StaffChoiceSystem`, `TalkChoiceSystem`, `PositionalChoiceSystem`, `OptionsSystem`, `RosterSystem`, `StatusSystem`, `ObjectiveScreenSystem`, `CampaignSystem`, `PrepareExchangeSystem` |
 | update | 12 | `PathPreviewSystem` - after the cursor has moved |
 | sync | 0 | `TransformSystem` |
 | render `background` | 10 | `GridRenderSystem` - **clears the layer** |
 | render `background` | 11 | `CampaignRenderSystem` - the title screen and the chapter card, which never share the screen with a map |
-| render `background` | 14, 15, 16, 17, 18, 19 | `TileMapRenderSystem`, `SeizeMarkerRenderSystem`, `ThreatRenderSystem`, `MovementRenderSystem`, `UnitRenderSystem`, `PositionalRenderSystem` (the landing wash, over the tokens) |
+| render `background` | 14, 15, 16, 17, 18, 19 | `TileMapRenderSystem`, `SeizeMarkerRenderSystem` and `PrepareRenderSystem` (15), `ThreatRenderSystem`, `MovementRenderSystem`, `UnitRenderSystem`, `PositionalRenderSystem` (the landing wash, over the tokens) |
 | render `gameplay` | 20 | `CursorRenderSystem` - **clears the layer** |
 | render `ui` | 50 | `UIRenderSystem` - **clears the layer**; menus, textboxes, popups |
-| render `ui` | 51-56 | `UnitCardRenderSystem` (51), `ForecastRenderSystem` and `ExperienceRenderSystem` (52), `TradeRenderSystem` (53), `TileInfoRenderSystem` (54), `TurnRenderSystem` (55), the options, roster, status and objective screens (56) |
+| render `ui` | 51-56 | `UnitCardRenderSystem` (51), `ForecastRenderSystem` and `ExperienceRenderSystem` (52), `TradeRenderSystem` (53), `TileInfoRenderSystem` (54), `TurnRenderSystem` (55), the options, roster, status and objective screens and the preparations' pack panels (56) |
+| render `ui` | 57 | `UIRaisedMenuRenderSystem` - menus that asked to be `raised` over the corner readouts (the preparations' army list) |
 | render `ui` | 58, 59 | `PhaseBannerRenderSystem`, `OutcomeRenderSystem` - the banners, over everything |
 
 Clearing is what takes a box off the screen: the frame after its state is popped, the owning render system clears the layer and nothing draws the box again.
@@ -833,7 +836,7 @@ Every document carries a `format` and a `version`, and the feature that owns it 
 | `catalog/items.json` | `vigilans-items` | `units/content/UnitCatalog.ts` | consumables: healing, stat boosts, keys |
 | `units/*.unit.json` | `vigilans-unit` | `units/content/UnitSheets.ts` | a character: faction, class, level, pack, abilities, base stats, growths, caps |
 | `campaign/campaign.json` | `vigilans-campaign` | `campaign/content/Campaigns.ts` | the chapters in order: each a scenario id, a title per locale and the map it is fought on |
-| `deployments/*.deployment.json` | `vigilans-deployment` | `units/content/Deployments.ts` | the units and where they stand, each enemy's `behaviour`, the `objective` |
+| `deployments/*.deployment.json` | `vigilans-deployment` | `units/content/Deployments.ts` | the units and where they stand (a placement's `id` when one sheet stands there twice, `required` for a unit the preparations keep), each enemy's `behaviour`, the `objective`, the `capacity` and extra deploy `slots` |
 | `maps/*.tilemap.json` | `vigilans-tilemap` | `map/content/TileMaps.ts` | tile layers of frame indices into the tileset |
 | `houses/*.houses.json` | `vigilans-houses` | `visit/content/Houses.ts` | who is in, what they say (per locale), what they hand over |
 | `locks/*.locks.json` | `vigilans-locks` | `locks/content/Locks.ts` | doors and chests, their open frames and rewards |
@@ -841,7 +844,8 @@ Every document carries a `format` and a `version`, and the feature that owns it 
 
 Adding content is therefore a data change:
 
-- **A character** is a `*.unit.json` sheet plus a manifest entry with the id `unit-<id>`; a placement in the deployment puts it on the map.
+- **A character** is a `*.unit.json` sheet plus a manifest entry with the id `unit-<id>`; a placement in the deployment puts it on the map. The eight Vigilant Knights are keyed by their wiki slug (`dardan-niveli`, ...); the short-id sheets (`dardan`, `hasan`, `elira`, `teuta`, `besnik`) are the `skirmish` scenario's fixtures, which the specs are written against.
+- **A generic enemy** (`bandit`, `ruffian`, `poacher`, `bandit-chief`) is one sheet placed as often as needed, each placement with an `id` of its own (`bandit-1`, `bandit-2`) that the unit goes by on the map.
 - **A unit's abilities** are the optional `abilities` list on its sheet - ids such as `swap` or `shove`; the positional feature reads its six off it, anything else is carried along for the features to come.
 - **An enemy's behaviour** is the optional `behaviour` on its placement (`charge` or `hold`; bosses hold by default).
 - **The objective** is the `objective` block of the deployment: `{ "win": "rout" }` or `{ "win": "seize", "column", "row" }`.

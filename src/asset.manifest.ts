@@ -40,7 +40,7 @@ const assetManifest: AssetManifest = {
 				type: "image",
 				subtype: "spritesheet",
 				url: "/ui/divider.png",
-				layout: { type: "grid", tileWidth: 96, tileHeight: 22, columns: 1, rows: 1 }
+				layout: { type: "grid", tileWidth: 96, tileHeight: 18, columns: 1, rows: 1 }
 			},
 			// The border nine-sliced around the selected row of a bare menu (the
 			// title screen's) - see drawMenuFrame in src/game/ui/view/UIPanel.ts.
@@ -101,6 +101,11 @@ const assetManifest: AssetManifest = {
 				url: "/data/deployments/river.deployment.json"
 			},
 			{
+				id: "deployment-bellum",
+				type: "json",
+				url: "/data/deployments/bellum.deployment.json"
+			},
+			{
 				id: "unit-dardan",
 				type: "json",
 				url: "/data/units/dardan.unit.json"
@@ -125,6 +130,68 @@ const assetManifest: AssetManifest = {
 				type: "json",
 				url: "/data/units/teuta.unit.json"
 			},
+			// The eight Vigilant Knights, keyed by their wiki slug, and the generic
+			// enemies a deployment places by instance (see the `id` on a placement).
+			{
+				id: "unit-dardan-niveli",
+				type: "json",
+				url: "/data/units/dardan-niveli.unit.json"
+			},
+			{
+				id: "unit-hasan-eyletmez",
+				type: "json",
+				url: "/data/units/hasan-eyletmez.unit.json"
+			},
+			{
+				id: "unit-maksimo-auditore",
+				type: "json",
+				url: "/data/units/maksimo-auditore.unit.json"
+			},
+			{
+				id: "unit-ivan-grussinskin",
+				type: "json",
+				url: "/data/units/ivan-grussinskin.unit.json"
+			},
+			{
+				id: "unit-leona-kaori",
+				type: "json",
+				url: "/data/units/leona-kaori.unit.json"
+			},
+			{
+				id: "unit-lina-yukari",
+				type: "json",
+				url: "/data/units/lina-yukari.unit.json"
+			},
+			{
+				id: "unit-mikael-flaco",
+				type: "json",
+				url: "/data/units/mikael-flaco.unit.json"
+			},
+			{
+				id: "unit-marven-camini",
+				type: "json",
+				url: "/data/units/marven-camini.unit.json"
+			},
+			{
+				id: "unit-bandit",
+				type: "json",
+				url: "/data/units/bandit.unit.json"
+			},
+			{
+				id: "unit-ruffian",
+				type: "json",
+				url: "/data/units/ruffian.unit.json"
+			},
+			{
+				id: "unit-poacher",
+				type: "json",
+				url: "/data/units/poacher.unit.json"
+			},
+			{
+				id: "unit-bandit-chief",
+				type: "json",
+				url: "/data/units/bandit-chief.unit.json"
+			},
 			// The houses on the map, who is in and what they hand over - see
 			// src/game/visit.
 			{
@@ -136,6 +203,11 @@ const assetManifest: AssetManifest = {
 				id: "houses-river",
 				type: "json",
 				url: "/data/houses/river.houses.json"
+			},
+			{
+				id: "houses-bellum",
+				type: "json",
+				url: "/data/houses/bellum.houses.json"
 			},
 			// The locked doors and chests on the map, and what the chests hold - see
 			// src/game/locks.
@@ -149,6 +221,11 @@ const assetManifest: AssetManifest = {
 				type: "json",
 				url: "/data/locks/river.locks.json"
 			},
+			{
+				id: "locks-bellum",
+				type: "json",
+				url: "/data/locks/bellum.locks.json"
+			},
 			// Who may talk to whom, and the script they speak - see src/game/talk.
 			{
 				id: "conversations-skirmish",
@@ -159,6 +236,11 @@ const assetManifest: AssetManifest = {
 				id: "conversations-river",
 				type: "json",
 				url: "/data/conversations/river.conversations.json"
+			},
+			{
+				id: "conversations-bellum",
+				type: "json",
+				url: "/data/conversations/bellum.conversations.json"
 			},
 			// The tile maps the chapters are fought on, `map-<name>` as the campaign
 			// sheet names them; MapState builds whichever the chapter asks for.

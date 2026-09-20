@@ -12,6 +12,7 @@ import { DialogSystem } from "@/game/ui/systems/DialogSystem";
 import { MenuSystem } from "@/game/ui/systems/MenuSystem";
 import { PopupSystem } from "@/game/ui/systems/PopupSystem";
 import { UIDemoSystem } from "@/game/ui/systems/UIDemoSystem";
+import { UIRaisedMenuRenderSystem } from "@/game/ui/systems/UIRaisedMenuRenderSystem";
 import { UIRenderSystem } from "@/game/ui/systems/UIRenderSystem";
 
 export interface UIFeatureConfig extends GameFeatureConfig {
@@ -52,7 +53,10 @@ export class UIFeature extends GameFeature {
 				{ system: DialogSystem, priority: 10 },
 				{ system: MenuSystem, priority: 10 },
 				{ system: PopupSystem, priority: 10 },
-				{ system: UIRenderSystem, priority: 50 }
+				{ system: UIRenderSystem, priority: 50 },
+				// Raised menus go over the map's corner readouts (54, 55) and under
+				// the banners (58).
+				{ system: UIRaisedMenuRenderSystem, priority: 57 }
 			],
 			...config
 		});

@@ -1,0 +1,122 @@
+{
+	"format": "vigilans-houses",
+	"version": 1,
+	"houses": [
+		{
+			"id": "smithy",
+			"column": 18,
+			"row": 14,
+			"openDoor": 450,
+			"reward": "iron-sword",
+			"pages": [
+				{
+					"speaker": {
+						"de": "Schmiedin",
+						"en": "Smith"
+					},
+					"text": {
+						"de": "Ihr tragt Waffen und kommt trotzdem an meine Tür statt an meine Mauer. Das ist mehr, als die anderen getan haben.",
+						"en": "You carry weapons and still you come to my door instead of my wall. That is more than the others managed."
+					}
+				},
+				{
+					"speaker": {
+						"de": "Schmiedin",
+						"en": "Smith"
+					},
+					"text": {
+						"de": "Nehmt die Klinge hier. Sie lag für einen Hauptmann bereit, der die Furt nie erreicht hat.",
+						"en": "Take this blade. It was laid by for a captain who never reached the ford."
+					}
+				}
+			]
+		},
+		{
+			"id": "ford-cottage",
+			"column": 23,
+			"row": 12,
+			"openDoor": 447,
+			"reward": "concoction",
+			"pages": [
+				{
+					"speaker": {
+						"de": "Alte Frau",
+						"en": "Old Woman"
+					},
+					"text": {
+						"de": "Von meinem Fenster aus sehe ich die Furt. Seit drei Tagen stehen dort Männer mit Äxten und lassen niemanden hinüber.",
+						"en": "I can see the ford from my window. For three days now there have been men with axes on it, letting nobody across."
+					}
+				},
+				{
+					"speaker": {
+						"de": "Alte Frau",
+						"en": "Old Woman"
+					},
+					"text": {
+						"de": "Ich habe keine Waffe für Euch. Aber ich habe einen Trank gebraut, und Ihr werdet ihn nötiger haben als ich.",
+						"en": "I have no weapon for you. But I brewed a draught, and you will have more need of it than I will."
+					}
+				}
+			]
+		},
+		{
+			"id": "millers-house",
+			"column": 27,
+			"row": 17,
+			"openDoor": 447,
+			"reward": "iron-axe",
+			"pages": [
+				{
+					"speaker": {
+						"de": "Müller",
+						"en": "Miller"
+					},
+					"text": {
+						"de": "Mein Junge ist mit der Grenzwache fortgezogen und hat seine Axt hiergelassen. Sie hängt seither über dem Herd.",
+						"en": "My boy went off with the border watch and left his axe behind. It has hung over the hearth ever since."
+					}
+				},
+				{
+					"speaker": {
+						"de": "Müller",
+						"en": "Miller"
+					},
+					"text": {
+						"de": "Nehmt sie mit. Eine Axt über dem Herd hält niemanden von der Tür fern.",
+						"en": "Take it with you. An axe over the hearth keeps nobody from the door."
+					}
+				}
+			]
+		},
+		{
+			"id": "riverside-hut",
+			"column": 23,
+			"row": 21,
+			"openDoor": 447,
+			"reward": "elixir",
+			"pages": [
+				{
+					"speaker": {
+						"de": "Fährmann",
+						"en": "Ferryman"
+					},
+					"text": {
+						"de": "Ich setze über, seit ich laufen kann, und ich habe noch nie so wenig Verkehr gesehen wie in dieser Woche.",
+						"en": "I have worked this crossing since I could walk, and I have never seen a week as quiet as this one."
+					}
+				},
+				{
+					"speaker": {
+						"de": "Fährmann",
+						"en": "Ferryman"
+					},
+					"text": {
+						"de": "Wenn Ihr die Furt öffnet, öffnet Ihr auch mein Geschäft. Hier - das habe ich für den schlimmsten Tag aufgehoben.",
+						"en": "Open the ford and you open my trade with it. Here - I was saving this for the worst day."
+					}
+				}
+			]
+		}
+	]
+}

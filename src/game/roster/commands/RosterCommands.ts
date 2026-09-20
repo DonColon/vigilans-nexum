@@ -55,27 +55,32 @@ export class RosterDownCommand extends MoveRosterCursorCommand {
 }
 
 /**
- * Closes the list. Confirm and cancel both do it: there is nothing to choose
- * here yet, so a player reaching for either should not have to find the other.
- * Like the dialog commands it marks the roster and lets RosterSystem tear it
- * down on the next tick.
+ * Confirm marks the highlighted row confirmed: on a readout that closes the
+ * list - there is nothing to choose, so a player reaching for either button
+ * should not have to find the other - and on a selectable list RosterSystem
+ * reports the row instead. Either way it only marks the roster and lets the
+ * system act on the next tick, like the dialog commands.
  */
-abstract class CloseRosterCommand extends RosterCommand {
-	protected action(_elapsed: number, _frame: number, { roster }: RosterCommandContext): void {
-		const component = roster.getComponent(RosterComponent);
-		component.update({ ...component.read(), closed: true });
-	}
-}
-
-export class RosterConfirmCommand extends CloseRosterCommand {
+export class RosterConfirmCommand extends RosterCommand {
 	constructor() {
 		super(confirmBinding());
 	}
+
+	protected action(_elapsed: number, _frame: number, { roster }: RosterCommandContext): void {
+		const component = roster.getComponent(RosterComponent);
+		component.update({ ...component.read(), confirmed: true });
+	}
 }
 
-export class RosterCancelCommand extends CloseRosterCommand {
+/** Closes the list. */
+export class RosterCancelCommand extends RosterCommand {
 	constructor() {
 		super(cancelBinding());
+	}
+
+	protected action(_elapsed: number, _frame: number, { roster }: RosterCommandContext): void {
+		const component = roster.getComponent(RosterComponent);
+		component.update({ ...component.read(), closed: true });
 	}
 }
 

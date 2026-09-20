@@ -46,6 +46,23 @@ export interface MenuRequest {
 	selectedIndex?: number;
 	/** Panel width in pixels. Defaults to the wide right-hand slot. */
 	width?: number;
+	/**
+	 * Panel height in pixels - for a panel that has to fill a fixed part of the
+	 * screen whatever it lists. Left out, the panel is as tall as its rows.
+	 */
+	height?: number;
+	/**
+	 * Lay the rows out in this many columns, left to right and then down - a
+	 * roster across a wide panel. Up and down then move a column's worth, left
+	 * and right one row along. Defaults to one column: the plain vertical list.
+	 */
+	columns?: number;
+	/**
+	 * Draw the panel above the map's corner readouts (the terrain card, the
+	 * turn counter), which otherwise sit over every menu - for a panel across
+	 * the top of the screen, where they are. Off by default.
+	 */
+	raised?: boolean;
 	/** How the menu is drawn - the framed panel unless said otherwise. See [[MenuStyle]]. */
 	style?: MenuStyle;
 	/**
@@ -177,8 +194,9 @@ export class MenuState extends GameState {
 		const values = items.map((_, index) => request.values?.[index] ?? "");
 		const disabled = items.map((_, index) => request.disabled?.[index] ?? false);
 
+		const columns = Math.max(1, Math.floor(request.columns ?? 1));
 		const viewport = this.display.getViewportDimension();
-		const height = menuHeight(items.length, title.length > 0, style);
+		const height = request.height ?? menuHeight(items.length, title.length > 0, style, columns);
 		const box = request.position
 			? menuAt(viewport, request.position, width, height)
 			: request.anchor
@@ -190,6 +208,9 @@ export class MenuState extends GameState {
 			id: request.id ?? FALLBACK.id,
 			title,
 			width,
+			height,
+			columns,
+			raised: request.raised ?? false,
 			style,
 			items,
 			ids,

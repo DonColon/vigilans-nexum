@@ -1,0 +1,44 @@
+{
+	"format": "vigilans-unit",
+	"version": 1,
+	"id": "ruffian",
+	"name": "Ruffian",
+	"faction": "enemy",
+	"class": "swordsman",
+	"level": 1,
+	"weapon": "bronze-sword",
+	"inventory": ["bronze-sword"],
+	"stats": {
+		"hp": 18,
+		"mp": 0,
+		"strength": 5,
+		"magic": 0,
+		"dexterity": 5,
+		"speed": 6,
+		"luck": 2,
+		"defense": 2,
+		"resistance": 1
+	},
+	"growths": {
+		"hp": 55,
+		"mp": 0,
+		"strength": 40,
+		"magic": 5,
+		"dexterity": 45,
+		"speed": 45,
+		"luck": 20,
+		"defense": 25,
+		"resistance": 15
+	},
+	"maxStats": {
+		"hp": 60,
+		"mp": 30,
+		"strength": 25,
+		"magic": 18,
+		"dexterity": 28,
+		"speed": 29,
+		"luck": 30,
+		"defense": 24,
+		"resistance": 22
+	}
+}

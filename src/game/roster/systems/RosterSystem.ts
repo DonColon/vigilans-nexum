@@ -10,8 +10,10 @@ import { RosterState } from "@/game/roster/states/RosterState";
 /**
  * Drives the open army list: it runs the commands the RosterState allows and,
  * once one of them has marked the list closed, reports it and pops the state.
- * There is nothing to age - the table shows all of itself at once - so this is
- * the whole of it.
+ * On a selectable list a confirmed row is reported as `roster:confirmed` and
+ * the list stays up for whoever opened it to act on; on a readout confirm
+ * closes it like cancel. There is nothing to age - the table shows all of
+ * itself at once - so this is the whole of it.
  *
  * One list at a time; the army the player is looking at is the only one there is.
  */
@@ -37,9 +39,20 @@ export class RosterSystem extends UpdateSystem {
 			return;
 		}
 
-		const data = entity.getComponent(RosterComponent).read();
+		const component = entity.getComponent(RosterComponent);
+		const data = component.read();
 
-		if (data.closed) {
+		if (data.confirmed) {
+			if (data.selectable) {
+				component.update({ ...data, confirmed: false });
+				this.eventBus.dispatch("roster:confirmed", { unitId: data.unitIds[data.selectedIndex] ?? "", selectedIndex: data.selectedIndex });
+				return;
+			}
+
+			component.update({ ...data, confirmed: false, closed: true });
+		}
+
+		if (component.read().closed) {
 			// Reported before the pop takes the entity with it, and carrying the row,
 			// because the event is delivered a tick later - by then there is no list
 			// left to ask.

@@ -10,11 +10,12 @@ import { TextAlign, TextAlignType } from "@/core/graphics/styles/text/TextAlign"
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { DialogComponent, DialogData } from "@/game/ui/components/DialogComponent";
-import { MenuComponent, MenuData, MenuStyle } from "@/game/ui/components/MenuComponent";
+import { MenuComponent } from "@/game/ui/components/MenuComponent";
 import { PopupComponent, PopupData } from "@/game/ui/components/PopupComponent";
-import { BADGE_DIAMETER, drawBadge, drawDivider, drawMenuFrame, drawMenuHighlight, drawPanel, drawText, uiAssetsReady } from "@/game/ui/view/UIPanel";
+import { drawPanel, drawText, uiAssetsReady } from "@/game/ui/view/UIPanel";
+import { drawMenu } from "@/game/ui/view/UIMenuPanel";
 import { countWords, revealedWordCount, splitWords, wrapText } from "@/game/ui/view/TextReveal";
-import { BARE_ROW_GAP, bareRowPitch, dialogBox, menuHeight, popupBox } from "@/game/ui/view/UILayout";
+import { dialogBox, popupBox } from "@/game/ui/view/UILayout";
 import { UITheme } from "@/game/ui/view/UITheme";
 import { textRevealDelay } from "@/game/options/GameSettings";
 
@@ -22,7 +23,8 @@ import { textRevealDelay } from "@/game/options/GameSettings";
  * Draws the UI layer: the menu panel first, the textbox over it, both framed
  * with the tinted Kenney art. Owns the layer, so it clears it every frame -
  * when nothing is open that clear is all it does, which is what wipes a box off
- * the screen the frame after its state is popped.
+ * the screen the frame after its state is popped. A menu that asked to be
+ * raised over the map's corner readouts is left to [[UIRaisedMenuRenderSystem]].
  *
  * Dialog text is always laid out in full; the words that have not been revealed
  * yet are drawn at a near-zero alpha instead of being left out, so the box never
@@ -66,9 +68,14 @@ export class UIRenderSystem extends RenderSystem {
 		this.blink += elapsed;
 
 		// Oldest first, so a submenu (created later) lands on top of its base menu.
+		// A raised menu is UIRaisedMenuRenderSystem's, later in the frame.
 		for (const menu of menus) {
-			const position = menu.getComponent(TransformComponent).read();
-			this.renderMenu(graphics, menu.getComponent(MenuComponent).read(), position.x, position.y);
+			const data = menu.getComponent(MenuComponent).read();
+
+			if (!data.raised) {
+				const position = menu.getComponent(TransformComponent).read();
+				drawMenu(graphics, this.assetStorage, data, position.x, position.y);
+			}
 		}
 
 		if (dialog !== null) {
@@ -167,100 +174,8 @@ export class UIRenderSystem extends RenderSystem {
 		}
 	}
 
-	private renderMenu(graphics: Graphics, data: MenuData, x: number, y: number): void {
-		if (data.style === MenuStyle.BARE) {
-			this.renderBareMenu(graphics, data, x, y);
-			return;
-		}
-
-		const hasTitle = data.title.length > 0;
-		const box = new Rectangle(x, y, data.width, menuHeight(data.items.length, hasTitle));
-
-		drawPanel(graphics, this.assetStorage, box);
-
-		let slotTop = y + UITheme.padding;
-
-		if (hasTitle) {
-			this.label(graphics, data.title, x + box.getWidth() / 2, slotTop + UITheme.lineHeight / 2, UITheme.name, UITheme.menuTitle, TextAlign.CENTER);
-			slotTop += UITheme.lineHeight;
-			drawDivider(graphics, this.assetStorage, x + UITheme.padding, slotTop, box.getWidth() - 2 * UITheme.padding);
-			slotTop += UITheme.padding / 2;
-		}
-
-		// The bracket cursor sits a couple of pixels in from the panel keyline so
-		// its arms never touch the frame.
-		const inset = UITheme.nineSlice.corner / 2 + 2;
-
-		// A left gutter for the badge discs, reserved for every row only when some
-		// row actually carries one, so a plain menu is unchanged.
-		const badged = data.badges.some((badge) => badge.length > 0);
-		const textX = x + UITheme.padding + (badged ? BADGE_DIAMETER + 8 : 0);
-
-		for (const [index, item] of data.items.entries()) {
-			const rowTop = slotTop + index * UITheme.lineHeight;
-			const centreY = rowTop + UITheme.lineHeight / 2;
-
-			if (index === data.selectedIndex) {
-				const row = new Rectangle(x + inset, rowTop + 1, box.getWidth() - 2 * inset, UITheme.lineHeight - 2);
-				drawMenuHighlight(graphics, row);
-			}
-
-			const badge = data.badges[index] ?? "";
-
-			if (badge.length > 0) {
-				drawBadge(graphics, badge, x + UITheme.padding + BADGE_DIAMETER / 2, centreY);
-			}
-
-			const color = menuRowColor(index === data.selectedIndex, data.disabled[index] ?? false);
-			this.label(graphics, item, textX, centreY, UITheme.menu, color, TextAlign.LEFT);
-
-			const value = data.values[index] ?? "";
-
-			if (value.length > 0) {
-				this.label(graphics, value, x + box.getWidth() - UITheme.padding, centreY, UITheme.menu, color, TextAlign.RIGHT);
-			}
-		}
-	}
-
-	/**
-	 * A bare menu: no panel, every row centred on the menu's width with air
-	 * between them, and the selected one framed by the select border - Kenney's
-	 * sample title menu. Badges and values have no place here and are not drawn.
-	 */
-	private renderBareMenu(graphics: Graphics, data: MenuData, x: number, y: number): void {
-		const centreX = x + data.width / 2;
-		let slotTop = y;
-
-		if (data.title.length > 0) {
-			this.label(graphics, data.title, centreX, slotTop + UITheme.lineHeight / 2, UITheme.name, UITheme.menuTitle, TextAlign.CENTER);
-			slotTop += UITheme.lineHeight + BARE_ROW_GAP;
-		}
-
-		for (const [index, item] of data.items.entries()) {
-			const rowTop = slotTop + index * bareRowPitch();
-			const centreY = rowTop + UITheme.lineHeight / 2;
-			const selected = index === data.selectedIndex;
-
-			if (selected) {
-				// The frame encloses the row's line height; its corner squares reach into the gap.
-				drawMenuFrame(graphics, this.assetStorage, new Rectangle(x, rowTop, data.width, UITheme.lineHeight));
-			}
-
-			this.label(graphics, item, centreX, centreY, UITheme.menu, menuRowColor(selected, data.disabled[index] ?? false), TextAlign.CENTER);
-		}
-	}
-
 	/** A line of text on its optical centre - see `drawText` in UIPanel. */
 	private label(graphics: Graphics, value: string, x: number, centreY: number, font: FontStyleSettings, color: Color, align: TextAlignType): void {
 		drawText(graphics, value, x, centreY, { font, color, align });
 	}
-}
-
-/** The four states a menu row can be drawn in: live or greyed out, under the cursor or not. */
-export function menuRowColor(selected: boolean, disabled: boolean): Color {
-	if (disabled) {
-		return selected ? UITheme.menuItemDisabledSelected : UITheme.menuItemDisabled;
-	}
-
-	return selected ? UITheme.menuItemSelected : UITheme.menuItem;
 }

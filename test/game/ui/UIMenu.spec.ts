@@ -14,10 +14,11 @@ import { InputState } from "@/core/input/InputState";
 import { KeyboardInput } from "@/core/input/keyboard/KeyboardInput";
 import { ServiceRegistry } from "@/core/service/ServiceRegistry";
 import { MenuConfirmedEvent, MenuCancelledEvent } from "@/game.events";
-import { MenuCancelCommand, MenuConfirmCommand, MenuDownCommand, MenuUpCommand, menuCommands } from "@/game/ui/commands/MenuCommands";
+import { MenuCancelCommand, MenuConfirmCommand, MenuDownCommand, MenuLeftCommand, MenuRightCommand, MenuUpCommand, menuCommands, steppedHighlight } from "@/game/ui/commands/MenuCommands";
 import { MenuComponent } from "@/game/ui/components/MenuComponent";
 import { MenuState } from "@/game/ui/states/MenuState";
 import { MenuSystem } from "@/game/ui/systems/MenuSystem";
+import { menuHeight } from "@/game/ui/view/UILayout";
 
 /**
  * Covers the menu the same way MapCursor.spec covers the cursor: the system
@@ -127,6 +128,65 @@ suite("UI Menu Test Suite", () => {
 		press(MenuUpCommand);
 		system.execute(16, 0);
 		expect(data().selectedIndex).toBe(3);
+	});
+
+	test("Left and right do nothing in a one-column menu", () => {
+		press(MenuRightCommand);
+		system.execute(16, 0);
+		expect(data().selectedIndex).toBe(0);
+
+		release();
+		press(MenuLeftCommand);
+		system.execute(16, 1);
+		expect(data().selectedIndex).toBe(0);
+	});
+
+	test("A menu laid out in columns is as tall as its rows, steps down a column's worth and along a row with left and right", () => {
+		state.updateMenu({ id: "grid", title: "Army", items: ["a", "b", "c", "d", "e"], columns: 2 });
+		menu = state.getMenu() as Entity;
+		system.dispose();
+		system = new MenuSystem(0).initialize();
+
+		expect(data()).toMatchObject({ columns: 2, selectedIndex: 0 });
+		expect(data().height).toBe(menuHeight(3, true));
+
+		press(MenuDownCommand);
+		system.execute(16, 0);
+		expect(data().selectedIndex).toBe(2);
+		release();
+
+		press(MenuRightCommand);
+		system.execute(16, 1);
+		expect(data().selectedIndex).toBe(3);
+		release();
+
+		press(MenuDownCommand);
+		system.execute(16, 2);
+		expect(data().selectedIndex).toBe(1); // wraps to the top of its column
+		release();
+
+		press(MenuLeftCommand);
+		system.execute(16, 3);
+		expect(data().selectedIndex).toBe(0);
+		release();
+
+		press(MenuUpCommand);
+		system.execute(16, 4);
+		expect(data().selectedIndex).toBe(4); // the bottom of the first column
+	});
+
+	test("The highlight steps through a grid the way the eye reads it, and a fixed height is kept", () => {
+		// Two columns, five rows: a b / c d / e
+		expect(steppedHighlight(4, 5, 2, "down")).toBe(0);
+		expect(steppedHighlight(3, 5, 2, "down")).toBe(1);
+		expect(steppedHighlight(1, 5, 2, "up")).toBe(3);
+		expect(steppedHighlight(0, 5, 2, "left")).toBe(4);
+		expect(steppedHighlight(4, 5, 2, "right")).toBe(0);
+		expect(steppedHighlight(2, 3, 1, "down")).toBe(0);
+		expect(steppedHighlight(0, 0, 2, "down")).toBe(0);
+
+		state.updateMenu({ id: "tall", items: ["a"], height: 400 });
+		expect((state.getMenu() as Entity).getComponent(MenuComponent).read()).toMatchObject({ height: 400, columns: 1 });
 	});
 
 	test("Confirm reports the highlighted row and pops the menu", () => {

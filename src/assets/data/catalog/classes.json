@@ -25,6 +25,30 @@
 			"movement": 5,
 			"ability": "Magic +2",
 			"promotesTo": ["bishop", "valkyrie"]
+		},
+		"citizen": {
+			"name": "Citizen",
+			"tier": "base",
+			"weaponTypes": ["sword", "lance", "axe", "bow", "staff"],
+			"movement": 4,
+			"ability": "Aptitude",
+			"promotesTo": ["swordsman", "lancer", "axe-fighter", "archer", "cleric"]
+		},
+		"lancer": {
+			"name": "Lancer",
+			"tier": "base",
+			"weaponTypes": ["lance"],
+			"movement": 5,
+			"ability": "Defense +2",
+			"promotesTo": ["soldier", "lance-cavalier"]
+		},
+		"archer": {
+			"name": "Archer",
+			"tier": "base",
+			"weaponTypes": ["bow"],
+			"movement": 5,
+			"ability": "Hit Rate +10",
+			"promotesTo": ["sniper", "bow-cavalier"]
 		}
 	}
 }

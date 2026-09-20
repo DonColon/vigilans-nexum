@@ -35,8 +35,9 @@ import { MenuState } from "@/game/ui/states/MenuState";
  *    from there.
  *  - On `map:ready`, after every feature has set the battle up, the run is
  *    laid over it: a veteran gets the sheet it ended the last chapter with, a
- *    unit that has fallen for good is taken off the map, the convoy is refilled.
- *    Every attempt at a chapter starts from the same record.
+ *    unit that has fallen for good is taken off the map, the convoy is
+ *    refilled, and whoever the chapter deployed off a sheet is enrolled. Every
+ *    attempt at a chapter starts from the same record.
  *  - A player unit's `unit:died` is noted as the battle's casualty - before the
  *    combat feature (0) takes the unit off the map, hence the higher priority.
  *  - `objective:acknowledged` on a victory is claimed ahead of the objective
@@ -215,6 +216,9 @@ export class CampaignFlowSystem extends ReactiveSystem {
 		if (convoy !== null) {
 			convoy.getComponent(ConvoyComponent).update({ items: data.convoy.map((entry) => ({ ...entry })) });
 		}
+
+		// New joiners are part of the army from here on - benched later, they are still carried.
+		component.update(CampaignComponent.enrolled(component.read(), rosterOf(unitsInWorld(this.world))));
 	}
 
 	private noteCasualty(event: UnitDiedEvent): void {

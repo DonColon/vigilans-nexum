@@ -50,6 +50,13 @@ export const UITheme = {
 		corner: 16
 	},
 
+	/**
+	 * How far the flourish at the right end of the divider art reaches, in
+	 * source pixels. It is drawn whole; only the plain rule left of it is
+	 * stretched, so the ornament never smears.
+	 */
+	dividerFlourish: 20,
+
 	/** Filled body of a panel, drawn from `panel`. Kept a touch translucent so the map still reads behind it. */
 	panelFill: Color.hex("#1b2138f2"),
 	/** Ornate ring drawn from `frame` over the body. */

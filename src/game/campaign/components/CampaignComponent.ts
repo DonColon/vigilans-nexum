@@ -11,9 +11,10 @@ export interface CampaignData extends JsonSchema {
 	/** Id of the chapter the run is on - the scenario the next battle is built from. */
 	chapter: string;
 	/**
-	 * The player's units as they stood when the chapter began: the sheets a
-	 * veteran is deployed with instead of the one on disk. A unit the chapter's
-	 * deployment names that is not here is new and comes off its sheet.
+	 * The player's army as it stood when the chapter began: the sheets a
+	 * veteran is deployed with instead of the one on disk, and the units the
+	 * chapter leaves on the bench. A unit the chapter's deployment names that
+	 * is not here is new, comes off its sheet, and is enrolled once deployed.
 	 */
 	roster: UnitData[];
 	/** Ids of the player's units that have fallen for good - the deployment may name them, the map will not hold them. */
@@ -58,20 +59,44 @@ export class CampaignComponent extends Component<CampaignData> {
 	}
 
 	/**
-	 * The chapter was won: the survivors become the roster the next one deploys,
-	 * the battle's casualties join the fallen for good, the convoy is kept, and
-	 * the run moves on to `next`.
+	 * The chapter was won: the survivors, and whoever sat the battle out on the
+	 * bench, become the roster the next one deploys; the battle's casualties
+	 * join the fallen for good; the convoy is kept; the run moves on to `next`.
 	 */
-	public static cleared(data: CampaignData, roster: UnitData[], convoy: InventoryEntry[], next: string, savedOn: string): CampaignData {
+	public static cleared(data: CampaignData, survivors: UnitData[], convoy: InventoryEntry[], next: string, savedOn: string): CampaignData {
+		const onMap = new Set(survivors.map((unit) => unit.id));
+		const benched = data.roster.filter((unit) => !onMap.has(unit.id) && !data.casualties.includes(unit.id));
+
 		return {
 			...data,
 			chapter: next,
-			roster: roster.map((unit) => ({ ...unit })),
+			roster: [...survivors, ...benched].map((unit) => ({ ...unit })),
 			fallen: [...data.fallen, ...data.casualties.filter((id) => !data.fallen.includes(id))],
 			convoy: convoy.map((entry) => ({ ...entry })),
 			casualties: [],
 			savedOn
 		};
+	}
+
+	/** Units the chapter deployed off their sheets join the roster; a unit already in it is left as it is. */
+	public static enrolled(data: CampaignData, units: UnitData[]): CampaignData {
+		const known = new Set(data.roster.map((unit) => unit.id));
+		const joining = units.filter((unit) => !known.has(unit.id)).map((unit) => ({ ...unit }));
+
+		return joining.length === 0 ? data : { ...data, roster: [...data.roster, ...joining] };
+	}
+
+	/** The roster with this unit's entry replaced - or added - by `unit`: what a benched unit takes with it. */
+	public static withRosterEntry(data: CampaignData, unit: UnitData): CampaignData {
+		const index = data.roster.findIndex((entry) => entry.id === unit.id);
+		const roster = index < 0 ? [...data.roster, { ...unit }] : data.roster.map((entry, at) => (at === index ? { ...unit } : entry));
+
+		return { ...data, roster };
+	}
+
+	/** Roster entries that are not on the map: the bench the preparations screen deploys from. */
+	public static benched(data: CampaignData, onMap: readonly string[]): UnitData[] {
+		return data.roster.filter((unit) => !onMap.includes(unit.id) && !data.fallen.includes(unit.id));
 	}
 
 	/** The saved sheet of a veteran, or null when this unit is new to the run. */

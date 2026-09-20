@@ -42,7 +42,7 @@ import {
 import { StatusSystem } from "@/game/status/systems/StatusSystem";
 import { BADGE_DIAMETER, drawBadge, drawPanel, drawText, uiAssetsReady } from "@/game/ui/view/UIPanel";
 import { UITheme } from "@/game/ui/view/UITheme";
-import { menuRowColor } from "@/game/ui/systems/UIRenderSystem";
+import { menuRowColor } from "@/game/ui/view/UIMenuPanel";
 import { UnitComponent, InventoryEntry, UnitData } from "@/game/units/components/UnitComponent";
 import { drawUnitToken } from "@/game/units/view/UnitToken";
 import { unitById, tileOf } from "@/game/units/rules/UnitLookup";

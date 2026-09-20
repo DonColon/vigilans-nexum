@@ -62,9 +62,12 @@ export const ROSTER_COLUMNS: readonly RosterColumn[] = [
 	{ labelKey: "roster.movement", width: 80, align: TextAlign.CENTER, value: (unit) => String(unit.stats.movement) }
 ];
 
-/** Width the table needs: its columns plus the panel's own padding. */
-export function rosterWidth(): number {
-	return ROSTER_COLUMNS.reduce((total, column) => total + column.width, 0) + 2 * UITheme.padding;
+/** Width of the last column when the rows carry a status word ("On map", "Bench", "Required"). */
+export const STATUS_WIDTH = 150;
+
+/** Width the table needs: its columns - and the status column, when the rows have one - plus the panel's own padding. */
+export function rosterWidth(withStatus = false): number {
+	return ROSTER_COLUMNS.reduce((total, column) => total + column.width, 0) + (withStatus ? STATUS_WIDTH : 0) + 2 * UITheme.padding;
 }
 
 /** Height the panel needs for its title, its heading row and `rowCount` units. */
@@ -78,8 +81,8 @@ export function rosterHeight(rowCount: number): number {
  * running off a screen too small to hold every column - the columns themselves
  * then share what is left, which is the renderer's job.
  */
-export function rosterPanel(viewport: Dimension, rowCount: number): Rectangle {
-	const width = Math.min(rosterWidth(), viewport.width - 2 * UITheme.padding);
+export function rosterPanel(viewport: Dimension, rowCount: number, withStatus = false): Rectangle {
+	const width = Math.min(rosterWidth(withStatus), viewport.width - 2 * UITheme.padding);
 	const height = rosterHeight(rowCount);
 
 	return new Rectangle(Math.round((viewport.width - width) / 2), Math.round((viewport.height - height) / 2), width, height);
@@ -89,9 +92,11 @@ export function rosterPanel(viewport: Dimension, rowCount: number): Rectangle {
  * Left edge of every column, relative to the table's own left edge, scaled to
  * whatever width the panel actually got. Returned alongside each column so a
  * renderer walks one list rather than keeping a running total of its own.
+ * With a status column, the stat columns share what is left of the width
+ * after it; the status column itself is the last [[STATUS_WIDTH]] scaled alike.
  */
-export function rosterColumnLayout(tableWidth: number): { column: RosterColumn; x: number; width: number }[] {
-	const scale = tableWidth / ROSTER_COLUMNS.reduce((total, column) => total + column.width, 0);
+export function rosterColumnLayout(tableWidth: number, withStatus = false): { column: RosterColumn; x: number; width: number }[] {
+	const scale = tableWidth / (ROSTER_COLUMNS.reduce((total, column) => total + column.width, 0) + (withStatus ? STATUS_WIDTH : 0));
 	const layout: { column: RosterColumn; x: number; width: number }[] = [];
 
 	let x = 0;

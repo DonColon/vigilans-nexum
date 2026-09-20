@@ -123,6 +123,43 @@
 			"maxRange": 1,
 			"uses": 20,
 			"experience": 12
+		},
+		"bronze-lance": {
+			"name": "Bronze Lance",
+			"type": "lance",
+			"rank": "E",
+			"might": 4,
+			"hit": 85,
+			"critical": 0,
+			"weight": 6,
+			"minRange": 1,
+			"maxRange": 1,
+			"uses": 45
+		},
+		"bronze-bow": {
+			"name": "Bronze Bow",
+			"type": "bow",
+			"rank": "E",
+			"might": 4,
+			"hit": 90,
+			"critical": 0,
+			"weight": 5,
+			"minRange": 2,
+			"maxRange": 2,
+			"uses": 45
+		},
+		"soothe": {
+			"name": "Soothe",
+			"type": "staff",
+			"rank": "E",
+			"might": 6,
+			"hit": 100,
+			"critical": 0,
+			"weight": 1,
+			"minRange": 1,
+			"maxRange": 1,
+			"uses": 15,
+			"experience": 11
 		}
 	}
 }

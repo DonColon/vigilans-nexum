@@ -22,6 +22,19 @@ export interface MenuData extends JsonSchema {
 	title: string;
 	/** Panel width in pixels - the state and the renderer read it from here so they agree. */
 	width: number;
+	/** Panel height in pixels: as tall as the rows need, unless the request fixed it. */
+	height: number;
+	/**
+	 * How many columns the rows are laid out in, left to right and then down -
+	 * 1 for the plain vertical list every in-battle menu is. Up and down move a
+	 * column's worth, left and right one row along.
+	 */
+	columns: number;
+	/**
+	 * Drawn above the map's corner readouts rather than under them - for a
+	 * panel that spans the top of the screen, where those readouts sit.
+	 */
+	raised: boolean;
 	/** How the menu is drawn - see [[MenuStyle]]. */
 	style: MenuStyle;
 	/** The rows, top to bottom. */

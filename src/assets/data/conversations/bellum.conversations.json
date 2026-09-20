@@ -1,0 +1,33 @@
+{
+	"format": "vigilans-conversations",
+	"version": 1,
+	"conversations": [
+		{
+			"id": "dardan-hasan",
+			"between": ["dardan-niveli", "hasan-eyletmez"],
+			"pages": [
+				{
+					"speaker": "hasan-eyletmez",
+					"text": {
+						"de": "Vier gegen zwei. Ich hab schon schlechtere Quoten gesehen - auf dem Marktplatz, mit einem Deckel als Schild.",
+						"en": "Four against two. I have seen worse odds - on the market square, with a lid for a shield."
+					}
+				},
+				{
+					"speaker": "dardan-niveli",
+					"text": {
+						"de": "Damals hat niemand geblutet. Bleib in meiner Nähe, Hasan. Wir gehen zusammen durch diese Tür.",
+						"en": "Nobody bled back then. Stay close, Hasan. We go through this door together."
+					}
+				},
+				{
+					"speaker": "hasan-eyletmez",
+					"text": {
+						"de": "Du zählst die Türen, ich tret sie ein. War schon immer so.",
+						"en": "You count the doors, I kick them in. Always has been."
+					}
+				}
+			]
+		}
+	]
+}

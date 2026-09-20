@@ -2,12 +2,74 @@
 	"format": "vigilans-deployment",
 	"version": 1,
 	"map": "river",
-	"objective": { "win": "seize", "column": 16, "row": 4 },
+	"objective": {
+		"win": "rout"
+	},
+	"capacity": 3,
+	"slots": [
+		{
+			"column": 2,
+			"row": 8
+		},
+		{
+			"column": 4,
+			"row": 6
+		}
+	],
 	"units": [
-		{ "unit": "dardan", "column": 3, "row": 7 },
-		{ "unit": "elira", "column": 4, "row": 8 },
-		{ "unit": "teuta", "column": 3, "row": 9 },
-		{ "unit": "hasan", "column": 16, "row": 5, "behaviour": "hold" },
-		{ "unit": "besnik", "column": 14, "row": 8 }
+		{
+			"unit": "dardan-niveli",
+			"column": 3,
+			"row": 7,
+			"required": true
+		},
+		{
+			"unit": "hasan-eyletmez",
+			"column": 4,
+			"row": 8
+		},
+		{
+			"unit": "maksimo-auditore",
+			"column": 3,
+			"row": 9
+		},
+		{
+			"unit": "bandit-chief",
+			"id": "bandit-chief",
+			"column": 16,
+			"row": 4,
+			"behaviour": "hold"
+		},
+		{
+			"unit": "ruffian",
+			"id": "ruffian-1",
+			"column": 16,
+			"row": 5,
+			"behaviour": "hold"
+		},
+		{
+			"unit": "poacher",
+			"id": "poacher-1",
+			"column": 14,
+			"row": 3
+		},
+		{
+			"unit": "bandit",
+			"id": "bandit-1",
+			"column": 14,
+			"row": 8
+		},
+		{
+			"unit": "bandit",
+			"id": "bandit-2",
+			"column": 13,
+			"row": 6
+		},
+		{
+			"unit": "ruffian",
+			"id": "ruffian-2",
+			"column": 15,
+			"row": 10
+		}
 	]
 }

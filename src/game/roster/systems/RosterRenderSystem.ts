@@ -13,7 +13,7 @@ import { RosterComponent, RosterData } from "@/game/roster/components/RosterComp
 import { ROSTER_PLATE, ROSTER_RULE, rosterCellX, rosterColumnLayout, rosterHeading, rosterPanel } from "@/game/roster/view/RosterScreen";
 import { drawMenuHighlight, drawPanel, drawText, uiAssetsReady } from "@/game/ui/view/UIPanel";
 import { UITheme } from "@/game/ui/view/UITheme";
-import { menuRowColor } from "@/game/ui/systems/UIRenderSystem";
+import { menuRowColor } from "@/game/ui/view/UIMenuPanel";
 import { UnitComponent, UnitData } from "@/game/units/components/UnitComponent";
 import { unitById } from "@/game/units/rules/UnitLookup";
 
@@ -25,7 +25,10 @@ import { unitById } from "@/game/units/rules/UnitLookup";
  *
  * A spent unit is greyed out with the menu's own disabled colour - the same
  * signal its token carries on the map, so the list agrees with what is on the
- * board.
+ * board; so is a row the list says nothing can be done with. Rows that carry
+ * a status word ("On map", "Bench", "Required" - the preparations' deploy
+ * list) get it in a last column, and a listed unit that is not on the map is
+ * drawn from the sheet the list carries for it.
  *
  * Runs after UIRenderSystem (which owns and clears the "ui" layer) and after the
  * corner HUDs, so the list covers them the way a full screen should.
@@ -55,9 +58,10 @@ export class RosterRenderSystem extends RenderSystem {
 
 		const data = entity.getComponent(RosterComponent).read();
 		const units = this.units(data);
+		const withStatus = data.status.some((status) => status.length > 0);
 
 		const graphics = this.display.getLayer("ui");
-		const panel = rosterPanel(this.display.getViewportDimension(), units.length);
+		const panel = rosterPanel(this.display.getViewportDimension(), units.length, withStatus);
 
 		// Solid plate first, the ornate frame over it - see ROSTER_PLATE.
 		graphics.fillColor(ROSTER_PLATE).fillRectangle(panel);
@@ -66,7 +70,7 @@ export class RosterRenderSystem extends RenderSystem {
 		const { x, y } = panel.getPosition();
 		let rowTop = y + UITheme.padding;
 
-		this.label(graphics, i18n("roster.title"), x + panel.getWidth() / 2, rowTop + UITheme.lineHeight / 2, UITheme.menuTitle, TextAlign.CENTER, UITheme.name);
+		this.label(graphics, data.title.length > 0 ? data.title : i18n("roster.title"), x + panel.getWidth() / 2, rowTop + UITheme.lineHeight / 2, UITheme.menuTitle, TextAlign.CENTER, UITheme.name);
 		rowTop += UITheme.lineHeight;
 
 		// No flourish under the title: the divider art stretches its ornament across
@@ -75,7 +79,12 @@ export class RosterRenderSystem extends RenderSystem {
 		rowTop += UITheme.padding / 2;
 
 		const tableX = x + UITheme.padding;
-		const columns = rosterColumnLayout(panel.getWidth() - 2 * UITheme.padding);
+		const tableWidth = panel.getWidth() - 2 * UITheme.padding;
+		const columns = rosterColumnLayout(tableWidth, withStatus);
+		// The status column takes whatever the stat columns left at the right.
+		const last = columns[columns.length - 1];
+		const statusX = tableX + last.x + last.width;
+		const statusWidth = tableX + tableWidth - statusX;
 
 		for (const { column, x: offset, width } of columns) {
 			const cellX = rosterCellX(tableX + offset, width, column.align);
@@ -105,23 +114,30 @@ export class RosterRenderSystem extends RenderSystem {
 				drawMenuHighlight(graphics, new Rectangle(x + inset, top + 1, panel.getWidth() - 2 * inset, UITheme.lineHeight - 2));
 			}
 
-			const color = menuRowColor(index === data.selectedIndex, unit.hasMoved);
+			const color = menuRowColor(index === data.selectedIndex, unit.hasMoved || (data.disabled[index] ?? false));
 
 			for (const { column, x: offset, width } of columns) {
 				const cellX = rosterCellX(tableX + offset, width, column.align);
 				this.label(graphics, column.value(unit), cellX, centreY, color, column.align, UITheme.subheading);
 			}
+
+			const status = data.status[index] ?? "";
+
+			if (status.length > 0) {
+				this.label(graphics, status, rosterCellX(statusX, statusWidth, TextAlign.RIGHT), centreY, color, TextAlign.RIGHT, UITheme.subheading);
+			}
 		}
 	}
 
-	/** The sheets of the listed units, in the order the roster named them, skipping any that have left the map. */
+	/**
+	 * The sheets of the listed units, in the order the roster named them: live
+	 * off the map, else the sheet the list carries for a benched unit, skipping
+	 * any that is neither.
+	 */
 	private units(data: RosterData): UnitData[] {
 		const onMap = this.queries.units.getResult();
 
-		return data.unitIds
-			.map((id) => unitById(onMap, id))
-			.filter((unit): unit is NonNullable<typeof unit> => unit !== null)
-			.map((unit) => unit.getComponent(UnitComponent).read());
+		return data.unitIds.map((id) => unitById(onMap, id)?.getComponent(UnitComponent).read() ?? RosterComponent.benchedSheet(data, id)).filter((unit): unit is UnitData => unit !== null);
 	}
 
 	/** A line of text on its optical centre - see `drawText` in UIPanel. */

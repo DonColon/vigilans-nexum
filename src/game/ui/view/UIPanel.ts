@@ -7,7 +7,7 @@ import { TextBaseline } from "@/core/graphics/styles/text/TextBaseline";
 import { Circle } from "@/core/math/geometry/Circle";
 import { Line } from "@/core/math/geometry/Line";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
-import { drawNineSlice, NineSlice } from "@/game/ui/view/NineSlice";
+import { drawNineSlice, NineSlice, tint } from "@/game/ui/view/NineSlice";
 import { UITheme } from "@/game/ui/view/UITheme";
 
 export interface PanelTextStyle {
@@ -138,16 +138,24 @@ export function drawBadge(graphics: Graphics, letter: string, centreX: number, c
 }
 
 /**
- * Draws the Kenney divider flourish centred on `y`, stretched to `width`. Used
- * between a menu title and its rows.
+ * Draws the Kenney divider centred on `y`, stretched to `width`: the flourish
+ * at its right end kept at its native size, the rule left of it stretched to
+ * fill. Used between a menu title and its rows.
  */
 export function drawDivider(graphics: Graphics, assets: AssetStorage, x: number, y: number, width: number): void {
 	const sheet = assets.getSpritesheet(UITheme.assets.divider);
-	const image = sheet.getImage();
+	const source = sheet.getImage();
+	const image = tint(source, UITheme.panelEdge);
+	const top = Math.round(y - source.height / 2);
 
 	graphics.imageSmoothing();
 
-	// The divider has no meaningful corners; a straight horizontal stretch keeps
-	// its centre flourish readable.
-	drawNineSlice(graphics, { image, corner: Math.min(image.width, image.height) / 2 - 1 }, new Rectangle(x, y - image.height / 2, width, image.height), UITheme.panelEdge);
+	const flourish = Math.min(UITheme.dividerFlourish, source.width, width);
+	const rule = source.width - flourish;
+
+	if (width > flourish) {
+		graphics.drawImage(image, 0, 0, rule, source.height, x, top, width - flourish, source.height);
+	}
+
+	graphics.drawImage(image, rule, 0, flourish, source.height, x + width - flourish, top, flourish, source.height);
 }

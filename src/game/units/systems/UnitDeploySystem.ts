@@ -10,7 +10,7 @@ import { UnitPopComponent } from "@/game/units/components/UnitPopComponent";
 import { loadUnitCatalogs } from "@/game/units/content/UnitCatalog";
 import { buildUnit, UnitDocument } from "@/game/units/content/UnitSheets";
 import { unitsInWorld, unitById } from "@/game/units/rules/UnitLookup";
-import { deploymentAsset, DeploymentDocument, parseDeployment } from "@/game/units/content/Deployments";
+import { deploymentAsset, DeploymentDocument, parseDeployment, placementId } from "@/game/units/content/Deployments";
 
 /**
  * Puts the playable units on the battle map and takes them off again. On
@@ -56,7 +56,8 @@ export class UnitDeploySystem extends ReactiveSystem {
 				continue;
 			}
 
-			const data = buildUnit(document);
+			// The placement's own id, so one sheet can stand on the map several times.
+			const data = { ...buildUnit(document), id: placementId(placement) };
 
 			const entity = this.world.createEntity();
 			entity.addComponent(UnitComponent, data);

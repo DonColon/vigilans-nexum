@@ -1,5 +1,7 @@
 export { UIFeature } from "@/game/ui/UIFeature";
 export { UIDemoSystem } from "@/game/ui/systems/UIDemoSystem";
+export { UIRenderSystem } from "@/game/ui/systems/UIRenderSystem";
+export { UIRaisedMenuRenderSystem } from "@/game/ui/systems/UIRaisedMenuRenderSystem";
 export type { UIFeatureConfig } from "@/game/ui/UIFeature";
 
 export { DialogComponent } from "@/game/ui/components/DialogComponent";
@@ -18,4 +20,7 @@ export { PopupState } from "@/game/ui/states/PopupState";
 export type { PopupRequest } from "@/game/ui/states/PopupState";
 
 export { UITheme } from "@/game/ui/view/UITheme";
+export { drawMenu, menuRowColor } from "@/game/ui/view/UIMenuPanel";
+export { steppedHighlight } from "@/game/ui/commands/MenuCommands";
+export type { MenuDirection } from "@/game/ui/commands/MenuCommands";
 export { wrapText, countWords, splitWords, revealedWordCount } from "@/game/ui/view/TextReveal";

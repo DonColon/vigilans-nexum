@@ -10,16 +10,28 @@ export function deploymentAsset(scenario: string): string {
 export const DEPLOYMENT_ASSET = deploymentAsset(DEFAULT_SCENARIO);
 
 /**
- * One unit's place on the map at the top of the battle. `behaviour` is only
- * read for the enemy's units - how that one fights on its phase; the ids are
- * the AI feature's (see src/game/ai/content/Behaviours) and a placement that
- * leaves it out gets that feature's default.
+ * One unit's place on the map at the top of the battle. `unit` names the
+ * sheet; `id` is what the unit goes by on the map when the sheet is placed
+ * more than once - two bandits off one sheet are `bandit-1` and `bandit-2` -
+ * and defaults to the sheet's id. `required` marks a player unit the battle
+ * cannot be prepared without (the preparations screen will not bench it).
+ * `behaviour` is only read for the enemy's units - how that one fights on
+ * its phase; the ids are the AI feature's (see src/game/ai/content/Behaviours)
+ * and a placement that leaves it out gets that feature's default.
  */
 export interface DeploymentPlacement {
 	unit: string;
+	id?: string;
 	column: number;
 	row: number;
+	required?: boolean;
 	behaviour?: string;
+}
+
+/** A tile a player unit may be deployed on beyond the ones the placements take. */
+export interface DeploymentSlot {
+	column: number;
+	row: number;
 }
 
 /**
@@ -45,6 +57,15 @@ export interface DeploymentDocument {
 	map: string;
 	units: DeploymentPlacement[];
 	objective?: DeploymentObjective;
+	/** How many player units the battle takes at most; left out, as many as there are deploy tiles. */
+	capacity?: number;
+	/** Deploy tiles beyond the player placements' own, for units the roster brings that the sheet does not name. */
+	slots?: DeploymentSlot[];
+}
+
+/** The id a placement's unit goes by on the map. */
+export function placementId(placement: DeploymentPlacement): string {
+	return placement.id ?? placement.unit;
 }
 
 /** Checks a parsed deployment sheet's shape. Throws a `GameError` naming what is wrong. */
@@ -78,6 +99,38 @@ export function parseDeployment(document: unknown): DeploymentDocument {
 
 		if (placement.behaviour !== undefined && typeof placement.behaviour !== "string") {
 			throw new GameError(`Deployment of "${placement.unit}" has a behaviour that is not a string`);
+		}
+
+		if (placement.id !== undefined && (typeof placement.id !== "string" || placement.id.length === 0)) {
+			throw new GameError(`Deployment of "${placement.unit}" has an id that is not a string`);
+		}
+
+		if (placement.required !== undefined && typeof placement.required !== "boolean") {
+			throw new GameError(`Deployment of "${placement.unit}" has a required flag that is not a boolean`);
+		}
+	}
+
+	const ids = (sheet.units as DeploymentPlacement[]).map(placementId);
+
+	for (const id of ids) {
+		if (ids.indexOf(id) !== ids.lastIndexOf(id)) {
+			throw new GameError(`Deployment places "${id}" twice - give one of them an id of its own`);
+		}
+	}
+
+	if (sheet.capacity !== undefined && (!Number.isInteger(sheet.capacity) || (sheet.capacity as number) < 1)) {
+		throw new GameError(`Deployment capacity must be a whole number of at least 1, got ${sheet.capacity}`);
+	}
+
+	if (sheet.slots !== undefined) {
+		if (!Array.isArray(sheet.slots)) {
+			throw new GameError("Deployment slots are not a list");
+		}
+
+		for (const slot of sheet.slots as Record<string, unknown>[]) {
+			if (!Number.isInteger(slot.column) || !Number.isInteger(slot.row)) {
+				throw new GameError("Deployment slot needs whole-number column and row");
+			}
 		}
 	}
 

@@ -1,0 +1,45 @@
+{
+	"format": "vigilans-unit",
+	"version": 1,
+	"id": "bandit-chief",
+	"name": "Bandit Chief",
+	"faction": "enemy",
+	"class": "axe-fighter",
+	"level": 3,
+	"weapon": "iron-axe",
+	"inventory": ["iron-axe", "vulnerary"],
+	"boss": true,
+	"stats": {
+		"hp": 26,
+		"mp": 0,
+		"strength": 8,
+		"magic": 0,
+		"dexterity": 5,
+		"speed": 5,
+		"luck": 3,
+		"defense": 5,
+		"resistance": 1
+	},
+	"growths": {
+		"hp": 70,
+		"mp": 0,
+		"strength": 55,
+		"magic": 5,
+		"dexterity": 40,
+		"speed": 40,
+		"luck": 20,
+		"defense": 40,
+		"resistance": 15
+	},
+	"maxStats": {
+		"hp": 60,
+		"mp": 30,
+		"strength": 25,
+		"magic": 18,
+		"dexterity": 28,
+		"speed": 29,
+		"luck": 30,
+		"defense": 24,
+		"resistance": 22
+	}
+}

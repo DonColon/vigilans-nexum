@@ -12,7 +12,7 @@ import { InputDevice } from "@/core/input/InputDevice";
 import { InputState } from "@/core/input/InputState";
 import { KeyboardInput } from "@/core/input/keyboard/KeyboardInput";
 import { ServiceRegistry } from "@/core/service/ServiceRegistry";
-import { RosterClosedEvent, RosterRequestedEvent } from "@/game.events";
+import { RosterClosedEvent, RosterConfirmedEvent, RosterRequestedEvent } from "@/game.events";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
@@ -233,6 +233,31 @@ suite("Roster Test Suite", () => {
 			press(RosterConfirmCommand);
 
 			expect(world.getEntities().filter((entity) => entity.hasComponent(RosterComponent))).toStrictEqual([]);
+		});
+
+		test("On a selectable list confirm reports the row and leaves the list up, and the list can be rewritten in place", () => {
+			const confirmed: RosterConfirmedEvent[] = [];
+			eventBus.subscribe("roster:confirmed", (event) => confirmed.push(event));
+
+			const state = stateManager.getState(RosterState);
+			state.request({ unitIds: ["dardan", "hasan"], title: "Deploy 1/2", status: ["On map", "Bench"], disabled: [true, false], selectable: true });
+			stateManager.push(RosterState);
+
+			const roster = () => (state.getRoster() as Entity).getComponent(RosterComponent).read();
+			expect(roster()).toMatchObject({ title: "Deploy 1/2", status: ["On map", "Bench"], disabled: [true, false], selectable: true, sheets: [] });
+
+			press(RosterDownCommand);
+			press(RosterConfirmCommand);
+
+			expect(confirmed).toStrictEqual([expect.objectContaining({ unitId: "hasan", selectedIndex: 1 })]);
+			expect(stateManager.peek()).toBe(state);
+			expect(roster()).toMatchObject({ confirmed: false, closed: false, selectedIndex: 1 });
+
+			state.updateRoster({ unitIds: ["dardan", "hasan"], title: "Deploy 2/2", status: ["On map", "On map"], selectable: true, selectedIndex: 1 });
+			expect(roster()).toMatchObject({ title: "Deploy 2/2", status: ["On map", "On map"], disabled: [false, false], selectedIndex: 1 });
+
+			press(RosterCancelCommand);
+			expect(stateManager.peek()).not.toBeInstanceOf(RosterState);
 		});
 
 		test("Re-opening comes back to the row it was left on", () => {

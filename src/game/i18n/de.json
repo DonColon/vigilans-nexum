@@ -127,5 +127,16 @@
 	"campaign.continue": "Fortsetzen",
 	"campaign.tagline": "Eine Geschichte über Vertrauen und die Bande, die ein Schlachtfeld zusammenhalten",
 	"campaign.chapter": "Kapitel {number}",
-	"campaign.begin": "Bestätigen, um zu beginnen"
+	"campaign.begin": "Bestätigen, um zu beginnen",
+	"prepare.title": "Vorbereitung",
+	"prepare.units": "Einheiten",
+	"prepare.formation": "Aufstellung",
+	"prepare.items": "Gegenstände",
+	"prepare.begin": "Beginnen",
+	"prepare.pick": "Einsatz {deployed}/{capacity}",
+	"prepare.onMap": "Im Feld",
+	"prepare.bench": "Reserve",
+	"prepare.required": "Pflicht",
+	"prepare.convoy": "Tross ({count})",
+	"prepare.partner": "Mit wem tauschen?"
 }

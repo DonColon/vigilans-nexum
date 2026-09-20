@@ -127,5 +127,16 @@
 	"campaign.continue": "Continue",
 	"campaign.tagline": "A tale of trust, and the bonds that hold a battlefield together",
 	"campaign.chapter": "Chapter {number}",
-	"campaign.begin": "Press confirm to begin"
+	"campaign.begin": "Press confirm to begin",
+	"prepare.title": "Preparations",
+	"prepare.units": "Units",
+	"prepare.formation": "Formation",
+	"prepare.items": "Items",
+	"prepare.begin": "Begin",
+	"prepare.pick": "Deploy {deployed}/{capacity}",
+	"prepare.onMap": "On map",
+	"prepare.bench": "Bench",
+	"prepare.required": "Required",
+	"prepare.convoy": "Convoy ({count})",
+	"prepare.partner": "Trade with whom?"
 }

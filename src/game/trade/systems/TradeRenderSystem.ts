@@ -11,7 +11,7 @@ import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { NOTHING_HELD, TradeComponent, TradeData, TradeSide } from "@/game/trade/components/TradeComponent";
 import { EMPTY_SLOT, tradePanels, tradeSlots } from "@/game/trade/view/TradeScreen";
-import { menuRowColor } from "@/game/ui/systems/UIRenderSystem";
+import { menuRowColor } from "@/game/ui/view/UIMenuPanel";
 import { BADGE_DIAMETER, drawBadge, drawDivider, drawMenuHighlight, drawPanel, drawText, uiAssetsReady } from "@/game/ui/view/UIPanel";
 import { UITheme } from "@/game/ui/view/UITheme";
 import { UnitComponent, InventoryEntry, UnitData } from "@/game/units/components/UnitComponent";

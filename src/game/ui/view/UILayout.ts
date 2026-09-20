@@ -4,8 +4,8 @@ import { MapTheme } from "@/game/map/view/MapTheme";
 import { MenuStyle } from "@/game/ui/components/MenuComponent";
 import { UITheme } from "@/game/ui/view/UITheme";
 
-/** Gap between a UI panel and the edge of the screen. */
-const SCREEN_MARGIN = 36;
+/** Gap between a UI panel and the edge of the screen - the least any positioned panel is nudged in to. */
+export const SCREEN_MARGIN = 36;
 
 /** Width a menu panel gets when the caller does not ask for one. */
 export const DEFAULT_MENU_WIDTH = 320;
@@ -64,13 +64,20 @@ export function popupBox(viewport: Dimension, lineCount: number, hasTitle: boole
 	return new Rectangle(Math.round((viewport.width - width) / 2), Math.round((viewport.height - height) / 2), width, height);
 }
 
-/** Height a menu panel needs for its title and rows. */
-export function menuHeight(itemCount: number, hasTitle: boolean, style: MenuStyle = MenuStyle.PANEL): number {
+/** How many rows `itemCount` items fill when laid out in this many columns, left to right and then down. */
+export function menuRowCount(itemCount: number, columns = 1): number {
+	return Math.ceil(itemCount / Math.max(1, columns));
+}
+
+/** Height a menu panel needs for its title and rows - the rows in `columns` columns, one by default. */
+export function menuHeight(itemCount: number, hasTitle: boolean, style: MenuStyle = MenuStyle.PANEL, columns = 1): number {
+	const rowCount = menuRowCount(itemCount, columns);
+
 	if (style === MenuStyle.BARE) {
-		return (hasTitle ? UITheme.lineHeight + BARE_ROW_GAP : 0) + itemCount * bareRowPitch();
+		return (hasTitle ? UITheme.lineHeight + BARE_ROW_GAP : 0) + rowCount * bareRowPitch();
 	}
 
-	const rows = itemCount * UITheme.lineHeight;
+	const rows = rowCount * UITheme.lineHeight;
 	const title = hasTitle ? UITheme.lineHeight + UITheme.padding / 2 : 0;
 	return UITheme.padding * 2 + title + rows;
 }

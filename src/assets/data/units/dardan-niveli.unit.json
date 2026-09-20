@@ -1,0 +1,46 @@
+{
+	"format": "vigilans-unit",
+	"version": 1,
+	"id": "dardan-niveli",
+	"name": "Dardan Niveli",
+	"faction": "player",
+	"class": "citizen",
+	"level": 1,
+	"weapon": "bronze-sword",
+	"inventory": ["bronze-sword", "vulnerary"],
+	"commander": true,
+	"abilities": ["swap"],
+	"stats": {
+		"hp": 19,
+		"mp": 10,
+		"strength": 5,
+		"magic": 3,
+		"dexterity": 6,
+		"speed": 7,
+		"luck": 5,
+		"defense": 4,
+		"resistance": 2
+	},
+	"growths": {
+		"hp": 70,
+		"mp": 30,
+		"strength": 50,
+		"magic": 20,
+		"dexterity": 60,
+		"speed": 65,
+		"luck": 50,
+		"defense": 40,
+		"resistance": 35
+	},
+	"maxStats": {
+		"hp": 60,
+		"mp": 30,
+		"strength": 25,
+		"magic": 25,
+		"dexterity": 28,
+		"speed": 29,
+		"luck": 30,
+		"defense": 24,
+		"resistance": 22
+	}
+}
