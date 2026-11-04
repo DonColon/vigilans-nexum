@@ -1,3 +1,4 @@
-import { System } from "@/core/ecs/System";
+import { ScheduledSystem } from "@/core/ecs/ScheduledSystem";
 
-export abstract class UpdateSystem extends System {}
+/** Runs in the update schedule, before the sync systems - the game's logic clock. */
+export abstract class UpdateSystem extends ScheduledSystem {}

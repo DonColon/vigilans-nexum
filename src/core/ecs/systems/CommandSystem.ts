@@ -28,8 +28,10 @@ export abstract class CommandSystem extends UpdateSystem {
 	@GameCoreService(InputDevice)
 	private inputDevice!: InputDevice;
 
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {};
+
+		return this;
 	}
 
 	public execute(elapsed: number, frame: number): void {

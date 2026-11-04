@@ -33,7 +33,9 @@ export class LocalDatabase {
 		return new Promise<void>((resolve, reject) => {
 			request.onupgradeneeded = () => {
 				this.database = request.result;
-				this.initializeDatabase();
+				// The upgrade transaction is the only way to look at a store that
+				// already exists - its key path decides whether it is kept.
+				this.initializeDatabase(request.transaction);
 			};
 
 			request.onsuccess = () => {
@@ -78,16 +80,32 @@ export class LocalDatabase {
 		}
 	}
 
-	private initializeDatabase(): void {
-		this.createMissingStores();
+	private initializeDatabase(upgrade: IDBTransaction | null): void {
+		this.createMissingStores(upgrade);
 		this.removeUnknownStores();
 	}
 
-	private createMissingStores(): void {
+	/**
+	 * Creates every configured store that is missing. A store that already
+	 * exists but was created with a different key path is dropped and made
+	 * again: the key path is fixed at creation, so an upgrade is the only place
+	 * it can change, and a store whose key is not the one its settings name
+	 * cannot take a write.
+	 */
+	private createMissingStores(upgrade: IDBTransaction | null): void {
 		for (const [name, settings] of Object.entries(this.config.repositories)) {
-			if (!this.database.objectStoreNames.contains(name)) {
-				this.database.createObjectStore(name, settings);
+			if (this.database.objectStoreNames.contains(name)) {
+				const keyPath = upgrade?.objectStore(name).keyPath ?? null;
+
+				if (sameKeyPath(keyPath, settings.key ?? null)) {
+					continue;
+				}
+
+				this.database.deleteObjectStore(name);
 			}
+
+			// The settings call the key `key`; IndexedDB calls it `keyPath`.
+			this.database.createObjectStore(name, { keyPath: settings.key, autoIncrement: settings.autoIncrement });
 		}
 	}
 
@@ -114,7 +132,9 @@ export class LocalDatabase {
 		for (const storeName of stores) {
 			const repo = this.getRepository(storeName);
 			repo.setTransaction(tx);
-			accessor[storeName] = repo;
+			// Assigned through Object.assign: indexing the mapped type with a union of
+			// store names narrows the value to never once there is more than one store.
+			Object.assign(accessor, { [storeName]: repo });
 		}
 
 		return accessor;
@@ -129,4 +149,13 @@ export class LocalDatabase {
 	private isValidStoreName(name: string): boolean {
 		return name in this.config.repositories;
 	}
+}
+
+/** Whether a store's key path is the one its settings name. */
+function sameKeyPath(actual: string | string[] | null, expected: string | string[] | null): boolean {
+	if (actual === null || expected === null) {
+		return actual === expected;
+	}
+
+	return JSON.stringify(actual) === JSON.stringify(expected);
 }

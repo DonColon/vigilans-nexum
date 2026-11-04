@@ -1,0 +1,44 @@
+{
+	"format": "vigilans-unit",
+	"version": 1,
+	"id": "hasan-eyletmez",
+	"name": "Hasan Eyletmez",
+	"faction": "player",
+	"class": "citizen",
+	"level": 1,
+	"weapon": "bronze-axe",
+	"inventory": ["bronze-axe", "bronze-sword", "vulnerary"],
+	"stats": {
+		"hp": 22,
+		"mp": 8,
+		"strength": 7,
+		"magic": 0,
+		"dexterity": 4,
+		"speed": 5,
+		"luck": 4,
+		"defense": 6,
+		"resistance": 1
+	},
+	"growths": {
+		"hp": 85,
+		"mp": 20,
+		"strength": 65,
+		"magic": 10,
+		"dexterity": 40,
+		"speed": 45,
+		"luck": 40,
+		"defense": 55,
+		"resistance": 25
+	},
+	"maxStats": {
+		"hp": 60,
+		"mp": 30,
+		"strength": 25,
+		"magic": 25,
+		"dexterity": 28,
+		"speed": 29,
+		"luck": 30,
+		"defense": 24,
+		"resistance": 22
+	}
+}

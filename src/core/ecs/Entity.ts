@@ -1,10 +1,10 @@
 import { GameError } from "@/core/GameError";
 import { randomUUID } from "@/core/math/generation/Randomizer";
 import { JsonSchema } from "@/core/ecs/JsonSchema";
-import { Component, ComponentConstructor } from "@/core/ecs/Component";
+import { Component, ComponentClass, ComponentConstructor } from "@/core/ecs/Component";
 import { GameStateManager } from "@/core/GameStateManager";
 import { GameStateConstructor } from "@/core/GameState";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { World } from "@/core/ecs/World";
 import { ServiceRegistry } from "@/core/service/ServiceRegistry";
@@ -21,8 +21,8 @@ export class Entity {
 	private readonly stateManager: GameStateManager;
 	private enabled: boolean;
 
-	@GameCoreService(EventSystem)
-	private eventSystem!: EventSystem;
+	@GameCoreService(EventBus)
+	private eventBus!: EventBus;
 
 	@GameCoreService("World")
 	private world!: World;
@@ -62,25 +62,25 @@ export class Entity {
 		const component = new componentType(data);
 		this.components.set(componentType.type, component);
 
-		this.eventSystem.dispatch("entityChanged", { entity: this });
+		this.eventBus.dispatch("entityChanged", { entity: this });
 		return this;
 	}
 
 	public removeComponent<T extends JsonSchema>(componentType: ComponentConstructor<T>): this {
 		this.components.delete(componentType.type);
 
-		this.eventSystem.dispatch("entityChanged", { entity: this });
+		this.eventBus.dispatch("entityChanged", { entity: this });
 		return this;
 	}
 
-	public getComponent<T extends JsonSchema>(componentType: ComponentConstructor<T>): Component<T> {
+	public getComponent<C extends Component<any>>(componentType: ComponentClass<C>): C {
 		const component = this.components.get(componentType.type);
 
 		if (component === undefined) {
 			throw new GameError(`Component not defined on entity ${this.id}`);
 		}
 
-		return component as Component<T>;
+		return component as C;
 	}
 
 	public getComponentData<T extends JsonSchema>(componentType: ComponentConstructor<T>): T {
@@ -123,7 +123,7 @@ export class Entity {
 		this.components.clear();
 		this.stateManager.clear();
 
-		this.eventSystem.dispatch("entityChanged", { entity: this });
+		this.eventBus.dispatch("entityChanged", { entity: this });
 		return this;
 	}
 

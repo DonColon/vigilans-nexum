@@ -1,21 +1,40 @@
+import { AssetStorage } from "@/core/assets/AssetStorage";
 import { Entity } from "@/core/ecs/Entity";
 import { World } from "@/core/ecs/World";
 import { identityTransform, TransformComponent } from "@/core/ecs/components/TransformComponent";
+import { EventBus } from "@/core/events/EventBus";
 import { GameState } from "@/core/GameState";
 import { Display } from "@/core/graphics/Display";
 import { GameCoreService } from "@/core/service/GameCoreService";
+import { cancelCommands } from "@/game/map/commands/CancelCommand";
+import { confirmCommands } from "@/game/map/commands/ConfirmCommand";
 import { moveCursorCommands } from "@/game/map/commands/MoveCursorCommand";
+import { threatCommands } from "@/game/map/commands/ThreatCommand";
+import { infoCommands } from "@/game/map/commands/InfoCommand";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
-import { skirmishMap } from "@/game/map/model/TileMaps";
-import { GridSystem } from "@/game/map/systems/GridSystem";
+import { TileMapComponent } from "@/game/map/components/TileMapComponent";
+import { DEFAULT_MAP_ASSET, DEFAULT_SCENARIO } from "@/game/map/content/Scenario";
+import { TileMapDocument, parseTileMapDocument } from "@/game/map/content/TileMapFormat";
+import { MapTheme } from "@/game/map/view/MapTheme";
 
-/** Edge length of a tile in pixels. */
-const CELL_SIZE = 32;
+/**
+ * What a battle is: the scenario whose documents the features read, and the
+ * asset id of the tile map it is fought on. The map is content, so it ships
+ * as a JSON asset rather than in the bundle; `Game.start` has the bundle in
+ * storage before this state is entered.
+ */
+export interface MapRequest {
+	scenario: string;
+	map: string;
+}
 
-/** Tile the cursor starts on, the fort on the western half of the map. */
-const CURSOR_START = { column: 2, row: 7 };
+/** Edge length of a tile in pixels - the viewport is sized to a whole number of these. */
+const CELL_SIZE = MapTheme.cellSize;
+
+/** Tile the cursor starts on until the units feature drops it onto the commander. */
+const CURSOR_START = { column: 6, row: 12 };
 
 /**
  * Player looking at a battle map: the map is on screen, the cursor is theirs
@@ -30,7 +49,7 @@ const CURSOR_START = { column: 2, row: 7 };
 export class MapState extends GameState {
 	public static readonly type = "map";
 
-	protected commands = [...moveCursorCommands];
+	protected commands = [...moveCursorCommands, ...confirmCommands, ...cancelCommands, ...threatCommands, ...infoCommands];
 
 	@GameCoreService(World)
 	private world!: World;
@@ -38,16 +57,51 @@ export class MapState extends GameState {
 	@GameCoreService(Display)
 	private display!: Display;
 
+	@GameCoreService(AssetStorage)
+	private assetStorage!: AssetStorage;
+
+	@GameCoreService(EventBus)
+	private eventBus!: EventBus;
+
 	private map: Entity | null = null;
 	private cursor: Entity | null = null;
 
+	/**
+	 * The battle this state builds when entered. Kept rather than consumed: a
+	 * lost battle is started over by entering the state again, and it has to
+	 * build the same one. The default is the scenario the game has always
+	 * shipped, so the map works with nothing asking for a chapter.
+	 */
+	private battle: MapRequest = { scenario: DEFAULT_SCENARIO, map: DEFAULT_MAP_ASSET };
+
+	/** Sets which battle is built the next time this state is entered - and every time after, until asked again. */
+	public request(request: MapRequest): void {
+		this.battle = { ...request };
+	}
+
+	/** The battle this state builds, or built. */
+	public getBattle(): MapRequest {
+		return { ...this.battle };
+	}
+
 	public onEnter(): void {
-		const grid = GridSystem.of(skirmishMap, CELL_SIZE);
-		const dimension = GridSystem.getGridDimension(grid);
+		const tilemap = parseTileMapDocument(this.assetStorage.getJson<TileMapDocument>(this.battle.map));
+
+		const grid = GridComponent.fromTileMap(tilemap, CELL_SIZE);
+		const dimension = GridComponent.dimension(grid);
 		const viewport = this.display.getViewportDimension();
 
 		this.map = this.world.createEntity();
 		this.map.addComponent(GridComponent, grid);
+		this.map.addComponent(TileMapComponent, {
+			tileset: tilemap.tileset,
+			tileWidth: tilemap.tileWidth,
+			tileHeight: tilemap.tileHeight,
+			columns: tilemap.columns,
+			rows: tilemap.rows,
+			background: tilemap.background ?? "",
+			layers: tilemap.layers.map((layer) => ({ name: layer.name, tiles: [...layer.tiles], flips: [...layer.flips] }))
+		});
 		this.map.addComponent(TransformComponent, {
 			...identityTransform,
 			x: Math.round((viewport.width - dimension.width) / 2),
@@ -67,9 +121,17 @@ export class MapState extends GameState {
 		});
 
 		this.resetCommands();
+
+		// Announced rather than acted on: a feature that puts things on the map -
+		// units today - listens for this and spawns them parented to `this.map`,
+		// reading the scenario's documents by the id carried here. With no such
+		// feature installed the event simply has no subscribers.
+		this.eventBus.dispatch("map:ready", { mapId: this.map.getID(), columns: grid.columns, rows: grid.rows, scenario: this.battle.scenario });
 	}
 
 	public onExit(): void {
+		this.eventBus.dispatch("map:closed", {});
+
 		if (this.cursor) {
 			this.world.unregisterEntity(this.cursor);
 			this.cursor = null;

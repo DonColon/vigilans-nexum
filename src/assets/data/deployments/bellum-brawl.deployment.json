@@ -1,0 +1,219 @@
+{
+	"format": "vigilans-deployment",
+	"version": 1,
+	"map": "market-square",
+	"preparations": false,
+	"objective": {
+		"win": "defeat",
+		"target": "blond-leader",
+		"protect": ["hasan-eyletmez"]
+	},
+	"units": [
+		{
+			"unit": "dardan-niveli",
+			"column": 14,
+			"row": 19,
+			"required": true,
+			"pack": [
+				{
+					"item": "bronze-sword",
+					"name": {
+						"de": "Holzstück",
+						"en": "Piece of Wood"
+					}
+				}
+			]
+		},
+		{
+			"unit": "hasan-eyletmez",
+			"column": 16,
+			"row": 19,
+			"required": true,
+			"pack": [
+				{
+					"item": "bronze-sword",
+					"name": {
+						"de": "Holzschwert",
+						"en": "Wooden Sword"
+					}
+				}
+			]
+		},
+		{
+			"unit": "maksimo-auditore",
+			"column": 13,
+			"row": 19,
+			"required": true,
+			"pack": [
+				{
+					"item": "bronze-lance",
+					"name": {
+						"de": "Stock",
+						"en": "Stick"
+					}
+				}
+			]
+		},
+		{
+			"unit": "leona-kaori",
+			"column": 17,
+			"row": 19,
+			"required": true,
+			"pack": [
+				{
+					"item": "bronze-lance",
+					"name": {
+						"de": "Stock",
+						"en": "Stick"
+					}
+				}
+			]
+		},
+		{
+			"unit": "ivan-grussinskin",
+			"column": 14,
+			"row": 20,
+			"required": true,
+			"pack": [
+				{
+					"item": "bronze-axe",
+					"name": {
+						"de": "Alte Pfanne",
+						"en": "Old Pan"
+					}
+				}
+			]
+		},
+		{
+			"unit": "lina-yukari",
+			"column": 16,
+			"row": 20,
+			"required": true,
+			"pack": [
+				{
+					"item": "bronze-axe",
+					"name": {
+						"de": "Alte Pfanne",
+						"en": "Old Pan"
+					}
+				}
+			]
+		},
+		{
+			"unit": "older-child-leader",
+			"id": "blond-leader",
+			"column": 15,
+			"row": 6,
+			"name": {
+				"de": "Anführer",
+				"en": "Ringleader"
+			},
+			"behaviour": "hold",
+			"chargeFromTurn": 3,
+			"pack": [
+				{
+					"item": "bronze-axe",
+					"name": {
+						"de": "Brett",
+						"en": "Plank"
+					}
+				}
+			]
+		},
+		{
+			"unit": "older-child",
+			"id": "stone-girl",
+			"column": 15,
+			"row": 7,
+			"name": {
+				"de": "Steinwerferin",
+				"en": "Stone-Thrower"
+			},
+			"pack": [
+				{
+					"item": "bronze-bow",
+					"name": {
+						"de": "Steine",
+						"en": "Stones"
+					}
+				}
+			]
+		},
+		{
+			"unit": "older-child",
+			"id": "older-child-1",
+			"column": 13,
+			"row": 7,
+			"name": {
+				"de": "Gefolgsmann",
+				"en": "Follower"
+			},
+			"pack": [
+				{
+					"item": "bronze-lance",
+					"name": {
+						"de": "Stock",
+						"en": "Stick"
+					}
+				}
+			]
+		},
+		{
+			"unit": "older-child",
+			"id": "older-child-2",
+			"column": 17,
+			"row": 7,
+			"name": {
+				"de": "Gefolgsmann",
+				"en": "Follower"
+			},
+			"pack": [
+				{
+					"item": "bronze-lance",
+					"name": {
+						"de": "Stock",
+						"en": "Stick"
+					}
+				}
+			]
+		},
+		{
+			"unit": "older-child",
+			"id": "older-child-3",
+			"column": 12,
+			"row": 7,
+			"name": {
+				"de": "Gefolgsmann",
+				"en": "Follower"
+			},
+			"pack": [
+				{
+					"item": "bronze-sword",
+					"name": {
+						"de": "Holzlatte",
+						"en": "Wooden Slat"
+					}
+				}
+			]
+		},
+		{
+			"unit": "older-child",
+			"id": "older-child-4",
+			"column": 18,
+			"row": 7,
+			"name": {
+				"de": "Gefolgsmann",
+				"en": "Follower"
+			},
+			"pack": [
+				{
+					"item": "bronze-sword",
+					"name": {
+						"de": "Holzlatte",
+						"en": "Wooden Slat"
+					}
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,25 @@
+{
+	"format": "vigilans-campaign",
+	"version": 1,
+	"chapters": [
+		{
+			"id": "bellum-duel",
+			"title": {
+				"de": "Jedes Ende... - Dardan gegen Hasan",
+				"en": "Every End... - Dardan Against Hasan"
+			},
+			"map": "market-square",
+			"prologue": true
+		},
+		{
+			"id": "bellum-brawl",
+			"title": {
+				"de": "Jedes Ende... - Die feindlichen Kinder",
+				"en": "Every End... - The Hostile Children"
+			},
+			"map": "market-square",
+			"continues": true,
+			"prologue": true
+		}
+	]
+}

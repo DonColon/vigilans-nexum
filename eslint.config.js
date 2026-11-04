@@ -46,5 +46,34 @@ export default [
 				}
 			]
 		}
+	},
+	// The feature layering: a component knows only its own data shape (and the
+	// content it is built from); a rule may read entities and several
+	// components but never the screen; a system may reach anything. Enforced
+	// here rather than remembered.
+	{
+		files: ["src/game/**/components/**/*.ts"],
+		rules: {
+			"@typescript-eslint/no-restricted-imports": [
+				"error",
+				{
+					patterns: [
+						{ group: ["@/core/ecs/Entity", "@/core/ecs/World"], message: "A component holds one data shape; anything that walks entities or the world is a rule (rules/).", allowTypeImports: true },
+						{ group: ["@/game/*/rules/*", "@/game/*/view/*", "@/game/*/systems/*"], message: "A component imports only its data's vocabulary: other components' data types and content/.", allowTypeImports: true }
+					]
+				}
+			]
+		}
+	},
+	{
+		files: ["src/game/**/rules/**/*.ts"],
+		rules: {
+			"@typescript-eslint/no-restricted-imports": [
+				"error",
+				{
+					patterns: [{ group: ["@/game/*/view/*", "@/game/*/systems/*"], message: "A rule is pure game logic; the screen and the systems sit above it.", allowTypeImports: true }]
+				}
+			]
+		}
 	}
 ];

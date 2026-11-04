@@ -1,0 +1,44 @@
+{
+	"format": "vigilans-unit",
+	"version": 1,
+	"id": "mikael-flaco",
+	"name": "Mikael Flaco",
+	"faction": "player",
+	"class": "citizen",
+	"level": 1,
+	"weapon": "bronze-bow",
+	"inventory": ["bronze-bow", "vulnerary"],
+	"stats": {
+		"hp": 16,
+		"mp": 11,
+		"strength": 4,
+		"magic": 3,
+		"dexterity": 8,
+		"speed": 8,
+		"luck": 2,
+		"defense": 2,
+		"resistance": 4
+	},
+	"growths": {
+		"hp": 45,
+		"mp": 35,
+		"strength": 40,
+		"magic": 25,
+		"dexterity": 75,
+		"speed": 70,
+		"luck": 25,
+		"defense": 25,
+		"resistance": 40
+	},
+	"maxStats": {
+		"hp": 60,
+		"mp": 30,
+		"strength": 25,
+		"magic": 25,
+		"dexterity": 28,
+		"speed": 29,
+		"luck": 30,
+		"defense": 24,
+		"resistance": 22
+	}
+}

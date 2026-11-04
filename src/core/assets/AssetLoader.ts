@@ -1,10 +1,12 @@
 import { GameError } from "@/core/GameError";
 import { AssetManifest } from "@/core/assets/AssetManifest";
-import { AssetType, AudioAsset, StylesheetAsset, FontAsset, HtmlAsset, ImageAsset, JavaScriptAsset, JsonAsset, VideoAsset, XmlAsset } from "@/core/assets/Asset";
+import { AssetType, AudioAsset, StylesheetAsset, FontAsset, HtmlAsset, ImageAsset, JavaScriptAsset, JsonAsset, SpriteAsset, SpriteSheetAsset, VideoAsset, XmlAsset } from "@/core/assets/Asset";
 import { Sprite } from "@/core/graphics/components/Sprite";
+import { Spritesheet, TexturePackerHash } from "@/core/graphics/components/Spritesheet";
 import { GameCoreService } from "@/core/service/GameCoreService";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { AssetStorage } from "@/core/assets/AssetStorage";
+import { AudioDevice } from "@/core/audio/AudioDevice";
 
 type LoaderMap = Record<AssetType["type"], (asset: any) => Promise<void>>;
 type UnloaderMap = Record<AssetType["type"], (id: string) => void>;
@@ -24,14 +26,18 @@ export class AssetLoader {
 	private cache!: Cache;
 
 	private renderContext: CanvasRenderingContext2D;
-	private audioContext: AudioContext;
 	private domParser: DOMParser;
 
 	@GameCoreService(AssetStorage)
 	private assetStorage!: AssetStorage;
 
-	@GameCoreService(EventSystem)
-	private eventSystem!: EventSystem;
+	@GameCoreService(EventBus)
+	private eventBus!: EventBus;
+
+	// Decoding happens on the context that plays the samples - the device owns the
+	// page's one AudioContext. Resolved lazily, so it need not exist before the loader.
+	@GameCoreService(AudioDevice)
+	private audioDevice!: AudioDevice;
 
 	constructor(id: string, config: LoaderConfiguration) {
 		this.manifest = config.manifest;
@@ -48,7 +54,6 @@ export class AssetLoader {
 		}
 
 		this.renderContext = renderContext;
-		this.audioContext = new AudioContext();
 		this.domParser = new DOMParser();
 	}
 
@@ -65,7 +70,10 @@ export class AssetLoader {
 		}
 
 		const unloaders: UnloaderMap = {
-			image: (id) => this.assetStorage.deleteImage(id),
+			image: (id) => {
+				this.assetStorage.deleteImage(id);
+				this.assetStorage.deleteSpritesheet(id);
+			},
 			audio: (id) => this.assetStorage.deleteAudio(id),
 			video: (id) => this.assetStorage.deleteVideo(id),
 			font: (id) => this.assetStorage.deleteFont(id),
@@ -84,7 +92,7 @@ export class AssetLoader {
 			}
 		}
 
-		this.eventSystem.dispatch("bundleUnloaded", {
+		this.eventBus.dispatch("bundleUnloaded", {
 			bundle: bundleName,
 			removed: bundle.length
 		});
@@ -117,7 +125,7 @@ export class AssetLoader {
 		const loaded = results.filter((result) => result.status === "fulfilled");
 		const failed = results.filter((result) => result.status === "rejected");
 
-		this.eventSystem.dispatch("bundleLoaded", {
+		this.eventBus.dispatch("bundleLoaded", {
 			bundle: bundleName,
 			loaded: loaded.length,
 			failed: failed.length
@@ -219,7 +227,7 @@ export class AssetLoader {
 	}
 
 	private dispatchBundleProgress(bundleName: string, current: number, total: number) {
-		this.eventSystem.dispatch("bundleProgress", {
+		this.eventBus.dispatch("bundleProgress", {
 			bundle: bundleName,
 			current,
 			total,
@@ -252,10 +260,12 @@ export class AssetLoader {
 	private async loadImage(asset: ImageAsset) {
 		if (asset.subtype === "sprite") {
 			await this.loadSprite(asset);
+		} else if (asset.subtype === "spritesheet") {
+			await this.loadSpritesheet(asset);
 		}
 	}
 
-	private async loadSprite(asset: ImageAsset) {
+	private async loadSprite(asset: SpriteAsset) {
 		const response = await this.getResponse(asset.url);
 		const blob = await response.blob();
 		const url = URL.createObjectURL(blob);
@@ -266,6 +276,25 @@ export class AssetLoader {
 			this.assetStorage.setImage(asset.id, sprite);
 		} catch (error) {
 			throw new GameError(`Image load failed: ${asset.url}: ${error}`);
+		} finally {
+			URL.revokeObjectURL(url);
+		}
+	}
+
+	private async loadSpritesheet(asset: SpriteSheetAsset) {
+		const response = await this.getResponse(asset.url);
+		const blob = await response.blob();
+		const url = URL.createObjectURL(blob);
+
+		try {
+			const image = await this.createImage(url);
+			const layout = asset.layout;
+
+			const spritesheet = layout.type === "grid" ? Spritesheet.fromGrid(image, layout) : Spritesheet.fromAtlas(image, this.assetStorage.getJson<TexturePackerHash>(layout.atlas));
+
+			this.assetStorage.setSpritesheet(asset.id, spritesheet);
+		} catch (error) {
+			throw new GameError(`Spritesheet load failed: ${asset.url}: ${error}`);
 		} finally {
 			URL.revokeObjectURL(url);
 		}
@@ -285,7 +314,7 @@ export class AssetLoader {
 		const buffer = await response.arrayBuffer();
 
 		try {
-			const audioBuffer = await this.audioContext.decodeAudioData(buffer);
+			const audioBuffer = await this.audioDevice.decode(buffer);
 
 			this.assetStorage.setAudio(asset.id, {
 				buffer: audioBuffer,

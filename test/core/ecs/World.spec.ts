@@ -7,7 +7,8 @@ import { EntityType } from "@/core/ecs/Entity";
 import { Query } from "@/core/ecs/Query";
 import { UpdateSystem } from "@/core/ecs/UpdateSystem";
 import { RenderSystem } from "@/core/ecs/RenderSystem";
-import { System } from "@/core/ecs/System";
+import { ScheduledSystem } from "@/core/ecs/ScheduledSystem";
+import { ReactiveSystem } from "@/core/ecs/ReactiveSystem";
 import { ServiceRegistry } from "@/core/service/ServiceRegistry";
 
 suite("World Test Suite", () => {
@@ -32,7 +33,9 @@ suite("World Test Suite", () => {
 			query: new Query({})
 		};
 
-		public initialize(): void {}
+		public initialize(): this {
+			return this;
+		}
 		public execute(): void {}
 	}
 
@@ -44,7 +47,9 @@ suite("World Test Suite", () => {
 			})
 		};
 
-		public initialize(): void {}
+		public initialize(): this {
+			return this;
+		}
 		public execute(): void {}
 	}
 
@@ -56,7 +61,9 @@ suite("World Test Suite", () => {
 			})
 		};
 
-		public initialize(): void {}
+		public initialize(): this {
+			return this;
+		}
 		public execute(): void {}
 	}
 
@@ -230,6 +237,17 @@ suite("World Test Suite", () => {
 		expect(world.hasEntity(entities[0])).toBeTruthy();
 	});
 
+	test("Registering a system constructs it and then calls initialize(), once", () => {
+		const initialize = vi.spyOn(MovementSystem.prototype, "initialize");
+
+		const world = new World();
+		world.registerSystem(MovementSystem, 0);
+
+		expect(initialize).toHaveBeenCalledTimes(1);
+		expect(initialize.mock.instances[0]).toBe(world.getSystem(MovementSystem));
+		initialize.mockRestore();
+	});
+
 	test("Register a system to the world", () => {
 		const world = new World();
 		world.registerSystem(MapSystem, 0);
@@ -276,11 +294,47 @@ suite("World Test Suite", () => {
 		expect(world.hasSystem("MovementSystem")).toBeTruthy();
 	});
 
-	test("Throw error when registering system that is neither UpdateSystem nor RenderSystem", () => {
-		// Create a system that extends System directly but is neither UpdateSystem nor RenderSystem
-		class InvalidSystem extends System {
+	test("A reactive system is registered without a priority and sits in no schedule", () => {
+		class FlowSystem extends ReactiveSystem {
+			public initialize(): this {
+				return this;
+			}
+		}
+
+		const world = new World();
+		world.registerSystem(FlowSystem);
+
+		expect(world.hasSystem(FlowSystem)).toBeTruthy();
+		expect(world.getSystem(FlowSystem)).toBeInstanceOf(FlowSystem);
+		expect(world.getUpdateSchedule()).toHaveLength(0);
+		expect(world.getSyncSchedule()).toHaveLength(0);
+		expect(world.getRenderSchedule()).toHaveLength(0);
+
+		world.unregisterSystem(FlowSystem);
+		expect(world.hasSystem(FlowSystem)).toBeFalsy();
+	});
+
+	test("A priority on a reactive system, or none on a scheduled one, is refused", () => {
+		class FlowSystem extends ReactiveSystem {
+			public initialize(): this {
+				return this;
+			}
+		}
+
+		const world = new World();
+		expect(() => (world as any).registerSystem(FlowSystem, 3)).toThrowError("runs on events and has no priority");
+		expect(() => (world as any).registerSystem(MovementSystem)).toThrowError("runs on the clock and needs a priority");
+		expect(world.hasSystem(FlowSystem)).toBeFalsy();
+		expect(world.hasSystem(MovementSystem)).toBeFalsy();
+	});
+
+	test("Throw error when registering a scheduled system that is neither UpdateSystem, SyncSystem nor RenderSystem", () => {
+		// Scheduled, but of none of the three kinds the world has a schedule for.
+		class InvalidSystem extends ScheduledSystem {
 			queries = {};
-			public initialize(): void {}
+			public initialize(): this {
+				return this;
+			}
 			public execute(): void {}
 		}
 
@@ -288,17 +342,18 @@ suite("World Test Suite", () => {
 		expect(() => world.registerSystem(InvalidSystem, 0)).toThrowError("System InvalidSystem must extend UpdateSystem, SyncSystem or RenderSystem");
 	});
 
-	test("Throw error when unregistering system that is neither UpdateSystem nor RenderSystem", () => {
-		// Create a system that extends System directly
-		class InvalidSystem extends System {
+	test("Throw error when unregistering a scheduled system that is neither UpdateSystem, SyncSystem nor RenderSystem", () => {
+		class InvalidSystem extends ScheduledSystem {
 			queries = {};
-			public initialize(): void {}
+			public initialize(): this {
+				return this;
+			}
 			public execute(): void {}
 		}
 
 		const world = new World();
 		// We need to bypass the scheduleSystem check to test unscheduleSystem
-		const invalidSystem = new InvalidSystem(0);
+		const invalidSystem = new InvalidSystem(0).initialize();
 		(world as any).systems.set(InvalidSystem.name, invalidSystem);
 
 		expect(() => world.unregisterSystem(InvalidSystem)).toThrowError("System InvalidSystem must extend UpdateSystem, SyncSystem or RenderSystem");

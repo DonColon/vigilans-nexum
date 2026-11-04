@@ -33,7 +33,7 @@
 		"build:preview": "vite preview",
 		"test": "vitest",
 		"test:coverage": "vitest run --coverage",
-		"start": "vite"
+		"start": "vite --host"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",

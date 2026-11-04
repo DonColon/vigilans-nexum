@@ -1,0 +1,265 @@
+import { test, expect, suite } from "vitest";
+import { UnitComponent, INVENTORY_SIZE, UnitData } from "@/game/units/components/UnitComponent";
+import { tradeInventoryItems } from "@/game/trade/rules/Trading";
+import { buildUnit, UnitDocument } from "@/game/units/content/UnitSheets";
+import { getItem } from "@/game/units/content/UnitCatalog";
+import dardanDocument from "@/assets/data/units/dardan.unit.json";
+import eliraDocument from "@/assets/data/units/elira.unit.json";
+
+/**
+ * Dardan's sheet also carries the fort's keys; these suites are about pack
+ * mechanics, so they work on his classic four slots and leave the keys off.
+ */
+const FOUR_SLOTS = ["bronze-sword", "iron-sword", "iron-blade", "vulnerary"];
+const fourSlotDardan = () => buildUnit({ ...(dardanDocument as UnitDocument), inventory: FOUR_SLOTS });
+
+/** Pack edits over a resolved unit: ready a weapon, put it away, or drop an entry. */
+suite("Inventory Test Suite", () => {
+	const dardan = fourSlotDardan;
+
+	test("Equipping a wieldable weapon readies it and moves it to the front", () => {
+		const before = dardan();
+		expect(before.weapon?.id).toBe("bronze-sword");
+
+		const after = UnitComponent.equip(before, 2); // iron-blade
+
+		expect(after.weapon?.id).toBe("iron-blade");
+		expect(after.inventory.map((entry) => entry.id)).toStrictEqual(["iron-blade", "bronze-sword", "iron-sword", "vulnerary"]);
+		expect(after.inventory.filter((entry) => entry.equipped).map((entry) => entry.id)).toStrictEqual(["iron-blade"]);
+		expect(after.weapon).toBe(after.inventory[0].weapon);
+	});
+
+	test("The source unit is left untouched", () => {
+		const before = dardan();
+		UnitComponent.equip(before, 1);
+		UnitComponent.unequip(before);
+		UnitComponent.drop(before, 0);
+
+		expect(before.weapon?.id).toBe("bronze-sword");
+		expect(before.inventory.map((entry) => entry.id)).toStrictEqual(["bronze-sword", "iron-sword", "iron-blade", "vulnerary"]);
+	});
+
+	test("Equipping a consumable or the already-readied weapon is a no-op", () => {
+		const unit = dardan();
+
+		expect(UnitComponent.equip(unit, 0)).toBe(unit); // already readied
+		expect(UnitComponent.equip(unit, 3)).toBe(unit); // vulnerary
+		expect(UnitComponent.equip(unit, 99)).toBe(unit); // out of range
+	});
+
+	test("A weapon the class cannot wield cannot be readied", () => {
+		const unit = buildUnit({ ...(dardanDocument as UnitDocument), inventory: ["bronze-sword", "iron-axe"] });
+
+		expect(unit.inventory[1].equippable).toBe(false);
+		expect(UnitComponent.equip(unit, 1)).toBe(unit);
+	});
+
+	test("Unequipping clears the readied weapon and every equipped flag, keeping pack order", () => {
+		const after = UnitComponent.unequip(dardan());
+
+		expect(after.weapon).toBeNull();
+		expect(after.inventory.some((entry) => entry.equipped)).toBe(false);
+		expect(after.inventory.map((entry) => entry.id)).toStrictEqual(["bronze-sword", "iron-sword", "iron-blade", "vulnerary"]);
+
+		// Nothing readied - unequipping again changes nothing.
+		expect(UnitComponent.unequip(after)).toBe(after);
+	});
+
+	test("Dropping removes the entry; dropping the readied weapon leaves the unit unarmed", () => {
+		const droppedItem = UnitComponent.drop(dardan(), 3); // vulnerary
+		expect(droppedItem.inventory.map((entry) => entry.id)).toStrictEqual(["bronze-sword", "iron-sword", "iron-blade"]);
+		expect(droppedItem.weapon?.id).toBe("bronze-sword");
+
+		const droppedWeapon = UnitComponent.drop(dardan(), 0); // the readied bronze-sword
+		expect(droppedWeapon.weapon).toBeNull();
+		expect(droppedWeapon.inventory.map((entry) => entry.id)).toStrictEqual(["iron-sword", "iron-blade", "vulnerary"]);
+
+		const unit = dardan();
+		expect(UnitComponent.drop(unit, 99)).toBe(unit); // out of range is a no-op
+		expect(UnitComponent.drop(unit, -1)).toBe(unit);
+	});
+});
+
+/** Using a vulnerary-style consumable: restore HP up to the unit's cap, spend a charge. */
+suite("Healing Item Test Suite", () => {
+	const wounded = (hp: number) => ({ ...fourSlotDardan(), currentHP: hp }); // vulnerary in slot 3, heals 10
+
+	test("UnitComponent.isHealingItem picks out consumables that restore HP", () => {
+		const unit = buildUnit({ ...(dardanDocument as UnitDocument), inventory: ["bronze-sword", "vulnerary", "elixir"] });
+
+		expect(UnitComponent.isHealingItem(unit.inventory[0])).toBe(false); // the sword
+		expect(UnitComponent.isHealingItem(unit.inventory[1])).toBe(true); // vulnerary
+		expect(UnitComponent.isHealingItem(unit.inventory[2])).toBe(true); // elixir
+	});
+
+	test("UnitComponent.healingAmount is clamped to the missing HP", () => {
+		expect(UnitComponent.healingAmount(wounded(5), getItem("vulnerary"))).toBe(10);
+		expect(UnitComponent.healingAmount(wounded(15), getItem("vulnerary"))).toBe(5); // only 5 missing
+		expect(UnitComponent.healingAmount(wounded(20), getItem("vulnerary"))).toBe(0); // full HP
+		expect(UnitComponent.healingAmount(wounded(3), getItem("elixir"))).toBe(17); // "full" heals the whole wound
+	});
+
+	test("Using a vulnerary heals up to the cap and spends one charge", () => {
+		const after = UnitComponent.useHealingItem(wounded(5), 3);
+
+		expect(after.currentHP).toBe(15);
+		expect(after.inventory[3].uses).toBe(2);
+		expect(after.inventory.map((entry) => entry.id)).toStrictEqual(["bronze-sword", "iron-sword", "iron-blade", "vulnerary"]);
+	});
+
+	test("Healing never overfills", () => {
+		expect(UnitComponent.useHealingItem(wounded(18), 3).currentHP).toBe(20);
+	});
+
+	test("The last charge removes the item from the pack", () => {
+		const unit = wounded(5);
+		unit.inventory = unit.inventory.map((entry) => (entry.id === "vulnerary" ? { ...entry, uses: 1 } : entry));
+
+		const after = UnitComponent.useHealingItem(unit, 3);
+
+		expect(after.currentHP).toBe(15);
+		expect(after.inventory.map((entry) => entry.id)).toStrictEqual(["bronze-sword", "iron-sword", "iron-blade"]);
+	});
+
+	test("Using at full HP, on a weapon, or out of range is a no-op", () => {
+		const full = wounded(20);
+		expect(UnitComponent.useHealingItem(full, 3)).toBe(full); // already at the cap
+
+		const hurt = wounded(5);
+		expect(UnitComponent.useHealingItem(hurt, 0)).toBe(hurt); // slot 0 is the bronze sword
+		expect(UnitComponent.useHealingItem(hurt, 99)).toBe(hurt); // out of range
+	});
+
+	test("The source unit is left untouched", () => {
+		const before = wounded(5);
+		UnitComponent.useHealingItem(before, 3);
+
+		expect(before.currentHP).toBe(5);
+		expect(before.inventory[3].uses).toBe(3);
+	});
+});
+
+/** Handing pack entries across between two units, and tidying one pack's own slots. */
+suite("Inventory Trade Test Suite", () => {
+	const dardan = fourSlotDardan; // swordsman: bronze-sword, iron-sword, iron-blade, vulnerary
+	const elira = () => buildUnit(eliraDocument as UnitDocument); // axe fighter: iron-axe, bronze-axe, concoction
+	const ids = (unit: UnitData) => unit.inventory.map((entry) => entry.id);
+
+	test("Two carried entries change owners", () => {
+		const after = tradeInventoryItems(dardan(), 1, elira(), 2); // iron-sword <-> concoction
+
+		expect(ids(after.left)).toStrictEqual(["bronze-sword", "concoction", "iron-blade", "vulnerary"]);
+		expect(ids(after.right)).toStrictEqual(["iron-axe", "bronze-axe", "iron-sword"]);
+	});
+
+	test("An entry moved onto an empty slot is given away into the back of the pack", () => {
+		const after = tradeInventoryItems(dardan(), 3, elira(), 4); // vulnerary onto a free slot
+
+		expect(ids(after.left)).toStrictEqual(["bronze-sword", "iron-sword", "iron-blade"]);
+		expect(ids(after.right)).toStrictEqual(["iron-axe", "bronze-axe", "concoction", "vulnerary"]);
+	});
+
+	test("It works the other way round too", () => {
+		const after = tradeInventoryItems(dardan(), 4, elira(), 1); // bronze-axe onto Dardan's free slot
+
+		expect(ids(after.left)).toStrictEqual(["bronze-sword", "iron-sword", "iron-blade", "vulnerary", "bronze-axe"]);
+		expect(ids(after.right)).toStrictEqual(["iron-axe", "concoction"]);
+	});
+
+	test("An entry is of use only when the holder can wield it - a consumable always is", () => {
+		expect(UnitComponent.isUsableEntry(dardan().inventory[0])).toBe(true); // his own bronze sword
+		expect(UnitComponent.isUsableEntry(dardan().inventory[3])).toBe(true); // a vulnerary is nobody's weapon
+		expect(UnitComponent.isUsableEntry(elira().inventory[0])).toBe(true); // her own iron axe
+
+		// The axe once it has crossed to the swordsman - dead weight, and greyed out.
+		const traded = tradeInventoryItems(dardan(), 4, elira(), 1);
+		expect(UnitComponent.isUsableEntry(traded.left.inventory[4])).toBe(false);
+	});
+
+	test("A weapon arrives wieldable only when the new holder's class trains in it", () => {
+		const after = tradeInventoryItems(dardan(), 4, elira(), 1); // an axe, to a swordsman
+
+		const axe = after.left.inventory[4];
+		expect(axe.id).toBe("bronze-axe");
+		expect(axe.equippable).toBe(false);
+		expect(axe.equipped).toBe(false);
+
+		// ... and the same axe was wieldable in the axe fighter's own pack.
+		expect(elira().inventory[1].equippable).toBe(true);
+	});
+
+	test("Handing over the readied weapon leaves the unit unarmed", () => {
+		const after = tradeInventoryItems(dardan(), 0, elira(), 2); // the equipped bronze-sword
+
+		expect(after.left.weapon).toBeNull();
+		expect(after.left.inventory.some((entry) => entry.equipped)).toBe(false);
+
+		// It arrives as a plain carried entry - the receiver readies nothing by itself.
+		expect(after.right.inventory[2].id).toBe("bronze-sword");
+		expect(after.right.inventory[2].equipped).toBe(false);
+		expect(after.right.weapon?.id).toBe("iron-axe");
+	});
+
+	test("Both units come back untouched when nothing can change hands", () => {
+		const left = dardan();
+		const right = elira();
+
+		const empty = INVENTORY_SIZE - 1; // both packs are short of full, so the last slot is free
+
+		expect(tradeInventoryItems(left, empty, right, empty)).toStrictEqual({ left, right }); // two empty slots
+		expect(tradeInventoryItems(left, INVENTORY_SIZE, right, 0)).toStrictEqual({ left, right }); // outside the pack
+		expect(tradeInventoryItems(left, -1, right, 0)).toStrictEqual({ left, right });
+		expect(tradeInventoryItems(left, 0, left, 1)).toStrictEqual({ left, right: left }); // the same unit
+
+		// A full pack has no empty slot, so putting an entry down on one of its
+		// rows is always a straight swap - it never has to grow past the eight.
+		const filler = new Array(INVENTORY_SIZE - 5).fill("vulnerary");
+		const full = buildUnit({ ...(eliraDocument as UnitDocument), inventory: ["iron-axe", "bronze-axe", "concoction", "vulnerary", "elixir", ...filler] });
+		const swapped = tradeInventoryItems(left, 3, full, 4);
+
+		expect(full.inventory).toHaveLength(INVENTORY_SIZE);
+		expect(ids(swapped.left)).toStrictEqual(["bronze-sword", "iron-sword", "iron-blade", "elixir"]);
+		expect(ids(swapped.right)).toStrictEqual(["iron-axe", "bronze-axe", "concoction", "vulnerary", "vulnerary", ...filler]);
+	});
+
+	test("The source units are left untouched", () => {
+		const left = dardan();
+		const right = elira();
+
+		tradeInventoryItems(left, 0, right, 0);
+
+		expect(ids(left)).toStrictEqual(["bronze-sword", "iron-sword", "iron-blade", "vulnerary"]);
+		expect(ids(right)).toStrictEqual(["iron-axe", "bronze-axe", "concoction"]);
+		expect(left.weapon?.id).toBe("bronze-sword");
+	});
+
+	test("Two slots of one pack change places, and the readied weapon stays readied", () => {
+		const after = UnitComponent.swapSlots(dardan(), 0, 2);
+
+		expect(ids(after)).toStrictEqual(["iron-blade", "iron-sword", "bronze-sword", "vulnerary"]);
+		expect(after.weapon?.id).toBe("bronze-sword");
+		expect(after.inventory[2].equipped).toBe(true);
+	});
+
+	test("An entry moved onto an empty slot of its own pack goes to the back", () => {
+		expect(ids(UnitComponent.swapSlots(dardan(), 1, 4))).toStrictEqual(["bronze-sword", "iron-blade", "vulnerary", "iron-sword"]);
+	});
+
+	test("A rearrangement that would change nothing is a no-op", () => {
+		const unit = dardan();
+
+		expect(UnitComponent.swapSlots(unit, 2, 2)).toBe(unit); // the same slot
+		expect(UnitComponent.swapSlots(unit, 4, INVENTORY_SIZE - 1)).toBe(unit); // two empty slots
+		expect(UnitComponent.swapSlots(unit, 0, INVENTORY_SIZE)).toBe(unit); // outside the pack
+		expect(UnitComponent.swapSlots(unit, 3, 4)).toBe(unit); // the last entry, moved to the back it is already at
+	});
+
+	test("A pack sheet cannot be authored past its slots", () => {
+		// His readied weapon is added to the front when a sheet leaves it out, so a
+		// pack authored right up to the ceiling has to name it to stay there.
+		const pack = ["bronze-sword", ...new Array(INVENTORY_SIZE - 1).fill("vulnerary")];
+
+		expect(buildUnit({ ...(dardanDocument as UnitDocument), inventory: pack }).inventory).toHaveLength(INVENTORY_SIZE);
+		expect(() => buildUnit({ ...(dardanDocument as UnitDocument), inventory: [...pack, "elixir"] })).toThrow(new RegExp(`a pack holds ${INVENTORY_SIZE}`));
+	});
+});

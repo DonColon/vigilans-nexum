@@ -1,0 +1,104 @@
+{
+	"format": "vigilans-deployment",
+	"version": 1,
+	"map": "market-square",
+	"preparations": false,
+	"objective": {
+		"win": "defeat",
+		"target": "hasan-duel"
+	},
+	"area": [
+		{
+			"column": 14,
+			"row": 12,
+			"columns": 3,
+			"rows": 1
+		},
+		{
+			"column": 13,
+			"row": 13,
+			"columns": 5,
+			"rows": 1
+		},
+		{
+			"column": 12,
+			"row": 14,
+			"columns": 7,
+			"rows": 3
+		},
+		{
+			"column": 13,
+			"row": 17,
+			"columns": 5,
+			"rows": 1
+		},
+		{
+			"column": 14,
+			"row": 18,
+			"columns": 3,
+			"rows": 1
+		}
+	],
+	"units": [
+		{
+			"unit": "dardan-niveli",
+			"column": 13,
+			"row": 15,
+			"pack": [
+				{
+					"item": "bronze-sword",
+					"name": {
+						"de": "Holzstück",
+						"en": "Piece of Wood"
+					}
+				},
+				{
+					"item": "bronze-bow",
+					"name": {
+						"de": "Steine",
+						"en": "Stones"
+					},
+					"uses": 3
+				}
+			]
+		},
+		{
+			"unit": "hasan-duel",
+			"column": 17,
+			"row": 15,
+			"pack": [
+				{
+					"item": "bronze-sword",
+					"name": {
+						"de": "Holzschwert",
+						"en": "Wooden Sword"
+					}
+				}
+			]
+		},
+		{
+			"unit": "leona-kaori",
+			"column": 12,
+			"row": 13,
+			"spectator": true
+		},
+		{
+			"unit": "maksimo-auditore",
+			"column": 12,
+			"row": 17,
+			"spectator": true
+		},
+		{
+			"unit": "lina-yukari",
+			"column": 18,
+			"row": 13,
+			"spectator": true
+		},
+		{
+			"unit": "ivan-grussinskin",
+			"column": 18,
+			"row": 17,
+			"spectator": true
+		}
+	]
+}

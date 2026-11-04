@@ -1,4 +1,4 @@
-import { EventSystem, EventSystemConfig } from "@/core/events/EventSystem";
+import { EventBus, EventBusConfig } from "@/core/events/EventBus";
 import { LocalDatabase, DatabaseConfiguration } from "@/core/database/LocalDatabase";
 import { AssetStorage } from "@/core/assets/AssetStorage";
 import { AssetLoader, LoaderConfiguration } from "@/core/assets/AssetLoader";
@@ -6,15 +6,16 @@ import { GameStateManager } from "@/core/GameStateManager";
 import { Display, DisplayConfiguration } from "@/core/graphics/Display";
 import { InputDevice, InputDeviceConfig } from "@/core/input/InputDevice";
 import { AudioDevice, AudioConfiguration } from "@/core/audio/AudioDevice";
+import { I18nService, I18nOptions } from "@/core/i18n";
 import { World } from "@/core/ecs/World";
 import { ComponentConstructor } from "@/core/ecs/Component";
 import { JsonSchema } from "@/core/ecs/JsonSchema";
 import { Entity, EntityType } from "@/core/ecs/Entity";
-import { SystemConstructor } from "@/core/ecs/System";
+import { ReactiveSystemConstructor, ScheduledSystemConstructor, SystemConstructor } from "@/core/ecs/System";
 import { GameStateConstructor } from "@/core/GameState";
 import { GameCommandConstructor } from "@/core/input/commands/GameCommand";
-import { Savegame } from "@/core/model/Savegame";
-import { getRandomState, setRandomState, seedRandom } from "@/core/math/generation/Randomizer";
+import { Savegame, SavegameExtension, snapshotWorld } from "@/core/model/Savegame";
+import { seedRandom } from "@/core/math/generation/Randomizer";
 import { GameFeature, GameFeatureConstructor } from "./GameFeature";
 import { TimerManager } from "./timer/TimerManager";
 import { CooldownManager } from "./timer/CooldownManager";
@@ -35,12 +36,17 @@ export interface GameConfiguration {
 		state: GameStateConstructor | string;
 		bundle: string;
 	};
-	eventSystem: EventSystemConfig;
+	eventBus: EventBusConfig;
 	inputDevice: InputDeviceConfig;
 	assetLoader: LoaderConfiguration;
 	localDatabase: DatabaseConfiguration;
 	display?: DisplayConfiguration;
 	audioDevice?: AudioConfiguration;
+	/**
+	 * Localisation. Left out, the browser language picks the locale and the
+	 * shipped `src/game/i18n/*.json` files are loaded with `en` as the fallback.
+	 */
+	i18n?: I18nOptions;
 }
 
 export class Game {
@@ -57,7 +63,8 @@ export class Game {
 
 	private features: Map<string, GameFeature>;
 
-	private eventSystem: EventSystem;
+	private i18n: I18nService;
+	private eventBus: EventBus;
 	private poolManager: PoolManager;
 	private localDatabase: LocalDatabase;
 	private assetStorage: AssetStorage;
@@ -85,7 +92,11 @@ export class Game {
 			seedRandom(config.seed);
 		}
 
-		this.eventSystem = new EventSystem(config.eventSystem);
+		// Reads the browser language and loads the matching src/game/i18n/[locale].json
+		// so i18n() works from the first frame - before any feature is installed.
+		this.i18n = new I18nService(config.i18n);
+
+		this.eventBus = new EventBus(config.eventBus);
 		this.poolManager = new PoolManager();
 		this.localDatabase = new LocalDatabase(config.id, config.localDatabase);
 		this.assetStorage = new AssetStorage();
@@ -107,12 +118,16 @@ export class Game {
 	}
 
 	public async start() {
-		this.stateManager.switch(this.config.initial.state);
-
+		// Loaded before the first state is entered: the bundle carries the content
+		// as well as the art - maps, unit sheets, the catalogs - and a state builds
+		// from it the moment it is switched to.
+		//
 		// Awaited rather than waited for through bundleLoaded: dispatched events
 		// are queued and only delivered by the loop, which is what start is about
 		// to set off - subscribing here would wait for an event that never lands.
 		await this.assetLoader.load(this.config.initial.bundle);
+
+		this.stateManager.switch(this.config.initial.state);
 		await this.resume();
 	}
 
@@ -124,12 +139,16 @@ export class Game {
 		this.animationFrame = window.requestAnimationFrame((current) => this.main(current));
 	}
 
-	public async load(slot: number) {
+	/**
+	 * Restores the framework's part of a save - the timer, every entity and
+	 * the state stack - and hands the whole record back so the game can take
+	 * up what it added (see `SavegameExtension`).
+	 */
+	public async load(slot: number): Promise<Savegame> {
 		const repository = this.localDatabase.getRepository("savegames");
 		const savegame = await repository.read(slot);
 
 		this.timer = savegame.playtime;
-		setRandomState(savegame.randomState);
 
 		for (const entity of savegame.entities) {
 			this.registerEntity(entity);
@@ -138,24 +157,16 @@ export class Game {
 		for (const state of savegame.currentState) {
 			this.stateManager.push(state);
 		}
+
+		return savegame;
 	}
 
-	public async save(slot: number) {
-		const entities = this.world.getEntities();
-		const states = this.stateManager.getCurrentStates();
-
-		const savegame: Savegame = {
-			id: slot,
-			playtime: this.timer,
-			modifiedOn: new Date().toISOString(),
-			screenshot: await this.display.screenshot(),
-			currentState: states.map((state) => (state.constructor as GameStateConstructor).type),
-			entities: entities.map((entity) => entity.toObject()),
-			randomState: getRandomState()
-		};
+	/** Writes the world as it stands, with the play timer and the game's own part of the save, into the slot. */
+	public async save(slot: number, extension: SavegameExtension): Promise<void> {
+		const savegame: Savegame = { ...snapshotWorld(this.world, this.stateManager, this.display, slot, this.timer), ...extension };
 
 		const repository = this.localDatabase.getRepository("savegames");
-		repository.save(savegame);
+		await repository.save(savegame);
 	}
 
 	public stop() {
@@ -163,6 +174,18 @@ export class Game {
 		this.isRunning = false;
 
 		window.cancelAnimationFrame(this.animationFrame);
+	}
+
+	/**
+	 * Runs a single fixed update step and a render, without the requestAnimationFrame
+	 * loop. Browser automation and a backgrounded tab both throttle rAF to a stop,
+	 * so this is the way to drive the game by hand from a test or the console.
+	 */
+	public step(elapsed: number = this.timePerUpdate) {
+		const now = performance.now();
+
+		this.update(elapsed, now);
+		this.render(elapsed, now);
 	}
 
 	public install(feature: GameFeature): this {
@@ -216,8 +239,14 @@ export class Game {
 		return this;
 	}
 
-	public registerSystem(systemType: SystemConstructor, priority: number): this {
-		this.world.registerSystem(systemType, priority);
+	public registerSystem(systemType: ScheduledSystemConstructor, priority: number): this;
+	public registerSystem(systemType: ReactiveSystemConstructor): this;
+	public registerSystem(systemType: SystemConstructor, priority?: number): this {
+		if (priority === undefined) {
+			this.world.registerSystem(systemType as ReactiveSystemConstructor);
+		} else {
+			this.world.registerSystem(systemType as ScheduledSystemConstructor, priority);
+		}
 		return this;
 	}
 
@@ -276,7 +305,7 @@ export class Game {
 		this.timerManager.update(elapsed);
 		this.cooldownManager.update(elapsed);
 		this.inputDevice.update();
-		this.eventSystem.processQueue();
+		this.eventBus.processQueue();
 		this.world.update(elapsed, frame);
 	}
 
