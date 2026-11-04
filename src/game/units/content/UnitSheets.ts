@@ -1,6 +1,9 @@
 import { GameError } from "@/core/GameError";
-import { getUnitClass, getWeapon, MOVEMENT_CAP } from "@/game/units/content/UnitCatalog";
-import { INVENTORY_SIZE, LEVEL_UP_EXPERIENCE, UnitComponent, UnitData, UnitFaction, UnitStats } from "@/game/units/components/UnitComponent";
+import { getI18n } from "@/core/i18n/I18n";
+import { LocalizedText, localizedText } from "@/core/i18n/LocalizedText";
+import { DeploymentPlacement, PackEntry, placementId } from "@/game/units/content/Deployments";
+import { getUnitClass, getWeapon, isCatalogWeapon, MOVEMENT_CAP } from "@/game/units/content/UnitCatalog";
+import { INVENTORY_SIZE, InventoryEntry, LEVEL_UP_EXPERIENCE, UnitComponent, UnitData, UnitFaction, UnitStats } from "@/game/units/components/UnitComponent";
 
 /**
  * A stat block as a sheet writes it: every stat but movement, which the class
@@ -177,4 +180,50 @@ export function buildUnit(document: UnitDocument): UnitData {
 		inventory,
 		hasMoved: false
 	};
+}
+
+/** The text in the language the game is being played in. */
+function localized(text: LocalizedText): string {
+	const service = getI18n();
+
+	return localizedText(text, service.getLocale(), service.getFallbackLocale());
+}
+
+/** A pack entry as a unit carries it: the catalog's entry, under the name and with the uses the placement gave it. */
+function packEntry(entry: PackEntry, unit: UnitData, readied: string): InventoryEntry {
+	const resolved = UnitComponent.resolveEntry(entry.item, unit.weaponTypes, readied);
+	const name = entry.name === undefined ? resolved.name : localized(entry.name);
+
+	return {
+		...resolved,
+		name,
+		uses: entry.uses ?? resolved.uses,
+		weapon: resolved.weapon === null ? null : { ...resolved.weapon, name }
+	};
+}
+
+/**
+ * The sheet as this placement puts it on the map: under the placement's id and
+ * name, with its pack, and on no side at all when it is a spectator.
+ */
+export function placedUnit(unit: UnitData, placement: DeploymentPlacement): UnitData {
+	const placed: UnitData = {
+		...unit,
+		id: placementId(placement),
+		name: placement.name === undefined ? unit.name : localized(placement.name),
+		faction: placement.spectator === true ? UnitFaction.NEUTRAL : unit.faction
+	};
+
+	if (placement.pack === undefined) {
+		return placed;
+	}
+
+	if (placement.pack.length > INVENTORY_SIZE) {
+		throw new GameError(`Deployment of "${placement.unit}" hands out ${placement.pack.length} entries, a pack holds ${INVENTORY_SIZE}`);
+	}
+
+	const readied = placement.pack.find((entry) => isCatalogWeapon(entry.item))?.item ?? "";
+	const inventory = placement.pack.map((entry) => packEntry(entry, unit, readied));
+
+	return { ...placed, inventory, weapon: inventory.find((entry) => entry.equipped)?.weapon ?? null };
 }

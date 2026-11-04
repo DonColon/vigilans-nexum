@@ -5,6 +5,8 @@ import { EnemyBehaviour } from "@/game/ai/content/Behaviours";
 export interface BehaviourData extends JsonSchema {
 	/** How this unit spends the enemy phase - see `content/Behaviours`. */
 	behaviour: EnemyBehaviour;
+	/** The turn it starts charging, whatever `behaviour` says; 0 when it never changes. */
+	chargeFromTurn: number;
 }
 
 /**

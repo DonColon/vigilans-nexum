@@ -35,7 +35,7 @@ import { UnitComponent, UnitData } from "@/game/units/components/UnitComponent";
 import { deploymentAsset, DeploymentDocument, parseDeployment, placementId } from "@/game/units/content/Deployments";
 import { buildUnit, UnitDocument } from "@/game/units/content/UnitSheets";
 import { GameError } from "@/core/GameError";
-import bellumDocument from "@/assets/data/deployments/bellum.deployment.json";
+import { chapterOneDeployment as bellumDocument } from "../../support/SpecContent";
 import dardanDocument from "@/assets/data/units/dardan-niveli.unit.json";
 import hasanDocument from "@/assets/data/units/hasan-eyletmez.unit.json";
 import leonaDocument from "@/assets/data/units/leona-kaori.unit.json";
@@ -102,7 +102,7 @@ suite("Prepare Test Suite", () => {
 		});
 
 		test("Every shipped deployment parses, with every placement's sheet in the bundle and instance ids unique", () => {
-			for (const scenario of ["skirmish", "bellum", "river"]) {
+			for (const scenario of ["bellum-duel", "bellum-brawl"]) {
 				const deployment = parseDeployment(assets.getJson<DeploymentDocument>(deploymentAsset(scenario)));
 
 				for (const placement of deployment.units) {
@@ -382,7 +382,7 @@ suite("Prepare Test Suite", () => {
 		const leona = buildUnit(leonaDocument as UnitDocument);
 
 		test("Deployed units are enrolled once; a benched unit takes its sheet with it", () => {
-			const begun = CampaignComponent.begin(1, "bellum");
+			const begun = CampaignComponent.begin(1, "chapter-one");
 			const enrolled = CampaignComponent.enrolled(begun, [dardan, hasan]);
 
 			expect(enrolled.roster.map((unit) => unit.id)).toStrictEqual(["dardan-niveli", "hasan-eyletmez"]);
@@ -395,8 +395,8 @@ suite("Prepare Test Suite", () => {
 		});
 
 		test("Winning keeps the benched on the roster and drops the casualties", () => {
-			const before = CampaignComponent.withCasualty(CampaignComponent.enrolled(CampaignComponent.begin(1, "bellum"), [dardan, hasan, leona]), "leona-kaori");
-			const after = CampaignComponent.cleared(before, [{ ...dardan, level: 4 }], [], "river");
+			const before = CampaignComponent.withCasualty(CampaignComponent.enrolled(CampaignComponent.begin(1, "chapter-one"), [dardan, hasan, leona]), "leona-kaori");
+			const after = CampaignComponent.cleared(before, [{ ...dardan, level: 4 }], [], "chapter-two");
 
 			expect(after.roster.map((unit) => `${unit.id} L${unit.level}`)).toStrictEqual(["dardan-niveli L4", "hasan-eyletmez L1"]);
 			expect(after.fallen).toStrictEqual(["leona-kaori"]);

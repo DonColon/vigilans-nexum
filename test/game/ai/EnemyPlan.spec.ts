@@ -229,7 +229,7 @@ suite("Enemy Plan Test Suite", () => {
 	});
 
 	suite("Deployment sheet", () => {
-		const valid = { format: "vigilans-deployment", version: 1, map: "fantasy", units: [{ unit: "hasan", column: 1, row: 2, behaviour: "hold" }] };
+		const valid = { format: "vigilans-deployment", version: 1, map: "spec", units: [{ unit: "hasan", column: 1, row: 2, behaviour: "hold" }] };
 
 		test("A well-formed sheet is returned as is", () => {
 			expect(parseDeployment(valid)).toBe(valid);

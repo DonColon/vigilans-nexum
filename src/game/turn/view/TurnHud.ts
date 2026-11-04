@@ -18,7 +18,7 @@ export const TURN_LABEL_KEY = "turn.label";
 const LABEL_FAMILY = "'kenney-mini', 'Trebuchet MS', sans-serif";
 
 /**
- * The turn counter tucked into the map's top-left corner: a localized label
+ * The turn counter tucked into the screen's top-left corner: a localized label
  * ("Turn" / "Zug") followed by a couple of `kenney-1bit` digit tiles on a dark
  * plate. Always at least two digits, so turn 3 reads `03`.
  */
@@ -28,7 +28,7 @@ export const TurnHud = {
 	glyph: 16,
 	/** How far the digit tiles are scaled up. */
 	scale: 1.5,
-	/** Gap between the plate and the map's top-left corner. */
+	/** Gap between the plate and the screen's top-left corner. */
 	inset: 6,
 	/** Inner padding of the plate above and below the digits. */
 	padding: 4,

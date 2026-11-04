@@ -1,0 +1,44 @@
+{
+	"format": "vigilans-unit",
+	"version": 1,
+	"id": "older-child",
+	"name": "Gefolgsmann",
+	"faction": "enemy",
+	"class": "citizen",
+	"level": 1,
+	"weapon": "bronze-sword",
+	"inventory": ["bronze-sword"],
+	"stats": {
+		"hp": 18,
+		"mp": 10,
+		"strength": 5,
+		"magic": 3,
+		"dexterity": 5,
+		"speed": 5,
+		"luck": 4,
+		"defense": 4,
+		"resistance": 2
+	},
+	"growths": {
+		"hp": 45,
+		"mp": 15,
+		"strength": 30,
+		"magic": 10,
+		"dexterity": 30,
+		"speed": 30,
+		"luck": 25,
+		"defense": 25,
+		"resistance": 15
+	},
+	"maxStats": {
+		"hp": 60,
+		"mp": 30,
+		"strength": 25,
+		"magic": 25,
+		"dexterity": 28,
+		"speed": 29,
+		"luck": 30,
+		"defense": 24,
+		"resistance": 22
+	}
+}

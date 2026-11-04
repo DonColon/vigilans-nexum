@@ -65,7 +65,7 @@ suite("Unit Deployment Test Suite", () => {
 	});
 
 	test("map:ready deploys the units from the deployment sheet", () => {
-		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "skirmish" });
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "spec" });
 		eventBus.processQueue();
 
 		expect(units()).toHaveLength(5);
@@ -84,7 +84,7 @@ suite("Unit Deployment Test Suite", () => {
 	});
 
 	test("The commander is tagged and the cursor starts on him", () => {
-		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "skirmish" });
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "spec" });
 		eventBus.processQueue();
 
 		const dardan = unitById(units(), "dardan") as Entity;
@@ -96,7 +96,7 @@ suite("Unit Deployment Test Suite", () => {
 	});
 
 	test("map:closed clears the units", () => {
-		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "skirmish" });
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "spec" });
 		eventBus.processQueue();
 		expect(units()).toHaveLength(5);
 
@@ -107,16 +107,16 @@ suite("Unit Deployment Test Suite", () => {
 	});
 
 	test("A fresh map:ready redeploys without leaving stale units", () => {
-		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "skirmish" });
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "spec" });
 		eventBus.processQueue();
-		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "skirmish" });
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "spec" });
 		eventBus.processQueue();
 
 		expect(units()).toHaveLength(5);
 	});
 
 	test("Using a healing item floats the restored HP over the unit in green", () => {
-		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "skirmish" });
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "spec" });
 		eventBus.processQueue();
 
 		const dardan = unitById(units(), "dardan") as Entity;
@@ -135,7 +135,7 @@ suite("Unit Deployment Test Suite", () => {
 	});
 
 	test("An item that healed nothing floats nothing", () => {
-		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "skirmish" });
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "spec" });
 		eventBus.processQueue();
 
 		eventBus.dispatch("unit:usedItem", { unitId: "dardan", itemId: "vulnerary", healed: 0, gains: NO_BOOST });
@@ -145,7 +145,7 @@ suite("Unit Deployment Test Suite", () => {
 	});
 
 	test("The label ages away and is taken off the unit again", () => {
-		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "skirmish" });
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "spec" });
 		eventBus.processQueue();
 
 		eventBus.dispatch("unit:usedItem", { unitId: "dardan", itemId: "vulnerary", healed: 4, gains: NO_BOOST });

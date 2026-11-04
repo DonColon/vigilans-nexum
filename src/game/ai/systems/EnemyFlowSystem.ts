@@ -6,7 +6,7 @@ import { BehaviourComponent } from "@/game/ai/components/BehaviourComponent";
 import { EnemyActionComponent, EnemyActionStep } from "@/game/ai/components/EnemyActionComponent";
 import { behaviourOf } from "@/game/ai/content/Behaviours";
 import { UnitComponent, UnitFaction } from "@/game/units/components/UnitComponent";
-import { DEPLOYMENT_ASSET, DeploymentPlacement, parseDeployment } from "@/game/units/content/Deployments";
+import { deploymentAsset, DeploymentPlacement, parseDeployment, placementId } from "@/game/units/content/Deployments";
 import { unitById, unitsInWorld, unitsOfFaction } from "@/game/units/rules/UnitLookup";
 
 /**
@@ -29,34 +29,34 @@ export class EnemyFlowSystem extends ReactiveSystem {
 
 	public initialize(): this {
 		// Below the units feature's own handler (0), so the units are on the map to tag.
-		this.subscribe("map:ready", () => this.tagEnemies(), -1);
+		this.subscribe("map:ready", (event) => this.tagEnemies(event.scenario), -1);
 		this.subscribe("combat:resolved", (event) => this.onCombatResolved(event));
 
 		return this;
 	}
 
-	private tagEnemies(): void {
-		const placements = this.placements();
+	private tagEnemies(scenario: string): void {
+		const placements = this.placements(scenario);
 
 		for (const enemy of unitsOfFaction(unitsInWorld(this.world), UnitFaction.ENEMY)) {
 			const data = enemy.getComponent(UnitComponent).read();
-			const placement = placements.find((candidate) => candidate.unit === data.id) ?? null;
-			const behaviour = behaviourOf(placement, data.boss);
+			const placement = placements.find((candidate) => placementId(candidate) === data.id) ?? null;
+			const tag = { behaviour: behaviourOf(placement, data.boss), chargeFromTurn: placement?.chargeFromTurn ?? 0 };
 
 			if (enemy.hasComponent(BehaviourComponent)) {
-				enemy.getComponent(BehaviourComponent).update({ behaviour });
+				enemy.getComponent(BehaviourComponent).update(tag);
 			} else {
-				enemy.addComponent(BehaviourComponent, { behaviour });
+				enemy.addComponent(BehaviourComponent, tag);
 			}
 		}
 	}
 
 	/** The battle's deployment placements, or none when the sheet cannot be read - every enemy then gets the default. */
-	private placements(): DeploymentPlacement[] {
+	private placements(scenario: string): DeploymentPlacement[] {
 		try {
-			return parseDeployment(this.assets.getJson(DEPLOYMENT_ASSET)).units;
+			return parseDeployment(this.assets.getJson(deploymentAsset(scenario))).units;
 		} catch (error) {
-			console.error(`Deployment "${DEPLOYMENT_ASSET}" could not be read for the enemy's behaviours:`, error);
+			console.error(`Deployment "${deploymentAsset(scenario)}" could not be read for the enemy's behaviours:`, error);
 			return [];
 		}
 	}

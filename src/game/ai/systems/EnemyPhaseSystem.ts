@@ -8,7 +8,7 @@ import { GameStateManager } from "@/core/GameStateManager";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { BehaviourComponent } from "@/game/ai/components/BehaviourComponent";
 import { EnemyActionComponent, EnemyActionData, EnemyActionStep } from "@/game/ai/components/EnemyActionComponent";
-import { EnemyBehaviour } from "@/game/ai/content/Behaviours";
+import { behaviourOnTurn, EnemyBehaviour } from "@/game/ai/content/Behaviours";
 import { planEnemyAction, PlanUnit } from "@/game/ai/rules/EnemyPlan";
 import { EnemyPhaseState } from "@/game/ai/states/EnemyPhaseState";
 import { ENEMY_AIM_MS, ENEMY_FOCUS_MS } from "@/game/ai/view/EnemyPace";
@@ -88,7 +88,12 @@ export class EnemyPhaseSystem extends UpdateSystem {
 		}
 
 		if (this.isMap(top)) {
-			this.stateManager.push(EnemyPhaseState);
+			// A battle decided on this phase is being taken down: held again, the
+			// map would be left under the state whoever leads on switches away from.
+			if (!data.over) {
+				this.stateManager.push(EnemyPhaseState);
+			}
+
 			return;
 		}
 
@@ -125,7 +130,9 @@ export class EnemyPhaseSystem extends UpdateSystem {
 		}
 
 		const enemy = waiting[0];
-		const behaviour = enemy.hasComponent(BehaviourComponent) ? enemy.getComponent(BehaviourComponent).read().behaviour : EnemyBehaviour.CHARGE;
+		const tag = enemy.hasComponent(BehaviourComponent) ? enemy.getComponent(BehaviourComponent).read() : { behaviour: EnemyBehaviour.CHARGE, chargeFromTurn: 0 };
+		const turn = this.queries.turns.getSingleResult()?.getComponent(TurnComponent).read().number ?? 1;
+		const behaviour = behaviourOnTurn(tag.behaviour, tag.chargeFromTurn, turn);
 		const targets: PlanUnit[] = enemiesOf(units, UnitFaction.ENEMY).map((unit) => ({ data: unit.getComponent(UnitComponent).read(), tile: tileOf(unit) }));
 		const self: PlanUnit = { data: enemy.getComponent(UnitComponent).read(), tile: tileOf(enemy) };
 
@@ -198,6 +205,8 @@ export class EnemyPhaseSystem extends UpdateSystem {
 
 		acting.getComponent(GridPositionComponent).update({ column: destination.column, row: destination.row });
 		acting.addComponent(WalkComponent, { path, elapsed: 0, duration: (path.length - 1) * WALK_STEP_MS });
+		// The cursor goes ahead of it, so a map taller than the screen scrolls to where the fight will be.
+		this.focusCursor(destination);
 	}
 
 	/** Hands the planned fight to the combat feature, or skips straight to done when there is none (or the target is gone). */

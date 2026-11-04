@@ -4,7 +4,7 @@ import { i18n } from "@/core/i18n/I18n";
 import { getTerrainProperties, IMPASSABLE, TerrainType } from "@/game/map/content/Terrain";
 
 /**
- * The terrain readout in the map's top-left corner, above the turn counter: what
+ * The terrain readout in the screen's top-left corner, above the turn counter: what
  * the tile under the cursor is and what standing on it is worth. Fire Emblem
  * keeps the same box on screen at all times and swaps its contents as the cursor
  * moves, which is what this does.
@@ -21,7 +21,7 @@ const LABEL_FAMILY = "'kenney-mini', 'Trebuchet MS', sans-serif";
 export const IMPASSABLE_COST = "-";
 
 export const TileInfoHud = {
-	/** Gap between the plate and the map's top-left corner - the turn counter's own inset. */
+	/** Gap between the plate and the screen's top-left corner - the turn counter's own inset. */
 	inset: 6,
 	/** Inner padding of the plate around its rows. */
 	padding: 10,
@@ -63,6 +63,24 @@ export const TILE_INFO_HEIGHT = TileInfoHud.padding * 2 + TILE_INFO_ROWS * TileI
 
 /** Top edge of whatever sits under the plate - what the turn counter measures itself from. */
 export const TILE_INFO_BOTTOM = TileInfoHud.inset + TILE_INFO_HEIGHT + TileInfoHud.gap;
+
+/** How far down the screen the corner's two plates reach, the turn counter included. */
+const HUD_CORNER_HEIGHT = TILE_INFO_BOTTOM + 40;
+
+/**
+ * Whether the corner plates go to the right of the screen: Fire Emblem's windows
+ * get out of the way of the cursor, so a tile under them can still be seen. They
+ * cross over once the cursor's tile comes under the left-hand corner, and stay
+ * on the left otherwise.
+ */
+export function hudOnRight(cursor: { x: number; y: number }, cellSize: number): boolean {
+	return cursor.x < TileInfoHud.inset + TileInfoHud.minWidth && cursor.y < HUD_CORNER_HEIGHT && cursor.x + cellSize > 0;
+}
+
+/** Left edge of a corner plate of this width. */
+export function hudPlateX(viewportWidth: number, width: number, onRight: boolean): number {
+	return onRight ? viewportWidth - TileInfoHud.inset - width : TileInfoHud.inset;
+}
 
 /** One line of the readout: what it is, and what the tile scores for it. */
 export interface TileInfoRow {

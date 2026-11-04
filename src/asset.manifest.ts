@@ -91,19 +91,14 @@ const assetManifest: AssetManifest = {
 			// each is looked up as `unit-<id>`, so a new character is a sheet plus an
 			// entry here - no TypeScript changes.
 			{
-				id: "deployment-skirmish",
+				id: "deployment-bellum-duel",
 				type: "json",
-				url: "/data/deployments/skirmish.deployment.json"
+				url: "/data/deployments/bellum-duel.deployment.json"
 			},
 			{
-				id: "deployment-river",
+				id: "deployment-bellum-brawl",
 				type: "json",
-				url: "/data/deployments/river.deployment.json"
-			},
-			{
-				id: "deployment-bellum",
-				type: "json",
-				url: "/data/deployments/bellum.deployment.json"
+				url: "/data/deployments/bellum-brawl.deployment.json"
 			},
 			{
 				id: "unit-dardan",
@@ -192,67 +187,75 @@ const assetManifest: AssetManifest = {
 				type: "json",
 				url: "/data/units/bandit-chief.unit.json"
 			},
+			{
+				id: "unit-hasan-duel",
+				type: "json",
+				url: "/data/units/hasan-duel.unit.json"
+			},
+			{
+				id: "unit-older-child",
+				type: "json",
+				url: "/data/units/older-child.unit.json"
+			},
+			{
+				id: "unit-older-child-leader",
+				type: "json",
+				url: "/data/units/older-child-leader.unit.json"
+			},
 			// The houses on the map, who is in and what they hand over - see
 			// src/game/visit.
 			{
-				id: "houses-skirmish",
+				id: "houses-bellum-duel",
 				type: "json",
-				url: "/data/houses/skirmish.houses.json"
+				url: "/data/houses/bellum-duel.houses.json"
 			},
 			{
-				id: "houses-river",
+				id: "houses-bellum-brawl",
 				type: "json",
-				url: "/data/houses/river.houses.json"
-			},
-			{
-				id: "houses-bellum",
-				type: "json",
-				url: "/data/houses/bellum.houses.json"
+				url: "/data/houses/bellum-brawl.houses.json"
 			},
 			// The locked doors and chests on the map, and what the chests hold - see
 			// src/game/locks.
 			{
-				id: "locks-skirmish",
+				id: "locks-bellum-duel",
 				type: "json",
-				url: "/data/locks/skirmish.locks.json"
+				url: "/data/locks/bellum-duel.locks.json"
 			},
 			{
-				id: "locks-river",
+				id: "locks-bellum-brawl",
 				type: "json",
-				url: "/data/locks/river.locks.json"
-			},
-			{
-				id: "locks-bellum",
-				type: "json",
-				url: "/data/locks/bellum.locks.json"
+				url: "/data/locks/bellum-brawl.locks.json"
 			},
 			// Who may talk to whom, and the script they speak - see src/game/talk.
 			{
-				id: "conversations-skirmish",
+				id: "conversations-bellum-duel",
 				type: "json",
-				url: "/data/conversations/skirmish.conversations.json"
+				url: "/data/conversations/bellum-duel.conversations.json"
 			},
 			{
-				id: "conversations-river",
+				id: "conversations-bellum-brawl",
 				type: "json",
-				url: "/data/conversations/river.conversations.json"
-			},
-			{
-				id: "conversations-bellum",
-				type: "json",
-				url: "/data/conversations/bellum.conversations.json"
+				url: "/data/conversations/bellum-brawl.conversations.json"
 			},
 			// The tile maps the chapters are fought on, `map-<name>` as the campaign
 			// sheet names them; MapState builds whichever the chapter asks for.
+			// Chapter 01 "Every End...": fights 1 and 2 are fought on the market
+			// square drawn in Tiled.
 			{
-				id: "map-fantasy",
+				id: "map-market-square",
 				type: "json",
-				url: "/data/maps/fantasy.tilemap.json"
+				url: "/data/maps/market-square.tilemap.json"
+			},
+			// The Level-01 sketches of the market and of the orphanage (fight 3).
+			{
+				id: "map-bellum-market",
+				type: "json",
+				url: "/data/maps/bellum-market.tilemap.json"
 			},
 			{
-				id: "map-river",
+				id: "map-bellum-orphanage",
 				type: "json",
-				url: "/data/maps/river.tilemap.json"
+				url: "/data/maps/bellum-orphanage.tilemap.json"
 			},
 			// Pixel fonts for the UI text. AssetLoader registers each as
 			// `new FontFace("<id>", ...)`, so the CSS family name is the asset id.

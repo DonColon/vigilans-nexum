@@ -9,12 +9,17 @@ export const CAMPAIGN_ASSET = "campaign";
  * scenario document (`deployment-<id>`, `houses-<id>`, ...) is shipped under,
  * see `src/game/map/content/Scenario` - the tile map it is fought on, and the
  * title its card shows, per locale. The chapter's number is its place in the
- * list.
+ * list, not counting the entries that `continues` the one before - further
+ * battles of the same chapter, under its number. A `prologue` entry follows the
+ * story rather than the run: nobody falls for good, each battle hands out its
+ * own packs, and nothing of it reaches the first entry that is not one.
  */
 export interface CampaignChapter {
 	id: string;
 	title: LocalizedText;
 	map: string;
+	continues?: boolean;
+	prologue?: boolean;
 }
 
 /**
@@ -54,6 +59,10 @@ export function parseCampaign(document: unknown): CampaignDocument {
 			throw new GameError("Campaign chapter is not an object");
 		}
 
+		if (chapter.continues === true && seen.size === 0) {
+			throw new GameError(`Campaign chapter "${chapter.id}" continues a chapter, but it is the first`);
+		}
+
 		if (typeof chapter.id !== "string" || chapter.id.length === 0) {
 			throw new GameError("Campaign chapter is missing its id");
 		}
@@ -81,9 +90,11 @@ export function chapterById(document: CampaignDocument, id: string): CampaignCha
 	return document.chapters.find((chapter) => chapter.id === id) ?? null;
 }
 
-/** One-based place of the chapter in the campaign - what its card calls it - or 0 when the sheet has none. */
+/** One-based number of the chapter in the campaign - what its card calls it - or 0 when the sheet has none. Entries that continue a chapter share its number. */
 export function chapterNumber(document: CampaignDocument, id: string): number {
-	return document.chapters.findIndex((chapter) => chapter.id === id) + 1;
+	const index = document.chapters.findIndex((chapter) => chapter.id === id);
+
+	return document.chapters.slice(0, index + 1).filter((chapter) => chapter.continues !== true).length;
 }
 
 /** The chapter played after this one, or null when it is the last - or not in the sheet at all. */

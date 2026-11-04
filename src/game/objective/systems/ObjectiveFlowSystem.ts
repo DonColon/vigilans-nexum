@@ -18,8 +18,9 @@ import { unitById, unitsInWorld } from "@/game/units/rules/UnitLookup";
  *    otherwise; on `map:closed` it goes.
  *  - After every `unit:died` - once the combat feature has taken the fallen
  *    off the map, hence the lower priority - the units left are read for an
- *    outcome (`rules/Outcome`): the commander gone or nobody left is a defeat,
- *    the last enemy gone a victory when the objective is a rout.
+ *    outcome (`rules/Outcome`): the commander or a protected unit gone, or
+ *    nobody left, is a defeat; the last enemy gone is a victory when the
+ *    objective is a rout, the target gone when it is a defeat.
  *  - `seize:requested` (the "Seize" command) is a victory when the unit really
  *    can claim the tile.
  *  - `objective:requested` (the "Objective" row of the global menu) pushes an

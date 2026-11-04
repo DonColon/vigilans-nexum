@@ -23,21 +23,21 @@ import banditDocument from "./src/assets/data/units/bandit.unit.json";
 import ruffianDocument from "./src/assets/data/units/ruffian.unit.json";
 import poacherDocument from "./src/assets/data/units/poacher.unit.json";
 import banditChiefDocument from "./src/assets/data/units/bandit-chief.unit.json";
-import bellumDeployment from "./src/assets/data/deployments/bellum.deployment.json";
-import bellumConversations from "./src/assets/data/conversations/bellum.conversations.json";
-import bellumHouses from "./src/assets/data/houses/bellum.houses.json";
-import bellumLocks from "./src/assets/data/locks/bellum.locks.json";
-import skirmishDeployment from "./src/assets/data/deployments/skirmish.deployment.json";
-import fantasyMap from "./src/assets/data/maps/fantasy.tilemap.json";
-import skirmishConversations from "./src/assets/data/conversations/skirmish.conversations.json";
-import skirmishHouses from "./src/assets/data/houses/skirmish.houses.json";
-import skirmishLocks from "./src/assets/data/locks/skirmish.locks.json";
-import campaign from "./src/assets/data/campaign/campaign.json";
-import riverDeployment from "./src/assets/data/deployments/river.deployment.json";
-import riverMap from "./src/assets/data/maps/river.tilemap.json";
-import riverConversations from "./src/assets/data/conversations/river.conversations.json";
-import riverHouses from "./src/assets/data/houses/river.houses.json";
-import riverLocks from "./src/assets/data/locks/river.locks.json";
+import hasanDuelDocument from "./src/assets/data/units/hasan-duel.unit.json";
+import olderChildDocument from "./src/assets/data/units/older-child.unit.json";
+import olderChildLeaderDocument from "./src/assets/data/units/older-child-leader.unit.json";
+import bellumDuelDeployment from "./src/assets/data/deployments/bellum-duel.deployment.json";
+import bellumDuelConversations from "./src/assets/data/conversations/bellum-duel.conversations.json";
+import bellumDuelHouses from "./src/assets/data/houses/bellum-duel.houses.json";
+import bellumDuelLocks from "./src/assets/data/locks/bellum-duel.locks.json";
+import bellumBrawlDeployment from "./src/assets/data/deployments/bellum-brawl.deployment.json";
+import bellumBrawlConversations from "./src/assets/data/conversations/bellum-brawl.conversations.json";
+import bellumBrawlHouses from "./src/assets/data/houses/bellum-brawl.houses.json";
+import bellumBrawlLocks from "./src/assets/data/locks/bellum-brawl.locks.json";
+import marketSquareMap from "./src/assets/data/maps/market-square.tilemap.json";
+import { specCampaign, specMap, specScenarios, specSmallMap } from "./test/support/SpecContent";
+import bellumMarketMap from "./src/assets/data/maps/bellum-market.tilemap.json";
+import bellumOrphanageMap from "./src/assets/data/maps/bellum-orphanage.tilemap.json";
 
 new EventBus({
 	history: {
@@ -63,7 +63,6 @@ const assetStorage = new AssetStorage();
 assetStorage.setJson("catalog-classes", classesDocument);
 assetStorage.setJson("catalog-weapons", weaponsDocument);
 assetStorage.setJson("catalog-items", itemsDocument);
-assetStorage.setJson("deployment-skirmish", skirmishDeployment);
 assetStorage.setJson("unit-dardan", dardanDocument);
 assetStorage.setJson("unit-elira", eliraDocument);
 assetStorage.setJson("unit-hasan", hasanDocument);
@@ -81,20 +80,31 @@ assetStorage.setJson("unit-bandit", banditDocument);
 assetStorage.setJson("unit-ruffian", ruffianDocument);
 assetStorage.setJson("unit-poacher", poacherDocument);
 assetStorage.setJson("unit-bandit-chief", banditChiefDocument);
-assetStorage.setJson("deployment-bellum", bellumDeployment);
-assetStorage.setJson("conversations-bellum", bellumConversations);
-assetStorage.setJson("houses-bellum", bellumHouses);
-assetStorage.setJson("locks-bellum", bellumLocks);
-assetStorage.setJson("map-fantasy", fantasyMap);
-assetStorage.setJson("conversations-skirmish", skirmishConversations);
-assetStorage.setJson("houses-skirmish", skirmishHouses);
-assetStorage.setJson("locks-skirmish", skirmishLocks);
-assetStorage.setJson("campaign", campaign);
-assetStorage.setJson("deployment-river", riverDeployment);
-assetStorage.setJson("map-river", riverMap);
-assetStorage.setJson("conversations-river", riverConversations);
-assetStorage.setJson("houses-river", riverHouses);
-assetStorage.setJson("locks-river", riverLocks);
+// What the specs fight on - test/support/SpecContent.ts. The shipped campaign is
+// read by test/game/campaign/Level01.spec.ts.
+assetStorage.setJson("campaign", specCampaign);
+assetStorage.setJson("map-spec", specMap);
+assetStorage.setJson("map-spec-small", specSmallMap);
+for (const [scenario, documents] of Object.entries(specScenarios)) {
+	assetStorage.setJson(`deployment-${scenario}`, documents.deployment);
+	assetStorage.setJson(`houses-${scenario}`, documents.houses);
+	assetStorage.setJson(`locks-${scenario}`, documents.locks);
+	assetStorage.setJson(`conversations-${scenario}`, documents.conversations);
+}
+assetStorage.setJson("unit-hasan-duel", hasanDuelDocument);
+assetStorage.setJson("unit-older-child", olderChildDocument);
+assetStorage.setJson("unit-older-child-leader", olderChildLeaderDocument);
+assetStorage.setJson("deployment-bellum-duel", bellumDuelDeployment);
+assetStorage.setJson("conversations-bellum-duel", bellumDuelConversations);
+assetStorage.setJson("houses-bellum-duel", bellumDuelHouses);
+assetStorage.setJson("locks-bellum-duel", bellumDuelLocks);
+assetStorage.setJson("deployment-bellum-brawl", bellumBrawlDeployment);
+assetStorage.setJson("conversations-bellum-brawl", bellumBrawlConversations);
+assetStorage.setJson("houses-bellum-brawl", bellumBrawlHouses);
+assetStorage.setJson("locks-bellum-brawl", bellumBrawlLocks);
+assetStorage.setJson("map-market-square", marketSquareMap);
+assetStorage.setJson("map-bellum-market", bellumMarketMap);
+assetStorage.setJson("map-bellum-orphanage", bellumOrphanageMap);
 
 // Seeded once here as well, so a spec that calls buildUnit directly - without
 // ever going through the UnitsFeature - resolves its classes and weapons.

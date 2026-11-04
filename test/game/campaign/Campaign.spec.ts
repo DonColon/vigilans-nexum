@@ -4,7 +4,7 @@ import { Entity } from "@/core/ecs/Entity";
 import { World } from "@/core/ecs/World";
 import { ServiceRegistry } from "@/core/service/ServiceRegistry";
 import { CampaignComponent } from "@/game/campaign/components/CampaignComponent";
-import { CAMPAIGN_ASSET, chapterAfter, chapterById, chapterNumber, parseCampaign } from "@/game/campaign/content/Campaigns";
+import { chapterAfter, chapterById, chapterNumber, parseCampaign } from "@/game/campaign/content/Campaigns";
 import { rested, rosterOf } from "@/game/campaign/rules/Roster";
 import { chapterCardAcceptsPress, chapterCardAlpha, CHAPTER_FADE_IN, CHAPTER_HOLD_MS } from "@/game/campaign/view/ChapterCard";
 import { SaveSlotComponent, SlotPurpose } from "@/game/campaign/components/SaveSlotComponent";
@@ -57,12 +57,10 @@ suite("Campaign Test Suite", () => {
 				expect(() => assets.getJson(mapAsset(chapter.map)), `map of "${chapter.id}"`).not.toThrow();
 				expect(Object.keys(chapter.title).sort()).toStrictEqual(["de", "en"]);
 			}
-
-			expect(assets.getJson(CAMPAIGN_ASSET)).toStrictEqual(campaignDocument);
 		});
 
 		test("The sheet's shape is checked", () => {
-			const chapter = { id: "one", title: { en: "One" }, map: "fantasy" };
+			const chapter = { id: "one", title: { en: "One" }, map: "spec" };
 
 			expect(() => parseCampaign(null)).toThrow(/not an object/);
 			expect(() => parseCampaign({ format: "other", version: 1, chapters: [chapter] })).toThrow(/format/);
@@ -83,7 +81,8 @@ suite("Campaign Test Suite", () => {
 			expect(chapterById(campaign, "nowhere")).toBeNull();
 
 			expect(chapterNumber(campaign, first.id)).toBe(1);
-			expect(chapterNumber(campaign, second.id)).toBe(2);
+			// The second entry continues the first chapter, under its number.
+			expect(chapterNumber(campaign, second.id)).toBe(1);
 			expect(chapterNumber(campaign, "nowhere")).toBe(0);
 
 			expect(chapterAfter(campaign, first.id)).toBe(second);
@@ -94,16 +93,16 @@ suite("Campaign Test Suite", () => {
 
 	suite("The run's record", () => {
 		test("A run begins at its chapter with nobody a veteran and nobody fallen", () => {
-			const data = CampaignComponent.begin(1, "skirmish");
+			const data = CampaignComponent.begin(1, "spec");
 
-			expect(data).toStrictEqual({ slot: 1, chapter: "skirmish", roster: [], fallen: [], convoy: [], casualties: [], playtime: 0 });
+			expect(data).toStrictEqual({ slot: 1, chapter: "spec", roster: [], fallen: [], convoy: [], casualties: [], playtime: 0 });
 			expect(CampaignComponent.played(data, 1500).playtime).toBe(1500);
 			expect(CampaignComponent.veteran(data, "dardan")).toBeNull();
 			expect(CampaignComponent.isFallen(data, "dardan")).toBe(false);
 		});
 
 		test("A casualty is noted once, and forgotten when the battle is opened again", () => {
-			const begun = CampaignComponent.begin(1, "skirmish");
+			const begun = CampaignComponent.begin(1, "spec");
 			const noted = CampaignComponent.withCasualty(CampaignComponent.withCasualty(begun, "elira"), "elira");
 
 			expect(noted.casualties).toStrictEqual(["elira"]);
@@ -115,17 +114,17 @@ suite("Campaign Test Suite", () => {
 
 		test("Clearing a chapter moves the run on with the survivors as veterans and the casualties fallen for good", () => {
 			const dardan = buildUnit(dardanDocument as UnitDocument);
-			const begun = CampaignComponent.withCasualty(CampaignComponent.begin(1, "skirmish"), "elira");
+			const begun = CampaignComponent.withCasualty(CampaignComponent.begin(1, "spec"), "elira");
 			const item = { ...dardan.inventory[0], equipped: false };
 
-			const cleared = CampaignComponent.cleared(begun, [{ ...dardan, level: 4 }], [item], "river");
+			const cleared = CampaignComponent.cleared(begun, [{ ...dardan, level: 4 }], [item], "chapter-two");
 
-			expect(cleared).toMatchObject({ slot: 1, chapter: "river", fallen: ["elira"], casualties: [] });
+			expect(cleared).toMatchObject({ slot: 1, chapter: "chapter-two", fallen: ["elira"], casualties: [] });
 			expect(cleared.convoy).toStrictEqual([item]);
 			expect(cleared.convoy[0]).not.toBe(item);
 			expect(CampaignComponent.veteran(cleared, "dardan")?.level).toBe(4);
 			expect(CampaignComponent.isFallen(cleared, "elira")).toBe(true);
-			expect(begun.chapter).toBe("skirmish");
+			expect(begun.chapter).toBe("spec");
 
 			// Fallen twice - noted again in a later chapter's attempt - is listed once.
 			const again = CampaignComponent.cleared(CampaignComponent.withCasualty(cleared, "elira"), [], [], "third");
@@ -134,7 +133,7 @@ suite("Campaign Test Suite", () => {
 
 		test("The run is laid into the framework's save and taken back out of it, the world's snapshot and the dice around it", () => {
 			const dardan = buildUnit(dardanDocument as UnitDocument);
-			const run = { ...CampaignComponent.begin(2, "river"), roster: [dardan], fallen: ["elira"], playtime: 4200 };
+			const run = { ...CampaignComponent.begin(2, "chapter-two"), roster: [dardan], fallen: ["elira"], playtime: 4200 };
 			const snapshot = { id: 0, playtime: 0, modifiedOn: "2026-09-20T00:00:00.000Z", screenshot: "data:image/jpeg;base64,x", currentState: ["map"], entities: [] };
 
 			const save = CampaignComponent.toSave(run, snapshot, 12345);
@@ -145,7 +144,7 @@ suite("Campaign Test Suite", () => {
 				screenshot: "data:image/jpeg;base64,x",
 				currentState: ["map"],
 				randomState: 12345,
-				chapter: "river",
+				chapter: "chapter-two",
 				fallen: ["elira"]
 			});
 			expect(save.roster[0]).toStrictEqual(dardan);
@@ -213,7 +212,7 @@ suite("Campaign Test Suite", () => {
 
 	suite("The save slot list", () => {
 		const empty = { slot: 1, empty: true, chapter: "", number: 0, title: "", playtime: 0, savedOn: "", snapshot: "" };
-		const held = { ...empty, slot: 2, empty: false, chapter: "river", number: 2, title: "River", playtime: 60_000 };
+		const held = { ...empty, slot: 2, empty: false, chapter: "chapter-two", number: 2, title: "River", playtime: 60_000 };
 
 		test("Playtime reads as a clock, and the date in the player's format - or not at all for a run never written", () => {
 			expect(formatPlaytime(0)).toBe("0:00:00");

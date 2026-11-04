@@ -46,11 +46,11 @@ const gameConfiguration: GameConfiguration = {
 		}
 	},
 	display: {
-		// The 48x24 battle map drawn at MapTheme.cellSize (32) - the map fills the
-		// viewport exactly, with no band around it.
+		// 16:9, about 27x15 tiles at MapTheme.cellSize (48) - the view a 3DS Fire
+		// Emblem has. A bigger map scrolls with the cursor, a smaller one is centred.
 		dimension: {
-			width: 1536,
-			height: 768
+			width: 1280,
+			height: 720
 		},
 		layers: {
 			1: "background",

@@ -10,11 +10,11 @@
  * document reads the one that id names. Nothing else carries the choice.
  */
 
-/** The scenario a battle map builds when nothing has asked for another - the one the game has always shipped. */
-export const DEFAULT_SCENARIO = "skirmish";
+/** The scenario a battle map builds when nothing has asked for another - the first fight of the story. */
+export const DEFAULT_SCENARIO = "bellum-duel";
 
 /** Asset id of the tile map the default scenario is fought on. */
-export const DEFAULT_MAP_ASSET = "map-fantasy";
+export const DEFAULT_MAP_ASSET = "map-market-square";
 
 /** Asset id of a scenario document: `<kind>-<scenario>`, the way `src/asset.manifest.ts` names them. */
 export function scenarioAsset(kind: string, scenario: string): string {

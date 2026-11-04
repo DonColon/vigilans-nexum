@@ -41,11 +41,14 @@ import { MenuComponent } from "@/game/ui/components/MenuComponent";
 import { MenuState } from "@/game/ui/states/MenuState";
 import { MenuSystem } from "@/game/ui/systems/MenuSystem";
 import { UIFeature } from "@/game/ui/UIFeature";
-import { UnitComponent } from "@/game/units/components/UnitComponent";
+import { CAMPAIGN_ASSET } from "@/game/campaign/content/Campaigns";
+import { UnitComponent, UnitFaction } from "@/game/units/components/UnitComponent";
 import { deploymentAsset, DeploymentDocument } from "@/game/units/content/Deployments";
 import { buildUnit, UnitDocument } from "@/game/units/content/UnitSheets";
 import { unitById, unitsInWorld } from "@/game/units/rules/UnitLookup";
 import { UnitsFeature } from "@/game/units/UnitsFeature";
+import campaignDocument from "@/assets/data/campaign/campaign.json";
+import { specCampaign } from "../../support/SpecContent";
 import dardanDocument from "@/assets/data/units/dardan-niveli.unit.json";
 
 /**
@@ -88,8 +91,8 @@ suite("Campaign Flow Test Suite", () => {
 	const stateManager = new GameStateManager();
 	new InputDevice({ gamepad: { axisThreshold: 0.5, deadZone: 0.1 } });
 
-	const bellum = assets.getJson<DeploymentDocument>(deploymentAsset("bellum"));
-	const river = assets.getJson<DeploymentDocument>(deploymentAsset("river"));
+	const bellum = assets.getJson<DeploymentDocument>(deploymentAsset("chapter-one"));
+	const river = assets.getJson<DeploymentDocument>(deploymentAsset("chapter-two"));
 
 	let features: { install(): void; uninstall(): void }[] = [];
 	let objectiveSystem: ObjectiveSystem | null = null;
@@ -265,8 +268,8 @@ suite("Campaign Flow Test Suite", () => {
 
 		objectiveSystem?.dispose();
 		objectiveSystem = null;
-		assets.setJson(deploymentAsset("bellum"), bellum);
-		assets.setJson(deploymentAsset("river"), river);
+		assets.setJson(deploymentAsset("chapter-one"), bellum);
+		assets.setJson(deploymentAsset("chapter-two"), river);
 
 		stateManager.clear();
 
@@ -279,6 +282,86 @@ suite("Campaign Flow Test Suite", () => {
 		}
 
 		eventBus.processQueue();
+	});
+
+	suite("The prologue, on the shipped campaign", () => {
+		const fixture = assets.getJson(CAMPAIGN_ASSET);
+
+		beforeEach(() => {
+			// With a chapter after it, to see what the prologue lets through.
+			assets.setJson(CAMPAIGN_ASSET, { ...campaignDocument, chapters: [...campaignDocument.chapters, specCampaign.chapters[1]] });
+		});
+
+		afterEach(() => {
+			assets.setJson(CAMPAIGN_ASSET, fixture);
+		});
+
+		test("Winning the duel leads on to the brawl under the same chapter number, keeping levels but not packs or the fallen", async () => {
+			await beginRun();
+
+			expect(card()?.read()).toBeUndefined();
+			expect(ready.at(-1)).toMatchObject({ scenario: "bellum-duel", columns: 31, rows: 31 });
+			expect(
+				sheet("dardan-niveli")
+					.read()
+					.inventory.map((entry) => entry.id)
+			).toStrictEqual(["bronze-sword", "bronze-bow"]);
+			expect(sheet("dardan-niveli").read().inventory[1].uses).toBe(3);
+			expect(sheet("leona-kaori").read().faction).toBe(UnitFaction.NEUTRAL);
+			expect(campaign().roster.map((member) => member.id)).toStrictEqual(["dardan-niveli"]);
+
+			const dardan = sheet("dardan-niveli");
+			dardan.update({ ...dardan.read(), level: 2, currentHP: 3 });
+			fell("hasan-duel");
+			acknowledge();
+
+			expect(card()?.read()).toMatchObject({ chapter: "bellum-brawl", number: 1, map: "map-market-square" });
+
+			enterBattle();
+
+			const veteran = sheet("dardan-niveli").read();
+			expect(veteran).toMatchObject({ level: 2, currentHP: veteran.stats.hp });
+			expect(veteran.inventory.map((entry) => entry.id)).toStrictEqual(["bronze-sword"]);
+			expect(sheet("leona-kaori").read().faction).toBe(UnitFaction.PLAYER);
+
+			fell("lina-yukari");
+			expect(world.entityWith(ObjectiveComponent)?.getComponent(ObjectiveComponent).read().outcome).toBe("");
+			expect(campaign().casualties).toStrictEqual(["lina-yukari"]);
+
+			fell("blond-leader");
+			acknowledge();
+
+			// Nothing of the prologue reaches chapter two - the run goes on with its slot and playtime.
+			expect(card()?.read()).toMatchObject({ chapter: "chapter-two", number: 2 });
+			expect(campaign()).toMatchObject({ chapter: "chapter-two", slot: CAMPAIGN_SLOT, roster: [], fallen: [], convoy: [], casualties: [] });
+		});
+
+		test("The shipped campaign ends with the brawl: won, it returns to the title", async () => {
+			assets.setJson(CAMPAIGN_ASSET, campaignDocument);
+			stash(CampaignComponent.begin(CAMPAIGN_SLOT, "bellum-brawl"));
+			await openTitle();
+			choose(TitleRow.CONTINUE);
+			enterBattle();
+
+			fell("blond-leader");
+			acknowledge();
+
+			expect(finished).toBe(1);
+			expect(stateManager.getCurrentStates().some((state) => state instanceof TitleState)).toBe(true);
+		});
+
+		test("Hasan falling in the brawl loses it, and it starts over", async () => {
+			stash(CampaignComponent.begin(CAMPAIGN_SLOT, "bellum-brawl"));
+			await openTitle();
+			choose(TitleRow.CONTINUE);
+			enterBattle();
+
+			fell("hasan-eyletmez");
+			acknowledge();
+
+			expect(ready.map((event) => event.scenario)).toStrictEqual(["bellum-brawl", "bellum-brawl"]);
+			expect(unit("hasan-eyletmez")).not.toBeNull();
+		});
 	});
 
 	test("The title screen asks the store and offers only a new game when the slot is empty", async () => {
@@ -294,7 +377,7 @@ suite("Campaign Flow Test Suite", () => {
 	});
 
 	test("With a run in the slot the title offers to continue it, first", async () => {
-		stash(CampaignComponent.begin(CAMPAIGN_SLOT, "river"));
+		stash(CampaignComponent.begin(CAMPAIGN_SLOT, "chapter-two"));
 
 		await openTitle();
 
@@ -303,7 +386,7 @@ suite("Campaign Flow Test Suite", () => {
 	});
 
 	test("Either title row opens the save slot list: every slot, the occupied ones put into words, and backing out returns to the menu", async () => {
-		stash({ ...CampaignComponent.begin(2, "river"), playtime: 3_725_000 });
+		stash({ ...CampaignComponent.begin(2, "chapter-two"), playtime: 3_725_000 });
 
 		await openTitle();
 		chooseRow(TitleRow.CONTINUE);
@@ -313,7 +396,7 @@ suite("Campaign Flow Test Suite", () => {
 		expect(list).toMatchObject({ purpose: SlotPurpose.CONTINUE, selectedIndex: 1 });
 		expect(list?.slots).toHaveLength(SAVE_SLOTS);
 		expect(list?.slots.map((slot) => slot.empty)).toStrictEqual([true, false, true]);
-		expect(list?.slots[1]).toMatchObject({ slot: 2, chapter: "river", number: 2, playtime: 3_725_000, snapshot: "" });
+		expect(list?.slots[1]).toMatchObject({ slot: 2, chapter: "chapter-two", number: 2, playtime: 3_725_000, snapshot: "" });
 		expect(["...Is A New Beginning", "...ist ein neuer Anfang"]).toContain(list?.slots[1].title);
 		expect(list?.slots[1].savedOn).toContain("2026");
 
@@ -338,7 +421,7 @@ suite("Campaign Flow Test Suite", () => {
 		expect(slotList()?.read()).toMatchObject({ purpose: SlotPurpose.NEW_GAME, selectedIndex: 0 });
 		pickSlot(3);
 		expect(slotChosen).toStrictEqual([expect.objectContaining({ purpose: SlotPurpose.NEW_GAME, slot: 3 })]);
-		expect(campaign()).toMatchObject({ slot: 3, chapter: "bellum", playtime: expect.any(Number) });
+		expect(campaign()).toMatchObject({ slot: 3, chapter: "chapter-one", playtime: expect.any(Number) });
 	});
 
 	test("Backing out of the title menu puts it straight back up", async () => {
@@ -359,18 +442,18 @@ suite("Campaign Flow Test Suite", () => {
 		choose(TitleRow.NEW_GAME);
 
 		expect(stateManager.getCurrentStates().map((state) => (state.constructor as typeof GameState).type)).toStrictEqual([ChapterCardState.type]);
-		expect(card()?.read()).toMatchObject({ chapter: "bellum", number: 1, map: "map-fantasy", acknowledged: false });
+		expect(card()?.read()).toMatchObject({ chapter: "chapter-one", number: 1, map: "map-spec", acknowledged: false });
 		expect(["Every End...", "Jedes Ende..."]).toContain(card()?.read().title);
-		expect(started).toStrictEqual([expect.objectContaining({ chapter: "bellum", number: 1 })]);
+		expect(started).toStrictEqual([expect.objectContaining({ chapter: "chapter-one", number: 1 })]);
 
-		expect(campaign()).toMatchObject({ slot: CAMPAIGN_SLOT, chapter: "bellum", roster: [], fallen: [], convoy: [], casualties: [] });
+		expect(campaign()).toMatchObject({ slot: CAMPAIGN_SLOT, chapter: "chapter-one", roster: [], fallen: [], convoy: [], casualties: [] });
 		// The title screen is gone with its state.
 		expect(world.getEntities().some((entity) => entity.hasComponent(TitleComponent))).toBe(false);
 
 		await tick();
 		frame();
 		// The framework's record - the world as it stood at the write, still the title - with the run laid into it.
-		expect(slots.get(CAMPAIGN_SLOT)).toMatchObject({ id: CAMPAIGN_SLOT, chapter: "bellum", roster: [], currentState: [TitleState.type], randomState: expect.any(Number) });
+		expect(slots.get(CAMPAIGN_SLOT)).toMatchObject({ id: CAMPAIGN_SLOT, chapter: "chapter-one", roster: [], currentState: [TitleState.type], randomState: expect.any(Number) });
 		expect(slots.get(CAMPAIGN_SLOT)?.entities.some((entity) => CampaignComponent.type in entity.components)).toBe(true);
 		expect(saved).toStrictEqual([expect.objectContaining({ slot: CAMPAIGN_SLOT })]);
 	});
@@ -388,8 +471,8 @@ suite("Campaign Flow Test Suite", () => {
 		enterBattle();
 
 		expect(topType()).toBe(MapState.type);
-		expect(stateManager.getState(MapState).getBattle()).toStrictEqual({ scenario: "bellum", map: "map-fantasy" });
-		expect(ready).toStrictEqual([expect.objectContaining({ scenario: "bellum", columns: 48, rows: 24 })]);
+		expect(stateManager.getState(MapState).getBattle()).toStrictEqual({ scenario: "chapter-one", map: "map-spec" });
+		expect(ready).toStrictEqual([expect.objectContaining({ scenario: "chapter-one", columns: 48, rows: 24 })]);
 		expect(unit("dardan-niveli")).not.toBeNull();
 		expect(unit("bandit-1")).not.toBeNull();
 		// A fresh run: everyone off their sheet, and already on the roster.
@@ -416,12 +499,12 @@ suite("Campaign Flow Test Suite", () => {
 
 		// The next chapter's card, and the run on it.
 		expect(stateManager.getCurrentStates().map((state) => (state.constructor as typeof GameState).type)).toStrictEqual([ChapterCardState.type]);
-		expect(card()?.read()).toMatchObject({ chapter: "river", number: 2, map: "map-river" });
-		expect(cleared).toStrictEqual([expect.objectContaining({ chapter: "bellum", next: "river" })]);
-		expect(started.map((event) => event.chapter)).toStrictEqual(["bellum", "river"]);
+		expect(card()?.read()).toMatchObject({ chapter: "chapter-two", number: 2, map: "map-spec-small" });
+		expect(cleared).toStrictEqual([expect.objectContaining({ chapter: "chapter-one", next: "chapter-two" })]);
+		expect(started.map((event) => event.chapter)).toStrictEqual(["chapter-one", "chapter-two"]);
 
 		const record = campaign();
-		expect(record).toMatchObject({ chapter: "river", fallen: [], casualties: [] });
+		expect(record).toMatchObject({ chapter: "chapter-two", fallen: [], casualties: [] });
 		expect(record.roster.map((veteran) => veteran.id).sort()).toStrictEqual(["dardan-niveli", "hasan-eyletmez"]);
 		expect(CampaignComponent.veteran(record, "dardan-niveli")).toMatchObject({ level: 5, currentHP: dardan.read().stats.hp, hasMoved: false });
 		expect(record.convoy).toStrictEqual([spare]);
@@ -432,7 +515,7 @@ suite("Campaign Flow Test Suite", () => {
 
 		await tick();
 		frame();
-		expect(slots.get(CAMPAIGN_SLOT)).toMatchObject({ chapter: "river" });
+		expect(slots.get(CAMPAIGN_SLOT)).toMatchObject({ chapter: "chapter-two" });
 		expect(saved).toHaveLength(2);
 		// The slot carries how long the run has been played and a picture of the screen it was written from.
 		expect(slots.get(CAMPAIGN_SLOT)?.playtime).toBeGreaterThan(0);
@@ -441,7 +524,7 @@ suite("Campaign Flow Test Suite", () => {
 		// Into the next battle: the veterans over their sheets, the convoy refilled, the new scenario's enemies.
 		enterBattle();
 		expect(topType()).toBe(MapState.type);
-		expect(ready.at(-1)).toMatchObject({ scenario: "river", columns: 20, rows: 15 });
+		expect(ready.at(-1)).toMatchObject({ scenario: "chapter-two", columns: 20, rows: 15 });
 		expect(sheet("dardan-niveli").read()).toMatchObject({ level: 5, currentHP: dardan.read().stats.hp, hasMoved: false });
 		expect(convoy().read().items).toStrictEqual([spare]);
 		expect(unit("bandit-chief")?.getComponent(UnitComponent).read()).toMatchObject({ faction: "enemy", boss: true });
@@ -464,7 +547,7 @@ suite("Campaign Flow Test Suite", () => {
 		routBellum();
 		acknowledge();
 
-		expect(campaign()).toMatchObject({ chapter: "river", fallen: ["hasan-eyletmez"], casualties: [] });
+		expect(campaign()).toMatchObject({ chapter: "chapter-two", fallen: ["hasan-eyletmez"], casualties: [] });
 		expect(campaign().roster.map((veteran) => veteran.id)).not.toContain("hasan-eyletmez");
 
 		enterBattle();
@@ -486,24 +569,24 @@ suite("Campaign Flow Test Suite", () => {
 		dismissBanner();
 
 		expect(topType()).toBe(MapState.type);
-		expect(ready.map((event) => event.scenario)).toStrictEqual(["bellum", "bellum"]);
+		expect(ready.map((event) => event.scenario)).toStrictEqual(["chapter-one", "chapter-one"]);
 		expect(unit("dardan-niveli")).not.toBeNull();
 		expect(unit("hasan-eyletmez")).not.toBeNull();
-		expect(campaign()).toMatchObject({ chapter: "bellum", fallen: [], casualties: [] });
+		expect(campaign()).toMatchObject({ chapter: "chapter-one", fallen: [], casualties: [] });
 		expect(cleared).toStrictEqual([]);
 		expect(started).toHaveLength(1);
 	});
 
 	test("Continue takes the run up at the top of the chapter the slot left it on, veterans and fallen included", async () => {
 		const veteran = { ...buildUnit(dardanDocument as UnitDocument), level: 7, currentHP: 1 };
-		stash({ ...CampaignComponent.begin(CAMPAIGN_SLOT, "river"), roster: [veteran], fallen: ["hasan-eyletmez"], playtime: 9000 }, "2026-09-19T00:00:00.000Z", 4242);
+		stash({ ...CampaignComponent.begin(CAMPAIGN_SLOT, "chapter-two"), roster: [veteran], fallen: ["hasan-eyletmez"], playtime: 9000 }, "2026-09-19T00:00:00.000Z", 4242);
 
 		await openTitle();
 		choose(TitleRow.CONTINUE);
 
 		expect(slotChosen).toStrictEqual([expect.objectContaining({ purpose: SlotPurpose.CONTINUE, slot: CAMPAIGN_SLOT })]);
-		expect(card()?.read()).toMatchObject({ chapter: "river", number: 2, map: "map-river" });
-		expect(campaign()).toMatchObject({ chapter: "river", fallen: ["hasan-eyletmez"] });
+		expect(card()?.read()).toMatchObject({ chapter: "chapter-two", number: 2, map: "map-spec-small" });
+		expect(campaign()).toMatchObject({ chapter: "chapter-two", fallen: ["hasan-eyletmez"] });
 		expect(campaign().playtime).toBeGreaterThanOrEqual(9000);
 		// The dice roll on from where the save left them.
 		expect(getRandomState()).toBe(4242);
@@ -511,7 +594,7 @@ suite("Campaign Flow Test Suite", () => {
 		expect(saved).toStrictEqual([]);
 
 		enterBattle();
-		expect(ready).toStrictEqual([expect.objectContaining({ scenario: "river" })]);
+		expect(ready).toStrictEqual([expect.objectContaining({ scenario: "chapter-two" })]);
 		expect(sheet("dardan-niveli").read()).toMatchObject({ level: 7, currentHP: veteran.stats.hp });
 		expect(unit("hasan-eyletmez")).toBeNull();
 		expect(unit("maksimo-auditore")).not.toBeNull();
@@ -523,8 +606,8 @@ suite("Campaign Flow Test Suite", () => {
 		await openTitle();
 		choose(TitleRow.CONTINUE);
 
-		expect(card()?.read()).toMatchObject({ chapter: "bellum", number: 1 });
-		expect(campaign().chapter).toBe("bellum");
+		expect(card()?.read()).toMatchObject({ chapter: "chapter-one", number: 1 });
+		expect(campaign().chapter).toBe("chapter-one");
 	});
 
 	test("The last chapter won finishes the run and returns to the title", async () => {
@@ -533,13 +616,13 @@ suite("Campaign Flow Test Suite", () => {
 		routBellum();
 		acknowledge();
 		enterBattle();
-		expect(ready.at(-1)?.scenario).toBe("river");
+		expect(ready.at(-1)?.scenario).toBe("chapter-two");
 
 		routRiver();
 		acknowledge();
 
 		expect(finished).toBe(1);
-		expect(cleared.at(-1)).toMatchObject({ chapter: "river", next: "" });
+		expect(cleared.at(-1)).toMatchObject({ chapter: "chapter-two", next: "" });
 		expect(stateManager.getCurrentStates().map((state) => (state.constructor as typeof GameState).type)).toStrictEqual([TitleState.type]);
 		expect(unitsInWorld(world)).toStrictEqual([]);
 
@@ -548,7 +631,7 @@ suite("Campaign Flow Test Suite", () => {
 		frame();
 		expect(stateManager.peek()).toBeInstanceOf(MenuState);
 		expect(menu()?.read().ids).toStrictEqual([TitleRow.CONTINUE, TitleRow.NEW_GAME]);
-		expect(slots.get(CAMPAIGN_SLOT)?.chapter).toBe("river");
+		expect(slots.get(CAMPAIGN_SLOT)?.chapter).toBe("chapter-two");
 	});
 
 	test("Without a run under way a decided battle is the objective feature's to start over", () => {
@@ -559,12 +642,12 @@ suite("Campaign Flow Test Suite", () => {
 		dismissBanner();
 
 		expect(world.entityWith(CampaignComponent)).toBeNull();
-		fell("dardan");
+		fell("dardan-niveli");
 		acknowledge(); // ... and the battle is rebuilt
 
 		expect(topType()).toBe(MapState.type);
 		expect(ready).toHaveLength(2);
 		expect(world.entityWith(ObjectiveComponent)?.getComponent(ObjectiveComponent).read().outcome).toBe("");
-		expect(unit("dardan")).not.toBeNull();
+		expect(unit("dardan-niveli")).not.toBeNull();
 	});
 });

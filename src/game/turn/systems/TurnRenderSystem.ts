@@ -5,14 +5,16 @@ import { TextBaseline } from "@/core/graphics/styles/text/TextBaseline";
 import { i18n } from "@/core/i18n/I18n";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { GameCoreService } from "@/core/service/GameCoreService";
+import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
-import { TILE_INFO_BOTTOM } from "@/game/map/view/TileInfoHud";
+import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
+import { hudOnRight, hudPlateX, TILE_INFO_BOTTOM } from "@/game/map/view/TileInfoHud";
 import { MapRenderSystem } from "@/game/map/systems/MapRenderSystem";
 import { TurnComponent } from "@/game/turn/components/TurnComponent";
 import { TurnHud, turnDigits } from "@/game/turn/view/TurnHud";
 
 /**
- * Draws the turn counter from `kenney-1bit` digit tiles, in the map's top-left
+ * Draws the turn counter from `kenney-1bit` digit tiles, in the screen's top-left
  * corner under the terrain readout (see TileInfoHud). On the "ui" layer above
  * UIRenderSystem (which owns and clears that layer), so it stays visible over
  * menus and redraws itself every frame.
@@ -24,7 +26,8 @@ export class TurnRenderSystem extends MapRenderSystem {
 	public initialize(): this {
 		this.queries = {
 			turns: new Query({ allowlist: [TurnComponent] }),
-			grids: new Query({ allowlist: [GridComponent] })
+			grids: new Query({ allowlist: [GridComponent] }),
+			cursors: new Query({ allowlist: [CursorComponent, GridPositionComponent] })
 		};
 
 		return this;
@@ -33,12 +36,11 @@ export class TurnRenderSystem extends MapRenderSystem {
 	public execute(): void {
 		const turn = this.queries.turns.getSingleResult();
 		const view = this.mapView(this.queries.grids.getSingleResult());
+		const cursor = this.queries.cursors.getSingleResult()?.getComponent(GridPositionComponent).read() ?? null;
 
 		if (turn === null || view === null || !this.assetStorage.hasSpritesheet(TurnHud.sheet)) {
 			return;
 		}
-
-		const origin = view.origin;
 
 		const digits = turnDigits(turn.getComponent(TurnComponent).read().number);
 		const size = TurnHud.glyph * TurnHud.scale;
@@ -56,10 +58,11 @@ export class TurnRenderSystem extends MapRenderSystem {
 		const width = Math.max(TurnHud.minWidth, TurnHud.paddingX * 2 + labelWidth + TurnHud.labelGap + digitsWidth);
 		const height = TurnHud.padding * 2 + size;
 
-		const plateX = origin.x + TurnHud.inset;
+		const onRight = cursor !== null && hudOnRight({ x: view.origin.x + cursor.column * view.cellSize, y: view.origin.y + cursor.row * view.cellSize }, view.cellSize);
+		const plateX = hudPlateX(this.display.getViewportDimension().width, width, onRight);
 		// Tucked under the terrain readout, which holds the top of the corner. Its
 		// height is fixed, so this never shifts as the cursor moves.
-		const plateY = origin.y + TILE_INFO_BOTTOM;
+		const plateY = TILE_INFO_BOTTOM;
 
 		graphics.fillColor(TurnHud.plate).fillRoundRectangle(new Rectangle(plateX, plateY, width, height), TurnHud.radius);
 

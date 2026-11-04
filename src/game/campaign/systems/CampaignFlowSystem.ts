@@ -22,7 +22,7 @@ import { TITLE_MENU_ID, TITLE_ROW_KEY, titleMenuPosition, TitleRow, titleRows } 
 import { ConvoyComponent } from "@/game/convoy/components/ConvoyComponent";
 import { mapAsset } from "@/game/map/content/Scenario";
 import { Outcome } from "@/game/objective/components/ObjectiveComponent";
-import { UnitComponent, UnitFaction } from "@/game/units/components/UnitComponent";
+import { InventoryEntry, UnitComponent, UnitData, UnitFaction } from "@/game/units/components/UnitComponent";
 import { unitById, unitsInWorld, unitsOfFaction } from "@/game/units/rules/UnitLookup";
 import { MenuStyle } from "@/game/ui/components/MenuComponent";
 import { MenuState } from "@/game/ui/states/MenuState";
@@ -53,7 +53,8 @@ import { MenuState } from "@/game/ui/states/MenuState";
  *    casualties become the fallen, the run moves to the next chapter, is
  *    written, and that chapter's card goes up. The last chapter won reports
  *    `campaign:finished` and returns to the title. A defeat is left to the
- *    objective feature, which starts the chapter over.
+ *    objective feature, which starts the chapter over. A `prologue` chapter
+ *    lets nobody fall for good and carries nothing past its last battle.
  *
  * A save is the framework's [[Savegame]] - the slot's header with the run's
  * playtime (which `CampaignSystem` keeps) and a thumbnail of the screen, and
@@ -260,6 +261,8 @@ export class CampaignFlowSystem extends ReactiveSystem {
 		const data = CampaignComponent.opened(component.read());
 		component.update(data);
 
+		const prologue = chapterById(this.campaign(), data.chapter)?.prologue === true;
+
 		for (const unit of unitsOfFaction(unitsInWorld(this.world), UnitFaction.PLAYER)) {
 			const sheet = unit.getComponent(UnitComponent);
 			const id = sheet.read().id;
@@ -272,7 +275,9 @@ export class CampaignFlowSystem extends ReactiveSystem {
 			const veteran = CampaignComponent.veteran(data, id);
 
 			if (veteran !== null) {
-				sheet.update(rested(veteran));
+				// In the prologue a child keeps the level but carries what this battle hands out.
+				const placed = sheet.read();
+				sheet.update(rested(prologue ? { ...veteran, inventory: placed.inventory, weapon: placed.weapon } : veteran));
 			}
 		}
 
@@ -322,12 +327,21 @@ export class CampaignFlowSystem extends ReactiveSystem {
 			return;
 		}
 
-		const cleared = CampaignComponent.cleared(data, roster, convoy, next.id);
+		const cleared = this.clearedRun(data, chapterById(campaign, data.chapter), next, roster, convoy);
 		component.update(cleared);
 		this.write(cleared);
 
 		this.events.dispatch("campaign:chapterCleared", { chapter: data.chapter, next: next.id });
 		this.startChapter(campaign, next);
+	}
+
+	/** What the run carries on to `next`: everything, or - leaving or inside the prologue - only what the story lets it. */
+	private clearedRun(data: CampaignData, chapter: CampaignChapter | null, next: CampaignChapter, roster: UnitData[], convoy: InventoryEntry[]): CampaignData {
+		if (chapter?.prologue !== true) {
+			return CampaignComponent.cleared(data, roster, convoy, next.id);
+		}
+
+		return next.prologue === true ? CampaignComponent.prologueCleared(data, roster, next.id) : CampaignComponent.prologueEnded(data, next.id);
 	}
 
 	/** The run's entity - one at a time; a run begun over the top of another replaces it. */

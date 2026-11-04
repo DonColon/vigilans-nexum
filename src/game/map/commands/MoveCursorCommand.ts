@@ -13,7 +13,7 @@ const REPEAT_DELAY = 250;
 const REPEAT_RATE = 45;
 
 /**
- * Steps the map cursor one tile into a direction, as far as the map reaches.
+ * Steps the map cursor one tile into a direction, as far as the battle reaches.
  * Bound to both the pressed and the held state of its inputs: the first update
  * after a press moves right away, holding the direction repeats the way the
  * cursor of a Fire Emblem battle map does.
@@ -33,7 +33,7 @@ export abstract class MoveCursorCommand extends MapCommand {
 
 		const next = new Vector2D(column, row).add(this.direction);
 
-		if (GridComponent.containsTile(grid, next.x, next.y)) {
+		if (GridComponent.inPlay(grid, next.x, next.y)) {
 			component.update({ column: next.x, row: next.y });
 		}
 	}

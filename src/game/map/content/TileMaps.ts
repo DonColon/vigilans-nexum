@@ -51,26 +51,3 @@ export function parseTileMap(sketch: string[]): TileMapDefinition {
 
 	return { columns, rows, tiles };
 }
-
-/**
- * A sample sketch: a river splitting the field, a ford in the middle and a fort
- * on either side of it. The game builds its map from the `map-fantasy` asset -
- * this is here as a ready-made grid to exercise the map systems against.
- */
-export const skirmishMap: TileMapDefinition = parseTileMap([
-	"MMMM..FF....~~......",
-	"MM....FF....~~...FF.",
-	"M...........~~...FF.",
-	"...FF...##..~~......",
-	"...FF...##..~~..O...",
-	"........##..........",
-	"............~~......",
-	"..O.........~~..FF..",
-	"....FF......~~..FF..",
-	"....FF......~~......",
-	"........##..~~...MM.",
-	"........##..~~...MM.",
-	"...FF.......~~....M.",
-	"...FF.......~~......",
-	"MMM.........~~......"
-]);

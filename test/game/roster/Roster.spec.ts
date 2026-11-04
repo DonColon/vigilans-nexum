@@ -138,7 +138,7 @@ suite("Roster Test Suite", () => {
 			bindings.set(commandType as Parameters<typeof bindings.get>[0], binding);
 		}
 
-		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "skirmish" });
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "spec" });
 		eventBus.processQueue();
 	});
 

@@ -74,6 +74,26 @@ suite("Objective Test Suite", () => {
 		test("Losing is checked first - an army that is no more has not won", () => {
 			expect(battleOutcome(rout, [])).toBe(Outcome.DEFEAT);
 		});
+
+		test("A defeat is won once its target is gone, however many others stand", () => {
+			const defeat = ObjectiveComponent.open(objectiveOf({ win: "defeat", target: "hasan" }));
+			const dardan = spawn(dardanDocument);
+			const hasan = spawn(hasanDocument);
+			const other = spawn(hasanDocument, 1, 0, { id: "other" });
+
+			expect(battleOutcome(defeat, [dardan, hasan, other])).toBe("");
+			expect(battleOutcome(defeat, [dardan, other])).toBe(Outcome.VICTORY);
+		});
+
+		test("A protected unit falling is a defeat, even with the target gone", () => {
+			const defeat = ObjectiveComponent.open(objectiveOf({ win: "defeat", target: "hasan", protect: ["elira"] }));
+			const dardan = spawn(dardanDocument);
+			const hasan = spawn(hasanDocument);
+
+			expect(battleOutcome(defeat, [dardan, hasan, spawn(eliraDocument)])).toBe("");
+			expect(battleOutcome(defeat, [dardan, hasan])).toBe(Outcome.DEFEAT);
+			expect(battleOutcome(defeat, [dardan])).toBe(Outcome.DEFEAT);
+		});
 	});
 
 	suite("Seizing", () => {
@@ -104,23 +124,28 @@ suite("Objective Test Suite", () => {
 		});
 
 		test("A sheet without an objective is a rout", () => {
-			expect(objectiveOf(undefined)).toStrictEqual({ win: WinCondition.ROUT, seizeColumn: -1, seizeRow: -1 });
+			expect(objectiveOf(undefined)).toStrictEqual({ win: WinCondition.ROUT, seizeColumn: -1, seizeRow: -1, target: "", protect: [] });
 		});
 
 		test("A seize carries its tile", () => {
-			expect(objectiveOf({ win: "seize", column: 12, row: 3 })).toStrictEqual({ win: WinCondition.SEIZE, seizeColumn: 12, seizeRow: 3 });
+			expect(objectiveOf({ win: "seize", column: 12, row: 3 })).toStrictEqual({ win: WinCondition.SEIZE, seizeColumn: 12, seizeRow: 3, target: "", protect: [] });
 		});
 
-		test("An unknown condition, or a seize without a tile, falls back to a rout and says so", () => {
+		test("A defeat carries its target, and any objective who it protects", () => {
+			expect(objectiveOf({ win: "defeat", target: "hasan", protect: ["elira"] })).toStrictEqual({ win: WinCondition.DEFEAT, seizeColumn: -1, seizeRow: -1, target: "hasan", protect: ["elira"] });
+		});
+
+		test("An unknown condition, a seize without a tile or a defeat without a target falls back to a rout and says so", () => {
 			const error = vi.spyOn(console, "error").mockImplementation(() => {});
 
 			expect(objectiveOf({ win: "survive" }).win).toBe(WinCondition.ROUT);
 			expect(objectiveOf({ win: "seize", column: 3 }).win).toBe(WinCondition.ROUT);
-			expect(error).toHaveBeenCalledTimes(2);
+			expect(objectiveOf({ win: "defeat" }).win).toBe(WinCondition.ROUT);
+			expect(error).toHaveBeenCalledTimes(3);
 		});
 
 		test("The deployment sheet checks the objective's shape", () => {
-			const sheet = { format: "vigilans-deployment", version: 1, map: "fantasy", units: [] };
+			const sheet = { format: "vigilans-deployment", version: 1, map: "spec", units: [] };
 
 			expect(() => parseDeployment({ ...sheet, objective: { win: "seize", column: 12, row: 3 } })).not.toThrow();
 			expect(() => parseDeployment({ ...sheet, objective: "rout" })).toThrow(/not an object/);

@@ -162,7 +162,7 @@ suite("Convoy Test Suite", () => {
 		convoy = new ConvoyFeature({ dependencies: [units, ui] });
 		convoy.install();
 
-		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "skirmish" });
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "spec" });
 		eventBus.processQueue();
 	});
 

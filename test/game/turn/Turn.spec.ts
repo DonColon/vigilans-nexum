@@ -111,7 +111,7 @@ suite("Turn Test Suite", () => {
 
 			feature = new TurnFeature();
 			feature.install();
-			eventBus.dispatch("map:ready", { mapId: "map", columns: 8, rows: 8, scenario: "skirmish" });
+			eventBus.dispatch("map:ready", { mapId: "map", columns: 8, rows: 8, scenario: "spec" });
 			tick();
 			dismissBanner();
 		});
@@ -135,7 +135,7 @@ suite("Turn Test Suite", () => {
 			eventBus.subscribe("turn:changed", (event) => (changed = event));
 			feature.install();
 
-			eventBus.dispatch("map:ready", { mapId: "map", columns: 8, rows: 8, scenario: "skirmish" });
+			eventBus.dispatch("map:ready", { mapId: "map", columns: 8, rows: 8, scenario: "spec" });
 			tick();
 
 			expect(turn()).toBe(1);

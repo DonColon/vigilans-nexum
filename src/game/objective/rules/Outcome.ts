@@ -3,7 +3,7 @@ import { GridPositionComponent } from "@/game/map/components/GridPositionCompone
 import { ObjectiveComponent, ObjectiveData, Outcome } from "@/game/objective/components/ObjectiveComponent";
 import { WinCondition } from "@/game/objective/content/Objectives";
 import { UnitComponent, UnitFaction } from "@/game/units/components/UnitComponent";
-import { unitsOfFaction } from "@/game/units/rules/UnitLookup";
+import { unitById, unitsOfFaction } from "@/game/units/rules/UnitLookup";
 
 /*
  * Whether the battle is over, read off the units still on the map. Pure - no
@@ -13,10 +13,11 @@ import { unitsOfFaction } from "@/game/units/rules/UnitLookup";
 
 /**
  * How the battle stands with these units on the map: lost when the commander
- * has fallen or nobody is left, won when the objective is met - a rout once
- * the last enemy is gone - and undecided ("") otherwise. Losing is checked
- * first: a battle cannot be won by an army that is no more. A seize is never
- * decided here - it is claimed with the "Seize" command, see [[canSeize]].
+ * or a unit the sheet protects has fallen or nobody is left, won when the
+ * objective is met - a rout once the last enemy is gone, a defeat once its
+ * target is - and undecided ("") otherwise. Losing is checked first: a battle
+ * cannot be won by an army that is no more. A seize is never decided here - it
+ * is claimed with the "Seize" command, see [[canSeize]].
  */
 export function battleOutcome(objective: ObjectiveData, units: readonly Entity[]): Outcome | "" {
 	const players = unitsOfFaction(units, UnitFaction.PLAYER);
@@ -25,7 +26,15 @@ export function battleOutcome(objective: ObjectiveData, units: readonly Entity[]
 		return Outcome.DEFEAT;
 	}
 
+	if (objective.protect.some((id) => unitById(players, id) === null)) {
+		return Outcome.DEFEAT;
+	}
+
 	if (objective.win === WinCondition.ROUT && unitsOfFaction(units, UnitFaction.ENEMY).length === 0) {
+		return Outcome.VICTORY;
+	}
+
+	if (objective.win === WinCondition.DEFEAT && unitById(units, objective.target) === null) {
 		return Outcome.VICTORY;
 	}
 

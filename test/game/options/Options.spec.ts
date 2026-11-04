@@ -185,7 +185,7 @@ suite("Options Test Suite", () => {
 			.set(channelVolumeId("sound"), DEFAULT_VOLUME)
 			.set(channelVolumeId("music"), DEFAULT_VOLUME);
 
-		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "skirmish" });
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "spec" });
 		eventBus.processQueue();
 	});
 

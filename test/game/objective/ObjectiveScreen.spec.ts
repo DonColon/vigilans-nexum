@@ -11,10 +11,16 @@ import { UITheme } from "@/game/ui/view/UITheme";
  * says about losing, and where the panel sits.
  */
 suite("Objective Screen Test Suite", () => {
-	const seize: ObjectiveData = { win: WinCondition.SEIZE, seizeColumn: 12, seizeRow: 5, outcome: "", acknowledged: false };
-	const rout: ObjectiveData = { win: WinCondition.ROUT, seizeColumn: -1, seizeRow: -1, outcome: "", acknowledged: false };
+	const seize: ObjectiveData = { win: WinCondition.SEIZE, seizeColumn: 12, seizeRow: 5, target: "", protect: [], outcome: "", acknowledged: false };
+	const rout: ObjectiveData = { win: WinCondition.ROUT, seizeColumn: -1, seizeRow: -1, target: "", protect: [], outcome: "", acknowledged: false };
+	const defeat: ObjectiveData = { ...rout, win: WinCondition.DEFEAT, target: "blond-leader" };
 
 	suite("What wins", () => {
+		test("A defeat names the unit it is won by felling", () => {
+			expect(winText(defeat, "Anführer")).toBe(i18n("objective.winDefeat", { name: "Anführer" }));
+			expect(objectiveLines(defeat, "Dardan", 6, 1, "Anführer")[0].value).toContain("Anführer");
+		});
+
 		test("A rout asks for every enemy", () => {
 			expect(winText(rout)).toBe(i18n("objective.winRout"));
 		});
@@ -26,6 +32,10 @@ suite("Objective Screen Test Suite", () => {
 	});
 
 	suite("What loses", () => {
+		test("Names a protected unit beside the commander", () => {
+			expect(loseText("Dardan", "Hasan")).toBe(i18n("objective.loseEither", { first: "Dardan", second: "Hasan" }));
+		});
+
 		test("Names the commander while there is one", () => {
 			expect(loseText("Dardan")).toBe(i18n("objective.loseCommander", { name: "Dardan" }));
 			expect(loseText("Dardan")).toContain("Dardan");

@@ -33,7 +33,7 @@ import { unitsInWorld, unitById } from "@/game/units/rules/UnitLookup";
 import { UnitsFeature } from "@/game/units/UnitsFeature";
 
 /**
- * The positional abilities end to end, on the skirmish: Dardan carries all
+ * The positional abilities end to end, on the spec scenario: Dardan carries all
  * six at 4,10, beside Elira at 5,10, with Teuta under her at 5,11 - two tiles
  * off him on the diagonal. A row shows only while somebody is in reach,
  * choosing one points the cursor at who would be moved, and confirming slides
@@ -156,7 +156,7 @@ suite("Positional Flow Test Suite", () => {
 			feature.install();
 		}
 
-		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "skirmish" });
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "spec" });
 		eventBus.processQueue();
 	});
 

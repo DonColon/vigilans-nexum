@@ -145,7 +145,7 @@
 			"critical": 0,
 			"weight": 5,
 			"minRange": 2,
-			"maxRange": 2,
+			"maxRange": 3,
 			"uses": 45
 		},
 		"soothe": {

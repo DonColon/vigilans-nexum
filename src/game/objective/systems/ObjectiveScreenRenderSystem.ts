@@ -14,7 +14,7 @@ import { drawPanel, drawText, uiAssetsReady } from "@/game/ui/view/UIPanel";
 import { UITheme } from "@/game/ui/view/UITheme";
 import { CommanderComponent } from "@/game/units/components/CommanderComponent";
 import { UnitComponent, UnitFaction } from "@/game/units/components/UnitComponent";
-import { unitsInWorld, unitsOfFaction } from "@/game/units/rules/UnitLookup";
+import { unitById, unitsInWorld, unitsOfFaction } from "@/game/units/rules/UnitLookup";
 
 /**
  * Draws the objective screen: the title over a short table - what wins, what
@@ -52,7 +52,7 @@ export class ObjectiveScreenRenderSystem extends RenderSystem {
 		}
 
 		const data = objective.getComponent(ObjectiveComponent).read();
-		const lines = objectiveLines(data, this.commanderName(), this.enemiesLeft(), this.turnNumber());
+		const lines = objectiveLines(data, this.commanderName(), this.enemiesLeft(), this.turnNumber(), this.nameOf(data.target) ?? "", this.nameOf(data.protect[0]));
 
 		const graphics = this.display.getLayer("ui");
 		const panel = objectivePanel(this.display.getViewportDimension(), lines.length);
@@ -80,6 +80,11 @@ export class ObjectiveScreenRenderSystem extends RenderSystem {
 
 	private commanderName(): string | null {
 		return this.world.entityWith(CommanderComponent)?.getComponent(UnitComponent).read().name ?? null;
+	}
+
+	/** The name of the unit with this id, while it is on the map. */
+	private nameOf(id: string | undefined): string | null {
+		return id === undefined ? null : (unitById(unitsInWorld(this.world), id)?.getComponent(UnitComponent).read().name ?? null);
 	}
 
 	private enemiesLeft(): number {

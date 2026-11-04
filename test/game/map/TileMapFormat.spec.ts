@@ -2,8 +2,7 @@ import { test, expect, suite } from "vitest";
 import { GameError } from "@/core/GameError";
 import { Terrain } from "@/game/map/content/Terrain";
 import { TileMapDocument, parseTileMapDocument } from "@/game/map/content/TileMapFormat";
-import riverDocument from "@/assets/data/maps/river.tilemap.json";
-import fantasyDocument from "@/assets/data/maps/fantasy.tilemap.json";
+import marketSquareDocument from "@/assets/data/maps/market-square.tilemap.json";
 
 function baseDocument(overrides: Partial<TileMapDocument> = {}): TileMapDocument {
 	return {
@@ -84,31 +83,20 @@ suite("Tile Map Format Test Suite", () => {
 		expect(() => parseTileMapDocument(baseDocument({ layers: [{ name: "ground", tiles: [0, -2, 0, 0] }] }))).toThrowError(GameError);
 	});
 
-	test("The shipped river map is a valid document", () => {
-		const map = parseTileMapDocument(riverDocument as TileMapDocument);
-
-		expect(map.tileset).toBe("kenney-1bit");
-		expect(map.terrain).toHaveLength(map.columns * map.rows);
-
-		for (const layer of map.layers) {
-			expect(layer.tiles).toHaveLength(map.columns * map.rows);
-		}
-	});
-
-	test("The shipped fantasy map is a valid document with orientation data", () => {
-		const map = parseTileMapDocument(fantasyDocument as TileMapDocument);
+	test("The shipped market square is a valid document with orientation data", () => {
+		const map = parseTileMapDocument(marketSquareDocument as TileMapDocument);
 
 		expect(map.tileset).toBe("kenney-1bit");
 		expect(map.background).toBe("#472d3c");
-		expect([map.columns, map.rows]).toStrictEqual([48, 24]);
-		expect(map.terrain).toHaveLength(48 * 24);
+		expect([map.columns, map.rows]).toStrictEqual([31, 31]);
+		expect(map.terrain).toHaveLength(31 * 31);
 
 		for (const layer of map.layers) {
-			expect(layer.tiles).toHaveLength(48 * 24);
-			expect(layer.flips).toHaveLength(48 * 24);
+			expect(layer.tiles).toHaveLength(31 * 31);
+			expect(layer.flips).toHaveLength(31 * 31);
 		}
 
-		// the sample leans on rotated wall and road tiles
+		// the kerb around the plaza is drawn with rotated tiles
 		expect(map.layers[0].flips.some((flip) => flip !== 0)).toBe(true);
 	});
 

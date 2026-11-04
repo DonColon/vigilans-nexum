@@ -32,7 +32,9 @@ export type UnitFaction = (typeof UnitFaction)[keyof typeof UnitFaction];
 
 export const UnitFaction = {
 	PLAYER: "player",
-	ENEMY: "enemy"
+	ENEMY: "enemy",
+	/** A bystander: holds its tile, has no phase, and neither side can act on it. A placement makes one - no sheet is written as one. */
+	NEUTRAL: "neutral"
 } as const;
 
 /** What an [[InventoryEntry]] holds - a weapon that can be readied, or a plain consumable. */

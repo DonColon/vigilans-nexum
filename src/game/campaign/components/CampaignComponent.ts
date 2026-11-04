@@ -115,6 +115,20 @@ export class CampaignComponent extends Component<CampaignData> {
 		};
 	}
 
+	/**
+	 * A battle of the prologue was won and another follows: the same as
+	 * [[cleared]], but nobody falls for good - a child who went down stands
+	 * again in the next scene - and there is no convoy to keep.
+	 */
+	public static prologueCleared(data: CampaignData, survivors: UnitData[], next: string): CampaignData {
+		return CampaignComponent.cleared({ ...data, casualties: [] }, survivors, [], next);
+	}
+
+	/** The prologue is over: nothing of it goes on. The run keeps its slot and its playtime and starts afresh at `next`. */
+	public static prologueEnded(data: CampaignData, next: string): CampaignData {
+		return { ...CampaignComponent.begin(data.slot, next), playtime: data.playtime };
+	}
+
 	/** Units the chapter deployed off their sheets join the roster; a unit already in it is left as it is. */
 	public static enrolled(data: CampaignData, units: UnitData[]): CampaignData {
 		const known = new Set(data.roster.map((unit) => unit.id));

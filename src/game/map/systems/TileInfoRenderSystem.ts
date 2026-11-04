@@ -7,11 +7,12 @@ import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
-import { terrainName, tileInfoRows, TileInfoHud, TILE_INFO_HEIGHT } from "@/game/map/view/TileInfoHud";
+import { hudOnRight, hudPlateX, terrainName, tileInfoRows, TileInfoHud, TILE_INFO_HEIGHT } from "@/game/map/view/TileInfoHud";
 import { MapRenderSystem } from "@/game/map/systems/MapRenderSystem";
 
 /**
- * Draws the terrain readout in the map's top-left corner: the name of the tile
+ * Draws the terrain readout in the top-left corner of the screen, wherever the
+ * map has scrolled to - the other top corner when the cursor is under it: the name of the tile
  * under the cursor and what it costs and gives. It follows the cursor, so it
  * changes as the player moves over the map.
  *
@@ -57,8 +58,9 @@ export class TileInfoRenderSystem extends MapRenderSystem {
 
 		const width = Math.max(TileInfoHud.minWidth, TileInfoHud.padding * 2 + Math.max(nameWidth, labelWidth + TileInfoHud.labelGap + valueWidth));
 
-		const plateX = view.origin.x + TileInfoHud.inset;
-		const plateY = view.origin.y + TileInfoHud.inset;
+		const onRight = hudOnRight({ x: view.origin.x + tile.column * view.cellSize, y: view.origin.y + tile.row * view.cellSize }, view.cellSize);
+		const plateX = hudPlateX(this.display.getViewportDimension().width, width, onRight);
+		const plateY = TileInfoHud.inset;
 
 		graphics.fillColor(TileInfoHud.plate).fillRoundRectangle(new Rectangle(plateX, plateY, width, TILE_INFO_HEIGHT), TileInfoHud.radius);
 

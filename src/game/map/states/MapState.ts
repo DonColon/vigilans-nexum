@@ -33,7 +33,7 @@ export interface MapRequest {
 /** Edge length of a tile in pixels - the viewport is sized to a whole number of these. */
 const CELL_SIZE = MapTheme.cellSize;
 
-/** Tile the cursor starts on, the road junction south of the castle. */
+/** Tile the cursor starts on until the units feature drops it onto the commander. */
 const CURSOR_START = { column: 6, row: 12 };
 
 /**

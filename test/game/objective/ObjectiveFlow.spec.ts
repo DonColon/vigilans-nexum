@@ -44,7 +44,7 @@ import { MenuComponent } from "@/game/ui/components/MenuComponent";
 import { MenuState } from "@/game/ui/states/MenuState";
 import { UIFeature } from "@/game/ui/UIFeature";
 import { UnitComponent, UnitFaction } from "@/game/units/components/UnitComponent";
-import { DEPLOYMENT_ASSET, DeploymentDocument } from "@/game/units/content/Deployments";
+import { deploymentAsset, DeploymentDocument } from "@/game/units/content/Deployments";
 import { unitById, unitsInWorld, unitsOfFaction } from "@/game/units/rules/UnitLookup";
 import { UnitsFeature } from "@/game/units/UnitsFeature";
 
@@ -65,7 +65,7 @@ suite("Objective Flow Test Suite", () => {
 	class MapStub extends GameState {
 		public static readonly type = MapState.type;
 		onEnter() {
-			eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "skirmish" });
+			eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "spec" });
 		}
 		onExit() {
 			eventBus.dispatch("map:closed", {});
@@ -93,7 +93,7 @@ suite("Objective Flow Test Suite", () => {
 	new InputDevice({ gamepad: { axisThreshold: 0.5, deadZone: 0.1 } });
 
 	const sketch = new Array(16).fill(".".repeat(8));
-	const deployment = assets.getJson<DeploymentDocument>(DEPLOYMENT_ASSET);
+	const deployment = assets.getJson<DeploymentDocument>(deploymentAsset("spec"));
 
 	let features: { install(): void; uninstall(): void }[] = [];
 	let map: Entity;
@@ -163,7 +163,7 @@ suite("Objective Flow Test Suite", () => {
 
 	/** Puts a sheet with this objective in the bundle - read when the map opens. */
 	const setObjective = (objective: DeploymentDocument["objective"]) => {
-		assets.setJson(DEPLOYMENT_ASSET, { ...deployment, objective });
+		assets.setJson(deploymentAsset("spec"), { ...deployment, objective });
 	};
 
 	const open = () => {
@@ -214,7 +214,7 @@ suite("Objective Flow Test Suite", () => {
 		enemyPhaseSystem?.dispose();
 		enemyPhaseSystem = null;
 		objectiveSystem = null;
-		assets.setJson(DEPLOYMENT_ASSET, deployment);
+		assets.setJson(deploymentAsset("spec"), deployment);
 
 		for (const feature of [...features].reverse()) {
 			feature.uninstall();
@@ -232,8 +232,8 @@ suite("Objective Flow Test Suite", () => {
 	test("The objective is read off the deployment sheet when the map opens", () => {
 		open();
 
-		// The skirmish is a seize of the tile before the castle gate.
-		expect(objective()).toStrictEqual({ win: WinCondition.SEIZE, seizeColumn: 12, seizeRow: 5, outcome: "", acknowledged: false });
+		// The spec scenario is a seize of the tile before the castle gate.
+		expect(objective()).toStrictEqual({ win: WinCondition.SEIZE, seizeColumn: 12, seizeRow: 5, target: "", protect: [], outcome: "", acknowledged: false });
 	});
 
 	test("A rout is won when the last enemy falls; the banner waits for whatever is over the map", () => {

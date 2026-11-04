@@ -144,7 +144,7 @@ export function attackableTiles(grid: GridData, reachable: readonly ReachableTil
 					continue;
 				}
 
-				if (!GridComponent.containsTile(grid, column, row)) {
+				if (!GridComponent.inPlay(grid, column, row)) {
 					continue;
 				}
 

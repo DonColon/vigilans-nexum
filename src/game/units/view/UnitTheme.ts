@@ -23,6 +23,11 @@ export const UnitTheme = {
 			body: Color.hex("#c4514f"),
 			ring: Color.hex("#ffe0de"),
 			glyph: Color.hex("#fff4f3")
+		},
+		[UnitFaction.NEUTRAL]: {
+			body: Color.hex("#8a8f9c"),
+			ring: Color.hex("#e4e6ea"),
+			glyph: Color.hex("#f4f5f7")
 		}
 	} as Record<UnitFaction, FactionColors>,
 

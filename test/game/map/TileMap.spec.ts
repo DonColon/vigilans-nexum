@@ -1,10 +1,12 @@
 import { test, expect, suite } from "vitest";
 import { GameError } from "@/core/GameError";
 import { IMPASSABLE, Terrain, getTerrainProperties, isPassable } from "@/game/map/content/Terrain";
-import { parseTileMap, skirmishMap } from "@/game/map/content/TileMaps";
+import { parseTileMap } from "@/game/map/content/TileMaps";
 import { GridComponent } from "@/game/map/components/GridComponent";
 
 suite("Tile Map Test Suite", () => {
+	const sketch = parseTileMap(["MM..F", "...~#", "..O.."]);
+
 	test("Sketch is parsed into a row major tile map", () => {
 		const definition = parseTileMap(["..F", "~#O"]);
 
@@ -20,16 +22,16 @@ suite("Tile Map Test Suite", () => {
 	});
 
 	test("Placeholder map has a tile for every cell", () => {
-		expect(skirmishMap.tiles).toHaveLength(skirmishMap.columns * skirmishMap.rows);
+		expect(sketch.tiles).toHaveLength(sketch.columns * sketch.rows);
 	});
 
 	test("Grid data is built from a definition and a cell size", () => {
-		const grid = GridComponent.of(skirmishMap, 32);
+		const grid = GridComponent.of(sketch, 32);
 
-		expect(grid.columns).toBe(skirmishMap.columns);
-		expect(grid.rows).toBe(skirmishMap.rows);
+		expect(grid.columns).toBe(sketch.columns);
+		expect(grid.rows).toBe(sketch.rows);
 		expect(grid.cellSize).toBe(32);
-		expect(GridComponent.dimension(grid)).toStrictEqual({ width: skirmishMap.columns * 32, height: skirmishMap.rows * 32 });
+		expect(GridComponent.dimension(grid)).toStrictEqual({ width: sketch.columns * 32, height: sketch.rows * 32 });
 	});
 
 	test("Tiles are looked up by column and row", () => {

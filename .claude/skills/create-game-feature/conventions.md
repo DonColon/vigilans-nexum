@@ -51,7 +51,7 @@ Cross-feature reads follow the same rule: a system may import another feature's 
 | Event payload | `<Feature><Verb>Event extends GameEvent` | `ObjectiveDecidedEvent` |
 | i18n key | `<feature>.<name>` | `objective.victory`, `menu.seize` |
 | Content format | `"vigilans-<kind>"`, `version: 1` | `"vigilans-deployment"` |
-| Asset id | `<kind>-<scenario>` or `<kind>-<id>` | `deployment-skirmish`, `unit-dardan` |
+| Asset id | `<kind>-<scenario>` or `<kind>-<id>` | `deployment-bellum-duel`, `unit-dardan` |
 | Vocabulary constants | `const` object + derived type | `export const Outcome = { VICTORY: "victory", DEFEAT: "defeat" } as const; export type Outcome = (typeof Outcome)[keyof typeof Outcome];` |
 | Spec | `test/game/<feature>/<Name>.spec.ts`, `<Name>Flow.spec.ts` | `Outcome.spec.ts`, `ObjectiveFlow.spec.ts` |
 

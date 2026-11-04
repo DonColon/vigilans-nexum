@@ -138,7 +138,7 @@ export function statusHeading(column: StatusColumn): string {
 
 /** Which side the unit fights on, as the player reads it. */
 export function factionLabel(faction: UnitFaction): string {
-	return i18n(faction === UnitFaction.PLAYER ? "status.faction.player" : "status.faction.enemy");
+	return i18n(`status.faction.${faction}`);
 }
 
 /** "Swordsman - Lv 3 - Exp 45": the line under the name. The points read the same as the army list's column. */

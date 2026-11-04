@@ -10,7 +10,7 @@ import { TurnSystem } from "@/game/turn/systems/TurnSystem";
 
 /**
  * The battle turn counter and its phases. It owns the `TurnComponent` - the
- * turn number and whose phase it is - shows the number in the map's top-left
+ * turn number and whose phase it is - shows the number in the screen's top-left
  * corner (`TurnRenderSystem`) and ends a phase: on `turn:end` from the global
  * command menu (or from the enemy phase, once it has nobody left to move), or
  * on its own once every unit of the acting side has acted (`unit:acted`). The

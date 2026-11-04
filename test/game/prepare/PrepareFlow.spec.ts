@@ -1,4 +1,5 @@
 import { test, expect, suite, beforeEach, afterEach } from "vitest";
+import { AssetStorage } from "@/core/assets/AssetStorage";
 import { Entity } from "@/core/ecs/Entity";
 import { World } from "@/core/ecs/World";
 import { TransformComponent } from "@/core/ecs/components/TransformComponent";
@@ -176,11 +177,11 @@ suite("Prepare Flow Test Suite", () => {
 	const open = (bench: string[] = ["maksimo-auditore"]) => {
 		const run = world.createEntity();
 		run.addComponent(CampaignComponent, {
-			...CampaignComponent.begin(CAMPAIGN_SLOT, "bellum"),
+			...CampaignComponent.begin(CAMPAIGN_SLOT, "chapter-one"),
 			roster: bench.map((id) => buildUnit({ ...maksimoDocument, id } as UnitDocument))
 		});
 
-		stateManager.getState(MapState).request({ scenario: "bellum", map: "map-fantasy" });
+		stateManager.getState(MapState).request({ scenario: "chapter-one", map: "map-spec" });
 		stateManager.switch(MapState); // queues map:ready
 		frame(); // map:ready - the battle is set up, the run laid over it, the screen goes up
 		frame(); // turn:changed - held
@@ -258,6 +259,19 @@ suite("Prepare Flow Test Suite", () => {
 		expect(world.entityWith(TurnComponent)).not.toBeNull();
 		expect(turns).toStrictEqual([]);
 		expect(stateManager.getCurrentStates().some((state) => state instanceof PhaseBannerState)).toBe(false);
+	});
+
+	test("A battle whose army is fixed opens straight into its first phase", () => {
+		const assets = ServiceRegistry.get<AssetStorage>(AssetStorage.name);
+		const bellum = assets.getJson<object>("deployment-chapter-one");
+
+		assets.setJson("deployment-chapter-one", { ...bellum, preparations: false });
+		open();
+		assets.setJson("deployment-chapter-one", bellum);
+
+		expect(opened).toBe(0);
+		expect(types()).not.toContain(PrepareState.type);
+		expect(turns).toHaveLength(1);
 	});
 
 	test("Without a run the map opens the way it always has", () => {

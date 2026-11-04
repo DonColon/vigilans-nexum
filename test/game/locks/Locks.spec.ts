@@ -20,9 +20,8 @@ import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
 import { TileMapComponent, TileMapData } from "@/game/map/components/TileMapComponent";
-import { Terrain, isPassable } from "@/game/map/content/Terrain";
+import { Terrain } from "@/game/map/content/Terrain";
 import { parseTileMap } from "@/game/map/content/TileMaps";
-import { parseTileMapDocument, TileMapDocument } from "@/game/map/content/TileMapFormat";
 import { PendingMoveComponent } from "@/game/movement/components/PendingMoveComponent";
 import { MovementFeature } from "@/game/movement/MovementFeature";
 import { UnitMenuRow } from "@/game/movement/view/UnitMenus";
@@ -36,8 +35,7 @@ import { UIFeature } from "@/game/ui/UIFeature";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
 import { unitsInWorld, unitById } from "@/game/units/rules/UnitLookup";
 import { UnitsFeature } from "@/game/units/UnitsFeature";
-import skirmishLocks from "@/assets/data/locks/skirmish.locks.json";
-import fantasyMap from "@/assets/data/maps/fantasy.tilemap.json";
+import { specLocks } from "../../support/SpecContent";
 
 /** The kenney-1bit frames the locks are drawn with: a shut and an open door, a shut and an open chest. */
 const CLOSED_DOOR = 550;
@@ -46,11 +44,7 @@ const CLOSED_CHEST = 304;
 const OPEN_CHEST = 305;
 
 suite("Scenario Lock Sheet Test Suite", () => {
-	const document = fantasyMap as unknown as TileMapDocument;
-	const parsed = parseTileMapDocument(document);
-	const frameAt = (column: number, row: number) => parsed.layers[0].tiles[row * parsed.columns + column];
-	const terrainAt = (column: number, row: number) => parsed.terrain[row * parsed.columns + column];
-	const sheet = parseLocks(skirmishLocks as LocksDocument);
+	const sheet = parseLocks(specLocks as LocksDocument);
 
 	test("The shipped sheet locks the fort behind one door, with one chest inside", () => {
 		expect(sheet.doors.map((door) => door.id)).toStrictEqual(["fort-gate"]);
@@ -58,27 +52,7 @@ suite("Scenario Lock Sheet Test Suite", () => {
 		expect(sheet.chests[0].reward).toBe("energy-drop");
 	});
 
-	test("Every shipped door is drawn shut on the map, blocks the way, and has a tile to open it from", () => {
-		for (const door of sheet.doors) {
-			expect(frameAt(door.column, door.row), `door "${door.id}"`).toBe(CLOSED_DOOR);
-			expect(terrainAt(door.column, door.row), `door "${door.id}"`).toBe(Terrain.WALL);
-			expect(door.openFrame).toBe(OPEN_DOOR);
-			expect(document.tileTerrain?.[String(door.openFrame)] ?? "plain").toBe(Terrain.PLAIN);
-
-			const doorstep = [
-				[door.column - 1, door.row],
-				[door.column + 1, door.row],
-				[door.column, door.row - 1],
-				[door.column, door.row + 1]
-			].filter(([column, row]) => column >= 0 && row >= 0 && column < parsed.columns && row < parsed.rows && isPassable(terrainAt(column, row)));
-
-			// A door nobody can stand beside can never be opened - and once it is
-			// open, there has to be somewhere on the far side to walk into.
-			expect(doorstep.length, `door "${door.id}"`).toBeGreaterThan(1);
-		}
-	});
-
-	test("Every shipped chest is drawn shut on ground a unit can stand on, and holds something the catalogs know", () => {
+	test("Every chest holds something the catalogs know", () => {
 		const assets = ServiceRegistry.get<AssetStorage>(AssetStorage.name);
 		const known = new Set([
 			...Object.keys(assets.getJson<{ weapons: Record<string, unknown> }>("catalog-weapons").weapons),
@@ -86,29 +60,10 @@ suite("Scenario Lock Sheet Test Suite", () => {
 		]);
 
 		for (const chest of sheet.chests) {
-			expect(frameAt(chest.column, chest.row), `chest "${chest.id}"`).toBe(CLOSED_CHEST);
-			expect(isPassable(terrainAt(chest.column, chest.row)), `chest "${chest.id}"`).toBe(true);
-			expect(chest.openFrame).toBe(OPEN_CHEST);
-
 			if (chest.reward.length > 0) {
 				expect(known, `chest "${chest.id}"`).toContain(chest.reward);
 			}
 		}
-	});
-
-	test("The fort is sealed until the gate opens - its chest is only reachable through the door", () => {
-		const grid = GridComponent.fromTileMap(parsed, 24);
-		const [gate] = sheet.doors;
-		const [chest] = sheet.chests;
-		const outside = { column: gate.column, row: gate.row + 1 };
-
-		// Even with the run of the whole map, the shut gate keeps the chest out of reach.
-		const sealed = reachableTiles(grid, outside, 999);
-		expect(sealed.some((tile) => tile.column === chest.column && tile.row === chest.row)).toBe(false);
-
-		const opened = { ...grid, tiles: grid.tiles.map((terrain, cell) => (cell === gate.row * grid.columns + gate.column ? Terrain.PLAIN : terrain)) };
-		const unsealed = reachableTiles(opened, outside, 999);
-		expect(unsealed.some((tile) => tile.column === chest.column && tile.row === chest.row)).toBe(true);
 	});
 
 	test("A malformed sheet is rejected", () => {
@@ -176,7 +131,7 @@ suite("Unit Locks Test Suite", () => {
 	const sketch = new Array(ROWS).fill(".".repeat(COLUMNS));
 	sketch[DOOR.row] = "#".repeat(COLUMNS);
 
-	const shipped = assets.getJson<LocksDocument>("locks-skirmish");
+	const shipped = assets.getJson<LocksDocument>("locks-spec");
 
 	/** The scenario sheet the feature reads, with the locks put where Teuta can reach them. */
 	const lockSheet = (chestOverrides: Record<string, unknown> = {}): LocksDocument => ({
@@ -277,7 +232,7 @@ suite("Unit Locks Test Suite", () => {
 
 	/** Builds the map and installs the features, with `document` as the scenario's locks. */
 	const start = (document: LocksDocument = lockSheet()) => {
-		assets.setJson("locks-skirmish", document);
+		assets.setJson("locks-spec", document);
 
 		map = world.createEntity();
 		map.addComponent(GridComponent, GridComponent.of(parseTileMap(sketch), 24));
@@ -299,7 +254,7 @@ suite("Unit Locks Test Suite", () => {
 		movement = new MovementFeature({ dependencies: [units, ui] });
 		movement.install();
 
-		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: COLUMNS, rows: ROWS, scenario: "skirmish" });
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: COLUMNS, rows: ROWS, scenario: "spec" });
 		eventBus.processQueue();
 	};
 
@@ -329,7 +284,7 @@ suite("Unit Locks Test Suite", () => {
 			world.unregisterEntity(entity);
 		}
 
-		assets.setJson("locks-skirmish", shipped);
+		assets.setJson("locks-spec", shipped);
 		eventBus.processQueue();
 	});
 

@@ -117,7 +117,14 @@ export class PrepareFlowSystem extends ReactiveSystem {
 		let limits;
 
 		try {
-			limits = deploymentLimits(parseDeployment(this.assets.getJson(deploymentAsset(scenario))), this.assets);
+			const deployment = parseDeployment(this.assets.getJson(deploymentAsset(scenario)));
+
+			// The army is fixed: nothing to prepare, and the opening turn goes straight through.
+			if (deployment.preparations === false) {
+				return;
+			}
+
+			limits = deploymentLimits(deployment, this.assets);
 		} catch (error) {
 			console.error(`Deployment "${deploymentAsset(scenario)}" could not be read for the preparations:`, error);
 			return;

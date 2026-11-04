@@ -34,7 +34,7 @@ import { UIFeature } from "@/game/ui/UIFeature";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
 import { unitsInWorld, unitById } from "@/game/units/rules/UnitLookup";
 import { UnitsFeature } from "@/game/units/UnitsFeature";
-import skirmishConversations from "@/assets/data/conversations/skirmish.conversations.json";
+import { specConversations } from "../../support/SpecContent";
 
 /** The scenario sheet, and a minimal one built by hand for the edge cases. */
 const sheet = (conversations: unknown[]) => ({ format: "vigilans-conversations", version: 1, conversations }) as unknown as ConversationsDocument;
@@ -43,7 +43,7 @@ const page = (speaker: string, de: string, en = de) => ({ speaker, text: { de, e
 
 suite("Conversation Sheet Test Suite", () => {
 	test("The shipped sheet pairs Dardan with Elira, and Elira with Hasan", () => {
-		const conversations = parseConversations(skirmishConversations as ConversationsDocument);
+		const conversations = parseConversations(specConversations as ConversationsDocument);
 
 		expect(conversations.map((entry) => entry.id)).toStrictEqual(["dardan-elira", "elira-hasan"]);
 		expect(conversations[0].between).toStrictEqual(["dardan", "elira"]);
@@ -57,7 +57,7 @@ suite("Conversation Sheet Test Suite", () => {
 	});
 
 	test("The script is not broken by hand - the box wraps it itself", () => {
-		const conversations = parseConversations(skirmishConversations as ConversationsDocument);
+		const conversations = parseConversations(specConversations as ConversationsDocument);
 
 		for (const conversation of conversations) {
 			for (const entry of conversation.pages) {
@@ -69,20 +69,20 @@ suite("Conversation Sheet Test Suite", () => {
 	});
 
 	test("Each speaker holds an end of the screen, the opener on top", () => {
-		const [conversation] = parseConversations(skirmishConversations as ConversationsDocument);
+		const [conversation] = parseConversations(specConversations as ConversationsDocument);
 
 		// Dardan opens, so his pages sit along the top and Elira's along the bottom.
 		expect(conversationSides(conversation)).toStrictEqual([DialogSide.TOP, DialogSide.BOTTOM, DialogSide.TOP, DialogSide.BOTTOM]);
 		expect(conversationDialog(conversation, "de", "en", () => null).sides).toStrictEqual(conversationSides(conversation));
 
 		// The one who answers first keeps the bottom whoever they are.
-		const [, second] = parseConversations(skirmishConversations as ConversationsDocument);
+		const [, second] = parseConversations(specConversations as ConversationsDocument);
 		expect(second.pages[0].speaker).toBe("hasan");
 		expect(conversationSides(second)).toStrictEqual([DialogSide.TOP, DialogSide.BOTTOM, DialogSide.TOP]);
 	});
 
 	test("A pair is found whichever way round it is asked for", () => {
-		const conversations = parseConversations(skirmishConversations as ConversationsDocument);
+		const conversations = parseConversations(specConversations as ConversationsDocument);
 
 		expect(conversationBetween(conversations, "dardan", "elira")?.id).toBe("dardan-elira");
 		expect(conversationBetween(conversations, "elira", "dardan")?.id).toBe("dardan-elira");
@@ -249,7 +249,7 @@ suite("Unit Talk Test Suite", () => {
 		movement = new MovementFeature({ dependencies: [units, ui] });
 		movement.install();
 
-		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "skirmish" });
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "spec" });
 		eventBus.processQueue();
 	});
 

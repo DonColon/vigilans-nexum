@@ -738,14 +738,14 @@ Where logic goes:
 {
 	"format": "vigilans-deployment",
 	"version": 1,
-	"map": "fantasy",
-	"objective": { "win": "seize", "column": 12, "row": 5 },
-	"units": [ { "unit": "dardan", "column": 4, "row": 10 }, ... ]
+	"map": "market-square",
+	"objective": { "win": "defeat", "target": "hasan-duel" },
+	"units": [ { "unit": "dardan-niveli", "column": 11, "row": 23 }, ... ]
 }
 ```
 
 ```ts
-export const WinCondition = { ROUT: "rout", SEIZE: "seize" } as const;
+export const WinCondition = { ROUT: "rout", SEIZE: "seize", DEFEAT: "defeat" } as const;
 
 export function objectiveOf(objective: DeploymentObjective | undefined): ObjectiveSetup {
 	// ... validates `win` and, for a seize, its tile ...
@@ -822,7 +822,7 @@ The game's content - every unit, class, weapon, item, map, deployment, house, lo
 
 ```ts
 // src/asset.manifest.ts (excerpt)
-{ id: "deployment-skirmish", type: "json", url: "/data/deployments/skirmish.deployment.json" },
+{ id: "deployment-bellum-duel", type: "json", url: "/data/deployments/bellum-duel.deployment.json" },
 { id: "unit-dardan", type: "json", url: "/data/units/dardan.unit.json" },
 ```
 
@@ -843,7 +843,7 @@ Every document carries a `format` and a `version`, and the feature that owns it 
 
 Adding content is therefore a data change:
 
-- **A character** is a `*.unit.json` sheet plus a manifest entry with the id `unit-<id>`; a placement in the deployment puts it on the map. The eight Vigilant Knights are keyed by their wiki slug (`dardan-niveli`, ...); the short-id sheets (`dardan`, `hasan`, `elira`, `teuta`, `besnik`) are the `skirmish` scenario's fixtures, which the specs are written against.
+- **A character** is a `*.unit.json` sheet plus a manifest entry with the id `unit-<id>`; a placement in the deployment puts it on the map. The eight Vigilant Knights are keyed by their wiki slug (`dardan-niveli`, ...); the short-id sheets (`dardan`, `hasan`, `elira`, `teuta`, `besnik`) are the fixtures of the `spec` scenario in `test/support/SpecContent.ts`, which the specs are written against.
 - **A generic enemy** (`bandit`, `ruffian`, `poacher`, `bandit-chief`) is one sheet placed as often as needed, each placement with an `id` of its own (`bandit-1`, `bandit-2`) that the unit goes by on the map.
 - **A unit's abilities** are the optional `abilities` list on its sheet - ids such as `swap` or `shove`; the positional feature reads its six off it, anything else is carried along for the features to come.
 - **An enemy's behaviour** is the optional `behaviour` on its placement (`charge` or `hold`; bosses hold by default).

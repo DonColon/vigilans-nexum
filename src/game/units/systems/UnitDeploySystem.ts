@@ -3,14 +3,15 @@ import { ReactiveSystem } from "@/core/ecs/ReactiveSystem";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { identityTransform, TransformComponent } from "@/core/ecs/components/TransformComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
-import { activeCursor } from "@/game/map/rules/ActiveMap";
+import { GridComponent } from "@/game/map/components/GridComponent";
+import { activeCursor, activeMap } from "@/game/map/rules/ActiveMap";
 import { CommanderComponent } from "@/game/units/components/CommanderComponent";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
 import { UnitPopComponent } from "@/game/units/components/UnitPopComponent";
 import { loadUnitCatalogs } from "@/game/units/content/UnitCatalog";
-import { buildUnit, UnitDocument } from "@/game/units/content/UnitSheets";
+import { buildUnit, placedUnit, UnitDocument } from "@/game/units/content/UnitSheets";
 import { unitsInWorld, unitById } from "@/game/units/rules/UnitLookup";
-import { deploymentAsset, DeploymentDocument, parseDeployment, placementId } from "@/game/units/content/Deployments";
+import { deploymentAsset, DeploymentDocument, parseDeployment } from "@/game/units/content/Deployments";
 
 /**
  * Puts the playable units on the battle map and takes them off again. On
@@ -49,7 +50,11 @@ export class UnitDeploySystem extends ReactiveSystem {
 		// have to be in place before the first unit is built.
 		loadUnitCatalogs(this.assets);
 
-		for (const placement of this.deployment(scenario).units) {
+		const deployment = this.deployment(scenario);
+
+		this.confineBattle(deployment);
+
+		for (const placement of deployment.units) {
 			const document = this.unitDocument(placement.unit);
 
 			if (document === null) {
@@ -57,7 +62,7 @@ export class UnitDeploySystem extends ReactiveSystem {
 			}
 
 			// The placement's own id, so one sheet can stand on the map several times.
-			const data = { ...buildUnit(document), id: placementId(placement) };
+			const data = placedUnit(buildUnit(document), placement);
 
 			const entity = this.world.createEntity();
 			entity.addComponent(UnitComponent, data);
@@ -70,6 +75,15 @@ export class UnitDeploySystem extends ReactiveSystem {
 		}
 
 		this.centreCursorOnCommander();
+	}
+
+	/** A sheet that names an area fights there; the map outside it is only backdrop. */
+	private confineBattle(deployment: DeploymentDocument): void {
+		const grid = activeMap(this.world)?.getComponent(GridComponent);
+
+		if (grid !== undefined && deployment.area !== undefined) {
+			grid.update(GridComponent.confinedTo(grid.read(), deployment.area));
+		}
 	}
 
 	/** The scenario's deployment sheet, or an empty one when it is not in storage. */

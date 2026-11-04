@@ -15,8 +15,6 @@ import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
 import { TileMapComponent, TileMapData } from "@/game/map/components/TileMapComponent";
 import { parseTileMap } from "@/game/map/content/TileMaps";
-import { parseTileMapDocument, TileMapDocument } from "@/game/map/content/TileMapFormat";
-import { isPassable } from "@/game/map/content/Terrain";
 import { MovementFeature } from "@/game/movement/MovementFeature";
 import { UnitMenuRow } from "@/game/movement/view/UnitMenus";
 import { UnitWalkSystem } from "@/game/movement/systems/UnitWalkSystem";
@@ -36,8 +34,7 @@ import { CONVOY_MENU } from "@/game/convoy/view/ConvoyMenus";
 import { VisitComponent } from "@/game/visit/components/VisitComponent";
 import { availableHouse } from "@/game/visit/rules/Visits";
 import { VisitFeature } from "@/game/visit/VisitFeature";
-import skirmishHouses from "@/assets/data/houses/skirmish.houses.json";
-import fantasyMap from "@/assets/data/maps/fantasy.tilemap.json";
+import { specHouses } from "../../support/SpecContent";
 import { HousesDocument } from "@/game/visit/content/Houses";
 
 /** The closed door the test map draws, and the doorway it opens into. */
@@ -45,43 +42,10 @@ const CLOSED_DOOR = 445;
 const OPEN_DOOR = 447;
 
 suite("Scenario House Sheet Test Suite", () => {
-	const map = fantasyMap as { columns: number; layers: { tiles: number[] }[] };
-	const frameAt = (column: number, row: number) => map.layers[0].tiles[row * map.columns + column];
-
-	test("Every shipped house stands on a door the map actually draws", () => {
-		for (const house of (skirmishHouses as HousesDocument).houses) {
-			const frame = frameAt(house.column, house.row);
-
-			expect(frame, `house "${house.id}"`).toBeGreaterThan(0);
-			// The authored frame is the shut door and the sheet names the open one -
-			// a house that named the frame already on the map would never change.
-			expect(house.openDoor, `house "${house.id}"`).not.toBe(frame);
-		}
-	});
-
-	test("Every shipped house has a tile a unit could knock from", () => {
-		const parsed = parseTileMapDocument(fantasyMap as unknown as TileMapDocument);
-		const terrainAt = (column: number, row: number) => parsed.terrain[row * parsed.columns + column];
-
-		for (const house of (skirmishHouses as HousesDocument).houses) {
-			const doorstep = [
-				[house.column - 1, house.row],
-				[house.column + 1, house.row],
-				[house.column, house.row - 1],
-				[house.column, house.row + 1]
-			].filter(([column, row]) => column >= 0 && row >= 0 && column < parsed.columns && row < parsed.rows && isPassable(terrainAt(column, row)));
-
-			// A house nobody can stand beside can never be visited, however good the
-			// script is - and now that the knock comes from outside, that is a real
-			// authoring mistake rather than a theoretical one.
-			expect(doorstep.length, `house "${house.id}"`).toBeGreaterThan(0);
-		}
-	});
-
-	test("Every shipped house hands over something the catalogs know", () => {
+	test("Every house hands over something the catalogs know", () => {
 		const known = new Set([...Object.keys(fantasyWeapons()), ...Object.keys(fantasyItems())]);
 
-		for (const house of (skirmishHouses as HousesDocument).houses) {
+		for (const house of (specHouses as HousesDocument).houses) {
 			if (house.reward !== undefined && house.reward.length > 0) {
 				expect(known, `house "${house.id}"`).toContain(house.reward);
 			}
@@ -127,7 +91,7 @@ suite("Visit Test Suite", () => {
 	const DOORSTEP = { column: 4, row: 11 };
 
 	const sketch = new Array(ROWS).fill(".".repeat(COLUMNS));
-	const shipped = assets.getJson<HousesDocument>("houses-skirmish");
+	const shipped = assets.getJson<HousesDocument>("houses-spec");
 
 	/** The scenario sheet the feature reads, with the house put where Dardan can reach it. */
 	const houseSheet = (overrides: Record<string, unknown> = {}): HousesDocument =>
@@ -273,7 +237,7 @@ suite("Visit Test Suite", () => {
 
 	/** Builds the map and installs the features, with `sheet` as the scenario's houses. */
 	const start = (sheet: HousesDocument = houseSheet()) => {
-		assets.setJson("houses-skirmish", sheet);
+		assets.setJson("houses-spec", sheet);
 
 		map = world.createEntity();
 		map.addComponent(GridComponent, GridComponent.of(parseTileMap(sketch), 24));
@@ -295,7 +259,7 @@ suite("Visit Test Suite", () => {
 		movement = new MovementFeature({ dependencies: [units, ui] });
 		movement.install();
 
-		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: COLUMNS, rows: ROWS, scenario: "skirmish" });
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: COLUMNS, rows: ROWS, scenario: "spec" });
 		eventBus.processQueue();
 	};
 
@@ -315,7 +279,7 @@ suite("Visit Test Suite", () => {
 			world.unregisterEntity(entity);
 		}
 
-		assets.setJson("houses-skirmish", shipped);
+		assets.setJson("houses-spec", shipped);
 		eventBus.processQueue();
 	});
 

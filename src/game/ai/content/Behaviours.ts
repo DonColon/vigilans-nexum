@@ -8,7 +8,8 @@ import { DeploymentPlacement } from "@/game/units/content/Deployments";
  *    can reach nobody, walks as far towards the nearest of the player's units
  *    as its movement allows. The rank and file.
  *  - `hold`: stays exactly where it stands and only strikes at whoever comes
- *    within its weapons' reach. A boss on its throne, a guard at a door.
+ *    within its weapons' reach. A boss on its throne, a guard at a door. A
+ *    placement's `chargeFromTurn` is the turn it gives that up and charges.
  */
 export type EnemyBehaviour = (typeof EnemyBehaviour)[keyof typeof EnemyBehaviour];
 
@@ -39,4 +40,9 @@ export function behaviourOf(placement: Pick<DeploymentPlacement, "unit" | "behav
 	}
 
 	return boss ? EnemyBehaviour.HOLD : EnemyBehaviour.CHARGE;
+}
+
+/** How a unit with this behaviour fights on `turn`: it charges once `chargeFromTurn` has come - 0 is never - whatever it did before. */
+export function behaviourOnTurn(behaviour: EnemyBehaviour, chargeFromTurn: number, turn: number): EnemyBehaviour {
+	return chargeFromTurn > 0 && turn >= chargeFromTurn ? EnemyBehaviour.CHARGE : behaviour;
 }

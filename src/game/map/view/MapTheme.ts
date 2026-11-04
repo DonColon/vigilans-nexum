@@ -9,12 +9,12 @@ import { Terrain, TerrainType } from "@/game/map/content/Terrain";
 export const MapTheme = {
 	/**
 	 * Edge length of a tile on screen, in pixels. The tileset art is 16x16, so
-	 * this draws it at exactly 2x - a whole number of screen pixels per art
-	 * pixel, which is what keeps it crisp. The viewport is sized from it: the
-	 * 48x24 map fills 1536x768 exactly, with no band around it (see
-	 * `game.config.ts`).
+	 * this draws it at exactly 3x - a whole number of screen pixels per art
+	 * pixel, which is what keeps it crisp. The screen shows about 27x15 of them
+	 * (see `game.config.ts`); a bigger map scrolls (`MapCameraSystem`) and a
+	 * smaller one is centred.
 	 */
-	cellSize: 32,
+	cellSize: 48,
 
 	terrain: {
 		[Terrain.PLAIN]: Color.hex("#7fa653"),
@@ -28,6 +28,9 @@ export const MapTheme = {
 	/** Frame drawn around the whole map. */
 	border: Color.hex("#141a26"),
 	borderWidth: 4,
+
+	/** Washed over the tiles a battle is not fought on, so the edge of the field reads. */
+	outOfPlay: Color.hex("#0d121b8c"),
 
 	/** Hairline between two tiles. */
 	gridLine: Color.hex("#0d121b40"),

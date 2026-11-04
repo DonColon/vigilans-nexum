@@ -6,10 +6,11 @@ import { Graphics } from "@/core/graphics/rendering/Graphics";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { Vector2D } from "@/core/math/geometry/Vector2D";
 import { GameCoreService } from "@/core/service/GameCoreService";
-import { GridComponent } from "@/game/map/components/GridComponent";
+import { GridComponent, GridData } from "@/game/map/components/GridComponent";
 import { TileMapComponent, TileMapData } from "@/game/map/components/TileMapComponent";
 import { EMPTY_TILE } from "@/game/map/content/TileMapFormat";
 import { MapRenderSystem } from "@/game/map/systems/MapRenderSystem";
+import { MapTheme } from "@/game/map/view/MapTheme";
 
 /**
  * Draws the tileset art of the battle map: every visual layer blitted cell by
@@ -61,6 +62,26 @@ export class TileMapRenderSystem extends MapRenderSystem {
 		}
 
 		this.renderLayers(graphics, tilemap, view.origin, view.cellSize);
+		this.renderOutOfPlay(graphics, view.grid, view.origin);
+	}
+
+	/** Dims the backdrop of a battle fought on part of the map. */
+	private renderOutOfPlay(graphics: Graphics, grid: GridData, origin: Vector2D) {
+		if (grid.area.length === 0) {
+			return;
+		}
+
+		const { columns, rows, cellSize } = grid;
+
+		graphics.fillColor(MapTheme.outOfPlay);
+
+		for (let row = 0; row < rows; row++) {
+			for (let column = 0; column < columns; column++) {
+				if (!GridComponent.inPlay(grid, column, row)) {
+					graphics.fillRectangle(new Rectangle(origin.x + column * cellSize, origin.y + row * cellSize, cellSize, cellSize));
+				}
+			}
+		}
 	}
 
 	private renderLayers(graphics: Graphics, tilemap: TileMapData, origin: Vector2D, cellSize: number) {

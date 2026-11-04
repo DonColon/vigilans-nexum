@@ -13,6 +13,7 @@ import { CursorRenderSystem } from "@/game/map/systems/CursorRenderSystem";
 import { TileInfoRenderSystem } from "@/game/map/systems/TileInfoRenderSystem";
 import { CursorSystem } from "@/game/map/systems/CursorSystem";
 import { GridRenderSystem } from "@/game/map/systems/GridRenderSystem";
+import { MapCameraSystem } from "@/game/map/systems/MapCameraSystem";
 import { TileMapRenderSystem } from "@/game/map/systems/TileMapRenderSystem";
 
 /**
@@ -31,6 +32,8 @@ export class MapFeature extends GameFeature {
 				// The cursor transform has to be up to date before the sync phase
 				// resolves the transform hierarchy for this frame.
 				{ system: CursorSystem, priority: 10 },
+				// After the cursor has moved, so a map bigger than the screen follows it.
+				{ system: MapCameraSystem, priority: 11 },
 				// The map is the backdrop of the gameplay layer the cursor is on:
 				// the flat terrain colours first, the tileset art over them, the
 				// cursor on top of both.

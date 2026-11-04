@@ -95,8 +95,10 @@ Loaders: `Deployments.ts` (shape), `Objectives.ts` (`objective`), `Behaviours.ts
 | `format` | yes | `"vigilans-deployment"` |
 | `version` | yes | `1` |
 | `map` | yes | map name, informational - `MapState` loads `MAP_ASSET` regardless |
-| `units[]` | yes | `{ unit, column, row, behaviour? }`; `unit` resolves as asset `unit-<id>`; integers; `behaviour` is `"charge"` (default) or `"hold"` (default for a boss) - enemies only |
-| `objective` | no | `{ win: "rout" }` or `{ win: "seize", column, row }`; missing → rout |
+| `units[]` | yes | `{ unit, column, row, behaviour? }`; `unit` resolves as asset `unit-<id>`; integers; `behaviour` is `"charge"` (default) or `"hold"` (default for a boss) - enemies only. Optional: `id` (what the unit goes by on the map), `required`, `chargeFromTurn` (the turn a holding enemy starts charging), `spectator: true` (a neutral bystander: holds its tile, neither side can act on it, not on the roster), `name` (`{ de, en }`, this battle's name), `pack` (replaces the sheet's pack for this battle: `[{ item, name?, uses? }]` - a catalog id with its numbers, under a story name and with the uses it has left; the first weapon is readied) |
+| `objective` | no | `{ win: "rout" }`, `{ win: "seize", column, row }` or `{ win: "defeat", target }` (`target` is a placement id); any of them may add `protect: [ids]` - units whose fall loses the battle, shown beside the commander (the screen names the first); missing → rout |
+| `area` | no | `[{ column, row, columns, rows }]`: the rectangles of tiles the battle is fought on; outside them the map is dimmed backdrop, the cursor cannot go and every tile is a wall. A spectator may stand outside |
+| `preparations` | no | `false`: the army is fixed and the battle opens without the preparations screen |
 
 ## Conversations - `conversations/<scenario>.conversations.json`
 
@@ -133,13 +135,13 @@ Ids are unique across doors and chests together; no two locks share a tile.
 
 ## Tile map - `maps/<name>.tilemap.json`
 
-Loader: `TileMapFormat.ts` → `parseTileMapDocument`. Asset id `map-<name>`; `MapState` loads `MAP_ASSET` (`map-fantasy`).
+Loader: `TileMapFormat.ts` → `parseTileMapDocument`. Asset id `map-<name>`; `MapState` loads the map the chapter names (`map-market-square` when nothing asks).
 
 | Field | Required | Rule |
 |---|---|---|
 | `format` | yes | `"vigilans-tilemap"` |
 | `version` | yes | `1` |
-| `columns`, `rows` | yes | positive integers; the display in `game.config.ts` is sized to 48×24 at 32 px |
+| `columns`, `rows` | yes | positive integers; the display in `game.config.ts` shows about 27×15 at 48 px; a smaller map is centred, a bigger one scrolls |
 | `tileWidth`, `tileHeight` | yes | 16 for `kenney-1bit` |
 | `tileset` | yes | spritesheet asset id (`kenney-1bit`) |
 | `background` | no | hex colour behind transparent tiles |

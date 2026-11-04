@@ -25,7 +25,9 @@ export const PHASE_TURN_KEY = "turn.banner";
 /** i18n key of the title, by faction. */
 export const PHASE_TITLE_KEY: Record<UnitFaction, string> = {
 	[UnitFaction.PLAYER]: "turn.playerPhase",
-	[UnitFaction.ENEMY]: "turn.enemyPhase"
+	[UnitFaction.ENEMY]: "turn.enemyPhase",
+	// Never shown: bystanders are not in PHASE_ORDER.
+	[UnitFaction.NEUTRAL]: "turn.enemyPhase"
 };
 
 /** Milliseconds the banner takes to fade in, hold and fade out again. */

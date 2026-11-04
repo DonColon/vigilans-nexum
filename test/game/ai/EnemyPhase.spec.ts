@@ -32,7 +32,7 @@ import { TurnSystem } from "@/game/turn/systems/TurnSystem";
 import { TurnFeature } from "@/game/turn/TurnFeature";
 import { UIFeature } from "@/game/ui/UIFeature";
 import { UnitComponent, UnitFaction } from "@/game/units/components/UnitComponent";
-import { DEPLOYMENT_ASSET, DeploymentDocument } from "@/game/units/content/Deployments";
+import { deploymentAsset, DeploymentDocument } from "@/game/units/content/Deployments";
 import { unitById, unitsInWorld, unitsOfFaction } from "@/game/units/rules/UnitLookup";
 import { UnitsFeature } from "@/game/units/UnitsFeature";
 
@@ -73,10 +73,10 @@ suite("Enemy Phase Test Suite", () => {
 	const stateManager = new GameStateManager();
 	new InputDevice({ gamepad: { axisThreshold: 0.5, deadZone: 0.1 } });
 
-	/** An open field the size the skirmish deployment fits in. */
+	/** An open field the size the spec deployment fits in. */
 	const sketch = new Array(16).fill(".".repeat(8));
 
-	const deployment = assets.getJson<DeploymentDocument>(DEPLOYMENT_ASSET);
+	const deployment = assets.getJson<DeploymentDocument>(deploymentAsset("spec"));
 
 	let features: { install(): void; uninstall(): void }[] = [];
 	let map: Entity;
@@ -154,7 +154,7 @@ suite("Enemy Phase Test Suite", () => {
 			feature.install();
 		}
 
-		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "skirmish" });
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "spec" });
 		eventBus.processQueue();
 		eventBus.processQueue(); // turn:changed -> the player's banner
 		dismissBanner();
@@ -183,7 +183,7 @@ suite("Enemy Phase Test Suite", () => {
 
 	afterEach(() => {
 		unsubscribe();
-		assets.setJson(DEPLOYMENT_ASSET, deployment);
+		assets.setJson(deploymentAsset("spec"), deployment);
 
 		for (const feature of [...features].reverse()) {
 			feature.uninstall();
@@ -210,20 +210,41 @@ suite("Enemy Phase Test Suite", () => {
 		});
 
 		test("A placement's behaviour is read off the deployment sheet", () => {
-			assets.setJson(DEPLOYMENT_ASSET, {
+			assets.setJson(deploymentAsset("spec"), {
 				...deployment,
 				units: deployment.units.map((placement) => (placement.unit === "hasan" ? { ...placement, behaviour: "hold" } : placement))
 			});
 
-			eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "skirmish" });
+			eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "spec" });
 			eventBus.processQueue();
 
 			expect((unit("hasan") as Entity).getComponent(BehaviourComponent).read().behaviour).toBe(EnemyBehaviour.HOLD);
 			expect((unit("besnik") as Entity).getComponent(BehaviourComponent).read().behaviour).toBe(EnemyBehaviour.CHARGE);
 		});
+
+		test("It is read off the battle's own sheet, by the id the unit goes by on the map", () => {
+			assets.setJson(deploymentAsset("brawl-test"), {
+				...deployment,
+				units: deployment.units.map((placement) => (placement.unit === "hasan" ? { ...placement, id: "hasan-2", behaviour: "hold", chargeFromTurn: 3 } : placement))
+			});
+
+			eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "brawl-test" });
+			eventBus.processQueue();
+
+			expect((unit("hasan-2") as Entity).getComponent(BehaviourComponent).read()).toStrictEqual({ behaviour: EnemyBehaviour.HOLD, chargeFromTurn: 3 });
+		});
 	});
 
 	suite("The phase", () => {
+		test("A battle decided on the enemy's phase does not hold the map again", () => {
+			const turn = (world.entityWith(TurnComponent) as Entity).getComponent(TurnComponent);
+
+			turn.update({ ...turn.read(), phase: UnitFaction.ENEMY, over: true });
+			frame();
+
+			expect(stateManager.peek()).toBeInstanceOf(MapStub);
+		});
+
 		test("It holds the map once the banner is gone, and not before", () => {
 			eventBus.dispatch("turn:end", {});
 			frame();
@@ -298,11 +319,11 @@ suite("Enemy Phase Test Suite", () => {
 		});
 
 		test("A holding enemy strikes only from where it stands, so with nobody in reach it never moves", () => {
-			assets.setJson(DEPLOYMENT_ASSET, {
+			assets.setJson(deploymentAsset("spec"), {
 				...deployment,
 				units: deployment.units.map((placement) => (placement.unit === "hasan" ? { ...placement, behaviour: "hold" } : placement))
 			});
-			eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "skirmish" });
+			eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "spec" });
 			eventBus.processQueue();
 			eventBus.processQueue();
 			dismissBanner();

@@ -2,7 +2,7 @@ import { test, expect, suite } from "vitest";
 import { DialogSide } from "@/game/ui/view/UILayout";
 import { houseAt, HousesDocument, parseHouses } from "@/game/visit/content/Houses";
 import { houseDialog } from "@/game/visit/view/VisitPopups";
-import skirmishHouses from "@/assets/data/houses/skirmish.houses.json";
+import { specHouses } from "../../support/SpecContent";
 
 /**
  * The house sheet: what a scenario is allowed to author, what it is rejected
@@ -16,7 +16,7 @@ suite("Houses Test Suite", () => {
 
 	suite("Parsing", () => {
 		test("The shipped skirmish sheet reads, and every house names a tile and an open door", () => {
-			const houses = parseHouses(skirmishHouses as HousesDocument);
+			const houses = parseHouses(specHouses as HousesDocument);
 
 			expect(houses.length).toBeGreaterThan(0);
 

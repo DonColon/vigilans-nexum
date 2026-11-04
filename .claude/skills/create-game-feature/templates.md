@@ -10,7 +10,7 @@ Derived from `src/game/units/content/Deployments.ts` and `src/game/objective/con
 import { GameError } from "@/core/GameError";
 
 /** Asset id of the <feature> sheet this battle reads. */
-export const <NAME>_ASSET = "<feature>-skirmish";
+export const <NAME>_ASSET = "<feature>-bellum-duel";
 
 /** TEMPLATE: one entry of the sheet. */
 export interface <Name>Entry {
@@ -567,15 +567,15 @@ game.install(new <Name>Feature({ dependencies: [units, ui] }));
 ## src/asset.manifest.ts entry (only for owned content)
 
 ```ts
-// The <feature> sheet for the skirmish - see src/game/<feature>.
+// The <feature> sheet for the first fight - see src/game/<feature>.
 {
-	id: "<feature>-skirmish",
+	id: "<feature>-bellum-duel",
 	type: "json",
-	url: "/data/<feature>/skirmish.<feature>.json"
+	url: "/data/<feature>/bellum-duel.<feature>.json"
 },
 ```
 
-And in `vitest.setup.ts`: `import skirmish<Name>s from "./src/assets/data/<feature>/skirmish.<feature>.json";` then `assetStorage.setJson("<feature>-skirmish", skirmish<Name>s);`.
+And in `vitest.setup.ts`: `import bellumDuel<Name>s from "./src/assets/data/<feature>/bellum-duel.<feature>.json";` then `assetStorage.setJson("<feature>-bellum-duel", bellumDuel<Name>s);`.
 
 ## test/game/<feature>/<Name>.spec.ts (pure)
 

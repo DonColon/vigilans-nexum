@@ -51,9 +51,13 @@ export function unitsOfFaction(units: readonly Entity[], faction: UnitFaction): 
 	return units.filter((unit) => unit.getComponent(UnitComponent).read().faction === faction);
 }
 
-/** The units `faction` is up against - everyone not fighting for it. */
+/** The units `faction` is up against - everyone fighting for the other side, which leaves the bystanders out. */
 export function enemiesOf(units: readonly Entity[], faction: UnitData["faction"]): Entity[] {
-	return units.filter((unit) => unit.getComponent(UnitComponent).read().faction !== faction);
+	return units.filter((unit) => {
+		const side = unit.getComponent(UnitComponent).read().faction;
+
+		return side !== faction && side !== UnitFaction.NEUTRAL;
+	});
 }
 
 /**
