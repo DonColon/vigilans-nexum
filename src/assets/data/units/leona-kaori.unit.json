@@ -1,0 +1,44 @@
+{
+	"format": "vigilans-unit",
+	"version": 1,
+	"id": "leona-kaori",
+	"name": "Leona Kaori",
+	"faction": "player",
+	"class": "citizen",
+	"level": 1,
+	"weapon": "bronze-sword",
+	"inventory": ["bronze-sword", "soothe", "vulnerary"],
+	"stats": {
+		"hp": 17,
+		"mp": 14,
+		"strength": 3,
+		"magic": 6,
+		"dexterity": 6,
+		"speed": 6,
+		"luck": 6,
+		"defense": 3,
+		"resistance": 5
+	},
+	"growths": {
+		"hp": 50,
+		"mp": 55,
+		"strength": 25,
+		"magic": 60,
+		"dexterity": 50,
+		"speed": 50,
+		"luck": 50,
+		"defense": 25,
+		"resistance": 55
+	},
+	"maxStats": {
+		"hp": 60,
+		"mp": 30,
+		"strength": 25,
+		"magic": 25,
+		"dexterity": 28,
+		"speed": 29,
+		"luck": 30,
+		"defense": 24,
+		"resistance": 22
+	}
+}

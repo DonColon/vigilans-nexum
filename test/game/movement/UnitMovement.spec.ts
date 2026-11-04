@@ -1,0 +1,594 @@
+import { test, expect, suite, beforeEach, afterEach } from "vitest";
+import { i18n } from "@/core/i18n/I18n";
+import { Entity } from "@/core/ecs/Entity";
+import { World } from "@/core/ecs/World";
+import { identityTransform, TransformComponent } from "@/core/ecs/components/TransformComponent";
+import { EventBus } from "@/core/events/EventBus";
+import { Display } from "@/core/graphics/Display";
+import { GameStateManager } from "@/core/GameStateManager";
+import { InputDevice } from "@/core/input/InputDevice";
+import { ServiceRegistry } from "@/core/service/ServiceRegistry";
+import { CombatRequestedEvent, UnitMovedEvent, UnitUsedItemEvent } from "@/game.events";
+import { CursorComponent } from "@/game/map/components/CursorComponent";
+import { GridComponent } from "@/game/map/components/GridComponent";
+import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
+import { parseTileMap } from "@/game/map/content/TileMaps";
+import { MovementComponent } from "@/game/movement/components/MovementComponent";
+import { PendingMoveComponent } from "@/game/movement/components/PendingMoveComponent";
+import { WalkComponent } from "@/game/movement/components/WalkComponent";
+import { MovementFeature } from "@/game/movement/MovementFeature";
+import { UnitMenuRow } from "@/game/movement/view/UnitMenus";
+import { hasTile } from "@/game/movement/rules/Pathfinding";
+import { PathPreviewSystem } from "@/game/movement/systems/PathPreviewSystem";
+import { UnitWalkSystem } from "@/game/movement/systems/UnitWalkSystem";
+import { MenuComponent } from "@/game/ui/components/MenuComponent";
+import { PopupComponent } from "@/game/ui/components/PopupComponent";
+import { MenuState } from "@/game/ui/states/MenuState";
+import { PopupState } from "@/game/ui/states/PopupState";
+import { UIFeature } from "@/game/ui/UIFeature";
+import { UnitComponent } from "@/game/units/components/UnitComponent";
+import { NO_BOOST } from "@/game/units/content/UnitCatalog";
+import { unitById } from "@/game/units/rules/UnitLookup";
+import { UnitsFeature } from "@/game/units/UnitsFeature";
+
+/**
+ * The Fire Emblem move flow end to end: `map:ready` deploys the units, confirm
+ * picks Dardan up, the cursor traces a shortest-path preview, confirm walks him
+ * to the tile and opens the command menu - "Warten" spends him, backing out
+ * reverts the move.
+ */
+suite("Unit Movement Test Suite", () => {
+	const world = ServiceRegistry.get<World>(World.name);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
+
+	world.registerComponent(TransformComponent);
+	world.registerComponent(GridComponent);
+	world.registerComponent(GridPositionComponent);
+	world.registerComponent(CursorComponent);
+
+	new Display("unit-movement-test", { dimension: { width: 1280, height: 720 } });
+	const stateManager = new GameStateManager();
+	new InputDevice({ gamepad: { axisThreshold: 0.5, deadZone: 0.1 } });
+
+	// All plain, big enough to hold the deployment (Dardan 4,10 - Hasan 4,14).
+	const sketch = new Array(16).fill(".".repeat(8));
+
+	/** Tiles the player's units walk in this suite - short enough to leave the map corners out of reach. */
+	const TEST_MOVEMENT = 5;
+
+	let units: UnitsFeature;
+	let ui: UIFeature;
+	let movement: MovementFeature;
+	let map: Entity;
+	let cursor: Entity;
+
+	const state = () => (world.getEntities().find((entity) => entity.hasComponent(MovementComponent)) as Entity).getComponent(MovementComponent).read();
+	const unit = (id: string) =>
+		unitById(
+			world.getEntities().filter((entity) => entity.hasComponent(UnitComponent)),
+			id
+		) as Entity;
+	const tileOf = (id: string) => unit(id).getComponent(GridPositionComponent).read();
+	const moveCursor = (column: number, row: number) => cursor.getComponent(GridPositionComponent).update({ column, row });
+
+	// A fresh system each time so its query snapshots the walking unit that
+	// already exists - the entityChanged event that would add it is only
+	// delivered by the loop, which the test does not run.
+	const finishWalk = () => {
+		const walkSystem = new UnitWalkSystem(8).initialize();
+		walkSystem.execute(10_000);
+		eventBus.processQueue();
+		walkSystem.dispose();
+	};
+
+	/** Runs the move commit and the walk to completion, leaving the command menu open. */
+	const walkTo = (column: number, row: number) => {
+		eventBus.dispatch("map:tileConfirmed", { column, row, terrain: "plain" });
+		eventBus.processQueue();
+		finishWalk();
+	};
+
+	beforeEach(() => {
+		stateManager.clear();
+
+		map = world.createEntity();
+		map.addComponent(GridComponent, GridComponent.of(parseTileMap(sketch), 24));
+		map.addComponent(TransformComponent, { ...identityTransform });
+
+		cursor = world.createEntity();
+		cursor.addComponent(CursorComponent, {});
+		cursor.addComponent(GridPositionComponent, { column: 4, row: 10 });
+
+		units = new UnitsFeature();
+		units.install();
+		ui = new UIFeature({ demo: false });
+		ui.install();
+		movement = new MovementFeature({ dependencies: [units, ui] });
+		movement.install();
+
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "spec" });
+		eventBus.processQueue();
+
+		// The move flow is what is under test here, not how far anybody's sheet says
+		// they walk: half of this suite is about what happens *off* a unit's range,
+		// which needs a range the 8x16 map is bigger than. Pinned so editing a unit
+		// sheet cannot quietly delete those cases by putting the whole map in reach.
+		for (const id of ["dardan", "elira"]) {
+			const component = unit(id).getComponent(UnitComponent);
+			const data = component.read();
+
+			component.update({ ...data, stats: { ...data.stats, movement: TEST_MOVEMENT } });
+		}
+
+		// Dardan's sheet also carries the fort's keys; this suite is about the
+		// pack flow, so it works on his classic four slots and leaves them off.
+		const dardanComponent = unit("dardan").getComponent(UnitComponent);
+		dardanComponent.update({ ...dardanComponent.read(), inventory: dardanComponent.read().inventory.slice(0, 4) });
+	});
+
+	afterEach(() => {
+		movement.uninstall();
+		ui.uninstall();
+		units.uninstall();
+		stateManager.clear();
+
+		for (const entity of world.getEntities()) {
+			world.unregisterEntity(entity);
+		}
+
+		eventBus.processQueue();
+	});
+
+	test("Confirm on Dardan lights his movement and attack range", () => {
+		eventBus.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
+		eventBus.processQueue();
+
+		const selected = state();
+
+		expect(selected.unitId).toBe("dardan");
+		expect(selected).toMatchObject({ originColumn: 4, originRow: 10 });
+		expect(hasTile(selected.movement, 4, 13)).toBe(true);
+		expect(hasTile(selected.movement, 4, 14)).toBe(false); // Hasan stands there
+		expect(hasTile(selected.attack, 4, 14)).toBe(true);
+	});
+
+	test("The path preview follows the cursor through the range", () => {
+		const preview = new PathPreviewSystem(12).initialize();
+
+		eventBus.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
+		eventBus.processQueue();
+
+		moveCursor(4, 13);
+		preview.execute();
+
+		expect(state().path).toStrictEqual([
+			{ column: 4, row: 10 },
+			{ column: 4, row: 11 },
+			{ column: 4, row: 12 },
+			{ column: 4, row: 13 }
+		]);
+
+		moveCursor(7, 0); // off the range
+		preview.execute();
+		expect(state().path).toStrictEqual([]);
+
+		preview.dispose();
+	});
+
+	test("A second confirm commits the move and walks the path", () => {
+		let moved: UnitMovedEvent | null = null;
+		eventBus.subscribe("unit:moved", (event) => (moved = event));
+
+		eventBus.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
+		eventBus.processQueue();
+
+		eventBus.dispatch("map:tileConfirmed", { column: 4, row: 13, terrain: "plain" });
+		eventBus.processQueue();
+
+		const dardan = unit("dardan");
+
+		// The tile and the selection resolve at once; the unit is not spent yet.
+		expect(tileOf("dardan")).toStrictEqual({ column: 4, row: 13 });
+		expect(dardan.getComponent(UnitComponent).read().hasMoved).toBe(false);
+		expect(dardan.hasComponent(PendingMoveComponent)).toBe(true);
+		expect(state().unitId).toBe("");
+		expect(dardan.getComponent(WalkComponent).read().path).toStrictEqual([
+			{ column: 4, row: 10 },
+			{ column: 4, row: 11 },
+			{ column: 4, row: 12 },
+			{ column: 4, row: 13 }
+		]);
+
+		// unit:moved lands when the walk finishes, and the command menu opens.
+		expect(moved).toBeNull();
+		finishWalk();
+
+		expect(dardan.hasComponent(WalkComponent)).toBe(false);
+		expect(moved).toMatchObject({ unitId: "dardan", fromColumn: 4, fromRow: 10, toColumn: 4, toRow: 13 });
+		expect(stateManager.peek()).toBeInstanceOf(MenuState);
+	});
+
+	test("Warten spends the unit and reports unit:acted", () => {
+		let acted: string | null = null;
+		eventBus.subscribe("unit:acted", (event) => (acted = event.unitId));
+
+		eventBus.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
+		eventBus.processQueue();
+		walkTo(4, 13);
+
+		const dardan = unit("dardan");
+		expect(dardan.hasComponent(PendingMoveComponent)).toBe(true);
+		expect(dardan.getComponent(UnitComponent).read().hasMoved).toBe(false);
+
+		eventBus.dispatch("ui:menuConfirmed", { menu: "unit-command", row: UnitMenuRow.WAIT, index: 1, item: i18n("menu.wait") });
+		eventBus.processQueue();
+		eventBus.processQueue(); // deliver unit:acted
+
+		expect(dardan.getComponent(UnitComponent).read().hasMoved).toBe(true);
+		expect(dardan.hasComponent(PendingMoveComponent)).toBe(false);
+		expect(tileOf("dardan")).toStrictEqual({ column: 4, row: 13 });
+		expect(acted).toBe("dardan");
+
+		// A spent unit cannot be picked up again.
+		eventBus.dispatch("map:tileConfirmed", { column: 4, row: 13, terrain: "plain" });
+		eventBus.processQueue();
+		expect(state().unitId).toBe("");
+	});
+
+	const menuState = () => stateManager.peek() as MenuState;
+	const menu = () => menuState().getMenu()?.getComponent(MenuComponent).read();
+	const submenu = () => menuState().getSubmenu()?.getComponent(MenuComponent).read();
+	const sheet = (id: string) => unit(id).getComponent(UnitComponent).read();
+
+	test("A row is acted on by its id, whatever the label says", () => {
+		eventBus.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
+		eventBus.processQueue();
+		walkTo(4, 13);
+
+		// The menu was built in one locale and confirmed in another - the label no
+		// longer matches anything, the row id still does.
+		eventBus.dispatch("ui:menuConfirmed", { menu: "unit-command", row: UnitMenuRow.WAIT, index: 1, item: "Attendre" });
+		eventBus.processQueue();
+		eventBus.processQueue();
+
+		expect(sheet("dardan").hasMoved).toBe(true);
+		expect(unit("dardan").hasComponent(PendingMoveComponent)).toBe(false);
+	});
+
+	/** Move Dardan in place and open his items menu. */
+	const openItems = () => {
+		eventBus.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
+		eventBus.processQueue();
+		walkTo(4, 13);
+		eventBus.dispatch("ui:menuConfirmed", { menu: "unit-command", row: UnitMenuRow.ITEMS, index: 0, item: i18n("menu.items") });
+		eventBus.processQueue();
+	};
+
+	test("Items lists the pack with names, badges and uses/maxUses", () => {
+		openItems();
+
+		expect(menu()?.id).toBe("unit-items");
+		expect(menu()?.items).toStrictEqual(["Bronze Sword", "Iron Sword", "Iron Blade", "Vulnerary"]);
+		expect(menu()?.badges).toStrictEqual([i18n("menu.equipped"), "", "", ""]);
+		expect(menu()?.values).toStrictEqual(["45/45", "45/45", "30/30", "3/3"]);
+	});
+
+	test("Selecting a row layers the action submenu while the items menu stays open", () => {
+		const equipped: string[] = [];
+		eventBus.subscribe("unit:equipped", (event) => equipped.push(event.weaponId));
+
+		openItems();
+
+		// A weapon that is not readied offers Equip then Drop, in a submenu.
+		eventBus.dispatch("ui:menuConfirmed", { menu: "unit-items", row: "iron-blade", index: 2, item: "Iron Blade" });
+		eventBus.processQueue();
+		expect(menu()?.id).toBe("unit-items"); // the pack list is still there
+		expect(submenu()?.id).toBe("unit-item-action");
+		expect(submenu()?.title).toBe("Iron Blade");
+		expect(submenu()?.items).toStrictEqual([i18n("menu.equip"), i18n("menu.drop")]);
+
+		eventBus.dispatch("ui:menuConfirmed", { menu: "unit-item-action", row: UnitMenuRow.EQUIP, index: 0, item: i18n("menu.equip") });
+		eventBus.processQueue();
+		eventBus.processQueue(); // deliver unit:equipped
+
+		expect(sheet("dardan").weapon?.id).toBe("iron-blade");
+		expect(sheet("dardan").inventory[0].id).toBe("iron-blade");
+		expect(sheet("dardan").hasMoved).toBe(false);
+		expect(unit("dardan").hasComponent(PendingMoveComponent)).toBe(true);
+		expect(equipped).toStrictEqual(["iron-blade"]);
+
+		// The submenu closed; the items menu refreshed with the new weapon leading.
+		expect(submenu()).toBeUndefined();
+		expect(menu()?.id).toBe("unit-items");
+		expect(menu()?.items[0]).toBe("Iron Blade");
+		expect(menu()?.badges).toStrictEqual([i18n("menu.equipped"), "", "", ""]);
+	});
+
+	test("The readied weapon offers Unequip, leaving the unit unarmed", () => {
+		let unequipped: string | null = null;
+		eventBus.subscribe("unit:unequipped", (event) => (unequipped = event.unitId));
+
+		openItems();
+
+		eventBus.dispatch("ui:menuConfirmed", { menu: "unit-items", row: "bronze-sword", index: 0, item: "Bronze Sword" });
+		eventBus.processQueue();
+		expect(submenu()?.items).toStrictEqual([i18n("menu.unequip"), i18n("menu.drop")]);
+
+		eventBus.dispatch("ui:menuConfirmed", { menu: "unit-item-action", row: UnitMenuRow.UNEQUIP, index: 0, item: i18n("menu.unequip") });
+		eventBus.processQueue();
+		eventBus.processQueue();
+
+		expect(sheet("dardan").weapon).toBeNull();
+		expect(sheet("dardan").inventory.some((entry) => entry.equipped)).toBe(false);
+		expect(unequipped).toBe("dardan");
+		expect(menu()?.badges.every((badge) => badge === "")).toBe(true); // no badge any more
+	});
+
+	test("Drop removes an item from the pack", () => {
+		const dropped: string[] = [];
+		eventBus.subscribe("unit:droppedItem", (event) => dropped.push(event.itemId));
+
+		openItems();
+
+		eventBus.dispatch("ui:menuConfirmed", { menu: "unit-items", row: "vulnerary", index: 3, item: "Vulnerary" });
+		eventBus.processQueue();
+		expect(submenu()?.items).toStrictEqual([i18n("menu.drop")]); // a consumable is drop-only
+
+		eventBus.dispatch("ui:menuConfirmed", { menu: "unit-item-action", row: UnitMenuRow.DROP, index: 0, item: i18n("menu.drop") });
+		eventBus.processQueue();
+		eventBus.processQueue();
+
+		expect(sheet("dardan").inventory.map((entry) => entry.id)).toStrictEqual(["bronze-sword", "iron-sword", "iron-blade"]);
+		expect(dropped).toStrictEqual(["vulnerary"]);
+		expect(submenu()).toBeUndefined();
+		expect(menu()?.id).toBe("unit-items");
+		expect(menu()?.items).toStrictEqual(["Bronze Sword", "Iron Sword", "Iron Blade"]);
+	});
+
+	test("Use heals the unit off a vulnerary and spends its turn", () => {
+		const used: UnitUsedItemEvent[] = [];
+		eventBus.subscribe("unit:usedItem", (event) => used.push(event));
+		let acted: string | null = null;
+		eventBus.subscribe("unit:acted", (event) => (acted = event.unitId));
+
+		const component = unit("dardan").getComponent(UnitComponent);
+		component.update({ ...component.read(), currentHP: 6 });
+
+		openItems();
+
+		// A wounded unit's vulnerary offers Use then Drop.
+		eventBus.dispatch("ui:menuConfirmed", { menu: "unit-items", row: "vulnerary", index: 3, item: "Vulnerary" });
+		eventBus.processQueue();
+		expect(submenu()?.items).toStrictEqual([i18n("menu.use"), i18n("menu.drop")]);
+
+		eventBus.dispatch("ui:menuConfirmed", { menu: "unit-item-action", row: UnitMenuRow.USE, index: 0, item: i18n("menu.use") });
+		eventBus.processQueue();
+		eventBus.processQueue(); // deliver unit:usedItem / unit:acted
+
+		expect(sheet("dardan").currentHP).toBe(16); // 6 + 10, under the 20 cap
+		expect(sheet("dardan").inventory[3].uses).toBe(2);
+		expect(sheet("dardan").hasMoved).toBe(true);
+		expect(unit("dardan").hasComponent(PendingMoveComponent)).toBe(false);
+		expect(used).toMatchObject([{ unitId: "dardan", itemId: "vulnerary", healed: 10 }]);
+		expect(acted).toBe("dardan");
+
+		// Every menu closed - the unit is done for the turn.
+		expect(stateManager.peek()).not.toBeInstanceOf(MenuState);
+	});
+
+	test("Use on a stat booster raises the stat for good, lists the gain, and spends the turn once it is read", () => {
+		const used: UnitUsedItemEvent[] = [];
+		eventBus.subscribe("unit:usedItem", (event) => used.push(event));
+		let acted: string | null = null;
+		eventBus.subscribe("unit:acted", (event) => (acted = event.unitId));
+
+		// Swap Dardan's vulnerary for an Energy Drop.
+		const component = unit("dardan").getComponent(UnitComponent);
+		component.update({ ...component.read(), inventory: [...component.read().inventory.slice(0, 3), UnitComponent.resolveEntry("energy-drop", component.read().weaponTypes, "")] });
+		const strength = sheet("dardan").stats.strength;
+
+		openItems();
+
+		// A booster with headroom offers Use then Drop, like a vulnerary.
+		eventBus.dispatch("ui:menuConfirmed", { menu: "unit-items", row: "energy-drop", index: 3, item: "Energy Drop" });
+		eventBus.processQueue();
+		expect(submenu()?.items).toStrictEqual([i18n("menu.use"), i18n("menu.drop")]);
+
+		eventBus.dispatch("ui:menuConfirmed", { menu: "unit-item-action", row: UnitMenuRow.USE, index: 0, item: i18n("menu.use") });
+		eventBus.processQueue();
+		eventBus.processQueue();
+
+		expect(sheet("dardan").stats.strength).toBe(strength + 2);
+		expect(sheet("dardan").inventory.map((entry) => entry.id)).toStrictEqual(["bronze-sword", "iron-sword", "iron-blade"]); // one use, and it is gone
+		expect(used).toMatchObject([{ unitId: "dardan", itemId: "energy-drop", healed: 0, gains: { ...NO_BOOST, strength: 2 } }]);
+
+		// The gain is on screen; the unit is not spent until it has been read.
+		expect(stateManager.peek()).toBeInstanceOf(PopupState);
+		const notice = stateManager.getState(PopupState).getPopup()?.getComponent(PopupComponent).read();
+		expect(notice).toMatchObject({ id: "boost-dardan", title: "Energy Drop", lines: [i18n("boost.gain", { stat: i18n("roster.strength"), amount: 2 })] });
+		expect(sheet("dardan").hasMoved).toBe(false);
+		expect(acted).toBeNull();
+
+		stateManager.pop();
+		eventBus.dispatch("ui:popupClosed", { popup: "boost-dardan" });
+		eventBus.processQueue();
+		eventBus.processQueue();
+
+		expect(sheet("dardan").hasMoved).toBe(true);
+		expect(unit("dardan").hasComponent(PendingMoveComponent)).toBe(false);
+		expect(acted).toBe("dardan");
+	});
+
+	test("A booster the unit is already capped for offers no Use", () => {
+		const component = unit("dardan").getComponent(UnitComponent);
+		const data = component.read();
+		component.update({
+			...data,
+			stats: { ...data.stats, strength: data.maxStats.strength },
+			inventory: [...data.inventory.slice(0, 3), UnitComponent.resolveEntry("energy-drop", data.weaponTypes, "")]
+		});
+
+		openItems();
+
+		eventBus.dispatch("ui:menuConfirmed", { menu: "unit-items", row: "energy-drop", index: 3, item: "Energy Drop" });
+		eventBus.processQueue();
+
+		expect(submenu()?.items).toStrictEqual([i18n("menu.drop")]);
+	});
+
+	test("A key offers no Use - it is turned at a lock, not from the pack", () => {
+		const component = unit("dardan").getComponent(UnitComponent);
+		const data = component.read();
+		component.update({ ...data, inventory: [...data.inventory.slice(0, 3), UnitComponent.resolveEntry("door-key", data.weaponTypes, "")] });
+
+		openItems();
+
+		eventBus.dispatch("ui:menuConfirmed", { menu: "unit-items", row: "door-key", index: 3, item: "Door Key" });
+		eventBus.processQueue();
+
+		expect(submenu()?.items).toStrictEqual([i18n("menu.drop")]);
+	});
+
+	test("Backing out of the submenu keeps the items menu; then items -> command -> reverts", () => {
+		openItems();
+
+		// items -> submenu
+		eventBus.dispatch("ui:menuConfirmed", { menu: "unit-items", row: "iron-sword", index: 1, item: "Iron Sword" });
+		eventBus.processQueue();
+		expect(submenu()?.id).toBe("unit-item-action");
+
+		// submenu closes, items menu still shown
+		eventBus.dispatch("ui:menuCancelled", { menu: "unit-item-action" });
+		eventBus.processQueue();
+		expect(submenu()).toBeUndefined();
+		expect(menu()?.id).toBe("unit-items");
+
+		// items -> command
+		eventBus.dispatch("ui:menuCancelled", { menu: "unit-items" });
+		eventBus.processQueue();
+		expect(menu()?.id).toBe("unit-command");
+
+		// command -> move reverted
+		eventBus.dispatch("ui:menuCancelled", { menu: "unit-command" });
+		eventBus.processQueue();
+		expect(tileOf("dardan")).toStrictEqual({ column: 4, row: 10 });
+	});
+
+	test("Confirm on an empty tile opens the global command menu; Zug beenden ends the turn", () => {
+		let ended = false;
+		eventBus.subscribe("turn:end", () => (ended = true));
+
+		eventBus.dispatch("map:tileConfirmed", { column: 1, row: 1, terrain: "plain" });
+		eventBus.processQueue();
+
+		expect(state().unitId).toBe("");
+		expect(stateManager.peek()).toBeInstanceOf(MenuState);
+
+		eventBus.dispatch("ui:menuConfirmed", { menu: "global-command", row: UnitMenuRow.END_TURN, index: 0, item: i18n("menu.endTurn") });
+		eventBus.processQueue();
+		eventBus.processQueue(); // deliver turn:end
+
+		expect(ended).toBe(true);
+	});
+
+	test("Backing out of the command menu reverts the move and re-opens the range", () => {
+		eventBus.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
+		eventBus.processQueue();
+		walkTo(4, 13);
+
+		const dardan = unit("dardan");
+		expect(tileOf("dardan")).toStrictEqual({ column: 4, row: 13 });
+
+		eventBus.dispatch("ui:menuCancelled", { menu: "unit-command" });
+		eventBus.processQueue();
+
+		expect(tileOf("dardan")).toStrictEqual({ column: 4, row: 10 });
+		expect(dardan.getComponent(UnitComponent).read().hasMoved).toBe(false);
+		expect(dardan.hasComponent(PendingMoveComponent)).toBe(false);
+		expect(cursor.getComponent(GridPositionComponent).read()).toStrictEqual({ column: 4, row: 10 });
+
+		// The unit is selected again with its range lit from the origin - the
+		// command system reports `unit:returned`, and the move system answers it
+		// on the next pass over the queue.
+		eventBus.processQueue();
+		const selected = state();
+		expect(selected.unitId).toBe("dardan");
+		expect(selected).toMatchObject({ originColumn: 4, originRow: 10 });
+		expect(hasTile(selected.movement, 4, 13)).toBe(true);
+	});
+
+	test("Attack asks the combat feature to open a forecast against the nearest enemy", () => {
+		let requested: CombatRequestedEvent | null = null;
+		eventBus.subscribe("combat:requested", (event) => (requested = event));
+
+		eventBus.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
+		eventBus.processQueue();
+		walkTo(4, 13); // adjacent to Hasan at 4,14
+
+		eventBus.dispatch("ui:menuConfirmed", { menu: "unit-command", row: UnitMenuRow.ATTACK, index: 0, item: i18n("menu.attack") });
+		eventBus.processQueue();
+		eventBus.processQueue(); // deliver combat:requested
+
+		expect(requested).toMatchObject({ attackerId: "dardan", defenderId: "hasan" });
+		expect(stateManager.peek()).not.toBeInstanceOf(MenuState); // the command menu is gone
+		expect(unit("dardan").hasComponent(PendingMoveComponent)).toBe(true); // still mid-turn until the fight resolves
+	});
+
+	test("Attack picks the nearest enemy when several are in reach (the forecast cycles the rest)", () => {
+		let requested: CombatRequestedEvent | null = null;
+		eventBus.subscribe("combat:requested", (event) => (requested = event));
+
+		eventBus.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
+		eventBus.processQueue();
+		walkTo(3, 14); // one tile from both Hasan (4,14) and Besnik (2,14)
+
+		eventBus.dispatch("ui:menuConfirmed", { menu: "unit-command", row: UnitMenuRow.ATTACK, index: 0, item: i18n("menu.attack") });
+		eventBus.processQueue();
+		eventBus.processQueue();
+
+		// Both are one tile away; the deploy order breaks the tie, so Hasan leads.
+		expect(requested).toMatchObject({ attackerId: "dardan", defenderId: "hasan" });
+	});
+
+	test("Another unit cannot be picked up while one is walking", () => {
+		eventBus.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
+		eventBus.processQueue();
+		eventBus.dispatch("map:tileConfirmed", { column: 4, row: 13, terrain: "plain" });
+		eventBus.processQueue();
+
+		expect(unit("dardan").hasComponent(WalkComponent)).toBe(true);
+
+		eventBus.dispatch("map:tileConfirmed", { column: 4, row: 13, terrain: "plain" });
+		eventBus.processQueue();
+
+		expect(state().unitId).toBe("");
+	});
+
+	test("Confirm off the range puts Dardan back without moving him", () => {
+		eventBus.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
+		eventBus.processQueue();
+
+		eventBus.dispatch("map:tileConfirmed", { column: 0, row: 0, terrain: "plain" });
+		eventBus.processQueue();
+
+		expect(tileOf("dardan")).toStrictEqual({ column: 4, row: 10 });
+		expect(state().unitId).toBe("");
+	});
+
+	test("Enemy units cannot be picked up", () => {
+		eventBus.dispatch("map:tileConfirmed", { column: 4, row: 14, terrain: "plain" });
+		eventBus.processQueue();
+
+		expect(state().unitId).toBe("");
+	});
+
+	test("Cancel drops the selection", () => {
+		eventBus.dispatch("map:tileConfirmed", { column: 4, row: 10, terrain: "plain" });
+		eventBus.processQueue();
+		expect(state().unitId).toBe("dardan");
+
+		eventBus.dispatch("map:cancelled", {});
+		eventBus.processQueue();
+		expect(state().unitId).toBe("");
+	});
+});

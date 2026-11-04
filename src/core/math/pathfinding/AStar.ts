@@ -32,6 +32,20 @@ export interface AStarOptions {
 	maxIterations?: number;
 	/** Heuristic function (default: Manhattan distance) */
 	heuristic?: (a: Vector2D, b: Vector2D) => number;
+	/**
+	 * Cost of *entering* a tile, when it is not the same for all of them - the
+	 * rough ground / forest / swamp of a tactics map. It replaces
+	 * `straightCost` / `diagonalCost` for the step it is asked about, and a
+	 * non-finite value (`Infinity`) marks the tile as one that cannot be entered
+	 * at all, on top of the grid's own walkability.
+	 */
+	cost?: (position: Vector2D) => number;
+	/**
+	 * Break equal-cost ties towards whichever approach keeps the current
+	 * heading, so a route runs straight where it can instead of stair-stepping.
+	 * Only affects which of two equally short routes comes back.
+	 */
+	preferStraight?: boolean;
 }
 
 /**
@@ -47,6 +61,74 @@ export interface PathfindingResult {
 	/** Length of the path */
 	pathLength: number;
 }
+
+/** One tile of a [[ReachableArea]]: where it is and what it cost to get there. */
+export interface ReachableNode {
+	position: Vector2D;
+	/** Total cost spent walking here from the start tile. */
+	cost: number;
+}
+
+/**
+ * Everything a flood fill settled: the tiles that came out within the budget,
+ * what each of them cost, and the route back to the start for any of them.
+ * `AStar.findReachable` builds it once, so a caller that needs both the range
+ * and a route through it - a tactics map lighting up where a unit may go and
+ * previewing how it walks there - only pays for the fill once.
+ */
+export class ReachableArea {
+	constructor(
+		private readonly costs: Map<string, number>,
+		private readonly cameFrom: Map<string, string | null>
+	) {}
+
+	/** Every tile in reach, the start tile included at cost 0. */
+	public getNodes(): ReachableNode[] {
+		return [...this.costs].map(([key, cost]) => ({ position: parseKey(key), cost }));
+	}
+
+	public contains(position: Vector2D): boolean {
+		return this.costs.has(toKey(position.x, position.y));
+	}
+
+	/** What reaching this tile costs, or null when it is out of reach. */
+	public getCost(position: Vector2D): number | null {
+		return this.costs.get(toKey(position.x, position.y)) ?? null;
+	}
+
+	/**
+	 * The route from the start tile to `target`, both included, or an empty
+	 * array when `target` was never reached.
+	 */
+	public pathTo(target: Vector2D): Vector2D[] {
+		const targetKey = toKey(target.x, target.y);
+
+		if (!this.costs.has(targetKey)) {
+			return [];
+		}
+
+		const route: Vector2D[] = [];
+
+		for (let key: string | null = targetKey; key !== null; key = this.cameFrom.get(key) ?? null) {
+			route.push(parseKey(key));
+		}
+
+		return route.reverse();
+	}
+}
+
+/** Grid positions are kept in the maps above as `"x,y"`, so they compare by value. */
+function toKey(x: number, y: number): string {
+	return `${x},${y}`;
+}
+
+function parseKey(key: string): Vector2D {
+	const [x, y] = key.split(",").map(Number);
+	return new Vector2D(x, y);
+}
+
+/** Every option filled in, except `cost` - which stays optional, because "no per-tile cost" is a meaning of its own. */
+type ResolvedOptions = Required<Omit<AStarOptions, "cost">> & Pick<AStarOptions, "cost">;
 
 /**
  * A* Pathfinding Algorithm
@@ -71,7 +153,7 @@ export class AStar {
 	private grid: AStarNode[][];
 	private width: number;
 	private height: number;
-	private defaultOptions: Required<AStarOptions>;
+	private defaultOptions: ResolvedOptions;
 
 	/**
 	 * Creates a new A* pathfinder
@@ -87,7 +169,9 @@ export class AStar {
 			diagonalCost: defaultOptions?.diagonalCost ?? 1.414, // sqrt(2)
 			straightCost: defaultOptions?.straightCost ?? 1,
 			maxIterations: defaultOptions?.maxIterations ?? 10000,
-			heuristic: defaultOptions?.heuristic ?? this.manhattanDistance.bind(this)
+			heuristic: defaultOptions?.heuristic ?? this.manhattanDistance.bind(this),
+			cost: defaultOptions?.cost,
+			preferStraight: defaultOptions?.preferStraight ?? false
 		};
 
 		this.grid = this.createGrid();
@@ -175,14 +259,20 @@ export class AStar {
 					continue;
 				}
 
-				// Calculate cost to neighbor
-				const isDiagonal = this.isDiagonal(currentNode.position, neighbor.position);
-				const movementCost = isDiagonal ? opts.diagonalCost : opts.straightCost;
+				// Cost of entering the neighbour: the per-tile cost when one was
+				// given, the straight / diagonal step cost otherwise.
+				const movementCost = this.stepCost(currentNode, neighbor, opts);
+
+				if (!Number.isFinite(movementCost)) {
+					continue;
+				}
+
 				const tentativeGCost = currentNode.gCost + movementCost;
 
 				const isInOpenList = openList.includes(neighbor);
+				const straighter = opts.preferStraight && tentativeGCost === neighbor.gCost && this.keepsHeading(currentNode, neighbor);
 
-				if (!isInOpenList || tentativeGCost < neighbor.gCost) {
+				if (!isInOpenList || tentativeGCost < neighbor.gCost || straighter) {
 					// This path to neighbor is better
 					neighbor.parent = currentNode;
 					neighbor.gCost = tentativeGCost;
@@ -198,6 +288,90 @@ export class AStar {
 
 		// No path found
 		return { path: [], success: false, nodesExplored: closedList.size, pathLength: 0 };
+	}
+
+	/**
+	 * Everything within `budget` of `start` - the movement range of a tactics
+	 * unit, the blast radius of a spell, the tiles an enemy could close on this
+	 * turn. A Dijkstra flood outward that spends the budget on the cost of
+	 * entering each tile (see `AStarOptions.cost`), so it stops early on rough
+	 * ground and never enters what it cannot afford.
+	 *
+	 * The [[ReachableArea]] it hands back also holds the route to every tile it
+	 * settled, so a range and the path through it come out of one fill.
+	 */
+	public findReachable(start: Vector2D, budget: number, options?: AStarOptions): ReachableArea {
+		const opts = { ...this.defaultOptions, ...options };
+
+		const costs = new Map<string, number>();
+		const cameFrom = new Map<string, string | null>();
+
+		if (!this.isValid(start) || !this.getNode(start).walkable) {
+			return new ReachableArea(costs, cameFrom);
+		}
+
+		const startKey = toKey(start.x, start.y);
+		costs.set(startKey, 0);
+		cameFrom.set(startKey, null);
+
+		// Which way the route arrived on a tile, for the straight-line tie-break.
+		const heading = new Map<string, string>();
+
+		// A plain array frontier: a budgeted fill settles a handful of tiles, so
+		// scanning it for the cheapest one costs less than a heap would.
+		const frontier: ReachableNode[] = [{ position: start, cost: 0 }];
+
+		while (frontier.length > 0) {
+			let cheapest = 0;
+
+			for (let index = 1; index < frontier.length; index++) {
+				if (frontier[index].cost < frontier[cheapest].cost) {
+					cheapest = index;
+				}
+			}
+
+			const current = frontier.splice(cheapest, 1)[0];
+			const currentKey = toKey(current.position.x, current.position.y);
+
+			if (current.cost > (costs.get(currentKey) ?? Infinity)) {
+				continue;
+			}
+
+			const currentNode = this.getNode(current.position);
+
+			for (const neighbor of this.getNeighbors(currentNode, opts)) {
+				const movementCost = this.stepCost(currentNode, neighbor, opts);
+
+				if (!neighbor.walkable || !Number.isFinite(movementCost)) {
+					continue;
+				}
+
+				const cost = current.cost + movementCost;
+
+				if (cost > budget) {
+					continue;
+				}
+
+				const key = toKey(neighbor.position.x, neighbor.position.y);
+				const known = costs.get(key) ?? Infinity;
+				const direction = this.headingOf(current.position, neighbor.position);
+				const straighter = opts.preferStraight && cost === known && heading.get(currentKey) === direction;
+
+				if (cost >= known && !straighter) {
+					continue;
+				}
+
+				costs.set(key, cost);
+				cameFrom.set(key, currentKey);
+				heading.set(key, direction);
+
+				if (cost < known) {
+					frontier.push({ position: neighbor.position, cost });
+				}
+			}
+		}
+
+		return new ReachableArea(costs, cameFrom);
 	}
 
 	/**
@@ -327,7 +501,7 @@ export class AStar {
 		return x >= 0 && x < this.width && y >= 0 && y < this.height;
 	}
 
-	private getNeighbors(node: AStarNode, options: Required<AStarOptions>): AStarNode[] {
+	private getNeighbors(node: AStarNode, options: ResolvedOptions): AStarNode[] {
 		const neighbors: AStarNode[] = [];
 		const { x, y } = node.position;
 
@@ -359,6 +533,33 @@ export class AStar {
 		}
 
 		return neighbors;
+	}
+
+	/**
+	 * What entering `neighbor` from `node` costs: the per-tile cost when one was
+	 * given, otherwise the straight or diagonal step cost. `Infinity` (or any
+	 * non-finite value) means the tile cannot be entered.
+	 */
+	private stepCost(node: AStarNode, neighbor: AStarNode, options: ResolvedOptions): number {
+		if (options.cost) {
+			return options.cost(neighbor.position);
+		}
+
+		return this.isDiagonal(node.position, neighbor.position) ? options.diagonalCost : options.straightCost;
+	}
+
+	/** The direction of a single step, as a key that compares by value. */
+	private headingOf(from: Vector2D, to: Vector2D): string {
+		return toKey(to.x - from.x, to.y - from.y);
+	}
+
+	/** Whether stepping from `node` on to `neighbor` carries on the way `node` was reached. */
+	private keepsHeading(node: AStarNode, neighbor: AStarNode): boolean {
+		if (node.parent === null) {
+			return false;
+		}
+
+		return this.headingOf(node.parent.position, node.position) === this.headingOf(node.position, neighbor.position);
 	}
 
 	private isDiagonal(a: Vector2D, b: Vector2D): boolean {

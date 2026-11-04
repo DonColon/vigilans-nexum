@@ -1,60 +1,131 @@
-import { AudioTrack } from "@/core/audio/AudioTrack";
+import { AudioClip } from "@/core/audio/AudioClip";
+import { AudioVoice, VoiceOptions } from "@/core/audio/AudioVoice";
+import { gainFromPercentage, rampGain, VOLUME_RAMP_SECONDS } from "@/core/audio/AudioVolume";
 
+/**
+ * A mixing bus every voice of one kind goes through - "sound", "music",
+ * "voice" - and what an options screen offers a volume row for.
+ *
+ * Two gains sit in the chain, `voices -> duck -> volumeGain -> out`, because two
+ * different parties drive them. `volumeGain` is the player's: their slider, their
+ * mute. `duck` is the engine's: music dips while a line is spoken and comes
+ * back up after. Sharing one gain would have the two fight - a duck restoring
+ * "100%" over a slider the player had at 40.
+ *
+ * The channel keeps the voices playing on it so that a mute, a pause or a
+ * removal reaches every one of them; a voice drops itself out when it stops.
+ */
 export class AudioChannel {
-	private context: AudioContext;
-	private volume: GainNode;
+	private readonly context: BaseAudioContext;
+	private readonly name: string;
+	private readonly duck: GainNode;
+	private readonly volumeGain: GainNode;
+	private readonly voices = new Set<AudioVoice>();
 
-	constructor(context: AudioContext) {
+	/** What the player set, kept apart from the gain so a mute can put it back. */
+	private level = 100;
+	private muted = false;
+
+	constructor(context: BaseAudioContext, name: string) {
 		this.context = context;
-		this.volume = this.context.createGain();
+		this.name = name;
+
+		this.duck = context.createGain();
+		this.volumeGain = context.createGain();
+		this.duck.connect(this.volumeGain);
 	}
 
-	public play(track: AudioTrack): AudioTrack {
-		const source = this.context.createBufferSource();
-		source.buffer = track.buffer;
-		source.connect(this.volume);
+	public getName(): string {
+		return this.name;
+	}
 
-		track.startedAt = this.context.currentTime;
+	/** Starts a new voice for a clip on this channel. Any number can play at once. */
+	public play(clip: AudioClip, options?: VoiceOptions): AudioVoice {
+		const voice = new AudioVoice(this.context, clip, this.duck, options);
 
-		if (track.offset) {
-			source.start(0, track.offset % track.buffer.duration);
-		} else {
-			source.start();
+		this.voices.add(voice);
+		voice.onStopped = () => this.voices.delete(voice);
+
+		return voice.play();
+	}
+
+	/** The voices currently on this channel, playing or paused. */
+	public getVoices(): AudioVoice[] {
+		return [...this.voices];
+	}
+
+	public pauseAll(): void {
+		for (const voice of this.voices) {
+			voice.pause();
+		}
+	}
+
+	public resumeAll(): void {
+		for (const voice of this.voices) {
+			voice.resume();
+		}
+	}
+
+	public stopAll(fadeSeconds: number = 0): void {
+		for (const voice of this.voices) {
+			voice.stop(fadeSeconds);
+		}
+	}
+
+	/** Sets this channel's loudness, 0 (silent) to 100 (as recorded). Out of range is clamped. */
+	public setVolume(volume: number): void {
+		this.level = Number.isFinite(volume) ? Math.min(Math.max(volume, 0), 100) : 100;
+
+		if (!this.muted) {
+			rampGain(this.volumeGain.gain, gainFromPercentage(this.level), this.context.currentTime, VOLUME_RAMP_SECONDS);
+		}
+	}
+
+	/** What this channel is set to, as a percentage - the slider's value, even while muted. */
+	public getVolume(): number {
+		return this.level;
+	}
+
+	public mute(): void {
+		if (this.muted) {
+			return;
 		}
 
-		track.source = source;
-		return track;
+		this.muted = true;
+		rampGain(this.volumeGain.gain, 0, this.context.currentTime, VOLUME_RAMP_SECONDS);
 	}
 
-	public loop(track: AudioTrack): AudioTrack {
-		const source = this.context.createBufferSource();
-		source.buffer = track.buffer;
-		source.loop = true;
-		source.connect(this.volume);
-
-		track.startedAt = this.context.currentTime;
-
-		if (track.offset) {
-			source.start(0, track.offset % track.buffer.duration);
-		} else {
-			source.start();
+	public unmute(): void {
+		if (!this.muted) {
+			return;
 		}
 
-		track.source = source;
-		return track;
+		this.muted = false;
+		rampGain(this.volumeGain.gain, gainFromPercentage(this.level), this.context.currentTime, VOLUME_RAMP_SECONDS);
 	}
 
-	public setVolume(volume: number) {
-		if (volume < 0 || volume > 100) {
-			throw new RangeError("volume must be percentage");
-		}
-
-		const value = this.volume.gain.minValue + (volume / 100) * (this.volume.gain.maxValue - this.volume.gain.minValue);
-
-		this.volume.gain.value = value;
+	public isMuted(): boolean {
+		return this.muted;
 	}
 
-	public connect(node: AudioNode) {
-		this.volume.connect(node);
+	/** Dips the channel to a percentage of its set volume over some seconds; `unduck` brings it back. */
+	public duckTo(percentage: number, seconds: number): void {
+		rampGain(this.duck.gain, gainFromPercentage(percentage), this.context.currentTime, seconds);
+	}
+
+	public unduck(seconds: number): void {
+		rampGain(this.duck.gain, 1, this.context.currentTime, seconds);
+	}
+
+	public connect(node: AudioNode): void {
+		this.volumeGain.connect(node);
+	}
+
+	/** Silences and drops everything: stops every voice and takes the channel off the graph. */
+	public dispose(): void {
+		this.stopAll();
+		this.voices.clear();
+		this.duck.disconnect();
+		this.volumeGain.disconnect();
 	}
 }

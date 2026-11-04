@@ -2,6 +2,13 @@ import { JsonSchema } from "@/core/ecs/JsonSchema";
 
 export type ComponentConstructor<T extends JsonSchema> = (new (data: T) => Component<T>) & { readonly type: string };
 
+/**
+ * A concrete component class, typed by the instance it constructs rather than
+ * by its data, so `entity.getComponent(UnitComponent)` hands back a
+ * `UnitComponent` - methods included - instead of the bare `Component<T>`.
+ */
+export type ComponentClass<C extends Component<any>> = (new (data: any) => C) & { readonly type: string };
+
 export class Component<T extends JsonSchema> {
 	/**
 	 * Stable identifier of this component kind. It is the key components are

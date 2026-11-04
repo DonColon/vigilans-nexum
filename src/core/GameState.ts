@@ -2,7 +2,7 @@ import { GameCoreService } from "@/core/service/GameCoreService";
 import type { GameCommand, GameCommandConstructor, GameCommandFamily } from "@/core/input/commands/GameCommand";
 import type { InputDevice } from "@/core/input/InputDevice";
 
-export type GameStateConstructor = (new () => GameState) & { readonly type: string };
+export type GameStateConstructor<Type extends GameState = GameState> = (new () => Type) & { readonly type: string };
 
 export abstract class GameState {
 	/**
@@ -40,14 +40,19 @@ export abstract class GameState {
 	}
 
 	/**
-	 * Forgets held inputs on every command of this state. Called when the state
-	 * becomes the active one, so that an input held while another state was on
-	 * top does not come through as a continued press here.
+	 * Forgets held inputs on every command of this state and drops the shared
+	 * input buffer. Called when the state becomes the active one, so that an
+	 * input meant for the state that was on top - the press that opened a menu,
+	 * a direction held while a dialog was up - does not carry over into this one.
+	 * Without the buffer flush a single confirm press cascades through every UI
+	 * state it opens, because the buffer keeps replaying it for a few frames.
 	 */
 	protected resetCommands() {
 		for (const command of this.getCommands()) {
 			command.reset();
 		}
+
+		this.inputDevice.clearInputBuffer();
 	}
 
 	public abstract onEnter(): void;

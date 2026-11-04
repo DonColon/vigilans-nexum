@@ -1,0 +1,321 @@
+import { test, expect, suite, beforeEach, afterEach } from "vitest";
+import { i18n } from "@/core/i18n/I18n";
+import { Entity } from "@/core/ecs/Entity";
+import { World } from "@/core/ecs/World";
+import { identityTransform, TransformComponent } from "@/core/ecs/components/TransformComponent";
+import { EventBus } from "@/core/events/EventBus";
+import { Display } from "@/core/graphics/Display";
+import { GameStateManager } from "@/core/GameStateManager";
+import { InputBinding } from "@/core/input/commands/InputBinding";
+import { InputChannel } from "@/core/input/InputChannel";
+import { InputDevice } from "@/core/input/InputDevice";
+import { InputState } from "@/core/input/InputState";
+import { KeyboardInput } from "@/core/input/keyboard/KeyboardInput";
+import { ServiceRegistry } from "@/core/service/ServiceRegistry";
+import { RosterClosedEvent, RosterConfirmedEvent, RosterRequestedEvent } from "@/game.events";
+import { CursorComponent } from "@/game/map/components/CursorComponent";
+import { GridComponent } from "@/game/map/components/GridComponent";
+import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
+import { parseTileMap } from "@/game/map/content/TileMaps";
+import { MovementFeature } from "@/game/movement/MovementFeature";
+import { GLOBAL_MENU, UnitMenuRow, globalCommandRequest } from "@/game/movement/view/UnitMenus";
+import { RosterCancelCommand, RosterConfirmCommand, RosterDownCommand, RosterUpCommand, rosterCommands } from "@/game/roster/commands/RosterCommands";
+import { RosterComponent } from "@/game/roster/components/RosterComponent";
+import { RosterFeature } from "@/game/roster/RosterFeature";
+import { RosterState } from "@/game/roster/states/RosterState";
+import { RosterSystem } from "@/game/roster/systems/RosterSystem";
+import { UIFeature } from "@/game/ui/UIFeature";
+import { UnitComponent } from "@/game/units/components/UnitComponent";
+import { unitsInWorld, unitById } from "@/game/units/rules/UnitLookup";
+import { UnitsFeature } from "@/game/units/UnitsFeature";
+
+suite("Global Menu Test Suite", () => {
+	test("The map's own menu offers the objective, the army list and the settings, then ending the turn", () => {
+		const request = globalCommandRequest();
+
+		expect(request.id).toBe(GLOBAL_MENU);
+		expect(request.ids).toStrictEqual([UnitMenuRow.OBJECTIVE, UnitMenuRow.UNITS, UnitMenuRow.OPTIONS, UnitMenuRow.END_TURN]);
+		expect(request.items).toStrictEqual([i18n("menu.objective"), i18n("menu.units"), i18n("menu.options"), i18n("menu.endTurn")]);
+
+		// Ending the turn is the one row here that cannot be taken back, so it is last.
+		expect(request.ids?.[request.ids.length - 1]).toBe(UnitMenuRow.END_TURN);
+	});
+});
+
+/**
+ * The army list end to end: the global menu opens it, the highlight moves
+ * through the player's units, and closing it changes nothing about them.
+ */
+suite("Roster Test Suite", () => {
+	class TestBinding extends InputBinding {
+		public pressed = false;
+
+		constructor() {
+			super({ channel: InputChannel.KEYBOARD, input: KeyboardInput.ENTER, state: InputState.JUST_PRESSED });
+		}
+
+		public condition(): boolean {
+			return this.pressed;
+		}
+	}
+
+	const world = ServiceRegistry.get<World>(World.name);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
+
+	world.registerComponent(TransformComponent);
+	world.registerComponent(GridComponent);
+	world.registerComponent(GridPositionComponent);
+	world.registerComponent(CursorComponent);
+
+	new Display("roster-test", { dimension: { width: 1536, height: 768 } });
+	const stateManager = new GameStateManager();
+	const inputDevice = new InputDevice({ gamepad: { axisThreshold: 0.5, deadZone: 0.1 } });
+
+	const sketch = new Array(16).fill(".".repeat(8));
+
+	let units: UnitsFeature;
+	let ui: UIFeature;
+	let roster: RosterFeature;
+	let movement: MovementFeature;
+	let map: Entity;
+
+	const bindings = new Map<typeof RosterUpCommand | typeof RosterDownCommand | typeof RosterConfirmCommand | typeof RosterCancelCommand, TestBinding>();
+
+	const state = () => (stateManager.getState(RosterState).getRoster() as Entity).getComponent(RosterComponent);
+	const systems: RosterSystem[] = [];
+
+	/** A RosterSystem whose query already sees the list that exists right now. */
+	const rosterSystem = () => {
+		const system = new RosterSystem(10).initialize();
+		systems.push(system);
+		return system;
+	};
+
+	/** Runs one command through the system, the way a single press would. */
+	const press = (commandType: Parameters<typeof bindings.get>[0]) => {
+		const binding = bindings.get(commandType) as TestBinding;
+		binding.pressed = true;
+
+		const system = rosterSystem();
+		system.execute(16, 0);
+		// A second pass, so the tick that sees `closed` pops the state.
+		system.execute(16, 1);
+
+		binding.pressed = false;
+		// A command remembers it was held until it sees a frame without the input;
+		// releasing it by hand keeps the next press a fresh one rather than a repeat.
+		inputDevice.getCommand(commandType).reset();
+
+		eventBus.processQueue();
+	};
+
+	const openFromMenu = () => {
+		eventBus.dispatch("ui:menuConfirmed", { menu: GLOBAL_MENU, row: UnitMenuRow.UNITS, index: 0, item: i18n("menu.units") });
+		eventBus.processQueue();
+		eventBus.processQueue(); // deliver roster:requested
+	};
+
+	beforeEach(() => {
+		stateManager.clear();
+
+		map = world.createEntity();
+		map.addComponent(GridComponent, GridComponent.of(parseTileMap(sketch), 24));
+		map.addComponent(TransformComponent, { ...identityTransform });
+
+		units = new UnitsFeature();
+		units.install();
+		ui = new UIFeature({ demo: false });
+		ui.install();
+		roster = new RosterFeature({ dependencies: [units] });
+		roster.install();
+		movement = new MovementFeature({ dependencies: [units, ui] });
+		movement.install();
+
+		for (const commandType of rosterCommands) {
+			const binding = new TestBinding();
+
+			inputDevice.getCommand(commandType).bindInput(binding);
+			bindings.set(commandType as Parameters<typeof bindings.get>[0], binding);
+		}
+
+		eventBus.dispatch("map:ready", { mapId: map.getID(), columns: 8, rows: 16, scenario: "spec" });
+		eventBus.processQueue();
+	});
+
+	afterEach(() => {
+		while (systems.length > 0) {
+			(systems.pop() as RosterSystem).dispose();
+		}
+
+		movement.uninstall();
+		roster.uninstall();
+		ui.uninstall();
+		units.uninstall();
+		stateManager.clear();
+
+		for (const entity of world.getEntities()) {
+			world.unregisterEntity(entity);
+		}
+
+		eventBus.processQueue();
+	});
+
+	suite("Opening", () => {
+		test("The global menu's Units row asks for the list", () => {
+			const requested: RosterRequestedEvent[] = [];
+			eventBus.subscribe("roster:requested", (event) => requested.push(event));
+
+			eventBus.dispatch("ui:menuConfirmed", { menu: GLOBAL_MENU, row: UnitMenuRow.UNITS, index: 0, item: i18n("menu.units") });
+			eventBus.processQueue();
+			eventBus.processQueue(); // the move flow's own dispatch lands a pass later
+
+			expect(requested).toHaveLength(1);
+		});
+
+		test("It lists the player's own units, and nobody else's", () => {
+			openFromMenu();
+
+			expect(stateManager.peek()).toBeInstanceOf(RosterState);
+			// The deployment puts Dardan, Elira and Teuta on the player's side, Hasan
+			// and Besnik on the other.
+			expect(state().read().unitIds).toStrictEqual(["dardan", "elira", "teuta"]);
+			expect(state().read().selectedIndex).toBe(0);
+		});
+
+		test("It sits on top, so the map stops taking input while it is up", () => {
+			openFromMenu();
+
+			expect(stateManager.peek()).toBeInstanceOf(RosterState);
+			expect(stateManager.getState(RosterState).getCommands()).toHaveLength(rosterCommands.length);
+		});
+
+		test("Ending the turn is still the other row, and does not open anything", () => {
+			eventBus.dispatch("ui:menuConfirmed", { menu: GLOBAL_MENU, row: UnitMenuRow.END_TURN, index: 1, item: i18n("menu.endTurn") });
+			eventBus.processQueue();
+			eventBus.processQueue();
+
+			expect(stateManager.peek()).not.toBeInstanceOf(RosterState);
+		});
+	});
+
+	suite("Moving through it", () => {
+		test("Down and up step the highlight, wrapping around the list", () => {
+			openFromMenu();
+
+			press(RosterDownCommand);
+			expect(state().read().selectedIndex).toBe(1);
+
+			press(RosterDownCommand);
+			press(RosterDownCommand); // past the end, back to the top
+			expect(state().read().selectedIndex).toBe(0);
+
+			press(RosterUpCommand); // before the start, round to the bottom
+			expect(state().read().selectedIndex).toBe(2);
+		});
+	});
+
+	suite("Closing", () => {
+		test("Cancel closes it and reports the row it was left on", () => {
+			const closed: RosterClosedEvent[] = [];
+			eventBus.subscribe("roster:closed", (event) => closed.push(event));
+
+			openFromMenu();
+			press(RosterDownCommand);
+			press(RosterCancelCommand);
+
+			expect(closed).toStrictEqual([expect.objectContaining({ selectedIndex: 1 })]);
+			expect(stateManager.peek()).not.toBeInstanceOf(RosterState);
+			expect(world.getEntities().filter((entity) => entity.hasComponent(RosterComponent))).toStrictEqual([]);
+		});
+
+		test("Confirm does the same - there is nothing on a readout to choose", () => {
+			openFromMenu();
+			press(RosterConfirmCommand);
+
+			expect(world.getEntities().filter((entity) => entity.hasComponent(RosterComponent))).toStrictEqual([]);
+		});
+
+		test("On a selectable list confirm reports the row and leaves the list up, and the list can be rewritten in place", () => {
+			const confirmed: RosterConfirmedEvent[] = [];
+			eventBus.subscribe("roster:confirmed", (event) => confirmed.push(event));
+
+			const state = stateManager.getState(RosterState);
+			state.request({ unitIds: ["dardan", "hasan"], title: "Deploy 1/2", status: ["On map", "Bench"], disabled: [true, false], selectable: true });
+			stateManager.push(RosterState);
+
+			const roster = () => (state.getRoster() as Entity).getComponent(RosterComponent).read();
+			expect(roster()).toMatchObject({ title: "Deploy 1/2", status: ["On map", "Bench"], disabled: [true, false], selectable: true, sheets: [] });
+
+			press(RosterDownCommand);
+			press(RosterConfirmCommand);
+
+			expect(confirmed).toStrictEqual([expect.objectContaining({ unitId: "hasan", selectedIndex: 1 })]);
+			expect(stateManager.peek()).toBe(state);
+			expect(roster()).toMatchObject({ confirmed: false, closed: false, selectedIndex: 1 });
+
+			state.updateRoster({ unitIds: ["dardan", "hasan"], title: "Deploy 2/2", status: ["On map", "On map"], selectable: true, selectedIndex: 1 });
+			expect(roster()).toMatchObject({ title: "Deploy 2/2", status: ["On map", "On map"], disabled: [false, false], selectedIndex: 1 });
+
+			press(RosterCancelCommand);
+			expect(stateManager.peek()).not.toBeInstanceOf(RosterState);
+		});
+
+		test("Re-opening comes back to the row it was left on", () => {
+			openFromMenu();
+			press(RosterDownCommand);
+			press(RosterCancelCommand);
+
+			openFromMenu();
+
+			expect(state().read().selectedIndex).toBe(1);
+		});
+
+		test("A new map starts the list back at the top", () => {
+			openFromMenu();
+			press(RosterDownCommand);
+			press(RosterCancelCommand);
+
+			eventBus.dispatch("map:closed", {});
+			eventBus.processQueue();
+
+			openFromMenu();
+			expect(state().read().selectedIndex).toBe(0);
+		});
+
+		test("Nothing about the army changes - it is a readout", () => {
+			const before = unitsInWorld(world).map((unit) => JSON.stringify(unit.getComponent(UnitComponent).read()));
+
+			openFromMenu();
+			press(RosterDownCommand);
+			press(RosterConfirmCommand);
+
+			expect(unitsInWorld(world).map((unit) => JSON.stringify(unit.getComponent(UnitComponent).read()))).toStrictEqual(before);
+		});
+	});
+
+	suite("An army that changes underneath it", () => {
+		test("A unit taken off the map drops out of the list it was opened with", () => {
+			openFromMenu();
+			expect(state().read().unitIds).toStrictEqual(["dardan", "elira", "teuta"]);
+
+			world.unregisterEntity(unitById(unitsInWorld(world), "elira") as Entity);
+
+			// The list keeps the ids it was given; the renderer is what skips the ones
+			// that have left, so the row the cursor is on stays where the player put it.
+			expect(state().read().unitIds).toStrictEqual(["dardan", "elira", "teuta"]);
+			expect(unitById(unitsInWorld(world), "elira")).toBeNull();
+		});
+
+		test("Opening it with no player units left still opens, with nothing in it", () => {
+			for (const unit of unitsInWorld(world)) {
+				world.unregisterEntity(unit);
+			}
+
+			openFromMenu();
+
+			expect(stateManager.peek()).toBeInstanceOf(RosterState);
+			expect(state().read().unitIds).toStrictEqual([]);
+			expect(state().read().selectedIndex).toBe(0);
+		});
+	});
+});

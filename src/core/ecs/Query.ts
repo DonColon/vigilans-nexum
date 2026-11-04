@@ -1,6 +1,6 @@
 import { WorldEvent } from "@/core/ecs/WorldEvent";
 import { Entity } from "@/core/ecs/Entity";
-import { EventSystem } from "@/core/events/EventSystem";
+import { EventBus } from "@/core/events/EventBus";
 import { GameCoreService } from "@/core/service/GameCoreService";
 import { ComponentConstructor } from "@/core/ecs/Component";
 import { World } from "@/core/ecs/World";
@@ -28,8 +28,8 @@ export class Query {
 	private readonly onEntityChangedHandler: (event: WorldEvent) => void;
 	private readonly onEntityRemovedHandler: (event: WorldEvent) => void;
 
-	@GameCoreService(EventSystem)
-	private eventSystem!: EventSystem;
+	@GameCoreService(EventBus)
+	private eventBus!: EventBus;
 
 	@GameCoreService(World)
 	private world!: World;
@@ -48,15 +48,17 @@ export class Query {
 			}
 		}
 
-		this.eventSystem.subscribe("entityChanged", this.onEntityChangedHandler);
-		this.eventSystem.subscribe("entityRemoved", this.onEntityRemovedHandler);
+		this.eventBus.subscribe("entityChanged", this.onEntityChangedHandler);
+		this.eventBus.subscribe("entityRemoved", this.onEntityRemovedHandler);
 	}
 
 	private onEntityChanged(event: WorldEvent) {
 		const index = this.entities.indexOf(event.entity);
 		const exists = index !== -1;
 
-		const matches = this.match(event.entity);
+		// A change to an entity that has already left the world - a system still
+		// holding it after a map restart - must not bring it back as a ghost.
+		const matches = this.world.hasEntity(event.entity) && this.match(event.entity);
 
 		if (matches && !exists) {
 			this.entities.push(event.entity);
@@ -87,7 +89,7 @@ export class Query {
 	}
 
 	public dispose(): void {
-		this.eventSystem.unsubscribe("entityChanged", this.onEntityChangedHandler);
-		this.eventSystem.unsubscribe("entityRemoved", this.onEntityRemovedHandler);
+		this.eventBus.unsubscribe("entityChanged", this.onEntityChangedHandler);
+		this.eventBus.unsubscribe("entityRemoved", this.onEntityRemovedHandler);
 	}
 }

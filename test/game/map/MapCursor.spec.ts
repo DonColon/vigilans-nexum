@@ -12,10 +12,15 @@ import { InputDevice } from "@/core/input/InputDevice";
 import { InputState } from "@/core/input/InputState";
 import { KeyboardInput } from "@/core/input/keyboard/KeyboardInput";
 import { ServiceRegistry } from "@/core/service/ServiceRegistry";
+import { cancelCommands } from "@/game/map/commands/CancelCommand";
+import { confirmCommands } from "@/game/map/commands/ConfirmCommand";
+import { threatCommands } from "@/game/map/commands/ThreatCommand";
+import { infoCommands } from "@/game/map/commands/InfoCommand";
 import { MoveCursorDownCommand, MoveCursorLeftCommand, MoveCursorRightCommand, MoveCursorUpCommand, moveCursorCommands } from "@/game/map/commands/MoveCursorCommand";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent } from "@/game/map/components/GridPositionComponent";
+import { TileMapComponent } from "@/game/map/components/TileMapComponent";
 import { MapState } from "@/game/map/states/MapState";
 import { CursorSystem } from "@/game/map/systems/CursorSystem";
 
@@ -52,6 +57,7 @@ suite("Map Cursor Test Suite", () => {
 
 	world.registerComponent(TransformComponent);
 	world.registerComponent(GridComponent);
+	world.registerComponent(TileMapComponent);
 	world.registerComponent(CursorComponent);
 	world.registerComponent(GridPositionComponent);
 
@@ -70,6 +76,12 @@ suite("Map Cursor Test Suite", () => {
 		inputDevice.getCommand(commandType).bindInput(binding);
 
 		bindings.set(commandType, binding);
+	}
+
+	// Allowed by MapState alongside the cursor commands; registered here so
+	// resetCommands() can resolve every command the state lists.
+	for (const commandType of [...confirmCommands, ...cancelCommands, ...threatCommands, ...infoCommands]) {
+		inputDevice.registerCommand(commandType);
 	}
 
 	const press = (commandType: GameCommandConstructor) => {
@@ -106,12 +118,12 @@ suite("Map Cursor Test Suite", () => {
 	});
 
 	test("State lists the cursor commands the map system runs", () => {
-		expect(state.getCommands()).toHaveLength(moveCursorCommands.length);
+		expect(state.getCommands()).toHaveLength(moveCursorCommands.length + confirmCommands.length + cancelCommands.length + threatCommands.length + infoCommands.length);
 		expect(state.getCommands(MoveCursorRightCommand)).toStrictEqual([inputDevice.getCommand(MoveCursorRightCommand)]);
 	});
 
 	test("Cursor steps one tile when its command is triggered", () => {
-		const system = new CursorSystem(0);
+		const system = new CursorSystem(0).initialize();
 		const start = tile();
 
 		press(MoveCursorRightCommand);
@@ -123,7 +135,7 @@ suite("Map Cursor Test Suite", () => {
 	});
 
 	test("Holding a direction repeats after the initial delay", () => {
-		const system = new CursorSystem(0);
+		const system = new CursorSystem(0).initialize();
 		const start = tile();
 
 		press(MoveCursorDownCommand);
@@ -142,7 +154,7 @@ suite("Map Cursor Test Suite", () => {
 	});
 
 	test("Cursor stops at the border of the map", () => {
-		const system = new CursorSystem(0);
+		const system = new CursorSystem(0).initialize();
 
 		press(MoveCursorLeftCommand);
 
@@ -156,7 +168,7 @@ suite("Map Cursor Test Suite", () => {
 	});
 
 	test("Cursor does not move while another state is pushed on top", () => {
-		const system = new CursorSystem(0);
+		const system = new CursorSystem(0).initialize();
 		const start = tile();
 
 		stateManager.push(MenuState);
@@ -176,7 +188,7 @@ suite("Map Cursor Test Suite", () => {
 	});
 
 	test("Cursor tile is written into its transform", () => {
-		const system = new CursorSystem(0);
+		const system = new CursorSystem(0).initialize();
 		const { cellSize } = (state.getMap() as Entity).getComponent(GridComponent).read();
 
 		press(MoveCursorUpCommand);

@@ -1,0 +1,38 @@
+Fantasy UI Borders (1.0) by Kenney - https://kenney.nl/assets/fantasy-ui-borders
+License: Creative Commons Zero (CC0) - http://creativecommons.org/publicdomain/zero/1.0/
+
+Files in this folder, taken from "PNG/Default":
+  panel.png   <- Panel/panel-000.png          (filled ornate panel, 48x48, 1-bit mask)
+  frame.png   <- Border/panel-border-000.png   (ornate border ring, 48x48, 1-bit mask)
+  select.png  <- Transparent center/panel-transparent-center-028.png
+                 (border with a half-transparent centre, the bare menu's selected row, 48x48, 2-bit mask: border opaque, centre at alpha 127)
+  divider.png <- Divider/divider-003.png       (rule with a knotted flourish at its right end, 96x18, 1-bit mask)
+  divider-fade.png <- Divider Fade/divider-fade-000.png (the same flourish, tail fading out, 96x22, 8-bit alpha)
+
+The art is a 1-bit alpha mask (white on transparency). The UI feature tints it at
+runtime (see src/game/ui/model/NineSlice.ts) and nine-slices panel.png / frame.png
+around arbitrary rectangles, so a single 48x48 source scales to any box size.
+
+------------------------------------------------------------------------------
+
+	Fantasy UI Borders (1.0)
+
+	Created/distributed by Kenney (www.kenney.nl)
+	Creation date: 03-12-2023
+
+	For the sample image the font 'Aoboshi One' was used, OPL (Open Font License)
+
+			------------------------------
+
+	License: (Creative Commons Zero, CC0)
+	http://creativecommons.org/publicdomain/zero/1.0/
+
+	You can use this content for personal, educational, and commercial purposes.
+
+	Support by crediting 'Kenney' or 'www.kenney.nl' (this is not a requirement)
+
+			------------------------------
+
+	• Website : www.kenney.nl
+	• Donate  : www.kenney.nl/donate
+	• Patreon : patreon.com/kenney

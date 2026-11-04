@@ -1,5 +1,17 @@
 import { test, expect } from "vitest";
-import { anyOf, randomBoolean, randomBooleans, randomDecimal, randomDecimals, randomInteger, randomIntegers, randomUUID } from "@/core/math/generation/Randomizer";
+import {
+	anyOf,
+	randomBoolean,
+	randomBooleans,
+	randomDecimal,
+	randomDecimals,
+	randomInteger,
+	randomIntegers,
+	randomUUID,
+	rollChance,
+	rollChanceAveraged,
+	seedRandom
+} from "@/core/math/generation/Randomizer";
 
 test("Generate random integer", () => {
 	const value = randomInteger({
@@ -79,4 +91,42 @@ test.each([
 	const value = anyOf<(typeof values)[number]>(values);
 	expect(value).toBeTypeOf(type);
 	expect(values).toContain(value);
+});
+
+test("rollChance is certain at the extremes and roughly matches the odds in between", () => {
+	seedRandom(1);
+
+	expect(rollChance(0)).toBe(false);
+	expect(rollChance(-10)).toBe(false);
+	expect(rollChance(100)).toBe(true);
+	expect(rollChance(150)).toBe(true);
+
+	let passes = 0;
+	for (let i = 0; i < 4000; i++) {
+		if (rollChance(30)) passes++;
+	}
+
+	expect(passes / 4000).toBeGreaterThan(0.24);
+	expect(passes / 4000).toBeLessThan(0.36);
+});
+
+test("rollChanceAveraged pulls the real odds towards the extremes and leaves 50% alone", () => {
+	seedRandom(7);
+
+	const rate = (percent: number, samples?: number) => {
+		let passes = 0;
+		for (let i = 0; i < 6000; i++) {
+			if (rollChanceAveraged(percent, samples)) passes++;
+		}
+		return passes / 6000;
+	};
+
+	expect(rate(80)).toBeGreaterThan(0.8); // displayed 80 hits more than 80% of the time
+	expect(rate(20)).toBeLessThan(0.2); // displayed 20 hits less than 20%
+	expect(rate(50)).toBeGreaterThan(0.44);
+	expect(rate(50)).toBeLessThan(0.56);
+
+	// One sample degrades to the plain roll.
+	expect(rate(80, 1)).toBeGreaterThan(0.74);
+	expect(rate(80, 1)).toBeLessThan(0.86);
 });

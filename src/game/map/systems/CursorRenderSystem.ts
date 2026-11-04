@@ -1,16 +1,12 @@
 import { Query, QueryList } from "@/core/ecs/Query";
-import { RenderSystem } from "@/core/ecs/RenderSystem";
 import { TransformComponent } from "@/core/ecs/components/TransformComponent";
-import { TransformSystem } from "@/core/ecs/systems/TransformSystem";
-import { World } from "@/core/ecs/World";
-import { Display } from "@/core/graphics/Display";
 import { Graphics } from "@/core/graphics/rendering/Graphics";
 import { Line } from "@/core/math/geometry/Line";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
-import { GameCoreService } from "@/core/service/GameCoreService";
 import { CursorComponent } from "@/game/map/components/CursorComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
-import { MapTheme } from "@/game/map/model/MapTheme";
+import { MapTheme } from "@/game/map/view/MapTheme";
+import { MapRenderSystem } from "@/game/map/systems/MapRenderSystem";
 
 /** Pixels the cursor breathes in and out of the tile it sits on. */
 const PULSE_AMPLITUDE = 1.5;
@@ -23,24 +19,20 @@ const PULSE_PERIOD = 1400;
  * selected tile with. Reads the position off the transform, so the cursor
  * follows the map wherever the map is placed.
  */
-export class CursorRenderSystem extends RenderSystem {
+export class CursorRenderSystem extends MapRenderSystem {
 	protected queries!: QueryList;
 
 	private time!: number;
 
-	@GameCoreService(World)
-	private world!: World;
-
-	@GameCoreService(Display)
-	private display!: Display;
-
-	public initialize(): void {
+	public initialize(): this {
 		this.queries = {
 			cursors: new Query({ allowlist: [CursorComponent, TransformComponent] }),
 			grids: new Query({ allowlist: [GridComponent] })
 		};
 
 		this.time = 0;
+
+		return this;
 	}
 
 	public execute(elapsed: number): void {
@@ -56,7 +48,7 @@ export class CursorRenderSystem extends RenderSystem {
 		this.time += elapsed;
 
 		const { cellSize } = map.getComponent(GridComponent).read();
-		const transforms = this.world.getSystem(TransformSystem) as TransformSystem;
+		const transforms = this.transforms();
 
 		const pulse = PULSE_AMPLITUDE * (1 + Math.sin((this.time / PULSE_PERIOD) * 2 * Math.PI));
 

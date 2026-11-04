@@ -22,7 +22,9 @@ export default defineConfig({
 		pool: "threads",
 		fileParallelism: false,
 		coverage: {
-			provider: "istanbul"
+			provider: "istanbul",
+			// lcov is what SonarCloud reads, see sonar-project.properties.
+			reporter: ["text", "html", "lcov"]
 		}
 	},
 	// Replaces the vite-tsconfig-paths plugin, see vite.config.ts.
