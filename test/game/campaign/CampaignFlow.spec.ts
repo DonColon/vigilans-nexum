@@ -331,19 +331,30 @@ suite("Campaign Flow Test Suite", () => {
 			fell("blond-leader");
 			acknowledge();
 
+			// Fight 3 changes the map, not the chapter number, and hands out its own packs.
+			expect(card()?.read()).toMatchObject({ chapter: "bellum-soldier", number: 1, map: "map-bellum-orphanage-war" });
+
+			enterBattle();
+
+			expect(ready.at(-1)).toMatchObject({ scenario: "bellum-soldier", columns: 31, rows: 17 });
+			expect(sheet("dardan-niveli").read().inventory.map((entry) => entry.id)).toStrictEqual(["bronze-knife"]);
+
+			fell("red-soldier");
+			acknowledge();
+
 			// Nothing of the prologue reaches chapter two - the run goes on with its slot and playtime.
 			expect(card()?.read()).toMatchObject({ chapter: "chapter-two", number: 2 });
 			expect(campaign()).toMatchObject({ chapter: "chapter-two", slot: CAMPAIGN_SLOT, roster: [], fallen: [], convoy: [], casualties: [] });
 		});
 
-		test("The shipped campaign ends with the brawl: won, it returns to the title", async () => {
+		test("The shipped campaign ends with the soldier: won, it returns to the title", async () => {
 			assets.setJson(CAMPAIGN_ASSET, campaignDocument);
-			stash(CampaignComponent.begin(CAMPAIGN_SLOT, "bellum-brawl"));
+			stash(CampaignComponent.begin(CAMPAIGN_SLOT, "bellum-soldier"));
 			await openTitle();
 			choose(TitleRow.CONTINUE);
 			enterBattle();
 
-			fell("blond-leader");
+			fell("red-soldier");
 			acknowledge();
 
 			expect(finished).toBe(1);

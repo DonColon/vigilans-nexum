@@ -146,10 +146,10 @@ Loader: `TileMapFormat.ts` → `parseTileMapDocument`. Asset id `map-<name>`; `M
 | `tileset` | yes | spritesheet asset id (`kenney-1bit`) |
 | `background` | no | hex colour behind transparent tiles |
 | `layers[]` | yes, ≥ 1 | `{ name, tiles[], flips?[] }`; `tiles` is `columns × rows` frame indices, row-major; `flips` same length, bitmask 1 horizontal / 2 vertical / 4 diagonal |
-| `tileTerrain` | no | frame index (as a string key) → `plain forest mountain water wall fort` |
+| `tileTerrain` | no | frame index (as a string key) → `plain forest bush tree mountain water wall fort fire` |
 | `defaultTerrain` | no | terrain of any frame not in `tileTerrain` |
 
-Terrain properties (`Terrain.ts`): plain 1 move; forest 2 move, +1 def, +20 avoid; mountain 3 move, +2 def, +30 avoid; fort 2 move, +2 def, +20 avoid; water and wall impassable.
+Terrain properties (`Terrain.ts`): plain 1 move; forest and bush 2 move, +1 def, +20 avoid; mountain 3 move, +2 def, +30 avoid; fort 2 move, +2 def, +20 avoid; water, wall, tree and fire impassable.
 
 ## Test sketches (not content)
 

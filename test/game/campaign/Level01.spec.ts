@@ -16,9 +16,9 @@ import { enemiesOf } from "@/game/units/rules/UnitLookup";
 import campaignDocument from "@/assets/data/campaign/campaign.json";
 
 /**
- * The first two fights of chapter 1 as shipped: the campaign sheet, the market
- * square and both deployments. Whether the documents fit together, and that the
- * numbers come out the way the level is designed to play.
+ * The three fights of chapter 1 as shipped: the campaign sheet, both maps and
+ * the deployments. Whether the documents fit together, and that the numbers come
+ * out the way the level is designed to play.
  */
 suite("Level 01 Test Suite", () => {
 	const assets = ServiceRegistry.get<AssetStorage>(AssetStorage.name);
@@ -31,12 +31,13 @@ suite("Level 01 Test Suite", () => {
 	const placed = (scenario: string, id: string) => place(sheet(scenario).units.find((placement) => placementId(placement) === id) as DeploymentPlacement);
 
 	suite("The campaign", () => {
-		test("Both fights are chapter 1, and they are the whole campaign", () => {
+		test("All three fights are chapter 1, and they are the whole campaign", () => {
 			const campaign = parseCampaign(campaignDocument);
 
-			expect(campaign.chapters.map((chapter) => chapter.id)).toStrictEqual(["bellum-duel", "bellum-brawl"]);
+			expect(campaign.chapters.map((chapter) => chapter.id)).toStrictEqual(["bellum-duel", "bellum-brawl", "bellum-soldier"]);
 			expect(chapterNumber(campaign, "bellum-duel")).toBe(1);
 			expect(chapterNumber(campaign, "bellum-brawl")).toBe(1);
+			expect(chapterNumber(campaign, "bellum-soldier")).toBe(1);
 			expect(chapterNumber(campaign, "nowhere")).toBe(0);
 		});
 
@@ -48,8 +49,8 @@ suite("Level 01 Test Suite", () => {
 	suite("The market square", () => {
 		test("Is the Tiled map at its full size, with the park, the crate and the town hall where they were drawn", () => {
 			expect(map).toMatchObject({ columns: 31, rows: 31 });
-			expect(terrain(15, 12)).toBe(Terrain.WALL); // a tree of the park
-			expect(terrain(14, 12)).toBe(Terrain.FOREST); // a bush
+			expect(terrain(15, 12)).toBe(Terrain.TREE); // a tree of the park
+			expect(terrain(14, 12)).toBe(Terrain.BUSH); // a bush
 			expect(terrain(15, 15)).toBe(Terrain.PLAIN); // the park's grass
 			expect(terrain(13, 11)).toBe(Terrain.PLAIN); // the plaza ring, drawn as empty cells
 			expect(terrain(15, 1)).toBe(Terrain.WALL); // an empty cell inside the town hall's roof
@@ -118,7 +119,7 @@ suite("Level 01 Test Suite", () => {
 				expect(inside(15, 19)).toBe(false);
 				expect(GridComponent.terrainAt(park, 13, 12)).toBe(Terrain.WALL);
 				expect(GridComponent.terrainAt(park, 15, 11)).toBe(Terrain.WALL);
-				expect(GridComponent.terrainAt(park, 14, 12)).toBe(Terrain.FOREST);
+				expect(GridComponent.terrainAt(park, 14, 12)).toBe(Terrain.BUSH);
 				expect(GridComponent.terrainAt(park, 15, 15)).toBe(Terrain.PLAIN);
 			});
 
@@ -156,7 +157,7 @@ suite("Level 01 Test Suite", () => {
 
 			const stone = strike(dardan, dardan.inventory[1].weapon, hasan, Terrain.PLAIN);
 			const wood = strike(dardan, dardan.inventory[0].weapon, hasan, Terrain.PLAIN);
-			const inBush = strike(hasan, hasan.weapon, dardan, Terrain.FOREST);
+			const inBush = strike(hasan, hasan.weapon, dardan, Terrain.BUSH);
 			const onGrass = strike(hasan, hasan.weapon, dardan, Terrain.PLAIN);
 
 			expect(stone).toMatchObject({ damage: 5, hit: 90 });
@@ -171,6 +172,34 @@ suite("Level 01 Test Suite", () => {
 	});
 
 	suite("The brawl", () => {
+		suite("The market", () => {
+			const market = GridComponent.confinedTo(grid, sheet("bellum-brawl").area ?? []);
+			const inside = (column: number, row: number) => GridComponent.inPlay(market, column, row);
+
+			test("Is the seventeen tiles square around the park, and everything else is out of play and shut", () => {
+				expect(inside(7, 7)).toBe(true);
+				expect(inside(23, 23)).toBe(true);
+				expect(inside(6, 15)).toBe(false);
+				expect(inside(24, 15)).toBe(false);
+				expect(inside(15, 6)).toBe(false);
+				expect(inside(15, 24)).toBe(false);
+				expect(GridComponent.terrainAt(market, 15, 6)).toBe(Terrain.WALL);
+			});
+
+			test("Both armies stand inside it, and every fighter can walk to every other without leaving it", () => {
+				const [first, ...rest] = sheet("bellum-brawl").units;
+				const reach = reachableTiles(market, { column: first.column, row: first.row }, 10_000, new Set());
+				const reached = new Set(reach.map((tile) => tileKey(tile.column, tile.row)));
+
+				expect(reach.every((tile) => inside(tile.column, tile.row))).toBe(true);
+
+				for (const placement of [first, ...rest]) {
+					expect(inside(placement.column, placement.row), placementId(placement)).toBe(true);
+					expect(reached.has(tileKey(placement.column, placement.row)), placementId(placement)).toBe(true);
+				}
+			});
+		});
+
 		test("The enemy's weapons are the level's: slats and sticks, the stones and the leader's plank", () => {
 			const weaponOf = (id: string) => placed("bellum-brawl", id).weapon?.type;
 
@@ -197,6 +226,74 @@ suite("Level 01 Test Suite", () => {
 
 			expect(["Steinwerferin", "Stone-Thrower"]).toContain(stones.name);
 			expect(stones.weapon?.name).toBe(stones.inventory[0].name);
+		});
+	});
+
+	suite("The soldier", () => {
+		const orphanage = parseTileMapDocument(assets.getJson<TileMapDocument>("map-bellum-orphanage-war"));
+		const yard = GridComponent.confinedTo(GridComponent.fromTileMap(orphanage, 32), sheet("bellum-soldier").area ?? []);
+		const inside = (column: number, row: number) => GridComponent.inPlay(yard, column, row);
+		const { units } = sheet("bellum-soldier");
+
+		test("The yard and its gate are in play, and the burning map around them is not", () => {
+			expect(orphanage).toMatchObject({ columns: 31, rows: 17 });
+			expect(inside(8, 2)).toBe(true);
+			expect(inside(22, 12)).toBe(true);
+			expect(inside(15, 13)).toBe(true); // the gate
+			expect(inside(14, 13)).toBe(false); // the fence beside it
+			expect(inside(15, 14)).toBe(false); // the road beyond
+			expect(inside(7, 8)).toBe(false); // the wall
+		});
+
+		test("Fire shuts a tile whatever burns on it, and the well and the house are no ground either", () => {
+			expect(GridComponent.terrainAt(yard, 15, 9)).toBe(Terrain.PLAIN);
+			expect(GridComponent.terrainAt(yard, 16, 8)).toBe(Terrain.BUSH); // a bush that has not caught
+			expect(GridComponent.terrainAt(yard, 17, 8)).toBe(Terrain.FIRE); // the one beside it has
+			expect(GridComponent.terrainAt(yard, 14, 11)).toBe(Terrain.FIRE); // burning grass
+			expect(GridComponent.terrainAt(yard, 12, 10)).toBe(Terrain.WATER); // the well
+			expect(GridComponent.terrainAt(yard, 15, 6)).toBe(Terrain.WALL); // the orphanage
+			expect(GridComponent.terrainAt(yard, 15, 13)).toBe(Terrain.PLAIN);
+		});
+
+		test("The children stand before the house, the soldier before the gate, and they can walk to one another", () => {
+			const soldier = units.find((placement) => placement.unit === "red-soldier") as DeploymentPlacement;
+			const children = units.filter((placement) => placement !== soldier);
+			const reach = reachableTiles(yard, { column: soldier.column, row: soldier.row }, 10_000, new Set());
+			const reached = new Set(reach.map((tile) => tileKey(tile.column, tile.row)));
+
+			expect(soldier).toMatchObject({ column: 15, row: 12 });
+			expect(children).toHaveLength(6);
+			expect(reach.every((tile) => inside(tile.column, tile.row))).toBe(true);
+			expect(new Set(units.map((placement) => tileKey(placement.column, placement.row))).size).toBe(units.length);
+
+			for (const child of children) {
+				expect(place(child).faction, placementId(child)).toBe(UnitFaction.PLAYER);
+				expect(reached.has(tileKey(child.column, child.row)), placementId(child)).toBe(true);
+			}
+		});
+
+		test("Everyone carries the level's weapon, and Dardan can use his dagger", () => {
+			const weaponOf = (id: string) => placed("bellum-soldier", id).weapon;
+
+			expect(weaponOf("dardan-niveli")).toMatchObject({ id: "bronze-knife", type: "knife", might: 2, name: expect.stringMatching(/Rostiger Dolch|Rusty Dagger/) });
+			expect(weaponOf("hasan-eyletmez")?.type).toBe("sword");
+			expect(weaponOf("maksimo-auditore")?.type).toBe("lance");
+			expect(weaponOf("leona-kaori")?.type).toBe("lance");
+			expect(weaponOf("ivan-grussinskin")?.type).toBe("bow");
+			expect(weaponOf("lina-yukari")?.type).toBe("bow");
+		});
+
+		test("He is the boss on the wiki's sheet: no child's blow counts for much, and his fell a child in two", () => {
+			const soldier = placed("bellum-soldier", "red-soldier");
+			const hasan = placed("bellum-soldier", "hasan-eyletmez");
+			const lina = placed("bellum-soldier", "lina-yukari");
+			const onGround = (attacker: UnitData, defender: UnitData) =>
+				computeStrike({ attacker, attackerWeapon: attacker.weapon as NonNullable<UnitData["weapon"]>, defender, defenderWeapon: defender.weapon, defenderTerrain: Terrain.PLAIN });
+
+			expect(soldier).toMatchObject({ boss: true, level: 13, faction: UnitFaction.ENEMY, stats: expect.objectContaining({ hp: 27, strength: 11, defense: 9 }) });
+			expect(onGround(hasan, soldier).damage).toBeLessThanOrEqual(1);
+			expect(onGround(lina, soldier).damage).toBe(0);
+			expect(2 * onGround(soldier, lina).damage).toBeGreaterThanOrEqual(lina.stats.hp);
 		});
 	});
 
