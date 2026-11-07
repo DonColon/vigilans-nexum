@@ -36,11 +36,15 @@ export const OBJECTIVE_LABEL_WIDTH = 200;
  * What wins the battle, as the player reads it: a rout names the enemy, a
  * seize points at the flag - the marker on the map is what says where, so
  * the line does not try to name a tile that may be plain ground. A defeat
- * names the unit it is won by felling.
+ * names the unit it is won by felling, a chain the unit whose shield it breaks.
  */
 export function winText(objective: ObjectiveData, targetName = ""): string {
 	if (objective.win === WinCondition.DEFEAT) {
 		return i18n("objective.winDefeat", { name: targetName });
+	}
+
+	if (objective.win === WinCondition.CHAIN) {
+		return i18n("objective.winChain", { name: targetName });
 	}
 
 	return objective.win === WinCondition.SEIZE ? i18n("objective.winSeize") : i18n("objective.winRout");
@@ -49,11 +53,15 @@ export function winText(objective: ObjectiveData, targetName = ""): string {
 /**
  * What loses the battle: the commander falls, or nobody is left - so it names
  * the commander while there is one on the map - and a unit the sheet protects
- * is named beside them.
+ * is named beside them. A sheet asking for a minimum army says how many.
  */
-export function loseText(commanderName: string | null, protectedName: string | null = null): string {
+export function loseText(commanderName: string | null, protectedName: string | null = null, atLeast = 1): string {
 	if (commanderName === null) {
 		return i18n("objective.loseArmy");
+	}
+
+	if (atLeast > 1) {
+		return i18n("objective.loseFewer", { name: commanderName, count: atLeast });
 	}
 
 	return protectedName === null ? i18n("objective.loseCommander", { name: commanderName }) : i18n("objective.loseEither", { first: commanderName, second: protectedName });
@@ -63,7 +71,7 @@ export function loseText(commanderName: string | null, protectedName: string | n
 export function objectiveLines(objective: ObjectiveData, commanderName: string | null, enemiesLeft: number, turn: number, targetName = "", protectedName: string | null = null): ObjectiveLine[] {
 	return [
 		{ label: i18n("objective.win"), value: winText(objective, targetName) },
-		{ label: i18n("objective.lose"), value: loseText(commanderName, protectedName) },
+		{ label: i18n("objective.lose"), value: loseText(commanderName, protectedName, objective.atLeast) },
 		{ label: i18n("objective.enemies"), value: String(enemiesLeft) },
 		{ label: i18n("turn.label"), value: String(turn) }
 	];

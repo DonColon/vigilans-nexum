@@ -117,6 +117,8 @@ export class CombatFlowSystem extends ReactiveSystem {
 			defenderSwung: outcome.defenderSwings > 0,
 			attackerDealtDamage: outcome.strikes.some((strike) => strike.side === "attacker" && strike.damage > 0),
 			defenderDealtDamage: outcome.strikes.some((strike) => strike.side === "defender" && strike.damage > 0),
+			attackerHits: outcome.strikes.filter((strike) => strike.side === "attacker" && strike.connected).length,
+			defenderHits: outcome.strikes.filter((strike) => strike.side === "defender" && strike.connected).length,
 			attackerDefeated: outcome.attackerDefeated,
 			defenderDefeated: outcome.defenderDefeated
 		});

@@ -111,6 +111,8 @@ export interface UnitData extends JsonSchema {
 	commander: boolean;
 	/** The chapter's boss - worth extra experience to whoever fells it. */
 	boss: boolean;
+	/** HP a fight cannot bring it below, set by its placement - 0 for anyone who can fall. */
+	hpFloor: number;
 	/** Ids of the abilities the unit has learned, as its sheet lists them - each feature reads the ones it owns. */
 	abilities: string[];
 	weaponTypes: WeaponType[];

@@ -11,8 +11,8 @@ import { UITheme } from "@/game/ui/view/UITheme";
  * says about losing, and where the panel sits.
  */
 suite("Objective Screen Test Suite", () => {
-	const seize: ObjectiveData = { win: WinCondition.SEIZE, seizeColumn: 12, seizeRow: 5, target: "", protect: [], outcome: "", acknowledged: false };
-	const rout: ObjectiveData = { win: WinCondition.ROUT, seizeColumn: -1, seizeRow: -1, target: "", protect: [], outcome: "", acknowledged: false };
+	const seize: ObjectiveData = { win: WinCondition.SEIZE, seizeColumn: 12, seizeRow: 5, target: "", protect: [], atLeast: 1, outcome: "", acknowledged: false };
+	const rout: ObjectiveData = { win: WinCondition.ROUT, seizeColumn: -1, seizeRow: -1, target: "", protect: [], atLeast: 1, outcome: "", acknowledged: false };
 	const defeat: ObjectiveData = { ...rout, win: WinCondition.DEFEAT, target: "blond-leader" };
 
 	suite("What wins", () => {

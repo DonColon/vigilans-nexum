@@ -11,7 +11,7 @@ export const GLOBAL_MENU = "global-command";
 export const ITEMS_MENU = "unit-items";
 export const ITEM_ACTION_MENU = "unit-item-action";
 
-export const COMMAND_MENU_WIDTH = 160;
+export const COMMAND_MENU_WIDTH = 190;
 export const GLOBAL_MENU_WIDTH = 190;
 export const ITEMS_MENU_WIDTH = 300;
 export const ITEM_ACTION_MENU_WIDTH = 190;
@@ -27,6 +27,7 @@ export const ITEM_ACTION_MENU_GAP = 4;
 export const UnitMenuRow = {
 	SEIZE: "seize",
 	ATTACK: "attack",
+	CHAIN: "chain",
 	STAFF: "staff",
 	VISIT: "visit",
 	CHEST: "chest",
@@ -64,6 +65,7 @@ interface Row {
 const LABELS: Record<UnitMenuRow, () => string> = {
 	[UnitMenuRow.SEIZE]: () => i18n("menu.seize"),
 	[UnitMenuRow.ATTACK]: () => i18n("menu.attack"),
+	[UnitMenuRow.CHAIN]: () => i18n("menu.chain"),
 	[UnitMenuRow.STAFF]: () => i18n("menu.staff"),
 	[UnitMenuRow.VISIT]: () => i18n("menu.visit"),
 	[UnitMenuRow.CHEST]: () => i18n("menu.chest"),
@@ -108,6 +110,8 @@ export interface UnitCommands {
 	canSeize?: boolean;
 	/** Something is in reach of a weapon it carries. */
 	canAttack?: boolean;
+	/** It could start a chain attack with two allies from where it stands. */
+	canChain?: boolean;
 	/** A wounded ally is in reach of a staff it carries. */
 	canUseStaff?: boolean;
 	/** It is standing beside the door of a house nobody has called on yet. */
@@ -126,7 +130,7 @@ export interface UnitCommands {
 
 /**
  * The rows of the unit command menu, in Fire Emblem's order: "Seize" when the
- * commander stands on the objective's tile, "Attack" when something is in reach, "Staff" when a wounded ally is in reach of a staff,
+ * commander stands on the objective's tile, "Attack" when something is in reach, "Chain Attack" when a shield stands at its last point with three in reach, "Staff" when a wounded ally is in reach of a staff,
  * "Visit" when it is standing beside the door of a house nobody has called on,
  * "Chest" when it stands on or beside a locked chest with a key for it, "Door" when it
  * stands beside a locked door with a key for it, "Talk" when someone beside it
@@ -144,6 +148,10 @@ export function unitCommandRows(unit: UnitData, commands: UnitCommands = {}): Un
 
 	if (commands.canAttack) {
 		rows.push(UnitMenuRow.ATTACK);
+	}
+
+	if (commands.canChain) {
+		rows.push(UnitMenuRow.CHAIN);
 	}
 
 	if (commands.canUseStaff) {

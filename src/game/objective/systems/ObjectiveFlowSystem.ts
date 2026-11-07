@@ -1,9 +1,9 @@
 import { AssetStorage } from "@/core/assets/AssetStorage";
 import { ReactiveSystem } from "@/core/ecs/ReactiveSystem";
 import { GameCoreService } from "@/core/service/GameCoreService";
-import { SeizeRequestedEvent } from "@/game.events";
+import { ChainStartedEvent, SeizeRequestedEvent } from "@/game.events";
 import { ObjectiveComponent, Outcome } from "@/game/objective/components/ObjectiveComponent";
-import { objectiveOf, ObjectiveSetup } from "@/game/objective/content/Objectives";
+import { objectiveOf, ObjectiveSetup, WinCondition } from "@/game/objective/content/Objectives";
 import { battleOutcome, canSeize } from "@/game/objective/rules/Outcome";
 import { ObjectiveScreenState } from "@/game/objective/states/ObjectiveScreenState";
 import { MapState } from "@/game/map/states/MapState";
@@ -23,6 +23,9 @@ import { unitById, unitsInWorld } from "@/game/units/rules/UnitLookup";
  *    objective is a rout, the target gone when it is a defeat.
  *  - `seize:requested` (the "Seize" command) is a victory when the unit really
  *    can claim the tile.
+ *  - `chain:started` is a victory when the objective is a chain against that
+ *    target. It is decided at the start, so a counter in the middle of the
+ *    chain cannot take the win back; the banner waits for the strikes.
  *  - `objective:requested` (the "Objective" row of the global menu) pushes an
  *    [[ObjectiveScreenState]] over the map: the readout of what the battle is
  *    won and lost by. What it says is read live while it is up.
@@ -45,6 +48,7 @@ export class ObjectiveFlowSystem extends ReactiveSystem {
 		// Below the combat feature's own handler (0), so the fallen unit is already gone.
 		this.subscribe("unit:died", () => this.check(), -1);
 		this.subscribe("seize:requested", (event) => this.onSeize(event));
+		this.subscribe("chain:started", (event) => this.onChainStarted(event));
 		this.subscribe("objective:requested", () => this.stateManager.push(ObjectiveScreenState));
 		this.subscribe("objective:acknowledged", () => this.stateManager.switch(MapState.type));
 
@@ -102,6 +106,14 @@ export class ObjectiveFlowSystem extends ReactiveSystem {
 		}
 
 		this.decide(Outcome.VICTORY);
+	}
+
+	private onChainStarted(event: ChainStartedEvent): void {
+		const objective = this.world.entityWith(ObjectiveComponent)?.getComponent(ObjectiveComponent).read() ?? null;
+
+		if (objective !== null && !ObjectiveComponent.isDecided(objective) && objective.win === WinCondition.CHAIN && objective.target === event.targetId) {
+			this.decide(Outcome.VICTORY);
+		}
 	}
 
 	private decide(outcome: Outcome): void {

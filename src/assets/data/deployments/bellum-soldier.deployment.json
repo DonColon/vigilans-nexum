@@ -4,8 +4,9 @@
 	"map": "bellum-orphanage-war",
 	"preparations": false,
 	"objective": {
-		"win": "defeat",
-		"target": "red-soldier"
+		"win": "chain",
+		"target": "red-soldier",
+		"atLeast": 3
 	},
 	"area": [
 		{
@@ -120,7 +121,9 @@
 				"de": "Roter Soldat",
 				"en": "Red Soldier"
 			},
-			"behaviour": "charge"
+			"behaviour": "charge",
+			"shield": 9,
+			"hpFloor": 1
 		}
 	]
 }

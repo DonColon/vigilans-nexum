@@ -140,6 +140,7 @@ The game is one folder per feature under `src/game`, installed in this order in 
 | `locks` | "Door" / "Chest": locked doors and chests, and the keys that open them |
 | `movement` | picking a unit up, its range, the walk, the unit and global command menus |
 | `positional` | "Shove" / "Swap" / "Reposition" / "Knockback" / "Draw Back" / "Mystic Pull": the Base-tier positional abilities off a unit's sheet, the target choice and the slide |
+| `chain` | the shield of a Special enemy (a placement's `shield`) and "Chain Attack": three units in reach, with the bar at its last point, strike in turn and the first breaks it - the Chapter 1 form of the rule |
 | `threat` | the enemy range overlay |
 | `status` | the hover card and the unit sheet screen |
 | `ai` | the enemy phase: enemies moving and fighting on their turn |
@@ -467,14 +468,14 @@ The `Display` creates one canvas per configured layer (`background`, `gameplay`,
 | Schedule | Priority | Systems |
 |---|---|---|
 | update | 6 | `ObjectiveSystem` - ahead of the two clocks it must beat to a quiet map |
-| update | 8 | the clocks: `TurnSystem`, `PhaseBannerSystem`, `BattleAnimationSystem`, `ExperienceSystem`, `EnemyPhaseSystem`, `UnitWalkSystem`, `UnitPopSystem` |
+| update | 8 | the clocks: `TurnSystem`, `PhaseBannerSystem`, `BattleAnimationSystem`, `ExperienceSystem`, `EnemyPhaseSystem`, `ChainSystem`, `UnitWalkSystem`, `UnitPopSystem` |
 | update | 9 | `PrepareSystem` - runs the cursor commands for the preparations screen just ahead of `CursorSystem`, which syncs the cursor's transform |
 | update | 10 | the screens, polling their commands: `CursorSystem`, `MenuSystem`, `DialogSystem`, `PopupSystem`, `ForecastSystem`, `TradeSystem`, `StaffChoiceSystem`, `TalkChoiceSystem`, `PositionalChoiceSystem`, `OptionsSystem`, `RosterSystem`, `StatusSystem`, `ObjectiveScreenSystem`, `CampaignSystem`, `PrepareExchangeSystem` |
 | update | 12 | `PathPreviewSystem` - after the cursor has moved |
 | sync | 0 | `TransformSystem` |
 | render `background` | 10 | `GridRenderSystem` - **clears the layer** |
 | render `background` | 11 | `CampaignRenderSystem` - the title screen and the chapter card, which never share the screen with a map |
-| render `background` | 14, 15, 16, 17, 18, 19 | `TileMapRenderSystem`, `SeizeMarkerRenderSystem` and `PrepareRenderSystem` (15), `ThreatRenderSystem`, `MovementRenderSystem`, `UnitRenderSystem`, `PositionalRenderSystem` (the landing wash, over the tokens) |
+| render `background` | 14, 15, 16, 17, 18, 19 | `TileMapRenderSystem`, `SeizeMarkerRenderSystem` and `PrepareRenderSystem` (15), `ThreatRenderSystem`, `MovementRenderSystem`, `UnitRenderSystem`, `PositionalRenderSystem` (the landing wash, over the tokens) and `ChainRenderSystem` (the shield bar, over the tokens) (19) |
 | render `gameplay` | 20 | `CursorRenderSystem` - **clears the layer** |
 | render `ui` | 50 | `UIRenderSystem` - **clears the layer**; menus, textboxes, popups |
 | render `ui` | 51-56 | `UnitCardRenderSystem` (51), `ForecastRenderSystem` and `ExperienceRenderSystem` (52), `TradeRenderSystem` (53), `TileInfoRenderSystem` (54), `TurnRenderSystem` (55), the options, roster, status and objective screens and the preparations' pack panels (56) |

@@ -2,6 +2,7 @@ import { Game } from "@/core/Game";
 import { gameConfiguration } from "@/game.config";
 import { AIFeature } from "@/game/ai";
 import { CampaignFeature } from "@/game/campaign";
+import { ChainFeature } from "@/game/chain";
 import { CombatFeature } from "@/game/combat";
 import { ExperienceFeature } from "@/game/experience";
 import { ConvoyFeature } from "@/game/convoy";
@@ -77,6 +78,9 @@ game.install(movement);
 // the movement feature's walk, so they are installed after it; the move flow
 // asks their rules which rows to offer, the way it asks the talk rules.
 game.install(new PositionalFeature({ dependencies: [units, movement] }));
+// The shield of a Special enemy and the chain attack against it: the strikes go
+// through the combat feature and the row sits on the movement feature's menu.
+game.install(new ChainFeature({ dependencies: [units, ui, combat, movement] }));
 // The enemy-range overlay - one enemy on confirm, the whole army on the R
 // button. It sits above the move flow on map:tileConfirmed, so it is installed
 // after it; it only needs the units on the map.

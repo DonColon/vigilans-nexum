@@ -2,6 +2,7 @@ import { ReactiveSystem } from "@/core/ecs/ReactiveSystem";
 import { Entity } from "@/core/ecs/Entity";
 import { TransformComponent } from "@/core/ecs/components/TransformComponent";
 import {
+	ChainCancelledEvent,
 	ChestOpenedEvent,
 	CombatCancelledEvent,
 	CombatResolvedEvent,
@@ -40,6 +41,8 @@ import {
 import { NO_BOOST } from "@/game/units/content/UnitCatalog";
 import { UnitComponent } from "@/game/units/components/UnitComponent";
 import { unitsInWorld, unitById, enemiesOf, alliesBeside, tileOf } from "@/game/units/rules/UnitLookup";
+import { ChainComponent } from "@/game/chain/components/ChainComponent";
+import { canChain } from "@/game/chain/rules/Chain";
 import { targetsInReach } from "@/game/combat/rules/Targeting";
 import { canUseStaff } from "@/game/staff/rules/Staves";
 import { LocksComponent } from "@/game/locks/components/LocksComponent";
@@ -102,6 +105,9 @@ import { availablePositionalAbilities } from "@/game/positional/rules/Positionin
  *    the map cursor between the units the ability could be used on and slides
  *    the pieces. A row only shows for an ability on the unit's sheet with
  *    somebody in reach of it; using one spends the unit.
+ *  - "Chain Attack" hands off to the chain feature (`chain:requested`), which
+ *    previews the formations. It only shows when the enemy's shield stands at
+ *    its last point and the unit has two allies to strike alongside it.
  *
  * Only some of those commands finish the unit's turn: "Wait", a used item, a
  * resolved fight, a raised staff, an opened lock, a visited house and a used
@@ -135,6 +141,7 @@ export class UnitCommandSystem extends ReactiveSystem {
 		this.subscribe("ui:menuCancelled", (event) => this.onCommandCancelled(event));
 		this.subscribe("combat:cancelled", (event) => this.onCombatCancelled(event));
 		this.subscribe("combat:resolved", (event) => this.onCombatResolved(event));
+		this.subscribe("chain:cancelled", (event) => this.onChainCancelled(event));
 		this.subscribe("trade:closed", (event) => this.onTradeClosed(event));
 		this.subscribe("talk:finished", (event) => this.onTalkFinished(event));
 		this.subscribe("talk:cancelled", (event) => this.onTalkCancelled(event));
@@ -179,6 +186,7 @@ export class UnitCommandSystem extends ReactiveSystem {
 		const commands = {
 			canSeize: this.canSeize(mover),
 			canAttack: this.attackTargets(mover).length > 0,
+			canChain: this.canChain(mover),
 			canUseStaff: canUseStaff(data, position, this.units()),
 			canVisit: this.house(mover) !== null,
 			canOpenChest: this.chest(mover) !== null,
@@ -189,6 +197,13 @@ export class UnitCommandSystem extends ReactiveSystem {
 		};
 
 		this.openMenu(unitCommandRequest(data, commands), position.column, position.row);
+	}
+
+	/** Whether this unit could start a chain attack from where it stands. The chain is the chain feature's, but the check over it is pure. */
+	private canChain(mover: Entity): boolean {
+		const chain = this.world.entityWith(ChainComponent);
+
+		return chain !== null && canChain(chain.getComponent(ChainComponent).read(), mover, this.units());
 	}
 
 	/**
@@ -436,6 +451,16 @@ export class UnitCommandSystem extends ReactiveSystem {
 			return;
 		}
 
+		if (event.row === UnitMenuRow.CHAIN) {
+			if (this.canChain(mover)) {
+				// The chain feature takes it from here - it previews the formations.
+				this.closeOpenMenu();
+				this.events.dispatch("chain:requested", { unitId: mover.getComponent(UnitComponent).read().id });
+			}
+
+			return;
+		}
+
 		if (event.row === UnitMenuRow.STAFF) {
 			// The staff feature takes it from here - it offers the staves and moves
 			// the cursor between the wounded allies in reach.
@@ -541,6 +566,11 @@ export class UnitCommandSystem extends ReactiveSystem {
 		if (mover !== null && mover.hasComponent(PendingMoveComponent)) {
 			this.openCommandMenu(mover);
 		}
+	}
+
+	/** The player backed out of the chain preview - nothing happened, so put the menu back. */
+	private onChainCancelled(event: ChainCancelledEvent): void {
+		this.reopenCommandMenu(event.unitId);
 	}
 
 	/** The fight happened - spend the attacker the same way "Wait" does (if it is still alive). */

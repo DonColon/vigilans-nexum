@@ -187,6 +187,14 @@ suite("Campaign Flow Test Suite", () => {
 		}
 	};
 
+	/** The chain against the soldier begins, which is what wins that battle. */
+	const chainStarted = () => {
+		eventBus.dispatch("chain:started", { unitId: "dardan-niveli", targetId: "red-soldier", partnerIds: ["hasan-eyletmez", "leona-kaori"] });
+		for (let pass = 0; pass < 4; pass++) {
+			eventBus.processQueue();
+		}
+	};
+
 	/** Presses the outcome banner away once it is up. */
 	const acknowledge = () => {
 		frame(); // the banner goes up on the quiet map
@@ -339,7 +347,7 @@ suite("Campaign Flow Test Suite", () => {
 			expect(ready.at(-1)).toMatchObject({ scenario: "bellum-soldier", columns: 31, rows: 17 });
 			expect(sheet("dardan-niveli").read().inventory.map((entry) => entry.id)).toStrictEqual(["bronze-knife"]);
 
-			fell("red-soldier");
+			chainStarted();
 			acknowledge();
 
 			// Nothing of the prologue reaches chapter two - the run goes on with its slot and playtime.
@@ -354,7 +362,7 @@ suite("Campaign Flow Test Suite", () => {
 			choose(TitleRow.CONTINUE);
 			enterBattle();
 
-			fell("red-soldier");
+			chainStarted();
 			acknowledge();
 
 			expect(finished).toBe(1);

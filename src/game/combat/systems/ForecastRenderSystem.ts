@@ -9,6 +9,7 @@ import { i18n } from "@/core/i18n/I18n";
 import { Line } from "@/core/math/geometry/Line";
 import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { GameCoreService } from "@/core/service/GameCoreService";
+import { ChainComponent, ChainData } from "@/game/chain/components/ChainComponent";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { GridPositionComponent, GridPositionData } from "@/game/map/components/GridPositionComponent";
 import { MapRenderSystem, MapView } from "@/game/map/systems/MapRenderSystem";
@@ -48,6 +49,7 @@ export class ForecastRenderSystem extends MapRenderSystem {
 		this.queries = {
 			forecasts: new Query({ allowlist: [ForecastComponent] }),
 			units: new Query({ allowlist: [UnitComponent, GridPositionComponent] }),
+			chains: new Query({ allowlist: [ChainComponent] }),
 			grids: new Query({ allowlist: [GridComponent] })
 		};
 
@@ -106,7 +108,10 @@ export class ForecastRenderSystem extends MapRenderSystem {
 		const viewport = this.display.getViewportDimension();
 		const { width, padding, rowHeight: row, headerGap } = CombatTheme;
 
-		const rows = 6; // name, weapon, HP, Dmg, Hit, Crit
+		const chain = this.queries.chains.getSingleResult()?.getComponent(ChainComponent).read() ?? null;
+		const shield = chain !== null && chain.targetId === forecast.defender.unitId ? chain : null;
+
+		const rows = shield === null ? 6 : 7; // name, weapon, HP, Dmg, Hit, Crit and, against a shield, what the attack takes off it
 		const height = padding * 2 + rows * row + headerGap;
 
 		const box = menuBeside(viewport, this.tileAnchor(view, defenderTile), width, height, view.cellSize);
@@ -166,6 +171,16 @@ export class ForecastRenderSystem extends MapRenderSystem {
 		rowTop += row;
 
 		this.statRow(graphics, i18n("forecast.crit"), `${forecast.attacker.crit}%`, defends ? `${forecast.defender.crit}%` : "--", centreOf(rowTop), columns);
+
+		if (shield !== null) {
+			rowTop += row;
+			this.statRow(graphics, i18n("forecast.shield"), this.shieldWear(shield), `${shield.shield}/${shield.maxShield}`, centreOf(rowTop), columns);
+		}
+	}
+
+	/** What a landed hit takes off the bar: a point, or nothing once it stands at the last one. */
+	private shieldWear(shield: ChainData): string {
+		return ChainComponent.atLastPoint(shield) ? "0" : "-1";
 	}
 
 	private statRow(graphics: Graphics, label: string, attackerValue: string, defenderValue: string, centreY: number, columns: { centreX: number; leftValue: number; rightValue: number }): void {
@@ -182,7 +197,7 @@ export class ForecastRenderSystem extends MapRenderSystem {
 			this.damageText(forecast.attacker),
 			columns.leftValue,
 			centreY,
-			this.lethal(forecast.attacker, forecast.defender.hp) ? CombatTheme.lethal : CombatTheme.value,
+			this.lethal(forecast.attacker, forecast.defender) ? CombatTheme.lethal : CombatTheme.value,
 			TextAlign.RIGHT
 		);
 
@@ -196,7 +211,7 @@ export class ForecastRenderSystem extends MapRenderSystem {
 			this.damageText(forecast.defender),
 			columns.rightValue,
 			centreY,
-			this.lethal(forecast.defender, forecast.attacker.hp) ? CombatTheme.lethal : CombatTheme.value,
+			this.lethal(forecast.defender, forecast.attacker) ? CombatTheme.lethal : CombatTheme.value,
 			TextAlign.LEFT
 		);
 	}
@@ -205,8 +220,8 @@ export class ForecastRenderSystem extends MapRenderSystem {
 		return side.attacks > 1 ? `${side.damage} x2` : `${side.damage}`;
 	}
 
-	private lethal(side: CombatantForecast, targetHp: number): boolean {
-		return side.damage * Math.max(1, side.attacks) >= targetHp;
+	private lethal(side: CombatantForecast, target: CombatantForecast): boolean {
+		return target.minHp === 0 && side.damage * Math.max(1, side.attacks) >= target.hp;
 	}
 
 	private text(graphics: Graphics, value: string, x: number, centreY: number, color: Color, align: TextAlignType, font: FontStyleSettings = UITheme.menu): void {

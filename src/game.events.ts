@@ -157,6 +157,9 @@ export interface CombatFoughtEvent extends GameEvent {
 	/** At least one of the side's strikes took HP off the other. */
 	attackerDealtDamage: boolean;
 	defenderDealtDamage: boolean;
+	/** How many of each side's strikes connected, whether they hurt or not - what wears a shield down. */
+	attackerHits: number;
+	defenderHits: number;
 	attackerDefeated: boolean;
 	defenderDefeated: boolean;
 }
@@ -469,6 +472,28 @@ export interface ObjectiveAcknowledgedEvent extends GameEvent {
 	outcome: Outcome;
 }
 
+/** The "Chain Attack" row was chosen: the preview of the formations on offer opens. */
+export interface ChainRequestedEvent extends GameEvent {
+	unitId: string;
+}
+
+/** The player backed out of the chain preview; nothing happened and the unit still has its action. */
+export interface ChainCancelledEvent extends GameEvent {
+	unitId: string;
+}
+
+/** A formation was chosen and the chain begins. A `chain` objective is won here, before the strikes play out. */
+export interface ChainStartedEvent extends GameEvent {
+	unitId: string;
+	targetId: string;
+	partnerIds: string[];
+}
+
+/** The last strike of a chain has played out and the map is about to be handed back. */
+export interface ChainFinishedEvent extends GameEvent {
+	targetId: string;
+}
+
 /** A request to open the objective screen (from the global command menu). */
 export type ObjectiveRequestedEvent = GameEvent;
 
@@ -600,6 +625,10 @@ declare module "@/core/events/GameEvents" {
 		"combat:cancelled": CombatCancelledEvent;
 		"combat:fought": CombatFoughtEvent;
 		"combat:resolved": CombatResolvedEvent;
+		"chain:requested": ChainRequestedEvent;
+		"chain:cancelled": ChainCancelledEvent;
+		"chain:started": ChainStartedEvent;
+		"chain:finished": ChainFinishedEvent;
 		"experience:gained": ExperienceGainedEvent;
 		"experience:shown": ExperienceShownEvent;
 		"staff:requested": StaffRequestedEvent;

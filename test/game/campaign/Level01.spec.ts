@@ -1,7 +1,7 @@
 import { test, expect, suite } from "vitest";
 import { AssetStorage } from "@/core/assets/AssetStorage";
 import { ServiceRegistry } from "@/core/service/ServiceRegistry";
-import { computeStrike } from "@/game/combat/rules/CombatMath";
+import { attackSpeed, computeStrike, doublesAt } from "@/game/combat/rules/CombatMath";
 import { chapterNumber, parseCampaign } from "@/game/campaign/content/Campaigns";
 import { GridComponent } from "@/game/map/components/GridComponent";
 import { isPassable, Terrain } from "@/game/map/content/Terrain";
@@ -249,7 +249,8 @@ suite("Level 01 Test Suite", () => {
 			expect(GridComponent.terrainAt(yard, 15, 9)).toBe(Terrain.PLAIN);
 			expect(GridComponent.terrainAt(yard, 16, 8)).toBe(Terrain.BUSH); // a bush that has not caught
 			expect(GridComponent.terrainAt(yard, 17, 8)).toBe(Terrain.FIRE); // the one beside it has
-			expect(GridComponent.terrainAt(yard, 14, 11)).toBe(Terrain.FIRE); // burning grass
+			expect(GridComponent.terrainAt(yard, 14, 10)).toBe(Terrain.FIRE); // burning grass
+			expect(GridComponent.terrainAt(yard, 14, 11)).toBe(Terrain.PLAIN); // the open way to the soldier's left
 			expect(GridComponent.terrainAt(yard, 12, 10)).toBe(Terrain.WATER); // the well
 			expect(GridComponent.terrainAt(yard, 15, 6)).toBe(Terrain.WALL); // the orphanage
 			expect(GridComponent.terrainAt(yard, 15, 13)).toBe(Terrain.PLAIN);
@@ -283,7 +284,27 @@ suite("Level 01 Test Suite", () => {
 			expect(weaponOf("lina-yukari")?.type).toBe("bow");
 		});
 
-		test("He is the boss on the wiki's sheet: no child's blow counts for much, and his fell a child in two", () => {
+		test("He is a slow Armored Knight: no child is struck twice in one fight, and every child at full health survives one blow", () => {
+			const soldier = placed("bellum-soldier", "red-soldier");
+			const children = units.filter((placement) => placement.unit !== "red-soldier").map(place);
+
+			expect(soldier).toMatchObject({ className: "armored-knight", weapon: expect.objectContaining({ id: "iron-lance" }), stats: expect.objectContaining({ speed: 6, movement: 4 }) });
+
+			for (const child of children) {
+				const blow = computeStrike({
+					attacker: soldier,
+					attackerWeapon: soldier.weapon as NonNullable<UnitData["weapon"]>,
+					defender: child,
+					defenderWeapon: child.weapon,
+					defenderTerrain: Terrain.PLAIN
+				});
+
+				expect(doublesAt(soldier, soldier.weapon, attackSpeed(child, child.weapon)), child.id).toBe(false);
+				expect(blow.damage, child.id).toBeLessThan(child.stats.hp);
+			}
+		});
+
+		test("He is the boss: no child's blow counts for much, and his fell a child in two", () => {
 			const soldier = placed("bellum-soldier", "red-soldier");
 			const hasan = placed("bellum-soldier", "hasan-eyletmez");
 			const lina = placed("bellum-soldier", "lina-yukari");

@@ -30,7 +30,7 @@
 			"name": "Citizen",
 			"tier": "base",
 			"weaponTypes": ["sword", "lance", "knife", "axe", "bow", "staff"],
-			"movement": 4,
+			"movement": 5,
 			"ability": "Aptitude",
 			"promotesTo": ["swordsman", "lancer", "axe-fighter", "archer", "cleric"]
 		},
@@ -49,6 +49,14 @@
 			"movement": 5,
 			"ability": "Hit Rate +10",
 			"promotesTo": ["sniper", "bow-cavalier"]
+		},
+		"armored-knight": {
+			"name": "Armored Knight",
+			"tier": "third",
+			"weaponTypes": ["lance", "axe"],
+			"movement": 4,
+			"ability": "Ironhide",
+			"promotesTo": ["armored-general"]
 		}
 	}
 }

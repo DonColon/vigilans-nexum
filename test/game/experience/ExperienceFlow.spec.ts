@@ -303,6 +303,8 @@ suite("Experience Flow Test Suite", () => {
 			defenderSwung: true,
 			attackerDealtDamage: true,
 			defenderDealtDamage: true,
+			attackerHits: 1,
+			defenderHits: 1,
 			attackerDefeated: false,
 			defenderDefeated: false
 		});
@@ -320,6 +322,8 @@ suite("Experience Flow Test Suite", () => {
 			defenderSwung: false,
 			attackerDealtDamage: false,
 			defenderDealtDamage: false,
+			attackerHits: 0,
+			defenderHits: 0,
 			attackerDefeated: false,
 			defenderDefeated: false
 		});
