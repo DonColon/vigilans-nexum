@@ -37,12 +37,14 @@ export class AudioMixer {
 	 * the music would play on - and a suspended context also costs nothing
 	 * in the background. Resumed on return, but only once the player has
 	 * unlocked audio at all; before that the gesture listeners do the resuming.
+	 * A refusal is let go, as in `unlock`: the context stays as it was and the
+	 * next visibility change tries again.
 	 */
 	private readonly visibilityListener = () => {
 		if (document.hidden) {
-			this.suspend();
+			this.suspend().catch(() => undefined);
 		} else if (this.unlocked) {
-			this.resume();
+			this.resume().catch(() => undefined);
 		}
 	};
 
