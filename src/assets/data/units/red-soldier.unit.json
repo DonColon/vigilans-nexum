@@ -1,0 +1,45 @@
+{
+	"format": "vigilans-unit",
+	"version": 1,
+	"id": "red-soldier",
+	"name": "Roter Soldat",
+	"faction": "enemy",
+	"class": "armored-knight",
+	"level": 13,
+	"boss": true,
+	"weapon": "iron-lance",
+	"inventory": ["iron-lance"],
+	"stats": {
+		"hp": 27,
+		"mp": 18,
+		"strength": 11,
+		"magic": 6,
+		"dexterity": 10,
+		"speed": 6,
+		"luck": 8,
+		"defense": 9,
+		"resistance": 6
+	},
+	"growths": {
+		"hp": 45,
+		"mp": 15,
+		"strength": 30,
+		"magic": 10,
+		"dexterity": 30,
+		"speed": 30,
+		"luck": 25,
+		"defense": 25,
+		"resistance": 15
+	},
+	"maxStats": {
+		"hp": 60,
+		"mp": 30,
+		"strength": 25,
+		"magic": 25,
+		"dexterity": 28,
+		"speed": 29,
+		"luck": 30,
+		"defense": 24,
+		"resistance": 22
+	}
+}

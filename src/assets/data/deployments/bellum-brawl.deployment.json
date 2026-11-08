@@ -8,6 +8,14 @@
 		"target": "blond-leader",
 		"protect": ["hasan-eyletmez"]
 	},
+	"area": [
+		{
+			"column": 7,
+			"row": 7,
+			"columns": 17,
+			"rows": 17
+		}
+	],
 	"units": [
 		{
 			"unit": "dardan-niveli",
@@ -103,7 +111,7 @@
 			"unit": "older-child-leader",
 			"id": "blond-leader",
 			"column": 15,
-			"row": 6,
+			"row": 7,
 			"name": {
 				"de": "Anführer",
 				"en": "Ringleader"
@@ -124,7 +132,7 @@
 			"unit": "older-child",
 			"id": "stone-girl",
 			"column": 15,
-			"row": 7,
+			"row": 8,
 			"name": {
 				"de": "Steinwerferin",
 				"en": "Stone-Thrower"

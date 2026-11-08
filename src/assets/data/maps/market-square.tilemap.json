@@ -65,8 +65,9 @@
 		"15": "plain",
 		"16": "plain",
 		"17": "plain",
-		"309": "forest",
-		"310": "forest",
+		"102": "tree",
+		"309": "bush",
+		"310": "bush",
 		"1039": "fort"
 	},
 	"defaultTerrain": "wall"

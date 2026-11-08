@@ -22,6 +22,8 @@ export interface CombatantForecast {
 	crit: number;
 	/** 0 = cannot strike (out of range / unarmed), 1 = one strike, 2 = follows up. */
 	attacks: number;
+	/** HP this side cannot be brought below - 0 for anyone who can fall. */
+	minHp: number;
 }
 
 /** The full forecast for an attack: the initiator and the target it would counter with. */
@@ -75,7 +77,8 @@ export function buildForecast(input: ForecastInputs): BattleForecast {
 		damage: attackerStrike.damage,
 		hit: attackerStrike.hit,
 		crit: attackerStrike.crit,
-		attacks: doublesAt(attacker, attackerWeapon, defenderSpeed) ? 2 : 1
+		attacks: doublesAt(attacker, attackerWeapon, defenderSpeed) ? 2 : 1,
+		minHp: attacker.hpFloor
 	};
 
 	if (!defenderCanCounter) {
@@ -92,7 +95,8 @@ export function buildForecast(input: ForecastInputs): BattleForecast {
 				damage: 0,
 				hit: 0,
 				crit: 0,
-				attacks: 0
+				attacks: 0,
+				minHp: defender.hpFloor
 			}
 		};
 	}
@@ -118,7 +122,8 @@ export function buildForecast(input: ForecastInputs): BattleForecast {
 			damage: counterStrike.damage,
 			hit: counterStrike.hit,
 			crit: counterStrike.crit,
-			attacks: doublesAt(defender, defenderWeapon, attackerSpeed) ? 2 : 1
+			attacks: doublesAt(defender, defenderWeapon, attackerSpeed) ? 2 : 1,
+			minHp: defender.hpFloor
 		}
 	};
 }
@@ -208,9 +213,9 @@ export function resolveCombat(forecast: BattleForecast, rolls: CombatRolls = DEF
 		const damage = connected ? source.damage * (critical ? CRIT_MULTIPLIER : 1) : 0;
 
 		if (side === "attacker") {
-			defenderHp = Math.max(0, defenderHp - damage);
+			defenderHp = Math.max(forecast.defender.minHp, defenderHp - damage);
 		} else {
-			attackerHp = Math.max(0, attackerHp - damage);
+			attackerHp = Math.max(forecast.attacker.minHp, attackerHp - damage);
 		}
 
 		strikes.push({

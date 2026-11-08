@@ -15,7 +15,7 @@ suite("Unit Data Test Suite", () => {
 		expect(dardan.name).toBe("Dardan Niveli");
 		expect(dardan.faction).toBe(UnitFaction.PLAYER);
 		expect(dardan.classLabel).toBe("Swordsman");
-		expect(dardan.stats.movement).toBe(99); // his sheet overrides the swordsman class
+		expect(dardan.stats.movement).toBe(5); // the swordsman class's, his sheet sets none
 		expect(dardan.weaponTypes).toContain(WeaponType.SWORD);
 		expect(dardan.weapon?.name).toBe("Bronze Sword");
 		expect(dardan.weapon?.minRange).toBe(1);
@@ -23,8 +23,10 @@ suite("Unit Data Test Suite", () => {
 		expect(dardan.currentHP).toBe(dardan.stats.hp);
 		expect(dardan.hasMoved).toBe(false);
 		expect(dardan.commander).toBe(true);
-		// A fresh sheet starts its level with no points, is nobody's boss, and is in a base-tier class.
+		// A fresh sheet starts its level with no points, though one may set its own.
 		expect(dardan.experience).toBe(0);
+		expect(buildUnit({ ...(dardanDocument as UnitDocument), experience: 42 }).experience).toBe(42);
+		// Nobody's boss, and in a base-tier class.
 		expect(dardan.boss).toBe(false);
 		expect(dardan.classTier).toBe(ClassTier.BASE);
 	});
@@ -40,13 +42,12 @@ suite("Unit Data Test Suite", () => {
 	});
 
 	test("Movement is a stat: a sheet may set its own, and falls back to the class without one", () => {
-		// The class grants five; Dardan's sheet asks for more.
+		// The class grants five; a sheet may ask for more.
 		expect(getUnitClass("swordsman").movement).toBe(5);
-		expect(buildUnit(dardanDocument as UnitDocument).stats.movement).toBe(99);
 
 		const document = dardanDocument as UnitDocument;
-		const { movement: _dropped, ...classStats } = document.stats;
-		expect(buildUnit({ ...document, stats: classStats }).stats.movement).toBe(5);
+		expect(buildUnit(document).stats.movement).toBe(5);
+		expect(buildUnit({ ...document, stats: { ...document.stats, movement: 7 } }).stats.movement).toBe(7);
 	});
 
 	test("Movement never grows with a level and stops at the usual cap unless the sheet says otherwise", () => {

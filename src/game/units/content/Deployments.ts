@@ -20,6 +20,8 @@ export function deploymentAsset(scenario: string): string {
  * `chargeFromTurn` is the turn a holding unit breaks its position and charges.
  * `spectator` puts the unit on the map as a bystander: it holds its tile and
  * takes no part. `name` and `pack` replace what the sheet says for this battle.
+ * `shield` makes the unit the battle's Special enemy, with a bar of that many
+ * points (see src/game/chain). `hpFloor` is the HP it cannot be brought below.
  */
 export interface DeploymentPlacement {
 	unit: string;
@@ -32,6 +34,8 @@ export interface DeploymentPlacement {
 	spectator?: boolean;
 	name?: LocalizedText;
 	pack?: PackEntry[];
+	shield?: number;
+	hpFloor?: number;
 }
 
 /**
@@ -57,8 +61,8 @@ export interface DeploymentSlot {
  * objective feature's (see src/game/objective/content/Objectives) - and a
  * condition about a place, seizing a throne, names its tile, and one about a
  * unit names its placement id as `target`. `protect` lists units whose fall
- * loses the battle as the commander's does. A sheet without one gets that
- * feature's default.
+ * loses the battle as the commander's does, and `atLeast` is how many of the
+ * army must still stand. A sheet without one gets that feature's default.
  */
 export interface DeploymentObjective {
 	win: string;
@@ -66,6 +70,7 @@ export interface DeploymentObjective {
 	row?: number;
 	target?: string;
 	protect?: string[];
+	atLeast?: number;
 }
 
 /**
@@ -141,6 +146,14 @@ export function parseDeployment(document: unknown): DeploymentDocument {
 
 		if (placement.spectator !== undefined && typeof placement.spectator !== "boolean") {
 			throw new GameError(`Deployment of "${placement.unit}" has a spectator flag that is not a boolean`);
+		}
+
+		if (placement.shield !== undefined && (!Number.isInteger(placement.shield) || (placement.shield as number) < 1)) {
+			throw new GameError(`Deployment of "${placement.unit}" needs a shield of at least 1, got ${placement.shield}`);
+		}
+
+		if (placement.hpFloor !== undefined && (!Number.isInteger(placement.hpFloor) || (placement.hpFloor as number) < 1)) {
+			throw new GameError(`Deployment of "${placement.unit}" needs an hpFloor of at least 1, got ${placement.hpFloor}`);
 		}
 
 		if (placement.pack !== undefined) {
@@ -234,6 +247,10 @@ function assertObjective(value: unknown): void {
 
 	if (objective.target !== undefined && (typeof objective.target !== "string" || objective.target.length === 0)) {
 		throw new GameError("Deployment objective has a target that is not a unit id");
+	}
+
+	if (objective.atLeast !== undefined && (!Number.isInteger(objective.atLeast) || (objective.atLeast as number) < 1)) {
+		throw new GameError(`Deployment objective needs an atLeast of at least 1, got ${objective.atLeast}`);
 	}
 
 	if (objective.protect !== undefined && (!Array.isArray(objective.protect) || objective.protect.some((id) => typeof id !== "string" || id.length === 0))) {

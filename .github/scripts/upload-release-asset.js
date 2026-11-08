@@ -1,49 +1,40 @@
+import { readFile } from "node:fs/promises";
 import { formatRepositoryTitle } from "./utils.js";
 
-export default async ({ core, context, github, release }) => {
+/**
+ * Uploads the zipped build of this workflow run as the release asset,
+ * replacing an asset of the same name from an earlier run.
+ */
+export default async ({ core, context, github, release, assetPath }) => {
 	const { owner, repo } = context.repo;
 
-	const artifactName = `${repo}-build-${release.name}`;
-	core.info(`Download build artifact ${artifactName}`);
-
-	const { data: { artifacts: [artifactMetadata] }  } = await github.rest.actions.listArtifactsForRepo({
-		owner,
-		repo,
-		name: artifactName,
-		per_page: 1
-	});
-
-	const { data: artifact } = await github.rest.actions.downloadArtifact({
-		owner,
-		repo,
-		artifact_id: artifactMetadata.id,
-		archive_format: "zip"
-	});
-
-	core.info(`Upload build artifact ${artifactName}`);
+	const assetName = `${repo}-build-${release.name}.zip`;
 	const assetLabel = `${formatRepositoryTitle(repo)} Build ${release.name}`;
-	const assetName = `${artifactName}.zip`;
 
-	if(release.assets.length !== 0) {
-    	const assetMetadata = release.assets.find((asset) => asset.name === assetName);
+	const previousAsset = release.assets.find((asset) => asset.name === assetName);
 
-		if(assetMetadata) {
-			await github.rest.repos.deleteReleaseAsset({
-				owner,
-				repo,
-				asset_id: assetMetadata.id
-			});
-		}
+	if (previousAsset) {
+		core.info(`Delete previous asset ${assetName}`);
+		await github.rest.repos.deleteReleaseAsset({
+			owner,
+			repo,
+			asset_id: previousAsset.id
+		});
 	}
 
-	await github.request({
-		method: "POST",
-		url: release.upload_url,
-		headers: {
-			"content-type": "application/zip"
-		},
-		label: assetLabel,
+	const data = await readFile(assetPath);
+
+	core.info(`Upload asset ${assetName} (${data.length} bytes)`);
+	await github.rest.repos.uploadReleaseAsset({
+		owner,
+		repo,
+		release_id: release.id,
 		name: assetName,
-		data: artifact
+		label: assetLabel,
+		headers: {
+			"content-type": "application/zip",
+			"content-length": data.length
+		},
+		data
 	});
 };

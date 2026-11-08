@@ -9,16 +9,19 @@ import { DeploymentObjective } from "@/game/units/content/Deployments";
  *    a gate - and chooses "Seize".
  *  - `defeat`: the one enemy the objective names as `target` is felled, however
  *    many of the others still stand.
+ *  - `chain`: a chain attack is started against the `target` - see src/game/chain.
  *
  * Losing is the same for every battle: the commander falls, or nobody is left
- * standing. A sheet may add units to that with `protect`.
+ * standing. A sheet may add units to that with `protect`, or ask that at least
+ * `atLeast` of the army stays on its feet.
  */
 export type WinCondition = (typeof WinCondition)[keyof typeof WinCondition];
 
 export const WinCondition = {
 	ROUT: "rout",
 	SEIZE: "seize",
-	DEFEAT: "defeat"
+	DEFEAT: "defeat",
+	CHAIN: "chain"
 } as const;
 
 const CONDITIONS = new Set<string>(Object.values(WinCondition));
@@ -36,6 +39,8 @@ export interface ObjectiveSetup {
 	target: string;
 	/** Ids of the units besides the commander whose fall loses the battle. */
 	protect: string[];
+	/** How many of the army must still stand - one, unless the sheet asks for more. */
+	atLeast: number;
 }
 
 /**
@@ -46,7 +51,14 @@ export interface ObjectiveSetup {
  * cannot be won.
  */
 export function objectiveOf(objective: DeploymentObjective | undefined): ObjectiveSetup {
-	const rout: ObjectiveSetup = { win: WinCondition.ROUT, seizeColumn: -1, seizeRow: -1, target: "", protect: [...(objective?.protect ?? [])] };
+	const rout: ObjectiveSetup = {
+		win: WinCondition.ROUT,
+		seizeColumn: -1,
+		seizeRow: -1,
+		target: "",
+		protect: [...(objective?.protect ?? [])],
+		atLeast: objective?.atLeast ?? 1
+	};
 
 	if (objective === undefined) {
 		return rout;
@@ -66,13 +78,13 @@ export function objectiveOf(objective: DeploymentObjective | undefined): Objecti
 		return { ...rout, win: WinCondition.SEIZE, seizeColumn: objective.column, seizeRow: objective.row };
 	}
 
-	if (objective.win === WinCondition.DEFEAT) {
+	if (objective.win === WinCondition.DEFEAT || objective.win === WinCondition.CHAIN) {
 		if (objective.target === undefined) {
-			console.error("Deployment objective is a defeat without a target");
+			console.error(`Deployment objective is a ${objective.win} without a target`);
 			return rout;
 		}
 
-		return { ...rout, win: WinCondition.DEFEAT, target: objective.target };
+		return { ...rout, win: objective.win, target: objective.target };
 	}
 
 	return rout;

@@ -16,11 +16,11 @@ export default defineConfig({
 				}
 			}
 		},
-		// Vitest 4 removed poolOptions in favour of top-level settings. Kept to one
-		// file at a time as before, since vitest.setup.ts seeds process-wide
-		// singletons into the ServiceRegistry.
+		// Spec files run in parallel. vitest.setup.ts seeds singletons into the
+		// ServiceRegistry, but with `isolate` (the default) every file gets its own
+		// module graph and so its own registry - the files never share them. Do not
+		// turn `isolate` off without making the specs reset that registry first.
 		pool: "threads",
-		fileParallelism: false,
 		coverage: {
 			provider: "istanbul",
 			// lcov is what SonarCloud reads, see sonar-project.properties.

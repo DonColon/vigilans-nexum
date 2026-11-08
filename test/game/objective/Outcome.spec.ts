@@ -124,15 +124,22 @@ suite("Objective Test Suite", () => {
 		});
 
 		test("A sheet without an objective is a rout", () => {
-			expect(objectiveOf(undefined)).toStrictEqual({ win: WinCondition.ROUT, seizeColumn: -1, seizeRow: -1, target: "", protect: [] });
+			expect(objectiveOf(undefined)).toStrictEqual({ win: WinCondition.ROUT, seizeColumn: -1, seizeRow: -1, target: "", protect: [], atLeast: 1 });
 		});
 
 		test("A seize carries its tile", () => {
-			expect(objectiveOf({ win: "seize", column: 12, row: 3 })).toStrictEqual({ win: WinCondition.SEIZE, seizeColumn: 12, seizeRow: 3, target: "", protect: [] });
+			expect(objectiveOf({ win: "seize", column: 12, row: 3 })).toStrictEqual({ win: WinCondition.SEIZE, seizeColumn: 12, seizeRow: 3, target: "", protect: [], atLeast: 1 });
 		});
 
 		test("A defeat carries its target, and any objective who it protects", () => {
-			expect(objectiveOf({ win: "defeat", target: "hasan", protect: ["elira"] })).toStrictEqual({ win: WinCondition.DEFEAT, seizeColumn: -1, seizeRow: -1, target: "hasan", protect: ["elira"] });
+			expect(objectiveOf({ win: "defeat", target: "hasan", protect: ["elira"] })).toStrictEqual({
+				win: WinCondition.DEFEAT,
+				seizeColumn: -1,
+				seizeRow: -1,
+				target: "hasan",
+				protect: ["elira"],
+				atLeast: 1
+			});
 		});
 
 		test("An unknown condition, a seize without a tile or a defeat without a target falls back to a rout and says so", () => {

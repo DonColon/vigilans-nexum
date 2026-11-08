@@ -170,6 +170,7 @@ export function buildUnit(document: UnitDocument): UnitData {
 		experience: document.experience ?? 0,
 		commander: document.commander ?? false,
 		boss: document.boss ?? false,
+		hpFloor: 0,
 		abilities,
 		weaponTypes: [...unitClass.weaponTypes],
 		stats,
@@ -211,7 +212,8 @@ export function placedUnit(unit: UnitData, placement: DeploymentPlacement): Unit
 		...unit,
 		id: placementId(placement),
 		name: placement.name === undefined ? unit.name : localized(placement.name),
-		faction: placement.spectator === true ? UnitFaction.NEUTRAL : unit.faction
+		faction: placement.spectator === true ? UnitFaction.NEUTRAL : unit.faction,
+		hpFloor: placement.hpFloor ?? unit.hpFloor
 	};
 
 	if (placement.pack === undefined) {

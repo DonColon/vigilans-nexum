@@ -61,4 +61,11 @@ suite("Tile Map Test Suite", () => {
 		expect(isPassable(Terrain.PLAIN)).toBe(true);
 		expect(isPassable(Terrain.WALL)).toBe(false);
 	});
+
+	test("A bush is cover that costs a step more, and neither a tree nor a fire can be entered", () => {
+		expect(getTerrainProperties(Terrain.BUSH)).toMatchObject({ movementCost: 2, defense: 1, avoid: 20 });
+		expect(isPassable(Terrain.BUSH)).toBe(true);
+		expect(isPassable(Terrain.TREE)).toBe(false);
+		expect(isPassable(Terrain.FIRE)).toBe(false);
+	});
 });

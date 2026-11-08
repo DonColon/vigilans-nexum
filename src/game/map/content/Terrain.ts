@@ -3,10 +3,13 @@ export type TerrainType = (typeof Terrain)[keyof typeof Terrain];
 export const Terrain = {
 	PLAIN: "plain",
 	FOREST: "forest",
+	BUSH: "bush",
+	TREE: "tree",
 	MOUNTAIN: "mountain",
 	WATER: "water",
 	WALL: "wall",
-	FORT: "fort"
+	FORT: "fort",
+	FIRE: "fire"
 } as const;
 
 /**
@@ -28,10 +31,13 @@ export interface TerrainProperties {
 export const terrainProperties: Record<TerrainType, TerrainProperties> = {
 	[Terrain.PLAIN]: { name: "Plain", movementCost: 1, defense: 0, avoid: 0 },
 	[Terrain.FOREST]: { name: "Forest", movementCost: 2, defense: 1, avoid: 20 },
+	[Terrain.BUSH]: { name: "Bush", movementCost: 2, defense: 1, avoid: 20 },
+	[Terrain.TREE]: { name: "Tree", movementCost: IMPASSABLE, defense: 0, avoid: 0 },
 	[Terrain.MOUNTAIN]: { name: "Mountain", movementCost: 3, defense: 2, avoid: 30 },
 	[Terrain.WATER]: { name: "Water", movementCost: IMPASSABLE, defense: 0, avoid: 0 },
 	[Terrain.WALL]: { name: "Wall", movementCost: IMPASSABLE, defense: 0, avoid: 0 },
-	[Terrain.FORT]: { name: "Fort", movementCost: 2, defense: 2, avoid: 20 }
+	[Terrain.FORT]: { name: "Fort", movementCost: 2, defense: 2, avoid: 20 },
+	[Terrain.FIRE]: { name: "Fire", movementCost: IMPASSABLE, defense: 0, avoid: 0 }
 };
 
 export function getTerrainProperties(terrain: TerrainType): TerrainProperties {

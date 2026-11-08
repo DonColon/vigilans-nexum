@@ -1,0 +1,129 @@
+{
+	"format": "vigilans-deployment",
+	"version": 1,
+	"map": "bellum-orphanage-war",
+	"preparations": false,
+	"objective": {
+		"win": "chain",
+		"target": "red-soldier",
+		"atLeast": 3
+	},
+	"area": [
+		{
+			"column": 8,
+			"row": 2,
+			"columns": 15,
+			"rows": 11
+		},
+		{
+			"column": 15,
+			"row": 13,
+			"columns": 1,
+			"rows": 1
+		}
+	],
+	"units": [
+		{
+			"unit": "dardan-niveli",
+			"column": 15,
+			"row": 9,
+			"required": true,
+			"pack": [
+				{
+					"item": "bronze-knife",
+					"name": {
+						"de": "Rostiger Dolch",
+						"en": "Rusty Dagger"
+					}
+				}
+			]
+		},
+		{
+			"unit": "hasan-eyletmez",
+			"column": 14,
+			"row": 9,
+			"required": true,
+			"pack": [
+				{
+					"item": "bronze-sword",
+					"name": {
+						"de": "Holzschwert",
+						"en": "Wooden Sword"
+					}
+				}
+			]
+		},
+		{
+			"unit": "leona-kaori",
+			"column": 16,
+			"row": 9,
+			"required": true,
+			"pack": [
+				{
+					"item": "bronze-lance",
+					"name": {
+						"de": "Stock",
+						"en": "Stick"
+					}
+				}
+			]
+		},
+		{
+			"unit": "maksimo-auditore",
+			"column": 14,
+			"row": 8,
+			"required": true,
+			"pack": [
+				{
+					"item": "bronze-lance",
+					"name": {
+						"de": "Stock",
+						"en": "Stick"
+					}
+				}
+			]
+		},
+		{
+			"unit": "ivan-grussinskin",
+			"column": 15,
+			"row": 8,
+			"required": true,
+			"pack": [
+				{
+					"item": "bronze-bow",
+					"name": {
+						"de": "Steine",
+						"en": "Stones"
+					}
+				}
+			]
+		},
+		{
+			"unit": "lina-yukari",
+			"column": 16,
+			"row": 8,
+			"required": true,
+			"pack": [
+				{
+					"item": "bronze-bow",
+					"name": {
+						"de": "Steine",
+						"en": "Stones"
+					}
+				}
+			]
+		},
+		{
+			"unit": "red-soldier",
+			"column": 15,
+			"row": 12,
+			"name": {
+				"de": "Roter Soldat",
+				"en": "Red Soldier"
+			},
+			"behaviour": "charge",
+			"shield": 9,
+			"hpFloor": 1
+		}
+	]
+}
