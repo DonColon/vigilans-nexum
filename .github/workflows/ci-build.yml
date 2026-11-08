@@ -17,6 +17,26 @@ concurrency:
   cancel-in-progress: ${{ github.ref_name != 'main' }}
 
 jobs:
+  # On a pull request: would the version in package.json be releasable after
+  # the merge? The release job applies the same rule (version-rules.js), but
+  # only once the merge has happened.
+  version:
+    name: Check Version
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout Repository ${{ github.event.repository.name }}
+        uses: actions/checkout@v7
+
+      - name: Check Version Against Releases
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const { default: checkVersion } = await import(`${process.env.GITHUB_WORKSPACE}/.github/scripts/check-version.js`);
+            await checkVersion({ core, context, github });
+
   code_quality:
     name: Check Code Quality
     runs-on: ubuntu-latest
@@ -103,6 +123,8 @@ jobs:
           name: ${{ steps.app_version.outputs.artifact }}
           path: dist
           if-no-files-found: error
+          # Only the release and deploy of this run need it; a release keeps its own copy.
+          retention-days: 7
 
   # Opens the very build that release and deploy ship - minified - in a real
   # browser and fails on any error or missing file on the way to the title
