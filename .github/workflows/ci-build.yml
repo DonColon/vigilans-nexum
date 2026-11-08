@@ -53,8 +53,16 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage/lcov.info
 
+      - name: Application Version
+        id: app_version
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      # The version from package.json lets Sonar's "previous version" new-code
+      # period on main start at each release instead of at the first analysis.
       - name: Check Sonarcloud Rules
         uses: SonarSource/sonarqube-scan-action@v8
+        with:
+          args: -Dsonar.projectVersion=${{ steps.app_version.outputs.version }}
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
