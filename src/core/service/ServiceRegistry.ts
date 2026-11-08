@@ -21,7 +21,7 @@ export function serviceId(service: ServiceKey): string {
 	const id = (service as unknown as Record<symbol, unknown>)[SERVICE_ID];
 
 	if (typeof id !== "string") {
-		throw new Error(`${service.name || "This class"} is not a service - declare it with @GameCoreService("<id>")`);
+		throw new TypeError(`${service.name || "This class"} is not a service - declare it with @GameCoreService("<id>")`);
 	}
 
 	return id;

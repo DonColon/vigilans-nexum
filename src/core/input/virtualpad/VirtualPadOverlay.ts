@@ -150,7 +150,12 @@ export class VirtualPadOverlay {
 
 		const { up, down, left, right } = this.layout.directions;
 
-		return Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? right : left) : dy > 0 ? down : up;
+		// Four-way: whichever axis the finger is further along wins.
+		if (Math.abs(dx) > Math.abs(dy)) {
+			return dx > 0 ? right : left;
+		}
+
+		return dy > 0 ? down : up;
 	}
 
 	private steer(direction: GamepadInputType | null, timeStamp: number): void {

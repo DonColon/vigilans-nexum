@@ -78,8 +78,8 @@ export class Display {
 		this.fitScale = 1;
 
 		this.viewportDimension = {
-			width: parseFloat(this.viewport.style.width),
-			height: parseFloat(this.viewport.style.height)
+			width: Number.parseFloat(this.viewport.style.width),
+			height: Number.parseFloat(this.viewport.style.height)
 		};
 
 		this.viewportOffset = new Vector2D(this.viewport.offsetLeft, this.viewport.offsetTop);
