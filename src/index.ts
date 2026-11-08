@@ -112,7 +112,9 @@ game.install(campaign);
 // through the UI feature and holds the turn feature's opening banner back, so
 // it is installed after all of them.
 game.install(new PrepareFeature({ dependencies: [ui, units, convoy, turn, campaign, roster] }));
-game.start();
+// A bundle that fails to load or a database that will not open stops the game
+// before the first frame - say why rather than leave a blank canvas.
+game.start().catch((error: unknown) => console.error("The game could not be started:", error));
 
 // Dev-only handle so the loop can be driven by hand when rAF is throttled
 // (browser automation, a backgrounded tab). Stripped from production builds.

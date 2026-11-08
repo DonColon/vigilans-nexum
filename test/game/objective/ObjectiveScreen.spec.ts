@@ -21,6 +21,13 @@ suite("Objective Screen Test Suite", () => {
 			expect(objectiveLines(defeat, "Dardan", 6, 1, "Anführer")[0].value).toContain("Anführer");
 		});
 
+		test("A chain names the unit whose shield it breaks", () => {
+			const chain: ObjectiveData = { ...rout, win: WinCondition.CHAIN, target: "red-soldier", atLeast: 3 };
+
+			expect(winText(chain, "Roter Soldat")).toBe(i18n("objective.winChain", { name: "Roter Soldat" }));
+			expect(winText(chain, "Roter Soldat")).not.toBe(winText(defeat, "Roter Soldat"));
+		});
+
 		test("A rout asks for every enemy", () => {
 			expect(winText(rout)).toBe(i18n("objective.winRout"));
 		});
@@ -39,6 +46,12 @@ suite("Objective Screen Test Suite", () => {
 		test("Names the commander while there is one", () => {
 			expect(loseText("Dardan")).toBe(i18n("objective.loseCommander", { name: "Dardan" }));
 			expect(loseText("Dardan")).toContain("Dardan");
+		});
+
+		test("A sheet asking for a minimum army says how many must remain", () => {
+			expect(loseText("Dardan", null, 3)).toBe(i18n("objective.loseFewer", { name: "Dardan", count: 3 }));
+			// The count wins over a protected unit: the line has room for one rule.
+			expect(loseText("Dardan", "Hasan", 3)).toBe(loseText("Dardan", null, 3));
 		});
 
 		test("Without a commander on the map it is the army alone", () => {

@@ -1,7 +1,9 @@
-import { test, expect, suite, beforeEach, afterEach } from "vitest";
+import { test, expect, suite, beforeEach, afterEach, vi } from "vitest";
 import { Entity } from "@/core/ecs/Entity";
 import { identityTransform, TransformComponent } from "@/core/ecs/components/TransformComponent";
+import { TransformSystem } from "@/core/ecs/systems/TransformSystem";
 import { World } from "@/core/ecs/World";
+import { Rectangle } from "@/core/math/geometry/Rectangle";
 import { EventBus } from "@/core/events/EventBus";
 import { GameState } from "@/core/GameState";
 import { GameStateManager } from "@/core/GameStateManager";
@@ -12,10 +14,11 @@ import { seedRandom } from "@/core/math/generation/Randomizer";
 import { ServiceRegistry } from "@/core/service/ServiceRegistry";
 import { AIFeature } from "@/game/ai/AIFeature";
 import { ChainFeature } from "@/game/chain/ChainFeature";
-import { ChainComponent } from "@/game/chain/components/ChainComponent";
+import { ChainComponent, ChainData } from "@/game/chain/components/ChainComponent";
 import { ChainState } from "@/game/chain/states/ChainState";
+import { ChainRenderSystem } from "@/game/chain/systems/ChainRenderSystem";
 import { ChainSystem } from "@/game/chain/systems/ChainSystem";
-import { CHAIN_MENU } from "@/game/chain/view/ChainTheme";
+import { CHAIN_MENU, ChainTheme } from "@/game/chain/view/ChainTheme";
 import { CombatFeature } from "@/game/combat/CombatFeature";
 import { BattleAnimationSystem } from "@/game/combat/systems/BattleAnimationSystem";
 import { BattleAnimationState } from "@/game/combat/states/BattleAnimationState";
@@ -68,7 +71,7 @@ suite("Chain Flow Test Suite", () => {
 	world.registerComponent(GridPositionComponent);
 	world.registerComponent(CursorComponent);
 
-	new Display("chain-test", { dimension: { width: 1280, height: 720 } });
+	const display = new Display("chain-test", { dimension: { width: 1280, height: 720 }, layers: { 1: "background", 2: "gameplay", 3: "ui" } });
 	const stateManager = new GameStateManager();
 	new InputDevice({ gamepad: { axisThreshold: 0.5, deadZone: 0.1 } });
 
@@ -299,5 +302,105 @@ suite("Chain Flow Test Suite", () => {
 		settle();
 
 		expect(objective().outcome).toBe(Outcome.DEFEAT);
+	});
+
+	test("A striker who no longer reaches is passed over, and nobody is handed on while a strike is fought", () => {
+		formation();
+		chooseChain();
+		confirmFormation();
+
+		// Hasan is shoved off before his turn comes: nothing he carries reaches the soldier from there.
+		moveTo("hasan-eyletmez", 2, 5);
+
+		const confirmed: string[] = [];
+		const stop = eventBus.subscribe("combat:confirmed", (event) => confirmed.push(event.attackerId));
+
+		chainSystem.execute(); // Dardan's strike is handed to the combat feature
+		chainSystem.execute(); // still his: the next striker waits
+		expect(chain().current).toBe("dardan-niveli");
+
+		for (let index = 0; index < 40 && finished === 0; index++) {
+			frame();
+		}
+
+		stop();
+
+		expect(confirmed).toStrictEqual(["dardan-niveli", "leona-kaori"]);
+		expect(chain()).toMatchObject({ strikers: [], current: "" });
+		expect(finished).toBe(1);
+	});
+
+	suite("Shield bar", () => {
+		let renderer: ChainRenderSystem;
+		let drawn: { rectangle: Rectangle; color: unknown }[];
+
+		/** One render frame: the map's screen position resolved, then the bar drawn - every rectangle noted with the colour it was filled in. */
+		const render = () => {
+			const background = display.getLayer("background");
+			let color: unknown = null;
+
+			const fill = vi.spyOn(background, "fillColor").mockImplementation(function (this: typeof background, next) {
+				color = next;
+				return this;
+			});
+			const rectangle = vi.spyOn(background, "fillRectangle").mockImplementation(function (this: typeof background, next) {
+				drawn.push({ rectangle: next, color });
+				return this;
+			});
+
+			world.getSystem(TransformSystem).execute();
+			renderer.execute();
+
+			fill.mockRestore();
+			rectangle.mockRestore();
+		};
+
+		const box = (rectangle: Rectangle) => [rectangle.getPosition().x, rectangle.getPosition().y, rectangle.getWidth(), rectangle.getHeight()];
+		const wear = (changes: Partial<ChainData>) => {
+			const component = (world.entityWith(ChainComponent) as Entity).getComponent(ChainComponent);
+			component.update({ ...component.read(), ...changes } as ChainData);
+		};
+
+		beforeEach(() => {
+			world.registerSystem(TransformSystem, 0);
+			renderer = new ChainRenderSystem(18).initialize();
+			drawn = [];
+		});
+
+		afterEach(() => {
+			renderer.dispose();
+			world.unregisterSystem(TransformSystem);
+		});
+
+		test("The bar runs across the top of the soldier's tile, one segment per point, the worn ones dark", () => {
+			wear({ shield: 3 });
+			render();
+
+			// The soldier stands on 15,12 of a 24px grid at the origin: his tile starts at 360,288.
+			// Inset 2 leaves 24 - 2·2 = 20px; nine segments share it with eight 1px gaps: (20 - 8) / 9 = 4/3 each.
+			expect(drawn).toHaveLength(1 + 9);
+			expect(box(drawn[0].rectangle)).toStrictEqual([361, 289, 22, 7]); // the outline, a pixel round the bar
+			expect(drawn[0].color).toBe(ChainTheme.outline);
+
+			expect(drawn[1].rectangle.getPosition().x).toBeCloseTo(362);
+			expect(drawn[1].rectangle.getPosition().y).toBe(290);
+			expect(drawn[1].rectangle.getWidth()).toBeCloseTo(4 / 3);
+			expect(drawn[1].rectangle.getHeight()).toBe(5);
+			// The last segment ends where the bar does: 362 + 8·(4/3 + 1) + 4/3 = 382.
+			expect(drawn[9].rectangle.getPosition().x + drawn[9].rectangle.getWidth()).toBeCloseTo(382);
+
+			const colors = drawn.slice(1).map((entry) => entry.color);
+			expect(colors).toStrictEqual([...new Array(3).fill(ChainTheme.point), ...new Array(6).fill(ChainTheme.spent)]);
+		});
+
+		test("No bar is drawn without a shield to show or a target on the map", () => {
+			wear({ maxShield: 0, shield: 0 });
+			render();
+			expect(drawn).toStrictEqual([]);
+
+			wear({ maxShield: 9, shield: 9, targetId: "nobody" });
+			render();
+			expect(drawn).toStrictEqual([]);
+		});
 	});
 });
