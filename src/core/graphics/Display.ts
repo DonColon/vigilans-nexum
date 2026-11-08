@@ -281,7 +281,10 @@ export class Display {
 
 	public lockPointer() {
 		if (!this.isPointerLocked()) {
-			this.viewport.requestPointerLock();
+			// Refused without a recent user gesture, or when the player just left the
+			// lock - `isPointerLocked` stays false, which is all a caller reads.
+			// Wrapped because older Safari returns nothing rather than a promise.
+			Promise.resolve(this.viewport.requestPointerLock()).catch(() => undefined);
 		}
 	}
 
@@ -299,7 +302,11 @@ export class Display {
 		if (!this.isOrientationLocked()) {
 			if ("lock" in screen.orientation && typeof screen.orientation.lock === "function") {
 				this.orientationLocked = true;
-				screen.orientation.lock(orientation);
+				// Desktop browsers, and mobile ones outside fullscreen, refuse the lock:
+				// then the orientation is not locked after all.
+				screen.orientation.lock(orientation).catch(() => {
+					this.orientationLocked = false;
+				});
 			}
 		}
 	}
