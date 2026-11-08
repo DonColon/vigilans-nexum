@@ -345,7 +345,11 @@ suite("Campaign Flow Test Suite", () => {
 			enterBattle();
 
 			expect(ready.at(-1)).toMatchObject({ scenario: "bellum-soldier", columns: 31, rows: 17 });
-			expect(sheet("dardan-niveli").read().inventory.map((entry) => entry.id)).toStrictEqual(["bronze-knife"]);
+			expect(
+				sheet("dardan-niveli")
+					.read()
+					.inventory.map((entry) => entry.id)
+			).toStrictEqual(["bronze-knife"]);
 
 			chainStarted();
 			acknowledge();
