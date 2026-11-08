@@ -15,7 +15,8 @@ import { unitById, unitsOfFaction } from "@/game/units/rules/UnitLookup";
  * How the battle stands with these units on the map: lost when the commander
  * or a unit the sheet protects has fallen or nobody is left, won when the
  * objective is met - a rout once the last enemy is gone, a defeat once its
- * target is - and undecided ("") otherwise. Losing is checked first: a battle
+ * target is - and undecided ("") otherwise. A `chain` objective is only ever
+ * won by [[ObjectiveFlowSystem]], when the chain starts. Losing is checked first: a battle
  * cannot be won by an army that is no more. A seize is never decided here - it
  * is claimed with the "Seize" command, see [[canSeize]].
  */
@@ -27,6 +28,10 @@ export function battleOutcome(objective: ObjectiveData, units: readonly Entity[]
 	}
 
 	if (objective.protect.some((id) => unitById(players, id) === null)) {
+		return Outcome.DEFEAT;
+	}
+
+	if (players.length < objective.atLeast) {
 		return Outcome.DEFEAT;
 	}
 

@@ -17,10 +17,12 @@ export interface ObjectiveData extends JsonSchema {
 	/** The tile a `seize` is won on; -1 for any other condition. */
 	seizeColumn: number;
 	seizeRow: number;
-	/** The unit a `defeat` is won by felling; "" for any other condition. */
+	/** The unit a `defeat` is won by felling or a `chain` by striking; "" for any other condition. */
 	target: string;
 	/** The units besides the commander whose fall loses the battle. */
 	protect: string[];
+	/** How many of the army must still stand. */
+	atLeast: number;
 	/** How the battle ended, or "" while it is still being fought. */
 	outcome: Outcome | "";
 	/** The outcome banner has been seen and pressed away - it is not put up again while the battle is torn down. */

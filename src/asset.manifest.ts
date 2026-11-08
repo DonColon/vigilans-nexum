@@ -101,6 +101,11 @@ const assetManifest: AssetManifest = {
 				url: "/data/deployments/bellum-brawl.deployment.json"
 			},
 			{
+				id: "deployment-bellum-soldier",
+				type: "json",
+				url: "/data/deployments/bellum-soldier.deployment.json"
+			},
+			{
 				id: "unit-dardan",
 				type: "json",
 				url: "/data/units/dardan.unit.json"
@@ -202,6 +207,11 @@ const assetManifest: AssetManifest = {
 				type: "json",
 				url: "/data/units/older-child-leader.unit.json"
 			},
+			{
+				id: "unit-red-soldier",
+				type: "json",
+				url: "/data/units/red-soldier.unit.json"
+			},
 			// The houses on the map, who is in and what they hand over - see
 			// src/game/visit.
 			{
@@ -213,6 +223,11 @@ const assetManifest: AssetManifest = {
 				id: "houses-bellum-brawl",
 				type: "json",
 				url: "/data/houses/bellum-brawl.houses.json"
+			},
+			{
+				id: "houses-bellum-soldier",
+				type: "json",
+				url: "/data/houses/bellum-soldier.houses.json"
 			},
 			// The locked doors and chests on the map, and what the chests hold - see
 			// src/game/locks.
@@ -226,6 +241,11 @@ const assetManifest: AssetManifest = {
 				type: "json",
 				url: "/data/locks/bellum-brawl.locks.json"
 			},
+			{
+				id: "locks-bellum-soldier",
+				type: "json",
+				url: "/data/locks/bellum-soldier.locks.json"
+			},
 			// Who may talk to whom, and the script they speak - see src/game/talk.
 			{
 				id: "conversations-bellum-duel",
@@ -237,6 +257,11 @@ const assetManifest: AssetManifest = {
 				type: "json",
 				url: "/data/conversations/bellum-brawl.conversations.json"
 			},
+			{
+				id: "conversations-bellum-soldier",
+				type: "json",
+				url: "/data/conversations/bellum-soldier.conversations.json"
+			},
 			// The tile maps the chapters are fought on, `map-<name>` as the campaign
 			// sheet names them; MapState builds whichever the chapter asks for.
 			// Chapter 01 "Every End...": fights 1 and 2 are fought on the market
@@ -246,7 +271,13 @@ const assetManifest: AssetManifest = {
 				type: "json",
 				url: "/data/maps/market-square.tilemap.json"
 			},
-			// The Level-01 sketches of the market and of the orphanage (fight 3).
+			// Fight 3 is fought in the burning orphanage's yard, drawn in Tiled.
+			{
+				id: "map-bellum-orphanage-war",
+				type: "json",
+				url: "/data/maps/bellum-orphanage-war.tilemap.json"
+			},
+			// The Level-01 sketches of the market and of the orphanage, unused.
 			{
 				id: "map-bellum-market",
 				type: "json",

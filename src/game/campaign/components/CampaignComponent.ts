@@ -74,7 +74,8 @@ export class CampaignComponent extends Component<CampaignData> {
 		return {
 			slot: save.id,
 			chapter: save.chapter,
-			roster: save.roster.map((unit) => ({ ...unit })),
+			// A save written before sheets had a floor holds none; the fight's sums need a number.
+			roster: save.roster.map((unit) => ({ ...unit, hpFloor: unit.hpFloor ?? 0 })),
 			fallen: [...save.fallen],
 			convoy: save.convoy.map((entry) => ({ ...entry })),
 			casualties: [...save.casualties],

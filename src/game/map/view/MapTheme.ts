@@ -19,10 +19,13 @@ export const MapTheme = {
 	terrain: {
 		[Terrain.PLAIN]: Color.hex("#7fa653"),
 		[Terrain.FOREST]: Color.hex("#3f6b3c"),
+		[Terrain.BUSH]: Color.hex("#5c8a4a"),
+		[Terrain.TREE]: Color.hex("#2f5233"),
 		[Terrain.MOUNTAIN]: Color.hex("#8b7c62"),
 		[Terrain.WATER]: Color.hex("#3a6ea5"),
 		[Terrain.WALL]: Color.hex("#4a4f5c"),
-		[Terrain.FORT]: Color.hex("#a4763f")
+		[Terrain.FORT]: Color.hex("#a4763f"),
+		[Terrain.FIRE]: Color.hex("#d9622b")
 	} as Record<TerrainType, Color>,
 
 	/** Frame drawn around the whole map. */

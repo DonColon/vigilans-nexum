@@ -233,7 +233,7 @@ suite("Objective Flow Test Suite", () => {
 		open();
 
 		// The spec scenario is a seize of the tile before the castle gate.
-		expect(objective()).toStrictEqual({ win: WinCondition.SEIZE, seizeColumn: 12, seizeRow: 5, target: "", protect: [], outcome: "", acknowledged: false });
+		expect(objective()).toStrictEqual({ win: WinCondition.SEIZE, seizeColumn: 12, seizeRow: 5, target: "", protect: [], atLeast: 1, outcome: "", acknowledged: false });
 	});
 
 	test("A rout is won when the last enemy falls; the banner waits for whatever is over the map", () => {

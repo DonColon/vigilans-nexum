@@ -36,7 +36,7 @@ suite("Status Screen Test Suite", () => {
 
 	suite("Header", () => {
 		test("The class line names the class and the level", () => {
-			expect(classLine(dardan())).toBe(`Swordsman - ${i18n("roster.level")} 1 - ${i18n("roster.experience")} 0`);
+			expect(classLine({ ...dardan(), experience: 42 })).toBe(`Swordsman - ${i18n("roster.level")} 1 - ${i18n("roster.experience")} 42`);
 		});
 
 		test("Each side has a label of its own, translated", () => {

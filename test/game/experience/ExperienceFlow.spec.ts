@@ -157,7 +157,8 @@ suite("Experience Flow Test Suite", () => {
 		unsubscribe = [eventBus.subscribe("experience:gained", (event) => gained.push(event)), eventBus.subscribe("experience:shown", (event) => shown.push(event.unitId))];
 
 		// A sure hit that never kills a healthy Hasan: the fight, not the dice, is under test.
-		patch("dardan", { stats: { ...sheet("dardan").stats, strength: 6, dexterity: 40 } });
+		// The bar starts empty, whatever the shipped sheet hands Dardan to playtest a level-up.
+		patch("dardan", { experience: 0, stats: { ...sheet("dardan").stats, strength: 6, dexterity: 40 } });
 		patch("hasan", { stats: { ...sheet("hasan").stats, speed: 1 } });
 	});
 
@@ -303,6 +304,8 @@ suite("Experience Flow Test Suite", () => {
 			defenderSwung: true,
 			attackerDealtDamage: true,
 			defenderDealtDamage: true,
+			attackerHits: 1,
+			defenderHits: 1,
 			attackerDefeated: false,
 			defenderDefeated: false
 		});
@@ -320,6 +323,8 @@ suite("Experience Flow Test Suite", () => {
 			defenderSwung: false,
 			attackerDealtDamage: false,
 			defenderDealtDamage: false,
+			attackerHits: 0,
+			defenderHits: 0,
 			attackerDefeated: false,
 			defenderDefeated: false
 		});

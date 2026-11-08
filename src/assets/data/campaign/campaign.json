@@ -20,6 +20,16 @@
 			"map": "market-square",
 			"continues": true,
 			"prologue": true
+		},
+		{
+			"id": "bellum-soldier",
+			"title": {
+				"de": "Jedes Ende... - Der rote Soldat",
+				"en": "Every End... - The Red Soldier"
+			},
+			"map": "bellum-orphanage-war",
+			"continues": true,
+			"prologue": true
 		}
 	]
 }

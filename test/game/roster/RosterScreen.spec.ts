@@ -22,7 +22,7 @@ suite("Roster Screen Test Suite", () => {
 		});
 
 		test("The row reads the sheet: name, class, level, the wound and every stat", () => {
-			const unit = { ...dardan(), currentHP: 12 };
+			const unit = { ...dardan(), currentHP: 12, experience: 0 };
 			const values = Object.fromEntries(ROSTER_COLUMNS.map((column) => [column.labelKey, column.value(unit)]));
 
 			expect(values["roster.name"]).toBe(unit.name);
