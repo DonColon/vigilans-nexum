@@ -154,5 +154,12 @@
 	"prepare.bench": "Bench",
 	"prepare.required": "Required",
 	"prepare.convoy": "Convoy ({count})",
-	"prepare.partner": "Trade with whom?"
+	"prepare.partner": "Trade with whom?",
+	"touch.confirm": "Confirm",
+	"touch.cancel": "Back",
+	"touch.info": "Unit details",
+	"touch.infoLabel": "Info",
+	"touch.threat": "Show enemy range",
+	"touch.threatLabel": "Range",
+	"mobile.rotate": "Turn your device sideways to play"
 }

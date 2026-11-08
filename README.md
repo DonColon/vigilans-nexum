@@ -611,7 +611,7 @@ export const CONFIRM: InputSet = {
 };
 ```
 
-Under the hood the `InputDevice` owns a keyboard device (listening on `window`, keyed by `event.code`), mouse and touch devices (on the display's viewport), a gamepad device (polled, with stick axes turned into virtual buttons) and one shared `InputBuffer` that keeps just-pressed and just-released edges for a few frames (configured to 5 frames / 200 ms), so a press one frame before a state opened is not lost. Commands are registered keyed by their class. `GameCommand.bindInput()` exists for rebinding; the game has no rebinding screen yet.
+Under the hood the `InputDevice` owns a keyboard device (listening on `window`, keyed by `event.code`), mouse and touch devices (on the display's viewport), a gamepad device (polled, with stick axes turned into virtual buttons) and one shared `InputBuffer` that keeps just-pressed and just-released edges for a few frames (configured to 5 frames / 200 ms), so a press one frame before a state opened is not lost. A fifth source, the `VirtualPadDevice`, is the touch pad drawn over the game on a phone (`VirtualPadOverlay`, laid out by `src/game/input/TouchControls.ts`): it presses gamepad buttons and is merged into the gamepad channel, so every command bound to a gamepad button works by touch with no change of its own. Commands are registered keyed by their class. `GameCommand.bindInput()` exists for rebinding; the game has no rebinding screen yet.
 
 ## Events
 

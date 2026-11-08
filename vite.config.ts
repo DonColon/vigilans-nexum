@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 
 import { defineConfig } from "vite";
+import { offline } from "./tools/offline";
 
 export default defineConfig({
 	root: "src",
@@ -8,6 +9,8 @@ export default defineConfig({
 	// verbatim to the root of outDir: asset bundles are fetched by AssetLoader at
 	// runtime and must keep stable, unhashed URLs.
 	publicDir: "assets",
+	// Writes dist/sw.js, which stores the whole build so the game plays offline.
+	plugins: [offline()],
 	build: {
 		outDir: "../dist",
 		// outDir lives outside root, so Vite will not clear it unless asked.

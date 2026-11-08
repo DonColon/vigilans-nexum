@@ -1,1 +1,164 @@
-* {	padding: 0;	margin: 0;}html {	height: 100%;}body {	height: 100%;	display: flex;	align-items: center;	justify-content: center;	background: #161616;}
+* {
+	padding: 0;
+	margin: 0;
+}
+
+html {
+	height: 100%;
+	/* No pull-to-refresh or bounce: a drag on a phone belongs to the game. */
+	overscroll-behavior: none;
+}
+
+body {
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: #161616;
+	/* The viewport keeps its logical size in the layout and is shrunk with a
+	   transform (Display.fit), so it may overflow the page box - never scroll. */
+	overflow: hidden;
+	/* Taps and drags are input, not page gestures: no double-tap zoom, no
+	   selection, no grey flash on touch. */
+	touch-action: none;
+	user-select: none;
+	-webkit-user-select: none;
+	-webkit-touch-callout: none;
+	-webkit-tap-highlight-color: transparent;
+}
+
+/* ---- Touch pad (VirtualPadOverlay, game/input/TouchControls.ts) ---------- */
+
+.virtual-pad {
+	--pad-size: clamp(120px, 22vmin, 170px);
+	--button-size: clamp(48px, 10vmin, 64px);
+	--pad-inset-x: max(16px, env(safe-area-inset-left), env(safe-area-inset-right));
+	--pad-inset-y: max(16px, env(safe-area-inset-bottom));
+	position: fixed;
+	inset: 0;
+	z-index: 100;
+	/* Only the cross and the buttons take touches; the rest falls through. */
+	pointer-events: none;
+	font-family: system-ui, sans-serif;
+}
+
+.virtual-pad--hidden {
+	display: none;
+}
+
+.virtual-pad__cross,
+.virtual-pad__button {
+	pointer-events: auto;
+	touch-action: none;
+	position: absolute;
+	color: rgba(255, 255, 255, 0.85);
+	background: rgba(14, 18, 28, 0.45);
+	border: 2px solid rgba(255, 255, 255, 0.35);
+	backdrop-filter: blur(2px);
+}
+
+.virtual-pad__cross {
+	left: var(--pad-inset-x);
+	bottom: var(--pad-inset-y);
+	width: var(--pad-size);
+	height: var(--pad-size);
+	border-radius: 50%;
+}
+
+.virtual-pad__arm {
+	position: absolute;
+	width: 0;
+	height: 0;
+	border: calc(var(--pad-size) * 0.09) solid transparent;
+}
+
+.virtual-pad__arm--up {
+	top: 10%;
+	left: 50%;
+	transform: translateX(-50%);
+	border-bottom-color: currentColor;
+}
+
+.virtual-pad__arm--down {
+	bottom: 10%;
+	left: 50%;
+	transform: translateX(-50%);
+	border-top-color: currentColor;
+}
+
+.virtual-pad__arm--left {
+	left: 10%;
+	top: 50%;
+	transform: translateY(-50%);
+	border-right-color: currentColor;
+}
+
+.virtual-pad__arm--right {
+	right: 10%;
+	top: 50%;
+	transform: translateY(-50%);
+	border-left-color: currentColor;
+}
+
+.virtual-pad__button {
+	width: var(--button-size);
+	height: var(--button-size);
+	border-radius: 50%;
+	font-size: calc(var(--button-size) * 0.3);
+	font-weight: 600;
+	/* Centre of the diamond the four buttons sit around. */
+	--centre-x: calc(var(--pad-inset-x) + var(--button-size) * 1.6);
+	--centre-y: calc(var(--pad-inset-y) + var(--button-size) * 1.6);
+	--offset: calc(var(--button-size) * 1.05);
+	right: calc(var(--centre-x) - var(--button-size) / 2);
+	bottom: calc(var(--centre-y) - var(--button-size) / 2);
+}
+
+.virtual-pad__button--pressed {
+	background: rgba(255, 255, 255, 0.35);
+	color: #10141c;
+}
+
+/* A right, B below, Info left, Range above - where a controller has them. */
+.virtual-pad__button--confirm {
+	right: calc(var(--centre-x) - var(--button-size) / 2 - var(--offset));
+	background: rgba(64, 120, 200, 0.55);
+}
+
+.virtual-pad__button--cancel {
+	bottom: calc(var(--centre-y) - var(--button-size) / 2 - var(--offset));
+}
+
+.virtual-pad__button--info {
+	right: calc(var(--centre-x) - var(--button-size) / 2 + var(--offset));
+	font-size: calc(var(--button-size) * 0.24);
+}
+
+.virtual-pad__button--threat {
+	bottom: calc(var(--centre-y) - var(--button-size) / 2 + var(--offset));
+	font-size: calc(var(--button-size) * 0.2);
+}
+
+/* ---- Hold the device sideways (game/input/MobileScreen.ts) --------------- */
+
+.rotate-hint {
+	display: none;
+}
+
+@media (orientation: portrait) and (pointer: coarse) {
+	.rotate-hint {
+		display: flex;
+		position: fixed;
+		inset: 0;
+		z-index: 200;
+		align-items: center;
+		justify-content: center;
+		padding: 32px;
+		text-align: center;
+		font:
+			600 20px/1.4 system-ui,
+			sans-serif;
+		color: #e8e2d0;
+		background: #161616;
+	}
+}

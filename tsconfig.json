@@ -35,5 +35,10 @@
 	"include": [
 		"src/**/*",
 		"test/**/*"
+	],
+	/* Build tooling runs in Node (tools/offline.ts, compiled by Vite); this
+	   project is typed for the browser and has no Node types. */
+	"exclude": [
+		"test/tools/**/*"
 	]
 }
