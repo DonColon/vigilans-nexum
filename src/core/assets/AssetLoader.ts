@@ -16,7 +16,7 @@ export interface LoaderConfiguration {
 	useCache: boolean;
 }
 
-@GameCoreService()
+@GameCoreService("AssetLoader")
 export class AssetLoader {
 	private manifest: AssetManifest;
 	private useCache: boolean;

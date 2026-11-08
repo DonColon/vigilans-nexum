@@ -43,8 +43,8 @@ import banditDocument from "@/assets/data/units/bandit.unit.json";
 
 /** What the preparations may change, read off a deployment sheet and the units on the map - all pure. */
 suite("Prepare Test Suite", () => {
-	const world = ServiceRegistry.get<World>(World.name);
-	const assets = ServiceRegistry.get<AssetStorage>(AssetStorage.name);
+	const world = ServiceRegistry.get<World>(World);
+	const assets = ServiceRegistry.get<AssetStorage>(AssetStorage);
 
 	world.registerComponent(UnitComponent);
 	world.registerComponent(GridPositionComponent);

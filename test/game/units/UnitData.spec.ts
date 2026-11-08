@@ -155,7 +155,7 @@ suite("Unit Data Test Suite", () => {
  * to say so rather than failing somewhere further down on `undefined`.
  */
 suite("Unit Catalog Test Suite", () => {
-	const assetStorage = ServiceRegistry.get<AssetStorage>(AssetStorage.name);
+	const assetStorage = ServiceRegistry.get<AssetStorage>(AssetStorage);
 
 	// vitest.setup.ts seeds them for every other spec; put them back.
 	afterEach(() => loadUnitCatalogs(assetStorage));

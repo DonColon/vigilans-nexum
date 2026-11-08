@@ -11,6 +11,7 @@ import { MouseInputType } from "@/core/input/mouse/MouseInput";
 import { TouchpadDevice } from "@/core/input/touchpad/TouchpadDevice";
 import { SwipeInputType } from "@/core/input/touchpad/SwipeInput";
 import { TouchInputType } from "@/core/input/touchpad/TouchInput";
+import { VirtualPadDevice } from "@/core/input/virtualpad/VirtualPadDevice";
 import { GameCommand, GameCommandConstructor } from "@/core/input/commands/GameCommand";
 import { InputBuffer, InputBufferConfig } from "@/core/input/InputBuffer";
 import { GameCoreService } from "@/core/service/GameCoreService";
@@ -20,9 +21,10 @@ export interface InputDeviceConfig {
 	buffer?: InputBufferConfig;
 }
 
-@GameCoreService()
+@GameCoreService("InputDevice")
 export class InputDevice {
-	private commands: Map<string, GameCommand>;
+	// Keyed by the class itself, never its `name`: a minifier renames classes.
+	private commands: Map<GameCommandConstructor, GameCommand>;
 	private channels: Map<InputChannelType, number>;
 	private buffer: InputBuffer;
 
@@ -30,9 +32,10 @@ export class InputDevice {
 	private keyboard: KeyboardDevice;
 	private mouse: MouseDevice;
 	private touchpad: TouchpadDevice;
+	private virtualPad: VirtualPadDevice;
 
 	constructor(config: InputDeviceConfig) {
-		this.commands = new Map<string, GameCommand>();
+		this.commands = new Map<GameCommandConstructor, GameCommand>();
 		this.channels = new Map<InputChannelType, number>();
 		this.buffer = new InputBuffer(config.buffer);
 
@@ -45,15 +48,17 @@ export class InputDevice {
 		this.keyboard = new KeyboardDevice(this.buffer);
 		this.mouse = new MouseDevice(this.buffer);
 		this.touchpad = new TouchpadDevice(this.buffer);
+		this.virtualPad = new VirtualPadDevice(this.buffer);
 
 		window.addEventListener("contextmenu", (event) => this.cancelEvent(event));
 		window.addEventListener("selectstart", (event) => this.cancelEvent(event));
 	}
 
 	public update() {
-		if (this.gamepad) {
-			this.channels.set(InputChannel.GAMEPAD, this.gamepad.update());
-		}
+		// A controller and the on-screen pad share the gamepad channel.
+		const padUsed = this.virtualPad.update();
+		const controllerUsed = this.gamepad ? this.gamepad.update() : 0;
+		this.channels.set(InputChannel.GAMEPAD, Math.max(controllerUsed, padUsed));
 
 		this.channels.set(InputChannel.KEYBOARD, this.keyboard.update());
 		this.channels.set(InputChannel.MOUSE, this.mouse.update());
@@ -81,18 +86,18 @@ export class InputDevice {
 	}
 
 	public registerCommand(commandType: GameCommandConstructor): this {
-		if (this.commands.has(commandType.name)) {
+		if (this.commands.has(commandType)) {
 			throw new GameError(`Command ${commandType.name} is already registered`);
 		}
 
 		const command = new commandType();
-		this.commands.set(commandType.name, command);
+		this.commands.set(commandType, command);
 
 		return this;
 	}
 
 	public unregisterCommand(commandType: GameCommandConstructor): this {
-		this.commands.delete(commandType.name);
+		this.commands.delete(commandType);
 		return this;
 	}
 
@@ -105,12 +110,16 @@ export class InputDevice {
 		this.buffer.clear();
 	}
 
-	public getCommand(commandType: GameCommandConstructor | string): GameCommand {
-		const name = typeof commandType === "string" ? commandType : commandType.name;
-		const command = this.commands.get(name);
+	/** The on-screen pad's buttons, pressed by the touch controls drawn over the game. */
+	public getVirtualPad(): VirtualPadDevice {
+		return this.virtualPad;
+	}
+
+	public getCommand(commandType: GameCommandConstructor): GameCommand {
+		const command = this.commands.get(commandType);
 
 		if (command === undefined) {
-			throw new GameError(`Command ${name} is not registered`);
+			throw new GameError(`Command ${commandType.name} is not registered`);
 		}
 
 		return command;
@@ -134,11 +143,16 @@ export class InputDevice {
 
 	private getInput<K extends keyof InputTypeMap>(channel: K, inputType: InputTypeMap[K]): Input {
 		if (channel === InputChannel.GAMEPAD) {
+			const onScreen = this.virtualPad.getInput(inputType as GamepadInputType);
+
 			if (this.gamepad === null) {
-				return { current: false, previous: false };
+				return onScreen;
 			}
 
-			return this.gamepad.getInput(inputType as GamepadInputType);
+			// Down if it is down on either: a controller and the on-screen pad are one gamepad.
+			const controller = this.gamepad.getInput(inputType as GamepadInputType);
+
+			return { current: controller.current || onScreen.current, previous: controller.previous || onScreen.previous };
 		} else if (channel === InputChannel.KEYBOARD) {
 			return this.keyboard.getInput(inputType as KeyboardInputType);
 		} else if (channel === InputChannel.MOUSE) {

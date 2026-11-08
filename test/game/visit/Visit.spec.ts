@@ -53,11 +53,11 @@ suite("Scenario House Sheet Test Suite", () => {
 	});
 
 	function fantasyWeapons(): Record<string, unknown> {
-		return ServiceRegistry.get<AssetStorage>(AssetStorage.name).getJson<{ weapons: Record<string, unknown> }>("catalog-weapons").weapons;
+		return ServiceRegistry.get<AssetStorage>(AssetStorage).getJson<{ weapons: Record<string, unknown> }>("catalog-weapons").weapons;
 	}
 
 	function fantasyItems(): Record<string, unknown> {
-		return ServiceRegistry.get<AssetStorage>(AssetStorage.name).getJson<{ items: Record<string, unknown> }>("catalog-items").items;
+		return ServiceRegistry.get<AssetStorage>(AssetStorage).getJson<{ items: Record<string, unknown> }>("catalog-items").items;
 	}
 });
 
@@ -70,9 +70,9 @@ suite("Scenario House Sheet Test Suite", () => {
  * map puts a house on 4,12, within his five movement.
  */
 suite("Visit Test Suite", () => {
-	const world = ServiceRegistry.get<World>(World.name);
-	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
-	const assets = ServiceRegistry.get<AssetStorage>(AssetStorage.name);
+	const world = ServiceRegistry.get<World>(World);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus);
+	const assets = ServiceRegistry.get<AssetStorage>(AssetStorage);
 
 	world.registerComponent(TransformComponent);
 	world.registerComponent(GridComponent);

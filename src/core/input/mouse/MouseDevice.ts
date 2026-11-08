@@ -128,11 +128,8 @@ export class MouseDevice {
 	}
 
 	private pointerMoved(pointer: Pointer, x: number, y: number) {
-		const offset = this.display.getViewportOffset();
-		const viewportX = x - offset.x;
-		const viewportY = y - offset.y;
-
-		pointer.position.current = new Vector2D(viewportX, viewportY);
+		// In the viewport's logical pixels, wherever it sits and however it is scaled.
+		pointer.position.current = this.display.toViewport(x, y);
 	}
 
 	private cancelEvent(event: Event) {

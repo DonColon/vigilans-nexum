@@ -23,8 +23,20 @@ import { TurnFeature } from "@/game/turn";
 import { UIFeature } from "@/game/ui";
 import { UnitsFeature } from "@/game/units";
 import { VisitFeature } from "@/game/visit";
+import { Display } from "@/core/graphics/Display";
+import { InputDevice } from "@/core/input/InputDevice";
+import { VirtualPadOverlay } from "@/core/input/virtualpad/VirtualPadOverlay";
+import { ServiceRegistry } from "@/core/service/ServiceRegistry";
+import { setUpMobileScreen } from "@/game/input/MobileScreen";
+import { touchControls } from "@/game/input/TouchControls";
 
 const game = new Game(gameConfiguration);
+
+// On a phone: the touch pad over the game - pressing the same gamepad buttons
+// every command already listens to - a note to turn the device sideways, and
+// fullscreen on the first touch.
+const touchPad = new VirtualPadOverlay(ServiceRegistry.get(InputDevice).getVirtualPad(), touchControls());
+setUpMobileScreen(ServiceRegistry.get(Display));
 
 const ui = new UIFeature({ demo: false });
 const units = new UnitsFeature();
@@ -116,8 +128,20 @@ game.install(new PrepareFeature({ dependencies: [ui, units, convoy, turn, campai
 // before the first frame - say why rather than leave a blank canvas.
 game.start().catch((error: unknown) => console.error("The game could not be started:", error));
 
-// Dev-only handle so the loop can be driven by hand when rAF is throttled
-// (browser automation, a backgrounded tab). Stripped from production builds.
+// Dev-only handles so the loop can be driven by hand when rAF is throttled
+// (browser automation, a backgrounded tab) and the touch pad shown or hidden
+// at will. Stripped from production builds.
 if (import.meta.env.DEV) {
-	(window as unknown as { game: Game }).game = game;
+	Object.assign(window, { game, touchPad });
+}
+
+// Offline play: the service worker (written by tools/offline.ts at build time)
+// stores the whole game on the first visit and serves it from then on. Builds
+// only - the dev server has no sw.js and must not have its files cached.
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+	try {
+		await navigator.serviceWorker.register("/sw.js");
+	} catch (error) {
+		console.warn("Offline play is unavailable:", error);
+	}
 }

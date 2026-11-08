@@ -9,6 +9,13 @@ import { GameCoreService } from "@/core/service/GameCoreService";
 export const MIN_BRIGHTNESS = 50;
 export const MAX_BRIGHTNESS = 150;
 
+/**
+ * Most backing-store pixels per logical pixel. A phone reports a device pixel
+ * ratio of 3 or more; three full-screen layers at that density cost a lot to
+ * clear and fill every frame for little a player would see on a small screen.
+ */
+export const MAX_RENDER_SCALE = 2;
+
 export interface DisplayConfiguration {
 	dimension?: Dimension;
 	layers?: {
@@ -16,7 +23,7 @@ export interface DisplayConfiguration {
 	};
 }
 
-@GameCoreService()
+@GameCoreService("Display")
 export class Display {
 	private readonly viewport: HTMLElement;
 	private readonly viewportDimension: Dimension;
@@ -31,11 +38,29 @@ export class Display {
 	private orientationLocked: boolean;
 	private brightness: number;
 
+	/** Backing-store pixels per logical pixel, fixed at start (see `MAX_RENDER_SCALE`). */
+	private readonly renderScale: number;
+	/** How far the viewport is shrunk on screen to fit the window, 1 when it fits as it is. */
+	private fitScale: number;
+
+	/**
+	 * The viewport is laid out in logical pixels - `dimension`, 1280x720 for the
+	 * game - on every device, so every renderer works in one coordinate space.
+	 * Each layer's backing store is that times `renderScale` and drawn through a
+	 * matching scale, so it stays crisp on a dense screen. The viewport is then
+	 * shrunk with a css transform until it fits the window (`fit`), never grown:
+	 * on a phone the whole battlefield shows, on a desktop nothing changes.
+	 */
 	constructor(id: string, config?: DisplayConfiguration) {
 		this.viewport = document.createElement("main");
 		this.viewport.id = id;
 
-		this.viewport.style.position = "relative";
+		// Pinned to the middle of the window and centred on itself, so it stays
+		// centred however it is scaled - a flex layout would centre the unscaled
+		// box, which overflows a small screen before the transform shrinks it.
+		this.viewport.style.position = "fixed";
+		this.viewport.style.left = "50%";
+		this.viewport.style.top = "50%";
 		this.viewport.style.display = "block";
 		this.viewport.style.background = "#eee";
 
@@ -49,12 +74,15 @@ export class Display {
 
 		document.body.append(this.viewport);
 
+		this.renderScale = Math.min(Math.max(devicePixelRatio || 1, 1), MAX_RENDER_SCALE);
+		this.fitScale = 1;
+
 		this.viewportDimension = {
-			width: parseFloat(this.viewport.style.width) * devicePixelRatio,
-			height: parseFloat(this.viewport.style.height) * devicePixelRatio
+			width: Number.parseFloat(this.viewport.style.width),
+			height: Number.parseFloat(this.viewport.style.height)
 		};
 
-		this.viewportOffset = new Vector2D(this.viewport.offsetLeft * devicePixelRatio, this.viewport.offsetTop * devicePixelRatio);
+		this.viewportOffset = new Vector2D(this.viewport.offsetLeft, this.viewport.offsetTop);
 
 		this.viewportCenter = new Vector2D(this.viewportOffset.x + this.viewportDimension.width / 2, this.viewportOffset.y + this.viewportDimension.height / 2);
 
@@ -75,6 +103,48 @@ export class Display {
 
 		this.orientationLocked = false;
 		this.brightness = 100;
+
+		this.fit();
+		window.addEventListener("resize", () => this.fit());
+		window.addEventListener("orientationchange", () => this.fit());
+	}
+
+	/**
+	 * Scales the viewport to fit the window, keeping its aspect ratio; the page
+	 * centres it. In a window it is only ever shrunk - a desktop shows the game at
+	 * its own size - but in fullscreen it fills the screen. Called on every
+	 * resize and turn of the device - entering or leaving fullscreen resizes the window too.
+	 */
+	public fit(): this {
+		const { width, height } = this.viewportDimension;
+		const fill = Math.min(window.innerWidth / width, window.innerHeight / height);
+		const scale = this.isFullscreen() ? fill : Math.min(1, fill);
+
+		this.fitScale = Number.isFinite(scale) && scale > 0 ? scale : 1;
+		this.viewport.style.transform = this.fitScale !== 1 ? `translate(-50%, -50%) scale(${this.fitScale})` : "translate(-50%, -50%)";
+
+		return this;
+	}
+
+	public getFitScale(): number {
+		return this.fitScale;
+	}
+
+	public getRenderScale(): number {
+		return this.renderScale;
+	}
+
+	/**
+	 * Where a point on the page - a pointer's `clientX` / `clientY` - lands in
+	 * the viewport's logical pixels, whatever the viewport is scaled to or where
+	 * it sits on the page right now.
+	 */
+	public toViewport(clientX: number, clientY: number): Vector2D {
+		const bounds = this.viewport.getBoundingClientRect();
+		const scaleX = bounds.width > 0 ? this.viewportDimension.width / bounds.width : 1;
+		const scaleY = bounds.height > 0 ? this.viewportDimension.height / bounds.height : 1;
+
+		return new Vector2D((clientX - bounds.left) * scaleX, (clientY - bounds.top) * scaleY);
 	}
 
 	public async screenshot(): Promise<Blob> {
@@ -153,6 +223,9 @@ export class Display {
 			throw new GameError(`Rendering Context for layer ${name} could not be created`);
 		}
 
+		// Renderers draw in logical pixels; the backing store is denser by renderScale.
+		context.setTransform(this.renderScale, 0, 0, this.renderScale, 0, 0);
+
 		const graphics = new Graphics(context);
 
 		this.viewport.append(canvas);
@@ -192,14 +265,14 @@ export class Display {
 		canvas.style.position = "absolute";
 		canvas.style.zIndex = order.toString();
 
-		canvas.width = this.viewportDimension.width;
-		canvas.height = this.viewportDimension.height;
+		// The backing store is denser than the viewport by renderScale to keep
+		// rendering crisp on high density displays. The element itself stays at the
+		// viewport's logical size, otherwise the canvas would overflow it.
+		canvas.width = Math.round(this.viewportDimension.width * this.renderScale);
+		canvas.height = Math.round(this.viewportDimension.height * this.renderScale);
 
-		// The backing store is sized in device pixels to keep rendering crisp on
-		// high density displays. The element itself has to stay at the css size of
-		// the viewport, otherwise the canvas overflows it by devicePixelRatio.
-		canvas.style.width = `${this.viewportDimension.width / devicePixelRatio}px`;
-		canvas.style.height = `${this.viewportDimension.height / devicePixelRatio}px`;
+		canvas.style.width = `${this.viewportDimension.width}px`;
+		canvas.style.height = `${this.viewportDimension.height}px`;
 
 		return canvas;
 	}
@@ -232,6 +305,10 @@ export class Display {
 	 * rather than left to every caller. A rejected promise that nobody handles is
 	 * an unhandled error in the console, and asking for fullscreen at the wrong
 	 * moment is an ordinary thing to do, not a fault.
+	 *
+	 * The whole page goes fullscreen, not the viewport alone: whatever is laid
+	 * over the game - the touch pad on a phone - has to come along. The viewport
+	 * is then fitted to the screen, grown if need be (see `fit`).
 	 */
 	public async enterFullscreen(): Promise<boolean> {
 		if (this.isFullscreen()) {
@@ -239,7 +316,7 @@ export class Display {
 		}
 
 		try {
-			await this.viewport.requestFullscreen({ navigationUI: "hide" });
+			await document.documentElement.requestFullscreen({ navigationUI: "hide" });
 			return true;
 		} catch {
 			return false;
@@ -261,7 +338,7 @@ export class Display {
 	}
 
 	public isFullscreen(): boolean {
-		return document.fullscreenElement === this.viewport;
+		return document.fullscreenElement === document.documentElement;
 	}
 
 	/**

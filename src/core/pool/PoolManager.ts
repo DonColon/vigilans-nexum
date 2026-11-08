@@ -5,7 +5,7 @@ import { GameCoreService } from "../service/GameCoreService";
 import { ObjectPool, ObjectPoolConfig } from "./ObjectPool";
 import { PoolFactory } from "./PoolFactory";
 
-@GameCoreService()
+@GameCoreService("PoolManager")
 export class PoolManager {
 	private pools: Map<string, ObjectPool<any>> = new Map();
 

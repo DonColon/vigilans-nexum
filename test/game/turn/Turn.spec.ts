@@ -48,8 +48,8 @@ suite("Turn Test Suite", () => {
 			onResume() {}
 		}
 
-		const world = ServiceRegistry.get<World>(World.name);
-		const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
+		const world = ServiceRegistry.get<World>(World);
+		const eventBus = ServiceRegistry.get<EventBus>(EventBus);
 
 		world.registerComponent(UnitComponent);
 		world.registerComponent(CommanderComponent);

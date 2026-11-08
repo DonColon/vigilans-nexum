@@ -370,4 +370,69 @@ suite("Display Fullscreen Unit Tests", () => {
 		await expect(screen.exitFullscreen()).resolves.toBe(true);
 		expect(screen.isFullscreen()).toBe(false);
 	});
+
+	suite("Fitting the screen", () => {
+		const windowSize = (width: number, height: number) => {
+			Object.defineProperty(window, "innerWidth", { value: width, configurable: true });
+			Object.defineProperty(window, "innerHeight", { value: height, configurable: true });
+		};
+
+		afterEach(() => windowSize(1024, 768));
+
+		test("A phone in landscape shrinks the 1280x720 viewport until all of it fits", () => {
+			// 844x390 - an iPhone on its side: the height is what limits, 390 / 720.
+			windowSize(844, 390);
+			const display = new Display("fit-phone", { dimension: { width: 1280, height: 720 } });
+
+			expect(display.getFitScale()).toBeCloseTo(390 / 720);
+			expect(display.getViewport().style.transform).toBe(`translate(-50%, -50%) scale(${390 / 720})`);
+			// The renderers still lay out in logical pixels.
+			expect(display.getViewportDimension()).toStrictEqual({ width: 1280, height: 720 });
+		});
+
+		test("A window larger than the viewport leaves it at its own size, never grown", () => {
+			windowSize(1920, 1080);
+			const display = new Display("fit-desktop", { dimension: { width: 1280, height: 720 } });
+
+			expect(display.getFitScale()).toBe(1);
+			expect(display.getViewport().style.transform).toBe("translate(-50%, -50%)");
+		});
+
+		test("Turning the device fits the viewport again", () => {
+			windowSize(1920, 1080);
+			const display = new Display("fit-turn", { dimension: { width: 1280, height: 720 } });
+
+			windowSize(390, 844);
+			display.fit();
+
+			// Upright, the width limits: 390 / 1280.
+			expect(display.getFitScale()).toBeCloseTo(390 / 1280);
+		});
+
+		test("A pointer on the page lands in logical pixels, however the viewport is scaled and placed", () => {
+			const display = new Display("fit-pointer", { dimension: { width: 1280, height: 720 } });
+			// Shrunk to half and centred in an 844-wide window: 640x360 on screen from (102, 15).
+			vi.spyOn(display.getViewport(), "getBoundingClientRect").mockReturnValue({ left: 102, top: 15, width: 640, height: 360, right: 742, bottom: 375, x: 102, y: 15, toJSON: () => ({}) });
+
+			const corner = display.toViewport(102, 15);
+			const centre = display.toViewport(102 + 320, 15 + 180);
+
+			expect([corner.x, corner.y]).toStrictEqual([0, 0]);
+			expect([centre.x, centre.y]).toStrictEqual([640, 360]);
+		});
+
+		test("Each layer is drawn in logical pixels onto a denser backing store, at most twice as dense", () => {
+			const ratio = window.devicePixelRatio;
+			Object.defineProperty(window, "devicePixelRatio", { value: 3, configurable: true });
+
+			const display = new Display("fit-dense", { dimension: { width: 1280, height: 720 }, layers: { 1: "fit-dense-ui" } });
+			const canvas = display.getLayer("fit-dense-ui").getCanvas();
+
+			expect(display.getRenderScale()).toBe(2);
+			expect([canvas.width, canvas.height]).toStrictEqual([2560, 1440]);
+			expect([canvas.style.width, canvas.style.height]).toStrictEqual(["1280px", "720px"]);
+
+			Object.defineProperty(window, "devicePixelRatio", { value: ratio, configurable: true });
+		});
+	});
 });

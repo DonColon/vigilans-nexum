@@ -12,7 +12,7 @@ suite("TransformSystem Test Suite", () => {
 		public static readonly type = "marker";
 	}
 
-	const world = ServiceRegistry.get<World>(World.name);
+	const world = ServiceRegistry.get<World>(World);
 
 	world.registerComponent(TransformComponent);
 	world.registerComponent(MarkerComponent);

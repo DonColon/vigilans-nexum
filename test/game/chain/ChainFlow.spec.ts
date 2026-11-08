@@ -51,8 +51,8 @@ import { UnitsFeature } from "@/game/units/UnitsFeature";
  * the shield. The battle is won, and the banner waits for the last strike.
  */
 suite("Chain Flow Test Suite", () => {
-	const world = ServiceRegistry.get<World>(World.name);
-	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
+	const world = ServiceRegistry.get<World>(World);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus);
 
 	class MapStub extends GameState {
 		public static readonly type = MapState.type;

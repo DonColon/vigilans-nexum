@@ -40,7 +40,7 @@ suite("Entity Test Suite", () => {
 		onResume() {}
 	}
 
-	const world = ServiceRegistry.get<World>(World.name);
+	const world = ServiceRegistry.get<World>(World);
 	world.registerComponent(PointComponent);
 	world.registerEntityState(JumpState);
 

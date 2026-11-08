@@ -54,9 +54,9 @@ import { UnitsFeature } from "@/game/units/UnitsFeature";
  * enemy phase under the banner - and, acknowledged, the battle starts over.
  */
 suite("Objective Flow Test Suite", () => {
-	const world = ServiceRegistry.get<World>(World.name);
-	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
-	const assets = ServiceRegistry.get<AssetStorage>(AssetStorage.name);
+	const world = ServiceRegistry.get<World>(World);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus);
+	const assets = ServiceRegistry.get<AssetStorage>(AssetStorage);
 
 	/**
 	 * Stands in for the battle map: matched by its type, and it announces

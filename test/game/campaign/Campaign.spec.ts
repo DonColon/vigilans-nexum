@@ -21,8 +21,8 @@ import hasanDocument from "@/assets/data/units/hasan.unit.json";
 
 /** The campaign sheet, the run's record and what a chapter hands the next one - all pure. */
 suite("Campaign Test Suite", () => {
-	const world = ServiceRegistry.get<World>(World.name);
-	const assets = ServiceRegistry.get<AssetStorage>(AssetStorage.name);
+	const world = ServiceRegistry.get<World>(World);
+	const assets = ServiceRegistry.get<AssetStorage>(AssetStorage);
 
 	world.registerComponent(UnitComponent);
 	world.registerComponent(GridPositionComponent);

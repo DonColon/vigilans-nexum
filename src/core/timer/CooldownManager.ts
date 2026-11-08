@@ -2,7 +2,7 @@ import { GameError } from "../GameError";
 import { GameCoreService } from "../service/GameCoreService";
 import { Cooldown } from "./Cooldown";
 
-@GameCoreService()
+@GameCoreService("CooldownManager")
 export class CooldownManager {
 	private cooldowns: Map<string, Cooldown> = new Map();
 

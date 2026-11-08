@@ -56,8 +56,8 @@ import maksimoDocument from "@/assets/data/units/maksimo-auditore.unit.json";
  * lets the first phase open.
  */
 suite("Prepare Flow Test Suite", () => {
-	const world = ServiceRegistry.get<World>(World.name);
-	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
+	const world = ServiceRegistry.get<World>(World);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus);
 
 	/** Registered for the campaign flow, which is installed but never asked to read or write here. */
 	ServiceRegistry.register("LocalDatabase", { getRepository: () => ({ read: () => Promise.resolve(undefined), save: () => Promise.resolve(1) }) });
@@ -262,7 +262,7 @@ suite("Prepare Flow Test Suite", () => {
 	});
 
 	test("A battle whose army is fixed opens straight into its first phase", () => {
-		const assets = ServiceRegistry.get<AssetStorage>(AssetStorage.name);
+		const assets = ServiceRegistry.get<AssetStorage>(AssetStorage);
 		const bellum = assets.getJson<object>("deployment-chapter-one");
 
 		assets.setJson("deployment-chapter-one", { ...bellum, preparations: false });

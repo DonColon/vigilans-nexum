@@ -23,8 +23,8 @@ import { UnitsFeature } from "@/game/units/UnitsFeature";
 
 /** The units feature just puts the deployment sheet on the map and takes it off again. */
 suite("Unit Deployment Test Suite", () => {
-	const world = ServiceRegistry.get<World>(World.name);
-	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
+	const world = ServiceRegistry.get<World>(World);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus);
 
 	world.registerComponent(TransformComponent);
 	world.registerComponent(GridComponent);

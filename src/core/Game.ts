@@ -61,7 +61,8 @@ export class Game {
 	private isRunning: boolean;
 	private timer: number;
 
-	private features: Map<string, GameFeature>;
+	// Keyed by the class itself, never its `name`: a minifier renames classes.
+	private features: Map<GameFeatureConstructor, GameFeature>;
 
 	private i18n: I18nService;
 	private eventBus: EventBus;
@@ -86,7 +87,7 @@ export class Game {
 		this.isRunning = false;
 		this.timer = 0;
 
-		this.features = new Map<string, GameFeature>();
+		this.features = new Map<GameFeatureConstructor, GameFeature>();
 
 		if (config.seed !== undefined) {
 			seedRandom(config.seed);
@@ -190,18 +191,18 @@ export class Game {
 
 	public install(feature: GameFeature): this {
 		feature.install();
-		this.features.set(feature.constructor.name, feature);
+		this.features.set(feature.constructor as GameFeatureConstructor, feature);
 		return this;
 	}
 
 	public uninstall(feature: GameFeature): this {
 		feature.uninstall();
-		this.features.delete(feature.constructor.name);
+		this.features.delete(feature.constructor as GameFeatureConstructor);
 		return this;
 	}
 
 	public getFeature<T extends GameFeature>(featureType: GameFeatureConstructor): T | null {
-		const feature = this.features.get(featureType.name);
+		const feature = this.features.get(featureType);
 		return feature ? (feature as T) : null;
 	}
 

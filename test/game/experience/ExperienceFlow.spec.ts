@@ -45,8 +45,8 @@ import { i18n } from "@/core/i18n/I18n";
  * 4,14, both level 1 in base classes - so a hit is worth 10 and a kill 25.
  */
 suite("Experience Flow Test Suite", () => {
-	const world = ServiceRegistry.get<World>(World.name);
-	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
+	const world = ServiceRegistry.get<World>(World);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus);
 
 	world.registerComponent(TransformComponent);
 	world.registerComponent(GridComponent);

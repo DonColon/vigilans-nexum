@@ -1,44 +1,24 @@
 import pkg from "../../package.json" with { type: "json" };
-import { compareVersions, parseVersion } from "./utils.js";
+import { checkVersion, listReleases } from "./version-rules.js";
 
 /**
  * Finds the release for the version in package.json, or creates it as a draft.
- *
- * - A draft or pre-release with that version is reused (it gets updated).
- * - A full release with that version cannot be overwritten.
- * - A new version must be higher than every existing release.
+ * Which version may be released is decided by `checkVersion`.
  */
 export default async ({ core, context, github }) => {
 	const appVersion = `v${pkg.version}`;
 	const { owner, repo } = context.repo;
 
-	const releases = await github.paginate(github.rest.repos.listReleases, {
-		owner,
-		repo,
-		per_page: 100
-	});
+	const { problem, existingRelease, highestVersion } = checkVersion(appVersion, await listReleases(github, context));
 
-	const existingRelease = releases.find((release) => release.name === appVersion);
-
-	if (existingRelease) {
-		if (isFullRelease(existingRelease)) {
-			core.setFailed(`A full release ${appVersion} can not be overwritten. Please increment the version number.`);
-			return;
-		}
-
-		core.info(`Update ${existingRelease.draft ? "draft" : "pre"} release ${appVersion}`);
-		core.setOutput("release", existingRelease);
+	if (problem) {
+		core.setFailed(problem);
 		return;
 	}
 
-	const highestVersion = releases
-		.map((release) => release.name)
-		.filter((name) => parseVersion(name))
-		.sort(compareVersions)
-		.at(-1);
-
-	if (highestVersion && compareVersions(appVersion, highestVersion) <= 0) {
-		core.setFailed(`Version ${appVersion} must be higher than the latest release ${highestVersion}.`);
+	if (existingRelease) {
+		core.info(`Update ${existingRelease.draft ? "draft" : "pre"} release ${appVersion}`);
+		core.setOutput("release", existingRelease);
 		return;
 	}
 
@@ -55,8 +35,4 @@ export default async ({ core, context, github }) => {
 
 	core.info(`Created draft release ${appVersion}`);
 	core.setOutput("release", newRelease);
-};
-
-const isFullRelease = (release) => {
-	return !release.draft && !release.prerelease;
 };

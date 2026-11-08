@@ -40,8 +40,8 @@ import { UnitsFeature } from "@/game/units/UnitsFeature";
  * the pieces and spends the user.
  */
 suite("Positional Flow Test Suite", () => {
-	const world = ServiceRegistry.get<World>(World.name);
-	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
+	const world = ServiceRegistry.get<World>(World);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus);
 
 	world.registerComponent(TransformComponent);
 	world.registerComponent(GridComponent);

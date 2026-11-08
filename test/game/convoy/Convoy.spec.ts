@@ -92,8 +92,8 @@ suite("Convoy System Test Suite", () => {
  * player says what goes on the baggage train.
  */
 suite("Convoy Test Suite", () => {
-	const world = ServiceRegistry.get<World>(World.name);
-	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
+	const world = ServiceRegistry.get<World>(World);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus);
 
 	world.registerComponent(TransformComponent);
 	world.registerComponent(GridComponent);

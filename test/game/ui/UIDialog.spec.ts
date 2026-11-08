@@ -39,8 +39,8 @@ suite("UI Dialog Test Suite", () => {
 		}
 	}
 
-	const world = ServiceRegistry.get<World>(World.name);
-	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
+	const world = ServiceRegistry.get<World>(World);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus);
 
 	world.registerComponent(TransformComponent);
 	world.registerComponent(DialogComponent);

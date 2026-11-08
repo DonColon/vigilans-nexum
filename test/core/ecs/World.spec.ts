@@ -68,7 +68,7 @@ suite("World Test Suite", () => {
 	}
 
 	test("Update the world one frame", () => {
-		const world = ServiceRegistry.get<World>(World.name);
+		const world = ServiceRegistry.get<World>(World);
 		world.registerSystem(MovementSystem, 0);
 		world.registerSystem(MapSystem, 0);
 
@@ -291,7 +291,6 @@ suite("World Test Suite", () => {
 		world.registerSystem(MovementSystem, 0);
 
 		expect(world.hasSystem(MovementSystem)).toBeTruthy();
-		expect(world.hasSystem("MovementSystem")).toBeTruthy();
 	});
 
 	test("A reactive system is registered without a priority and sits in no schedule", () => {
@@ -354,7 +353,7 @@ suite("World Test Suite", () => {
 		const world = new World();
 		// We need to bypass the scheduleSystem check to test unscheduleSystem
 		const invalidSystem = new InvalidSystem(0).initialize();
-		(world as any).systems.set(InvalidSystem.name, invalidSystem);
+		(world as any).systems.set(InvalidSystem, invalidSystem);
 
 		expect(() => world.unregisterSystem(InvalidSystem)).toThrowError("System InvalidSystem must extend UpdateSystem, SyncSystem or RenderSystem");
 	});

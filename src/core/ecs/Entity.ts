@@ -38,7 +38,7 @@ export class Entity {
 		const entity = new Entity(entityType.id);
 		const stateManager = entity.getStateManager();
 
-		const world = ServiceRegistry.get<World>(World.name);
+		const world = ServiceRegistry.get<World>(World);
 
 		for (const state of entityType.states) {
 			const stateType = world.getEntityState(state);

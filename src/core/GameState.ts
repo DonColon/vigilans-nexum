@@ -12,7 +12,7 @@ export abstract class GameState {
 	 */
 	public static readonly type: string = "state";
 
-	// Resolved by name rather than by class: states sit below the input layer
+	// Resolved by service id rather than by class: states sit below the input layer
 	// and pulling it in would put GameState into an import cycle with it.
 	@GameCoreService("InputDevice")
 	private inputDevice!: InputDevice;

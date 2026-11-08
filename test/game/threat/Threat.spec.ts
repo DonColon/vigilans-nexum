@@ -32,8 +32,8 @@ import { UnitsFeature } from "@/game/units/UnitsFeature";
  * enemy Hasan on 4,14 and Besnik on 2,14.
  */
 suite("Enemy Range Test Suite", () => {
-	const world = ServiceRegistry.get<World>(World.name);
-	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
+	const world = ServiceRegistry.get<World>(World);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus);
 
 	world.registerComponent(TransformComponent);
 	world.registerComponent(GridComponent);

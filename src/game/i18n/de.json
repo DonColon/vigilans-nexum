@@ -154,5 +154,12 @@
 	"prepare.bench": "Reserve",
 	"prepare.required": "Pflicht",
 	"prepare.convoy": "Tross ({count})",
-	"prepare.partner": "Mit wem tauschen?"
+	"prepare.partner": "Mit wem tauschen?",
+	"touch.confirm": "Bestätigen",
+	"touch.cancel": "Zurück",
+	"touch.info": "Einheitendetails",
+	"touch.infoLabel": "Info",
+	"touch.threat": "Gegnerreichweite zeigen",
+	"touch.threatLabel": "Reichweite",
+	"mobile.rotate": "Dreh dein Gerät quer, um zu spielen"
 }

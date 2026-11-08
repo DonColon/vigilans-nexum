@@ -21,7 +21,7 @@ import besnikDocument from "@/assets/data/units/besnik.unit.json";
  * wall in the last column so a push can run into something.
  */
 suite("Positioning Test Suite", () => {
-	const world = ServiceRegistry.get<World>(World.name);
+	const world = ServiceRegistry.get<World>(World);
 
 	world.registerComponent(UnitComponent);
 	world.registerComponent(GridPositionComponent);

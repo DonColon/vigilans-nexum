@@ -42,6 +42,7 @@ npm run lint            # ESLint, including the layering rules described below
 npm run format:check    # Prettier
 npm run build           # type-check, then bundle to dist/
 npm run build:preview   # serve the bundle
+npm run test:smoke      # open the built bundle in a headless browser (after build; first time: npx playwright install chromium)
 ```
 
 Tests run one file at a time (`fileParallelism: false` in `vitest.config.ts`): `vitest.setup.ts` seeds process-wide singletons - the `World`, the `EventBus`, the asset bundle - into the service registry, so files cannot share a process safely.
@@ -152,7 +153,7 @@ A new feature is added to this table at its install position - the [Building a f
 
 ## Framework overview
 
-`Game` is the composition root. Its constructor builds every core service - in order: `I18nService`, `EventBus`, `PoolManager`, `LocalDatabase`, `AssetStorage`, `AssetLoader`, `GameStateManager`, `Display`, `InputDevice`, `AudioDevice`, `TimerManager`, `CooldownManager`, `World` - from one `GameConfiguration` (`src/game.config.ts`). Each of those classes is decorated with `@GameCoreService()`, so constructing it registers it as a singleton that anything else can inject. The engine registers exactly one piece of ECS infrastructure itself, the `TransformComponent` and its `TransformSystem` at sync priority 0; everything else is a feature.
+`Game` is the composition root. Its constructor builds every core service - in order: `I18nService`, `EventBus`, `PoolManager`, `LocalDatabase`, `AssetStorage`, `AssetLoader`, `GameStateManager`, `Display`, `InputDevice`, `AudioDevice`, `TimerManager`, `CooldownManager`, `World` - from one `GameConfiguration` (`src/game.config.ts`). Each of those classes is decorated with `@GameCoreService("<id>")`, so constructing it registers it as a singleton under that id that anything else can inject. The engine registers exactly one piece of ECS infrastructure itself, the `TransformComponent` and its `TransformSystem` at sync priority 0; everything else is a feature.
 
 Between `new Game(config)` and `game.start()` the caller installs features. `start()` loads the initial asset bundle, switches to the initial state and starts the loop:
 
@@ -283,7 +284,7 @@ The `systems` entries are typed so that the wrong shape does not compile:
 export type SystemEntry = { system: ScheduledSystemConstructor; priority: number } | { system: ReactiveSystemConstructor; priority?: never };
 ```
 
-`install()` checks the dependencies, then registers in the order **components → entity states → entities → commands → states → systems** and finally calls the `onInstall()` hook. `uninstall()` reverses that order, calls `onUninstall()`, and only then drops any event subscriptions the feature made through its own `subscribe()` - so a feature tearing its state down can still react to what that dispatches. The `Game` keeps installed features by class name.
+`install()` checks the dependencies, then registers in the order **components → entity states → entities → commands → states → systems** and finally calls the `onInstall()` hook. `uninstall()` reverses that order, calls `onUninstall()`, and only then drops any event subscriptions the feature made through its own `subscribe()` - so a feature tearing its state down can still react to what that dispatches. The `Game` keeps installed features keyed by their class.
 
 Installation order matters twice over: a feature's dependencies must be installed first, and for reactive systems that subscribe to the same event with the same priority, subscription order - install order - is delivery order. `src/index.ts` installs the game's nineteen features in that order and says why at every step:
 
@@ -610,7 +611,7 @@ export const CONFIRM: InputSet = {
 };
 ```
 
-Under the hood the `InputDevice` owns a keyboard device (listening on `window`, keyed by `event.code`), mouse and touch devices (on the display's viewport), a gamepad device (polled, with stick axes turned into virtual buttons) and one shared `InputBuffer` that keeps just-pressed and just-released edges for a few frames (configured to 5 frames / 200 ms), so a press one frame before a state opened is not lost. Commands are registered by class name. `GameCommand.bindInput()` exists for rebinding; the game has no rebinding screen yet.
+Under the hood the `InputDevice` owns a keyboard device (listening on `window`, keyed by `event.code`), mouse and touch devices (on the display's viewport), a gamepad device (polled, with stick axes turned into virtual buttons) and one shared `InputBuffer` that keeps just-pressed and just-released edges for a few frames (configured to 5 frames / 200 ms), so a press one frame before a state opened is not lost. A fifth source, the `VirtualPadDevice`, is the touch pad drawn over the game on a phone (`VirtualPadOverlay`, laid out by `src/game/input/TouchControls.ts`): it presses gamepad buttons and is merged into the gamepad channel, so every command bound to a gamepad button works by touch with no change of its own. Commands are registered keyed by their class. `GameCommand.bindInput()` exists for rebinding; the game has no rebinding screen yet.
 
 ## Events
 
@@ -667,21 +668,21 @@ private decide(outcome: Outcome): void {
 
 ## Services and dependency injection
 
-Core services are singletons found by name in the `ServiceRegistry`, and `@GameCoreService` is the one decorator that both registers and injects them.
+Core services are singletons found by id in the `ServiceRegistry`, and `@GameCoreService` is the one decorator that both registers and injects them.
 
-As a **class decorator**, `@GameCoreService()` wraps the class in a `Proxy` whose `construct` trap registers the new instance under the class name. Constructing a service is registering it; the registry keeps the first instance and ignores later registrations under the same name. The `Game` constructor is where the thirteen core services are constructed - `World`, `EventBus`, `GameStateManager`, `InputDevice`, `Display`, `AssetStorage`, `AssetLoader`, `AudioDevice`, `LocalDatabase`, `I18nService`, `TimerManager`, `CooldownManager`, `PoolManager`; the `OptionsService` is the one exception, created on first use by `getOptions()` so that settings can be read before the game exists.
+As a **class decorator**, `@GameCoreService("World")` files the class under that id and wraps it in a `Proxy` whose `construct` trap registers the new instance under it. The id is spelled out, never taken from the class's `name`, because a minifier renames classes. Constructing a service is registering it; the registry keeps the first instance and ignores later registrations under the same id. The `Game` constructor is where the thirteen core services are constructed - `World`, `EventBus`, `GameStateManager`, `InputDevice`, `Display`, `AssetStorage`, `AssetLoader`, `AudioDevice`, `LocalDatabase`, `I18nService`, `TimerManager`, `CooldownManager`, `PoolManager`; the `OptionsService` is the one exception, created on first use by `getOptions()` so that settings can be read before the game exists.
 
-As a **property decorator**, `@GameCoreService(EventBus)` or `@GameCoreService("InputDevice")` defines a lazy getter on the class prototype that resolves the service from the registry on first access and caches it. A property may name the service by class or by string; the string form exists for modules that would otherwise import in a cycle:
+As a **property decorator**, `@GameCoreService(EventBus)` or `@GameCoreService("InputDevice")` defines a lazy getter on the class prototype that resolves the service from the registry on first access and caches it. A property may name the service by class or by its id; the id form exists for modules that would otherwise import in a cycle:
 
 ```ts
 // src/core/GameState.ts
-// Resolved by name rather than by class: states sit below the input layer
+// Resolved by service id rather than by class: states sit below the input layer
 // and pulling it in would put GameState into an import cycle with it.
 @GameCoreService("InputDevice")
 private inputDevice!: InputDevice;
 ```
 
-Two build settings exist because of this mechanism. `esbuild.keepNames: true` in `vite.config.ts` keeps class names through minification, because services, systems, features and commands are all looked up by class name. `useDefineForClassFields: false` in `tsconfig.json` keeps a decorated `private world!: World` from becoming an own property that would shadow the prototype getter.
+Nothing at runtime depends on a class's `name`, so the build may minify freely: services are found by the id their decorator declares, systems, features and commands by the class itself (the registries are keyed by the constructor), components and states by their static `type`. `npm run test:smoke` opens the minified build in a browser to prove it. One build setting does exist because of this mechanism: `useDefineForClassFields: false` in `tsconfig.json` keeps a decorated `private world!: World` from becoming an own property that would shadow the prototype getter.
 
 Tests construct the services they need directly and reach the shared ones through the registry; `vitest.setup.ts` creates the `World` and the `EventBus` once per file and seeds the asset bundle:
 

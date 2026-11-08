@@ -3,7 +3,7 @@ import { GameCoreService } from "../service/GameCoreService";
 import { Timer, TimerConfig } from "./Timer";
 import { TimerMode } from "./TimerMode";
 
-@GameCoreService()
+@GameCoreService("TimerManager")
 export class TimerManager {
 	private timers: Map<string, Timer> = new Map();
 	private anonymousTimers: Set<Timer> = new Set();

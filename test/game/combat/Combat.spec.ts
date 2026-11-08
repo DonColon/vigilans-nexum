@@ -38,8 +38,8 @@ import { ForecastState } from "@/game/combat/states/ForecastState";
  * Radiant Dawn formulas, real rolls - writing HP back and spending the attacker.
  */
 suite("Combat Flow Test Suite", () => {
-	const world = ServiceRegistry.get<World>(World.name);
-	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
+	const world = ServiceRegistry.get<World>(World);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus);
 
 	world.registerComponent(TransformComponent);
 	world.registerComponent(GridComponent);

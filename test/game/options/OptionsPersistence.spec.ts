@@ -20,7 +20,7 @@ import { gameSettings, OPTIONS_STORAGE_KEY, syncGameOptions } from "@/game/optio
  * remembered anyway and carried until the player touches something.
  */
 suite("Options Persistence Test Suite", () => {
-	ServiceRegistry.get<World>(World.name);
+	ServiceRegistry.get<World>(World);
 
 	const display = new Display("options-persistence-test", { dimension: { width: 640, height: 480 } });
 	new GameStateManager();

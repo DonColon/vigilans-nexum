@@ -21,7 +21,7 @@ import campaignDocument from "@/assets/data/campaign/campaign.json";
  * out the way the level is designed to play.
  */
 suite("Level 01 Test Suite", () => {
-	const assets = ServiceRegistry.get<AssetStorage>(AssetStorage.name);
+	const assets = ServiceRegistry.get<AssetStorage>(AssetStorage);
 	const map = parseTileMapDocument(assets.getJson<TileMapDocument>("map-market-square"));
 	const grid = GridComponent.fromTileMap(map, 32);
 	const terrain = (column: number, row: number) => GridComponent.terrainAt(grid, column, row);

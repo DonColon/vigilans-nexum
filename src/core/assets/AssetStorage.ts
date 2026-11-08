@@ -4,7 +4,7 @@ import { Spritesheet } from "@/core/graphics/components/Spritesheet";
 import { GameError } from "@/core/GameError";
 import { GameCoreService } from "@/core/service/GameCoreService";
 
-@GameCoreService()
+@GameCoreService("AssetStorage")
 export class AssetStorage {
 	private audio: Map<string, AudioClip>;
 	private images: Map<string, Sprite>;
