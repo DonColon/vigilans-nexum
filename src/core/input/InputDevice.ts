@@ -20,9 +20,10 @@ export interface InputDeviceConfig {
 	buffer?: InputBufferConfig;
 }
 
-@GameCoreService()
+@GameCoreService("InputDevice")
 export class InputDevice {
-	private commands: Map<string, GameCommand>;
+	// Keyed by the class itself, never its `name`: a minifier renames classes.
+	private commands: Map<GameCommandConstructor, GameCommand>;
 	private channels: Map<InputChannelType, number>;
 	private buffer: InputBuffer;
 
@@ -32,7 +33,7 @@ export class InputDevice {
 	private touchpad: TouchpadDevice;
 
 	constructor(config: InputDeviceConfig) {
-		this.commands = new Map<string, GameCommand>();
+		this.commands = new Map<GameCommandConstructor, GameCommand>();
 		this.channels = new Map<InputChannelType, number>();
 		this.buffer = new InputBuffer(config.buffer);
 
@@ -81,18 +82,18 @@ export class InputDevice {
 	}
 
 	public registerCommand(commandType: GameCommandConstructor): this {
-		if (this.commands.has(commandType.name)) {
+		if (this.commands.has(commandType)) {
 			throw new GameError(`Command ${commandType.name} is already registered`);
 		}
 
 		const command = new commandType();
-		this.commands.set(commandType.name, command);
+		this.commands.set(commandType, command);
 
 		return this;
 	}
 
 	public unregisterCommand(commandType: GameCommandConstructor): this {
-		this.commands.delete(commandType.name);
+		this.commands.delete(commandType);
 		return this;
 	}
 
@@ -105,12 +106,11 @@ export class InputDevice {
 		this.buffer.clear();
 	}
 
-	public getCommand(commandType: GameCommandConstructor | string): GameCommand {
-		const name = typeof commandType === "string" ? commandType : commandType.name;
-		const command = this.commands.get(name);
+	public getCommand(commandType: GameCommandConstructor): GameCommand {
+		const command = this.commands.get(commandType);
 
 		if (command === undefined) {
-			throw new GameError(`Command ${name} is not registered`);
+			throw new GameError(`Command ${commandType.name} is not registered`);
 		}
 
 		return command;

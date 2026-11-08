@@ -2,7 +2,7 @@ import { GameError } from "@/core/GameError";
 import { GameState, GameStateConstructor } from "@/core/GameState";
 import { GameCoreService } from "@/core/service/GameCoreService";
 
-@GameCoreService()
+@GameCoreService("GameStateManager")
 export class GameStateManager {
 	private readonly states: Map<string, GameState> = new Map<string, GameState>();
 	private readonly currentStates: GameState[] = [];

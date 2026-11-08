@@ -16,7 +16,7 @@ export interface DisplayConfiguration {
 	};
 }
 
-@GameCoreService()
+@GameCoreService("Display")
 export class Display {
 	private readonly viewport: HTMLElement;
 	private readonly viewportDimension: Dimension;

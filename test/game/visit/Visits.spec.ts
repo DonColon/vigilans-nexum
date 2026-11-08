@@ -17,7 +17,7 @@ import { availableHouses, availableHouse, findDoor } from "@/game/visit/rules/Vi
  * what the player sees change: an open door means someone is still in.
  */
 suite("Visit System Test Suite", () => {
-	const world = ServiceRegistry.get<World>(World.name);
+	const world = ServiceRegistry.get<World>(World);
 
 	world.registerComponent(UnitComponent);
 	world.registerComponent(GridPositionComponent);

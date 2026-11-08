@@ -21,7 +21,7 @@ import hasanDocument from "@/assets/data/units/hasan.unit.json";
  * seize is won on.
  */
 suite("Objective Test Suite", () => {
-	const world = ServiceRegistry.get<World>(World.name);
+	const world = ServiceRegistry.get<World>(World);
 
 	world.registerComponent(UnitComponent);
 	world.registerComponent(GridPositionComponent);

@@ -8,7 +8,7 @@ export interface EventBusConfig {
 	history: EventHistoryConfig;
 }
 
-@GameCoreService()
+@GameCoreService("EventBus")
 export class EventBus {
 	private readonly subscribers: Map<EventNames, EventSubscriber<any>[]>;
 	private readonly queue: EventQueue;

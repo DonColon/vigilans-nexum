@@ -20,8 +20,8 @@ suite("Query Test Suite", () => {
 		public static readonly type = "move";
 	}
 
-	const world = ServiceRegistry.get<World>(World.name);
-	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
+	const world = ServiceRegistry.get<World>(World);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus);
 	world.registerComponent(PointComponent);
 	world.registerComponent(MoveComponent);
 

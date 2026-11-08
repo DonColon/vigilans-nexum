@@ -1,78 +1,78 @@
-// ========== src/core/di/GameCoreService.ts ==========
 import { Constructor } from "@/core/service/ConstructorType";
-import { ServiceRegistry } from "@/core/service/ServiceRegistry";
+import { SERVICE_ID, ServiceKey, ServiceRegistry, serviceId } from "@/core/service/ServiceRegistry";
 
 /**
- * @GameCoreService - Multi-Purpose Decorator
+ * @GameCoreService - one decorator for both sides of a service.
  *
- * Usage 1: Class Decorator (marks service for auto-registration)
- * @GameCoreService()
- * export class EventBus { }
+ * On a class, it declares the service and the id it is filed under; every
+ * instance registers itself on construction (the first one stands):
  *
- * Usage 2: Property Decorator with string name
- * @GameCoreService('EventBus')
- * private eventBus! : EventBus;
+ *     @GameCoreService("EventBus")
+ *     export class EventBus { }
  *
- * Usage 3: Property Decorator with constructor (type-safe!)
- * @GameCoreService(EventBus)
- * private eventBus! : EventBus;
+ * On a property, it injects a service, looked up on first read - by class
+ * (type-safe) or, where importing the class would close an import cycle, by
+ * the same id:
+ *
+ *     @GameCoreService(EventBus)
+ *     private eventBus!: EventBus;
+ *
+ *     @GameCoreService("World")
+ *     private world!: World;
+ *
+ * The id is spelled out rather than taken from the class's `name`: a
+ * minifier renames classes, and a service has to be found under the same id
+ * in a production build as in development.
  */
-export function GameCoreService(): <T extends Constructor>(constructor: T) => T;
-export function GameCoreService<T>(service: Constructor<T> | string): PropertyDecorator;
-export function GameCoreService<T>(service?: Constructor<T> | string): any {
-	// Case 1: Class Decorator (no arguments or called with ())
-	if (service === undefined) {
-		return function <T extends Constructor>(constructor: T): T {
-			// Create proxy constructor that auto-registers on instantiation
-			const proxyConstructor = new Proxy(constructor, {
-				construct(target, args) {
-					const instance = new target(...args);
+export function GameCoreService(id: string): (target: any, propertyKey?: string | symbol) => any;
+export function GameCoreService<T>(service: Constructor<T>): PropertyDecorator;
+export function GameCoreService<T>(service: ServiceKey<T>): any {
+	return function (target: any, propertyKey?: string | symbol): any {
+		if (propertyKey === undefined) {
+			return declareService(target as Constructor, serviceId(service as string));
+		}
 
-					// Auto-register the service
-					ServiceRegistry.register(constructor.name, instance);
-
-					return instance;
-				}
-			});
-
-			// Preserve class name for debugging
-			Object.defineProperty(proxyConstructor, "name", {
-				value: constructor.name,
-				writable: false
-			});
-
-			return proxyConstructor as T;
-		};
-	}
-
-	// Case 2 & 3: Property Decorator (with string or constructor)
-	return function (target: any, propertyKey: string) {
-		let cached: any = undefined;
-
-		Object.defineProperty(target, propertyKey, {
-			get() {
-				if (cached === undefined) {
-					try {
-						if (typeof service === "string") {
-							// Case 2: String name
-							cached = ServiceRegistry.get(service);
-						} else {
-							// Case 3: Constructor (type-safe!)
-							cached = ServiceRegistry.get(service.name);
-						}
-					} catch (error) {
-						console.error(`[GameCoreService] Failed to inject service into ${target.constructor.name}. ${propertyKey}:`, error);
-						throw error;
-					}
-				}
-				return cached;
-			},
-			set(value: any) {
-				// Allow manual override for testing
-				cached = value;
-			},
-			enumerable: true,
-			configurable: true
-		});
+		injectService(target, propertyKey, service);
 	};
+}
+
+/** Wraps the class so each instance registers itself under `id`. */
+function declareService<T extends Constructor>(constructor: T, id: string): T {
+	const proxyConstructor = new Proxy(constructor, {
+		construct(target, args) {
+			const instance = new target(...args);
+			ServiceRegistry.register(id, instance);
+			return instance;
+		}
+	});
+
+	// On the class itself, so subclasses and the proxy both answer with it.
+	Object.defineProperty(constructor, SERVICE_ID, { value: id, writable: false });
+
+	return proxyConstructor;
+}
+
+/** Turns the property into a lazy getter for the service; a test may assign its own. */
+function injectService(target: any, propertyKey: string | symbol, service: ServiceKey): void {
+	let cached: any = undefined;
+
+	Object.defineProperty(target, propertyKey, {
+		get() {
+			if (cached === undefined) {
+				try {
+					cached = ServiceRegistry.get(service);
+				} catch (error) {
+					console.error(`[GameCoreService] Failed to inject service into ${target.constructor.name}. ${String(propertyKey)}:`, error);
+					throw error;
+				}
+			}
+			return cached;
+		},
+		set(value: any) {
+			// Allow manual override for testing
+			cached = value;
+		},
+		enumerable: true,
+		configurable: true
+	});
 }

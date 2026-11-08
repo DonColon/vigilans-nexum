@@ -53,7 +53,7 @@ suite("Map Cursor Test Suite", () => {
 		}
 	}
 
-	const world = ServiceRegistry.get<World>(World.name);
+	const world = ServiceRegistry.get<World>(World);
 
 	world.registerComponent(TransformComponent);
 	world.registerComponent(GridComponent);

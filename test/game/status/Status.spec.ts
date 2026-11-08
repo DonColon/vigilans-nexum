@@ -51,8 +51,8 @@ suite("Status Test Suite", () => {
 
 	type StatusCommandType = typeof StatusPreviousCommand | typeof StatusNextCommand | typeof StatusConfirmCommand | typeof StatusCancelCommand | typeof StatusInfoCommand;
 
-	const world = ServiceRegistry.get<World>(World.name);
-	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
+	const world = ServiceRegistry.get<World>(World);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus);
 
 	world.registerComponent(TransformComponent);
 	world.registerComponent(GridComponent);

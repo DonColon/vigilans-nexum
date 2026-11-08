@@ -40,7 +40,7 @@ const DEFAULT_DUCK_FADE = 0.25;
  * giving way to the next. What comes back from a `play*` call is the voice,
  * which is the handle to stop, fade or pan that one playback later.
  */
-@GameCoreService()
+@GameCoreService("AudioDevice")
 export class AudioDevice {
 	private readonly mixer: AudioMixer;
 	private readonly musicChannel: string;

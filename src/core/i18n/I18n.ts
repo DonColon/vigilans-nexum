@@ -67,7 +67,7 @@ function readBrowserLanguages(): string[] {
  * registers itself. Inject it with `@GameCoreService(I18nService)` inside a
  * system or feature; from a plain module use the {@link i18n} function.
  */
-@GameCoreService()
+@GameCoreService("I18nService")
 export class I18nService {
 	private catalog: Record<string, LocaleMessages> = {};
 	private available: string[] = [];

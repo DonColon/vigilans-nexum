@@ -53,7 +53,7 @@ suite("Scenario Lock Sheet Test Suite", () => {
 	});
 
 	test("Every chest holds something the catalogs know", () => {
-		const assets = ServiceRegistry.get<AssetStorage>(AssetStorage.name);
+		const assets = ServiceRegistry.get<AssetStorage>(AssetStorage);
 		const known = new Set([
 			...Object.keys(assets.getJson<{ weapons: Record<string, unknown> }>("catalog-weapons").weapons),
 			...Object.keys(assets.getJson<{ items: Record<string, unknown> }>("catalog-items").items)
@@ -108,9 +108,9 @@ suite("Scenario Lock Sheet Test Suite", () => {
  * doorstep at 4,11.
  */
 suite("Unit Locks Test Suite", () => {
-	const world = ServiceRegistry.get<World>(World.name);
-	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
-	const assets = ServiceRegistry.get<AssetStorage>(AssetStorage.name);
+	const world = ServiceRegistry.get<World>(World);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus);
+	const assets = ServiceRegistry.get<AssetStorage>(AssetStorage);
 
 	world.registerComponent(TransformComponent);
 	world.registerComponent(GridComponent);

@@ -23,7 +23,7 @@ export const DEFAULT_OPTIONS_KEY = "options";
  * Values are written down as they change and read back on the next visit - see
  * [[OptionsStore]] for why that is `localStorage`.
  */
-@GameCoreService()
+@GameCoreService("OptionsService")
 export class OptionsService {
 	private values = new Map<string, string>();
 	private definitions: OptionDefinition[] = [];

@@ -12,12 +12,13 @@ import { EventBus } from "@/core/events/EventBus";
 import { binaryInsert } from "@/core/utils/Arrays";
 import { SyncSystem } from "./SyncSystem";
 
-@GameCoreService()
+@GameCoreService("World")
 export class World {
 	private readonly components: Map<string, ComponentConstructor<any>>;
 	private readonly states: Map<string, GameStateConstructor>;
 	private readonly entities: Map<string, Entity>;
-	private readonly systems: Map<string, System>;
+	// Keyed by the class itself, never its `name`: a minifier renames classes.
+	private readonly systems: Map<SystemConstructor, System>;
 
 	private updateSchedule: ScheduledSystem[];
 	private syncSchedule: ScheduledSystem[];
@@ -30,7 +31,7 @@ export class World {
 		this.components = new Map<string, ComponentConstructor<any>>();
 		this.states = new Map<string, GameStateConstructor>();
 		this.entities = new Map<string, Entity>();
-		this.systems = new Map<string, System>();
+		this.systems = new Map<SystemConstructor, System>();
 
 		this.updateSchedule = [];
 		this.syncSchedule = [];
@@ -232,7 +233,7 @@ export class World {
 			throw new GameError(`System ${systemType.name} runs on events and has no priority - order its handlers with subscribe(name, handler, priority)`);
 		}
 
-		this.systems.set(systemType.name, system);
+		this.systems.set(systemType, system);
 		return this;
 	}
 
@@ -253,7 +254,7 @@ export class World {
 		const system = this.getSystem(systemType);
 		system.dispose();
 
-		this.systems.delete(systemType.name);
+		this.systems.delete(systemType);
 
 		if (system instanceof ScheduledSystem) {
 			this.unscheduleSystem(system);
@@ -275,7 +276,7 @@ export class World {
 	}
 
 	public getSystem<Type extends System>(systemType: SystemConstructor<Type>): Type {
-		const system = this.systems.get(systemType.name);
+		const system = this.systems.get(systemType);
 
 		if (system === undefined) {
 			throw new GameError(`System ${systemType.name} is not registered`);
@@ -296,8 +297,7 @@ export class World {
 		return this.renderSchedule;
 	}
 
-	public hasSystem(systemType: SystemConstructor | string): boolean {
-		const systemName = typeof systemType === "string" ? systemType : systemType.name;
-		return this.systems.has(systemName);
+	public hasSystem(systemType: SystemConstructor): boolean {
+		return this.systems.has(systemType);
 	}
 }

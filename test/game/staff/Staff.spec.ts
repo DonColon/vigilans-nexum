@@ -91,8 +91,8 @@ suite("Staff System Test Suite", () => {
  * 4,10 (two tiles off - out of a Heal staff's reach).
  */
 suite("Unit Staff Test Suite", () => {
-	const world = ServiceRegistry.get<World>(World.name);
-	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
+	const world = ServiceRegistry.get<World>(World);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus);
 
 	world.registerComponent(TransformComponent);
 	world.registerComponent(GridComponent);

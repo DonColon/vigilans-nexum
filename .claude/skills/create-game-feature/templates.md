@@ -597,7 +597,7 @@ import hasanDocument from "@/assets/data/units/hasan.unit.json";
 
 /** TEMPLATE: one sentence on what these rules decide. */
 suite("<Name> Test Suite", () => {
-	const world = ServiceRegistry.get<World>(World.name);
+	const world = ServiceRegistry.get<World>(World);
 
 	world.registerComponent(UnitComponent);
 	world.registerComponent(GridPositionComponent);
@@ -663,8 +663,8 @@ import { UnitsFeature } from "@/game/units/UnitsFeature";
 
 /** TEMPLATE: the flow end to end, in a sentence. */
 suite("<Name> Flow Test Suite", () => {
-	const world = ServiceRegistry.get<World>(World.name);
-	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
+	const world = ServiceRegistry.get<World>(World);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus);
 
 	/** Stands in for the battle map: the framework only tells the map by its type. */
 	class MapStub extends GameState {

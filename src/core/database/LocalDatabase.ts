@@ -17,7 +17,7 @@ export type RepositoryAccessor = {
 	[K in StoreNames]: Repository<K>;
 };
 
-@GameCoreService()
+@GameCoreService("LocalDatabase")
 export class LocalDatabase {
 	private readonly repositories = new Map<StoreNames, Repository<any>>();
 	private database!: IDBDatabase;

@@ -37,8 +37,8 @@ import { UnitsFeature } from "@/game/units/UnitsFeature";
  * Trading is free, so he still has his turn when the screen closes.
  */
 suite("Unit Trade Test Suite", () => {
-	const world = ServiceRegistry.get<World>(World.name);
-	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
+	const world = ServiceRegistry.get<World>(World);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus);
 
 	world.registerComponent(TransformComponent);
 	world.registerComponent(GridComponent);

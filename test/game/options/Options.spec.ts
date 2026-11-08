@@ -77,8 +77,8 @@ suite("Options Test Suite", () => {
 		}
 	}
 
-	const world = ServiceRegistry.get<World>(World.name);
-	const eventBus = ServiceRegistry.get<EventBus>(EventBus.name);
+	const world = ServiceRegistry.get<World>(World);
+	const eventBus = ServiceRegistry.get<EventBus>(EventBus);
 
 	// Registered before anything asks for the settings, so the options are built
 	// with a channel row each - the way they are in the running game.
