@@ -1,0 +1,10 @@
+version: 2
+updates:
+  # Keeps the actions in .github/workflows on their current major versions.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns: ["*"]

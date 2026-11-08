@@ -1,30 +1,39 @@
+// "netlify" is the environment used before the split into production and preview.
+const ENVIRONMENTS = ["production", "preview", "netlify"];
+
 export default async ({ core, context, github }) => {
-    const { owner, repo } = context.repo;
+	const { owner, repo } = context.repo;
 
-    const parameters = {
-        owner,
-        repo,
-        per_page: 100,
-        environment: "netlify"
-    }
+	for (const environment of ENVIRONMENTS) {
+		const deployments = await github.paginate(github.rest.repos.listDeployments, {
+			owner,
+			repo,
+			environment,
+			per_page: 100
+		});
 
-    for await(const response of github.paginate.iterator(github.rest.repos.listDeployments, parameters)) {
-        const { data: deployments } = response;
+		core.info(`${deployments.length} deployments found in ${environment}`);
 
-        core.info(`${deployments.length} deployments found`);
+		for (const deployment of deployments) {
+			try {
+				// Active deployments cannot be deleted, so retire them first.
+				await github.rest.repos.createDeploymentStatus({
+					owner,
+					repo,
+					deployment_id: deployment.id,
+					state: "inactive"
+				});
 
-        for(const deployment of deployments) {
-            try {
-                await github.rest.repos.deleteDeployment({
-                    owner,
-                    repo,
-                    deployment_id: deployment.id,
-                });
-            } catch(error) {
-                core.info(`Deployment ${deployment.id}: ${error.message}`);
-            }
-        }
-    }
+				await github.rest.repos.deleteDeployment({
+					owner,
+					repo,
+					deployment_id: deployment.id
+				});
+			} catch (error) {
+				core.warning(`Deployment ${deployment.id}: ${error.message}`);
+			}
+		}
+	}
 
-    core.info(`Deleted all deployments`);
+	core.info(`Deleted all deployments`);
 };

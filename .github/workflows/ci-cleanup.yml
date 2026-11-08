@@ -2,6 +2,9 @@ name: Github CI Cleanup
 
 on: workflow_dispatch
 
+permissions:
+  contents: read
+
 jobs:
   cleanup:
     name: Cleanup Repository ${{ github.event.repository.name }}
@@ -9,27 +12,24 @@ jobs:
     timeout-minutes: 30
 
     permissions:
+      contents: read
       actions: write
       deployments: write
 
     steps:
       - name: Checkout Repository ${{ github.event.repository.name }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Cleanup Workflow Runs
-        uses: actions/github-script@v7
-        id: cleanup_workflow_runs
+        uses: actions/github-script@v9
         with:
           script: |
-            const scriptPath = '${{ github.workspace }}/.github/scripts/cleanup-workflow-runs.js';
-            const { default: cleanupWorkflowRuns } = await import(scriptPath);
+            const { default: cleanupWorkflowRuns } = await import(`${process.env.GITHUB_WORKSPACE}/.github/scripts/cleanup-workflow-runs.js`);
             await cleanupWorkflowRuns({ core, context, github });
 
       - name: Cleanup Deployments
-        uses: actions/github-script@v7
-        id: cleanup_deployments
+        uses: actions/github-script@v9
         with:
           script: |
-            const scriptPath = '${{ github.workspace }}/.github/scripts/cleanup-deployments.js';
-            const { default: cleanupDeployments } = await import(scriptPath);
+            const { default: cleanupDeployments } = await import(`${process.env.GITHUB_WORKSPACE}/.github/scripts/cleanup-deployments.js`);
             await cleanupDeployments({ core, context, github });
