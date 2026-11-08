@@ -109,3 +109,7 @@ dist
 
 # graphify knowledge graph
 graphify-out/
+
+# Playwright smoke test output
+test-results/
+playwright-report/
