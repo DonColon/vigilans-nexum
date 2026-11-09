@@ -148,6 +148,53 @@ suite("Virtual Pad Test Suite", () => {
 			expect(overlay.isVisible()).toBe(true);
 		});
 
+		/** The last finger leaves the screen - a touchend with no touches left. */
+		const allFingersUp = () => {
+			const event = new Event("touchend") as Event & { touches: unknown[] };
+			Object.defineProperty(event, "touches", { value: [] });
+			window.dispatchEvent(event);
+		};
+
+		test("A button whose release went missing is let go once no finger is on the screen", () => {
+			const confirm = element(".virtual-pad__button--confirm");
+
+			// Down, and the pointerup never arrives - the finger slid off, the event was lost.
+			pointer("pointerdown", confirm);
+			pad.update();
+			expect(pad.isHeld(GamepadInput.A)).toBe(true);
+
+			allFingersUp();
+			expect(pad.isHeld(GamepadInput.A)).toBe(false);
+			expect(confirm.classList.contains("virtual-pad__button--pressed")).toBe(false);
+
+			// And it presses again: down, then a fresh press on the next tap.
+			pad.update();
+			pointer("pointerdown", confirm);
+			pad.update();
+			expect(pad.getInput(GamepadInput.A)).toStrictEqual({ previous: false, current: true });
+		});
+
+		test("A quick tap that ends before the next frame still counts when the last finger lifts", () => {
+			const confirm = element(".virtual-pad__button--confirm");
+
+			pointer("pointerdown", confirm);
+			pointer("pointerup", confirm);
+			allFingersUp();
+
+			pad.update();
+			expect(pad.getInput(GamepadInput.A).current).toBe(true);
+		});
+
+		test("A finger still on the pad keeps its button held while another lifts", () => {
+			const event = new Event("touchend") as Event & { touches: unknown[] };
+			Object.defineProperty(event, "touches", { value: [{ identifier: 2 }] });
+
+			pointer("pointerdown", element(".virtual-pad__button--cancel"));
+			window.dispatchEvent(event);
+
+			expect(pad.isHeld(GamepadInput.B)).toBe(true);
+		});
+
 		test("Every button names what it does for a screen reader", () => {
 			expect(element(".virtual-pad__button--confirm").getAttribute("aria-label")).toBe("Confirm");
 		});

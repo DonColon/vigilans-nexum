@@ -162,3 +162,26 @@ body {
 		background: #161616;
 	}
 }
+
+/* ---- An error, shown where a phone has no console (MobileScreen.ts) ---- */
+
+.error-banner {
+	position: fixed;
+	top: max(8px, env(safe-area-inset-top));
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 300;
+	max-width: min(90vw, 640px);
+	padding: 10px 16px;
+	border-radius: 8px;
+	font:
+		500 14px/1.4 system-ui,
+		sans-serif;
+	color: #fff;
+	background: rgba(150, 30, 30, 0.92);
+	pointer-events: auto;
+}
+
+.error-banner[hidden] {
+	display: none;
+}

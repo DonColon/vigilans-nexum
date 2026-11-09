@@ -43,6 +43,22 @@ export class VirtualPadOverlay {
 	private readonly onKey = () => this.hide();
 	private readonly onBlur = () => this.releaseAll();
 
+	/**
+	 * The safety net: once no finger is on the screen, nothing on the pad is held,
+	 * whatever events went missing on the way. A button whose release was lost -
+	 * a finger sliding off it where the browser did not keep the pointer
+	 * captured, two thumbs on it, a notification pulled down mid-press - would
+	 * otherwise stay held for good, and a held button never presses again.
+	 */
+	private readonly onTouchEnd = (event: TouchEvent) => {
+		if (event.touches.length === 0) {
+			// Held only: a quick tap that just ended must still reach the next frame.
+			this.direction = null;
+			this.pad.releaseHeld(event.timeStamp);
+			this.clearPressed();
+		}
+	};
+
 	constructor(
 		private readonly pad: VirtualPadDevice,
 		private readonly layout: VirtualPadLayout,
@@ -62,6 +78,8 @@ export class VirtualPadOverlay {
 		window.addEventListener("touchstart", this.onTouch, { capture: true, passive: true });
 		window.addEventListener("keydown", this.onKey, { capture: true });
 		window.addEventListener("blur", this.onBlur);
+		window.addEventListener("touchend", this.onTouchEnd, { capture: true, passive: true });
+		window.addEventListener("touchcancel", this.onTouchEnd, { capture: true, passive: true });
 	}
 
 	public getElement(): HTMLElement {
@@ -84,6 +102,8 @@ export class VirtualPadOverlay {
 		window.removeEventListener("touchstart", this.onTouch, { capture: true });
 		window.removeEventListener("keydown", this.onKey, { capture: true });
 		window.removeEventListener("blur", this.onBlur);
+		window.removeEventListener("touchend", this.onTouchEnd, { capture: true });
+		window.removeEventListener("touchcancel", this.onTouchEnd, { capture: true });
 		this.releaseAll();
 		this.element.remove();
 	}
@@ -99,6 +119,13 @@ export class VirtualPadOverlay {
 	private releaseAll(): void {
 		this.direction = null;
 		this.pad.releaseAll();
+		this.clearPressed();
+	}
+
+	private clearPressed(): void {
+		for (const button of Array.from(this.element.querySelectorAll(".virtual-pad__button--pressed"))) {
+			button.classList.remove("virtual-pad__button--pressed");
+		}
 	}
 
 	private createCross(): HTMLElement {

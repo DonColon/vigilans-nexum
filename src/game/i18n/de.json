@@ -161,5 +161,6 @@
 	"touch.infoLabel": "Info",
 	"touch.threat": "Gegnerreichweite zeigen",
 	"touch.threatLabel": "Reichweite",
-	"mobile.rotate": "Dreh dein Gerät quer, um zu spielen"
+	"mobile.rotate": "Dreh dein Gerät quer, um zu spielen",
+	"mobile.error": "Ein Fehler ist aufgetreten – zum Schließen tippen. {message}"
 }
