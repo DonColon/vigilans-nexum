@@ -287,18 +287,50 @@ export class Game {
 		// is capped and everything beyond it is dropped.
 		this.lag = Math.min(this.lag + elapsed, this.timePerUpdate * Game.maxCatchUpSteps);
 
-		while (this.lag >= this.timePerUpdate) {
-			// The fixed step rather than the frame delta: an update advances the
-			// game by exactly the slice of time it is handed, however many of them
-			// a frame ends up running.
-			this.update(this.timePerUpdate, current);
-			this.lag -= this.timePerUpdate;
+		// One frame failing must not end the game: the next frame is asked for
+		// whatever happens in this one. Before, a single error left the loop
+		// unscheduled - the picture froze and no input was ever read again, with
+		// nothing to show for it on a phone, where there is no console to look at.
+		try {
+			while (this.lag >= this.timePerUpdate) {
+				// The fixed step rather than the frame delta: an update advances the
+				// game by exactly the slice of time it is handed, however many of them
+				// a frame ends up running.
+				this.update(this.timePerUpdate, current);
+				this.lag -= this.timePerUpdate;
+			}
+
+			this.render(elapsed, current);
+		} catch (error) {
+			// The failing steps are not replayed next frame.
+			this.lag = 0;
+			this.reportFrameError(error);
+		} finally {
+			if (this.isRunning) {
+				this.animationFrame = window.requestAnimationFrame((current) => this.main(current));
+			}
+		}
+	}
+
+	/** Messages already reported - an error that recurs every frame is told once, not sixty times a second. */
+	private readonly reportedErrors = new Set<string>();
+
+	/**
+	 * Logs an error a frame threw, and hands it to the page's error listeners
+	 * (`reportError`) - where the game shows it to a player who has no console.
+	 */
+	private reportFrameError(error: unknown): void {
+		const message = error instanceof Error ? error.message : String(error);
+
+		if (this.reportedErrors.has(message)) {
+			return;
 		}
 
-		this.render(elapsed, current);
+		this.reportedErrors.add(message);
+		console.error("A frame failed:", error);
 
-		if (this.isRunning) {
-			this.animationFrame = window.requestAnimationFrame((current) => this.main(current));
+		if (typeof reportError === "function") {
+			reportError(error);
 		}
 	}
 

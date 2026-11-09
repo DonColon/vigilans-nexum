@@ -36,7 +36,19 @@ export class VirtualPadDevice {
 		this.lastUsed = timeStamp;
 	}
 
-	/** Lets go of everything - the pad was hidden, or the page lost focus. */
+	/**
+	 * Lifts every finger but keeps the taps the game has not seen yet: a quick
+	 * tap that ended before the next frame still counts. For when no finger is
+	 * on the screen any more.
+	 */
+	public releaseHeld(timeStamp: number = performance.now()): void {
+		if (this.held.size > 0) {
+			this.held.clear();
+			this.lastUsed = timeStamp;
+		}
+	}
+
+	/** Lets go of everything, unseen taps included - the pad was hidden, or the page lost focus. */
 	public releaseAll(): void {
 		this.held.clear();
 		this.tapped.clear();

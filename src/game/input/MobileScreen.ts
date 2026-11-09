@@ -21,6 +21,8 @@ function isInstalled(): boolean {
  * screen, the game starts fullscreen and in landscape on its own (manifest.json).
  */
 export function setUpMobileScreen(display: Display): void {
+	showErrorsOnScreen();
+
 	const hint = document.createElement("div");
 	hint.className = "rotate-hint";
 	hint.setAttribute("role", "status");
@@ -42,4 +44,38 @@ export function setUpMobileScreen(display: Display): void {
 		},
 		{ once: true }
 	);
+}
+
+/**
+ * A phone has no console: an error the game runs into - a frame that threw, a
+ * promise nobody caught - is shown in a banner at the top instead, so the player
+ * can see that something went wrong and send a screenshot of it. Only on a touch
+ * screen; a tap closes it. The first error stays until then, later ones wait.
+ */
+function showErrorsOnScreen(): void {
+	if (!isTouchScreen()) {
+		return;
+	}
+
+	const banner = document.createElement("div");
+	banner.className = "error-banner";
+	banner.setAttribute("role", "alert");
+	banner.hidden = true;
+	banner.addEventListener("pointerup", () => {
+		banner.hidden = true;
+	});
+	document.body.append(banner);
+
+	const show = (reason: unknown) => {
+		if (!banner.hidden) {
+			return;
+		}
+
+		const message = reason instanceof Error ? reason.message : String(reason);
+		banner.textContent = i18n("mobile.error", { message });
+		banner.hidden = false;
+	};
+
+	window.addEventListener("error", (event) => show(event.error ?? event.message));
+	window.addEventListener("unhandledrejection", (event) => show(event.reason));
 }

@@ -161,5 +161,6 @@
 	"touch.infoLabel": "Info",
 	"touch.threat": "Show enemy range",
 	"touch.threatLabel": "Range",
-	"mobile.rotate": "Turn your device sideways to play"
+	"mobile.rotate": "Turn your device sideways to play",
+	"mobile.error": "Something went wrong - tap to close. {message}"
 }
